@@ -11,7 +11,7 @@ namespace Combat.Core
         IEventBus Events { get; }
 
         EntityId SpawnActor(in ActorSpawnSpec spec);
-        bool TryGetActor(EntityId id, out IActor actor);
+        bool TryGetActor(EntityId id, out Actor actor);
         void RequestDespawn(EntityId id);
         void Tick(float dt);
     }
@@ -46,7 +46,7 @@ namespace Combat.Core
 
         public EntityId SpawnActor(in ActorSpawnSpec spec) => _registry.Spawn(spec);
 
-        public bool TryGetActor(EntityId id, out IActor actor) => _registry.TryGet(id, out actor);
+        public bool TryGetActor(EntityId id, out Actor actor) => _registry.TryGet(id, out actor);
 
         public void RequestDespawn(EntityId id) => _registry.RequestDespawn(id);
 

@@ -5,7 +5,7 @@ namespace Combat.Core
 {
     public interface IEntityRegistry
     {
-        bool TryGet(EntityId id, out IActor actor);
+        bool TryGet(EntityId id, out Actor actor);
         EntityId Spawn(in ActorSpawnSpec spec);
         void RequestDespawn(EntityId id);
         void FlushDespawn();
@@ -17,7 +17,7 @@ namespace Combat.Core
     {
         struct Slot
         {
-            public IActor Actor;
+            public Actor Actor;
             public int Generation;
             public bool Occupied;
         }
@@ -27,7 +27,7 @@ namespace Combat.Core
         readonly Queue<int> _freeIndices = new Queue<int>(32);
         readonly HashSet<EntityId> _pendingDespawn = new HashSet<EntityId>();
         readonly List<EntityId> _despawnScratch = new List<EntityId>(16);
-        readonly List<IActor> _activeScratch = new List<IActor>(64);
+        readonly List<Actor> _activeScratch = new List<Actor>(64);
 
         public int ActiveCount { get; private set; }
 
@@ -38,7 +38,7 @@ namespace Combat.Core
             _slots.Add(new Slot { Occupied = false, Generation = 0, Actor = null });
         }
 
-        public bool TryGet(EntityId id, out IActor actor)
+        public bool TryGet(EntityId id, out Actor actor)
         {
             actor = null;
             if (!id.IsValid)
@@ -150,7 +150,7 @@ namespace Combat.Core
         /// <summary>
         /// 供 World 本地阶段遍历；返回的列表本帧内只读使用。
         /// </summary>
-        public List<IActor> CopyActiveActors()
+        public List<Actor> CopyActiveActors()
         {
             _activeScratch.Clear();
             for (int i = 1; i < _slots.Count; i++)

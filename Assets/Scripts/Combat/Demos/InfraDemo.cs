@@ -50,6 +50,17 @@ namespace Combat.Demos
             // generation 校验：旧 id 应失效
             var id2 = world.SpawnActor(new ActorSpawnSpec("pinger"));
             print($"respawn {id2}, oldValid={world.TryGetActor(id, out _)}, newValid={world.TryGetActor(id2, out _)}");
+
+            /*
+这个 Demo 真正验证的内容：
+World.Tick() 有明确、固定的帧序。
+Actor 只产生 Intent，不直接驱动跨实体服务。
+Service 按类型排空 Intent 队列。
+EventBus 将处理结果通知给表现层。
+销毁请求延迟到帧末执行。
+实体槽位可以复用。
+Generation 可以让旧 EntityId 自动失效。
+            */
         }
     }
 
@@ -83,13 +94,13 @@ namespace Combat.Demos
         }
     }
 
-    sealed class PingEmitterComp : ITickComp
+    sealed class PingEmitterComp : Comp
     {
         readonly IIntentQueue _intents;
         readonly float _interval;
         float _acc;
-        IActor _self;
         int _shots;
+        override public bool WantsTick => true;
 
         public PingEmitterComp(IIntentQueue intents, float interval)
         {
@@ -97,19 +108,19 @@ namespace Combat.Demos
             _interval = interval;
         }
 
-        public void OnAttach(IActor self) { _self = self; _acc = 0f; _shots = 0; }
-        public void OnDetach() { _self = null; }
+        protected override void OnAttach() { _acc = 0f; _shots = 0; }
+        protected override void OnDetach() { }
 
-        public void Tick(float dt)
+        public override void Tick(float dt)
         {
             _acc += dt;
             if (_acc < _interval) return;
             _acc -= _interval;
             _shots++;
 
-            _intents.Post(new PingIntent(_self.Id, $"ping-{_shots}"));
+            _intents.Post(new PingIntent(Self.Id, $"ping-{_shots}"));
             if (_shots >= 3)
-                _intents.Post(new DespawnSelfIntent(_self.Id));
+                _intents.Post(new DespawnSelfIntent(Self.Id));
         }
     }
 
@@ -118,7 +129,7 @@ namespace Combat.Demos
         readonly IIntentQueue _intents;
         public DemoActorFactory(IIntentQueue intents) => _intents = intents;
 
-        public IActor Create(in ActorSpawnSpec spec)
+        public Actor Create(in ActorSpawnSpec spec)
         {
             var actor = new Actor();
             actor.SetActive(true);
@@ -127,7 +138,7 @@ namespace Combat.Demos
             return actor;
         }
 
-        public void Release(IActor actor)
+        public void Release(Actor actor)
         {
             if (actor is Actor a) a.ResetForPool();
         }
