@@ -98,43 +98,4 @@ namespace Combat.Core
         }
     }
 
-    /// <summary>
-    /// 默认工厂：按 blueprint 字符串创建空壳 Actor。
-    /// 后续子系统会替换为「读蓝图挂 Comp」的商用工厂。
-    /// </summary>
-    public sealed class EmptyActorFactory : IActorFactory
-    {
-        public Actor Create(in ActorSpawnSpec spec)
-        {
-            var actor = new Actor();
-            actor.SetActive(true);
-            return actor;
-        }
-        public void Release(Actor actor)
-        {
-            actor?.ResetForPool();
-        }
-    }
-
-    public sealed class FighterActorFactory : IActorFactory
-    {
-        readonly CombatTime _time;
-        public FighterActorFactory(CombatTime time)
-        {
-            _time = time;
-        }
-        public Actor Create(in ActorSpawnSpec spec)
-        {
-            var actor = new Actor();
-            actor.SetActive(true);
-            // 专属参数在构造；不在基类 OnAttach 形参里塞万能包
-            actor.AddComp(new TagComp());
-            actor.AddComp(new InputBufferComp(_time, bufferWindow: 0.2f));
-            return actor;
-        }
-        public void Release(Actor actor)
-        {
-            actor?.ResetForPool();
-        }
-    }
 }
