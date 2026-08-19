@@ -3,6 +3,17 @@ using System.Collections.Generic;
 
 namespace Combat.Core
 {
+    public interface ITagRead
+    {
+        bool Has(TagId tag);
+        int Stack(TagId tag);
+    }
+    public interface ITagWrite : ITagRead
+    {
+        void Add(TagId tag, int stacks, TagSource source);
+        void Remove(TagId tag, int stacks, TagSource source);
+    }
+
     public static class CommonTags
     {
         public static readonly TagId Cancel = new TagId(1001);
