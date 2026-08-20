@@ -8,14 +8,14 @@ namespace Combat.Core
         readonly CombatWorld _world;
         readonly IntentQueue _intents;
         readonly ProjectileSpecLibrary _specs;
-        readonly ProjectileDemo.CombatActorFactory _factory;
+        readonly CombatActorFactory _factory;
         readonly List<EntityId> _activeProjectiles = new List<EntityId>(32);
 
         public ProjectileService(
             CombatWorld world,
             IntentQueue intents,
             ProjectileSpecLibrary specs,
-            ProjectileDemo.CombatActorFactory factory)
+            CombatActorFactory factory)
         {
             _world = world ?? throw new ArgumentNullException(nameof(world));
             _intents = intents ?? throw new ArgumentNullException(nameof(intents));
@@ -50,8 +50,8 @@ namespace Combat.Core
 
             var ownerTf = owner.GetComp<TransformComp>();
             int ownerTeam = 0;
-            if (owner.TryGetComp<HurtboxComp>(out var ownerHurt))
-                ownerTeam = ownerHurt.Team;
+            if (owner.TryGetComp<TeamComp>(out var team))
+                ownerTeam = team.Team;
 
             // 方向：MVP 用 spec 本地方向；有 Yaw 时可按朝向旋转
             var dir = new SimVec3(spec.DirX, spec.DirY, spec.DirZ);
@@ -139,8 +139,15 @@ namespace Combat.Core
                     var hurt = target.GetComp<HurtboxComp>();
                     if (!hurt.CanBeHit)
                         continue;
-                    if (hurt.Team == contact.Team)
-                        continue; // 同队不打
+
+                    int srcTeam = contact.Team; // 生成投射物时写入的是 Owner 的 TeamComp
+                    int dstTeam = 0;
+                    if (target.TryGetComp<TeamComp>(out var team))
+                        dstTeam = team.Team;
+                    else
+                        continue; // 无阵营则不可被弹道打（或按需放行）
+                    if (dstTeam == srcTeam)
+                        continue;
 
                     var ttf = target.GetComp<TransformComp>();
                     if (!Overlap(ptf.Position, contact.Radius, ttf.Position, hurt.Radius))

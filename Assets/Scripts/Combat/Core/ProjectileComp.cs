@@ -3,14 +3,10 @@ using System.Collections.Generic;
 
 namespace Combat.Core
 {
-    /// <summary>逻辑受击盒。角色/木桩挂载；投射物不挂。</summary>
     public sealed class HurtboxComp : Comp
     {
         public float Radius = 0.5f;
-        public int Team = 0;          // 0=玩家友方，1=敌方；MVP 简单整数
         public bool CanBeHit = true;
-
-        public void SetTeam(int team) => Team = team;
         public void SetRadius(float r) => Radius = r > 0f ? r : 0.01f;
     }
 
@@ -39,7 +35,7 @@ namespace Combat.Core
         }
     }
 
-     public sealed class ProjectileHitRecordComp : Comp
+    public sealed class ProjectileHitRecordComp : Comp
     {
         readonly HashSet<int> _hitIndexPacked = new HashSet<int>();
         // 用 Index+Generation 打包不够安全时改存 EntityId；MVP 存两个 int 的字符串键更稳

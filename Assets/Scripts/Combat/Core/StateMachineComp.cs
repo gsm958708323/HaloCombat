@@ -46,7 +46,7 @@ namespace Combat.Core
             => _hitDuration = seconds > 0f ? seconds : 0.01f;
         protected override void OnAttach()
         {
-            _input = Self.GetComp<InputBufferComp>();
+            Self.TryGetComp(out _input);
             Self.TryGetComp(out _director);
             Self.TryGetComp(out _tags);
             _current = ActorStateId.Root;
@@ -77,7 +77,7 @@ namespace Combat.Core
                 _hitTimer = 0f;
             if (next == ActorStateId.Hit || next == ActorStateId.Dead)
             {
-                _input.Clear();
+                _input?.Clear();
                 _director?.Stop(next == ActorStateId.Dead
                     ? DirectorStopReason.Dead
                     : DirectorStopReason.Hit);
