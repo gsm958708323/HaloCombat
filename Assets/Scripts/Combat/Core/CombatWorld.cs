@@ -79,5 +79,7 @@ namespace Combat.Core
             // 3) 帧末销毁
             _registry.FlushDespawn();
         }
+
+        public List<Actor> CopyActiveActors() => _registry.CopyActiveActors();
     }
 }
