@@ -24,6 +24,7 @@ namespace Combat.Core
         public static bool operator ==(ActorStateId a, ActorStateId b) => a.Equals(b);
         public static bool operator !=(ActorStateId a, ActorStateId b) => !a.Equals(b);
 
+        public static readonly ActorStateId None = new ActorStateId(0);
         public static readonly ActorStateId Root = new ActorStateId(1);
         public static readonly ActorStateId Jump = new ActorStateId(2);
         public static readonly ActorStateId Attack = new ActorStateId(3);
@@ -33,97 +34,92 @@ namespace Combat.Core
 
     public sealed class StateMachineComp : Comp
     {
-        readonly ComboTableSO _comboTable;
-        readonly TagComp _tags;
         InputBufferComp _input;
-        CombatTime _time;
-        ActorState? _currentState;
+        SkillDirectorComp _director;
+        TagComp _tags;
         ActorStateId _current = ActorStateId.Root;
-        ActorStateId _targetId = ActorStateId.Root;
-
+        float _hitTimer;
+        float _hitDuration = 0.35f;
         public ActorStateId Current => _current;
-
-        public StateMachineComp(ComboTableSO comboTable, TagComp tags, InputBufferComp input, CombatTime time)
-        {
-            _comboTable = comboTable ?? throw new ArgumentNullException(nameof(comboTable));
-            _tags = tags ?? throw new ArgumentNullException(nameof(tags));
-            _input = input ?? throw new ArgumentNullException(nameof(input));
-            _time = time ?? throw new ArgumentNullException(nameof(time));
-        }
-
-        public override bool WantsTick => false; // 主状态切换事件驱动；需要状态内 tick 再开
+        public override bool WantsTick => true;
+        public void SetHitDuration(float seconds)
+            => _hitDuration = seconds > 0f ? seconds : 0.01f;
         protected override void OnAttach()
         {
             _input = Self.GetComp<InputBufferComp>();
+            Self.TryGetComp(out _director);
+            Self.TryGetComp(out _tags);
             _current = ActorStateId.Root;
+            ApplyStateTags(ActorStateId.None, ActorStateId.Root);
         }
         protected override void OnDetach()
         {
-            if (_currentState != null)
-                _currentState.OnExit(new StateExitReason { Reason = "Detach" });
-            _currentState = null;
+            _input = null;
+            _director = null;
+            _tags = null;
         }
-
         public bool TryEnter(ActorStateId next, StateEnterArgs args)
         {
             if (next == _current)
                 return true;
-
-            // MVP：Dead 不可退出；Hit 可被 Dead 覆盖
             if (_current == ActorStateId.Dead)
                 return false;
-            if (_current == ActorStateId.Hit && next != ActorStateId.Dead && next != ActorStateId.Root)
-                return false; // 简化硬直：Hit 只能回 Root 或进 Dead（可按受击表再扩）
-
-            // 状态验证（可扩展：每个状态子类实现 CanEnterFrom）
-            var targetState = GetState(next);
-            if (targetState == null || !targetState.CanEnterFrom(_current))
+            // 简化：Hit 中只允许 Dead 或 Recover→Root（走 Notify/Recover）
+            if (_current == ActorStateId.Hit &&
+                next != ActorStateId.Dead &&
+                next != ActorStateId.Root)
                 return false;
-
-            // 当前退出
-            if (_currentState != null)
-                _currentState.OnExit(new StateExitReason { Reason = args.Reason });
-
-            // 新进入
+            var prev = _current;
             _current = next;
-            _currentState = targetState;
-            _currentState.OnEnter(args);
-
-            // Hit/Dead 自动清理（你锁定编排）
+            if (next == ActorStateId.Hit)
+                _hitTimer = _hitDuration;
+            else
+                _hitTimer = 0f;
             if (next == ActorStateId.Hit || next == ActorStateId.Dead)
             {
                 _input.Clear();
-                if (Self.TryGetComp<SkillDirectorComp>(out var director))
-                    director.Stop(next == ActorStateId.Dead ? DirectorStopReason.Dead : DirectorStopReason.Hit);
+                _director?.Stop(next == ActorStateId.Dead
+                    ? DirectorStopReason.Dead
+                    : DirectorStopReason.Hit);
             }
-
+            ApplyStateTags(prev, next);
             return true;
         }
-
-        /// <summary>硬直结束回 Root（后续可由 Hit 状态时长驱动调用）。</summary>
-        public void RecoverFromHit()
+        /// <summary>
+        /// 任意非 Dead「活动结束」统一回 Root。
+        /// Jump 落地、Attack 轴结束、Hit 硬直结束都走这里。
+        /// </summary>
+        public void NotifyActivityFinished(ActorStateId finished, string reason)
         {
-            if (_current == ActorStateId.Hit)
-                TryEnter(ActorStateId.Root, new StateEnterArgs(ActorStateId.Hit, "Recover"));
+            if (_current == ActorStateId.Dead)
+                return;
+            if (_current != finished)
+                return;
+            TryEnter(ActorStateId.Root, new StateEnterArgs(finished, reason));
         }
-
-        public void Tick(float dt)
+        public override void Tick(float dt)
         {
-            if (_currentState != null)
-                _currentState.Tick(dt);
+            if (_current != ActorStateId.Hit)
+                return;
+            _hitTimer -= dt;
+            if (_hitTimer <= 0f)
+                NotifyActivityFinished(ActorStateId.Hit, "HitRecover");
         }
-
-        ActorState? GetState(ActorStateId id)
+        void ApplyStateTags(ActorStateId prev, ActorStateId next)
         {
-            return id switch
-            {
-                var i when i == ActorStateId.Root => new RootState(_comboTable, _tags, _input, _time),
-                var i when i == ActorStateId.Jump => new JumpState(_comboTable, _tags, _input, _time),
-                var i when i == ActorStateId.Attack => new AttackState(_comboTable, _tags, _input, _time),
-                var i when i == ActorStateId.Hit => new HitState(_comboTable, _tags, _input, _time),
-                var i when i == ActorStateId.Dead => new DeadState(_comboTable, _tags, _input, _time),
-                _ => null
-            };
+            if (_tags == null)
+                return;
+            // 粗状态 Tag：供 Condition / 移动使用
+            if (prev == ActorStateId.Jump)
+                _tags.Remove(CommonTags.Airborne, 1, TagSource.StateExit("Jump"));
+            if (next == ActorStateId.Jump)
+                _tags.Add(CommonTags.Airborne, 1, TagSource.StateEnter("Jump"));
+            if (prev == ActorStateId.Root)
+                _tags.Remove(CommonTags.Grounded, 1, TagSource.StateExit("Root"));
+            if (next == ActorStateId.Root)
+                _tags.Add(CommonTags.Grounded, 1, TagSource.StateEnter("Root"));
+            if (next == ActorStateId.Dead)
+                _tags.Add(CommonTags.Dead, 1, TagSource.StateEnter("Dead"));
         }
     }
 }

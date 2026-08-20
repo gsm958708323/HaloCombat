@@ -6,37 +6,90 @@ namespace Combat.Core
     /// </summary>
     public abstract class Effect
     {
-        public bool IsFinished { get; protected set; }
-        /// <summary>进入时调用一次。派生可 override；需要宿主数据时用专属方法。</summary>
+        public bool IsFinished { get; private set; }
         public virtual void Enter() { }
         public virtual void Tick(float dt) { }
         public virtual void Exit() { }
         public void MarkFinished() => IsFinished = true;
     }
-    public readonly struct AddTagEffectArgs
-    {
-        public readonly TagComp Tags;
-        public readonly TagId Tag;
-        public readonly int Stacks;
 
-        public AddTagEffectArgs(TagComp tags, TagId tag, int stacks)
+    public sealed class MoveOffsetEffect : Effect
+    {
+        readonly LocomotionComp _loco;
+        readonly float _x, _y, _z;
+        readonly bool _asVelocity;
+        readonly bool _interval;
+        readonly float _duration;
+        bool _instantApplied;
+        public MoveOffsetEffect(
+            LocomotionComp loco,
+            float x, float y, float z,
+            bool asVelocity,
+            bool interval,
+            float duration)
         {
-            Tags = tags;
-            Tag = tag;
-            Stacks = stacks;
+            _loco = loco;
+            _x = x; _y = y; _z = z;
+            _asVelocity = asVelocity;
+            _interval = interval;
+            _duration = duration > 1e-5f ? duration : 1e-5f;
+        }
+        public override void Enter()
+        {
+            if (_interval)
+                return;
+            // 瞬时：一次性位移
+            _loco.AddAxisDelta(_x, _y, _z);
+            _instantApplied = true;
+            MarkFinished();
+        }
+        public override void Tick(float dt)
+        {
+            if (!_interval)
+                return;
+            if (_asVelocity)
+            {
+                _loco.AddAxisDelta(_x * dt, _y * dt, _z * dt);
+            }
+            else
+            {
+                // 总位移在区间内均分
+                _loco.AddAxisDelta(
+                    _x * (dt / _duration),
+                    _y * (dt / _duration),
+                    _z * (dt / _duration));
+            }
+        }
+        public override void Exit()
+        {
+            // 区间结束无需额外处理；累计已在 Tick 完成
         }
     }
 
     public sealed class AddTagEffect : Effect
     {
-        readonly AddTagEffectArgs _args;
-
-        public AddTagEffect(in AddTagEffectArgs args) => _args = args;
-
+        readonly TagComp _tags;
+        readonly TagId _tag;
+        readonly int _stacks;
+        readonly bool _interval;
+        public AddTagEffect(TagComp tags, TagId tag, int stacks, bool interval)
+        {
+            _tags = tags;
+            _tag = tag;
+            _stacks = stacks < 1 ? 1 : stacks;
+            _interval = interval;
+        }
         public override void Enter()
         {
-            _args.Tags.Add(_args.Tag, _args.Stacks, TagSource.Effect(nameof(AddTagEffect)));
-            MarkFinished(); // 瞬时 Effect
+            _tags.Add(_tag, _stacks, TagSource.Effect(nameof(AddTagEffect)));
+            if (!_interval)
+                MarkFinished();
+        }
+        public override void Exit()
+        {
+            // 区间结束自动移除；瞬时已在 Enter 结束
+            if (_interval)
+                _tags.Remove(_tag, _stacks, TagSource.Effect(nameof(AddTagEffect) + ".Exit"));
         }
     }
 
@@ -56,13 +109,18 @@ namespace Combat.Core
 
     public sealed class RemoveTagEffect : Effect
     {
-        readonly RemoveTagEffectArgs _args;
-
-        public RemoveTagEffect(in RemoveTagEffectArgs args) => _args = args;
-
+        readonly TagComp _tags;
+        readonly TagId _tag;
+        readonly int _stacks;
+        public RemoveTagEffect(TagComp tags, TagId tag, int stacks)
+        {
+            _tags = tags;
+            _tag = tag;
+            _stacks = stacks < 1 ? 1 : stacks;
+        }
         public override void Enter()
         {
-            _args.Tags.Remove(_args.Tag, _args.Stacks, TagSource.Effect(nameof(RemoveTagEffect)));
+            _tags.Remove(_tag, _stacks, TagSource.Effect(nameof(RemoveTagEffect)));
             MarkFinished();
         }
     }

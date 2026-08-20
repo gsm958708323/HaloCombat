@@ -14,9 +14,8 @@ namespace Combat.Core
     public sealed class SkillDirectorComp : Comp
     {
         readonly TimelineLibrary _library;
-        readonly EffectFactory _effects;
         readonly TimelinePlayer _player;
-        TagComp _tags;
+        StateMachineComp _fsm;
         SkillNodeId _currentSkill = SkillNodeId.None;
         public SkillNodeId CurrentSkill => _currentSkill;
         public bool IsPlaying => _player.IsPlaying;
@@ -24,60 +23,47 @@ namespace Combat.Core
         public SkillDirectorComp(TimelineLibrary library, EffectFactory effects)
         {
             _library = library ?? throw new ArgumentNullException(nameof(library));
-            _effects = effects ?? throw new ArgumentNullException(nameof(effects));
-            _player = new TimelinePlayer(_effects);
+            _player = new TimelinePlayer(effects ?? throw new ArgumentNullException(nameof(effects)));
         }
         protected override void OnAttach()
         {
-            _tags = Self.GetComp<TagComp>();
+            _fsm = Self.GetComp<StateMachineComp>();
         }
         protected override void OnDetach()
         {
             Stop(DirectorStopReason.Detach);
-            _tags = null;
-            _currentSkill = SkillNodeId.None;
+            _fsm = null;
         }
-        /// <summary>换招 = 换轴。先停旧轴，再播新轴。</summary>
         public void Play(SkillNodeId skill, TimelineId timelineId)
         {
-            if (!skill.IsValid || !timelineId.IsValid)
-                throw new ArgumentException("Play requires valid skill and timeline");
             if (!_library.TryGet(timelineId, out var so))
-                throw new InvalidOperationException($"Timeline not registered: {timelineId}");
+                throw new InvalidOperationException($"Missing timeline {timelineId}");
             if (_player.IsPlaying)
-                Stop(DirectorStopReason.Replaced);
+                _player.Stop(); // 区间 Exit 会清 Tag
             _currentSkill = skill;
             _player.Play(so);
+            if (_fsm.Current != ActorStateId.Attack)
+                _fsm.TryEnter(ActorStateId.Attack, new StateEnterArgs(_fsm.Current, "PlaySkill"));
         }
         public void Stop(DirectorStopReason reason)
         {
-            if (!_player.IsPlaying && !_currentSkill.IsValid)
-                return;
+            bool wasPlaying = _player.IsPlaying || _currentSkill.IsValid;
             _player.Stop();
-            // 受击/死亡：技能节点清空（Attack 主状态是否退出由 StateMachine 决定）
-            if (reason == DirectorStopReason.Hit ||
-                reason == DirectorStopReason.Dead ||
-                reason == DirectorStopReason.Detach)
-            {
-                _currentSkill = SkillNodeId.None;
-            }
-            else if (reason == DirectorStopReason.Finished)
-            {
-                _currentSkill = SkillNodeId.None;
-            }
-            // Replaced：Play 会马上写入新 skill，这里不必清
-            if (reason == DirectorStopReason.Replaced)
-                return;
+            _currentSkill = SkillNodeId.None;
+            // 自然播完 → 回 Root；Hit/Dead/Replace 不在这里抢状态
+            if (reason == DirectorStopReason.Finished && wasPlaying)
+                _fsm?.NotifyActivityFinished(ActorStateId.Attack, "TimelineFinished");
         }
         public override void Tick(float dt)
         {
             if (!_player.IsPlaying)
                 return;
-            _player.Tick(dt, Self, _tags);
+            _player.Tick(dt, Self);
             if (!_player.IsPlaying)
             {
-                // 自然播完
+                // 播完
                 _currentSkill = SkillNodeId.None;
+                _fsm.NotifyActivityFinished(ActorStateId.Attack, "TimelineFinished");
             }
         }
     }

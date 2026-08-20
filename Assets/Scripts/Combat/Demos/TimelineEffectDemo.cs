@@ -2,7 +2,7 @@ using System;
 using Combat.Core;
 using UnityEngine;
 
-namespace Combat.Demos
+namespace Combat.TimelineEffectDemo
 {
     public sealed class FighterActorFactory : IActorFactory
     {
@@ -29,7 +29,7 @@ namespace Combat.Demos
             actor.AddComp(tagComp);
             var inputComp = new InputBufferComp(_time);
             actor.AddComp(inputComp);
-            actor.AddComp(new StateMachineComp(_combos, tagComp, inputComp, _time));
+            actor.AddComp(new StateMachineComp());
             actor.AddComp(new SkillDirectorComp(_timelines, _effects));
             actor.AddComp(new ComboComp(_combos));
             actor.AddComp(new PlayerCombatDriverComp());
