@@ -2,7 +2,10 @@ using System;
 
 namespace Combat.Core
 {
-   public sealed class ComboComp : Comp
+    /// <summary>
+    /// ComboComp 只做边表匹配 + Consume（不涉及状态切换，状态机在外编排）。
+    /// </summary>
+    public sealed class ComboComp : Comp
     {
         readonly ComboTableSO _table;
         InputBufferComp _input;

@@ -49,5 +49,23 @@ namespace Combat.Core
 
         public bool TryGet(int value, out ProjectileSpec spec)
             => _map.TryGetValue(value, out spec);
+
+        public ProjectileSpecLibrary Create()
+        {
+            var projSpecs = new ProjectileSpecLibrary();
+            projSpecs.Register(new ProjectileSpec
+            {
+                Id = ProjectileSpecId.Bolt901,
+                Speed = 10f,
+                Lifetime = 2f,
+                Radius = 0.35f,
+                DirX = 1f,
+                AttackSpecValue = 42,
+                Pierce = false,
+                SpawnOffsetX = 0.6f,
+                SpawnOffsetY = 1.0f
+            });
+            return projSpecs;
+        }
     }
 }

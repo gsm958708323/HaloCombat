@@ -108,7 +108,7 @@ namespace Combat.Core
             actor.AddComp(new ProjectileLifetimeComp(_intents));
             actor.AddComp(new ProjectileHitRecordComp());
             actor.AddComp(new ProjectileContactComp());
-            // Attach 后由 Service 调用 ApplyProjectileSetup（见下）
+            // Attach 后由 Service 调用 ProjectileSetup
             // 这里只挂组件；位姿/速度在 Spawn 后立刻 Setup
         }
 

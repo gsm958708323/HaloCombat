@@ -2,7 +2,10 @@ using System;
 
 namespace Combat.Core
 {
-     public enum DirectorStopReason : byte
+    /// <summary>
+    /// SkillDirectorComp 只做播轴/换轴/停轴 + Timeline 游标（无内部算法，只播轴）。
+    /// </summary>
+    public enum DirectorStopReason : byte
     {
         Finished = 0,
         Replaced = 1, // 换轴

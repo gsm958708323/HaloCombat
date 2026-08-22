@@ -4,9 +4,15 @@ namespace Combat.Core
     {
         public abstract string Name { get; }
         public virtual bool CanEnterFrom(ActorStateId from) => true; // 默认可从任何状态进
-        public abstract void OnEnter(StateEnterArgs args);
+        public virtual void OnEnter(StateEnterArgs args)
+        {
+            UnityEngine.Debug.LogFormat("Enter Root from {0} due to {1}", args.From, args.Reason);
+        }
         public abstract void Tick(float dt);
-        public abstract void OnExit(StateExitReason reason);
+        public virtual void OnExit(StateExitReason reason)
+        {
+            UnityEngine.Debug.LogFormat("Exit Root due to {0}", reason.Reason);
+        }
     }
 
     public struct StateEnterArgs

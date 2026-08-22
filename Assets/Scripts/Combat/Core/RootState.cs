@@ -10,12 +10,10 @@ namespace Combat.Core
         readonly InputBufferComp _input;
         readonly CombatTime _time;
 
-        public RootState(ComboTableSO combo, TagComp tags, InputBufferComp input, CombatTime time)
+        public RootState(TagComp tags, InputBufferComp input)
         {
-            _combo = combo;
             _tags = tags;
             _input = input;
-            _time = time;
         }
 
         public override bool CanEnterFrom(ActorStateId from) => true;
@@ -37,19 +35,21 @@ namespace Combat.Core
         readonly CombatTime _time;
         public override string Name => "Hit";
 
-        public HitState(ComboTableSO combo, TagComp tags, InputBufferComp input, CombatTime time)
+        public HitState(TagComp tags, InputBufferComp input)
         {
-            _combo = combo;
             _tags = tags;
             _input = input;
-            _time = time;
         }
         public override void OnEnter(StateEnterArgs args)
         {
+            base.OnEnter(args);
         }
 
         public override void Tick(float dt) { }
-        public override void OnExit(StateExitReason reason) { }
+        public override void OnExit(StateExitReason reason)
+        {
+            base.OnExit(reason);
+        }
         public override bool CanEnterFrom(ActorStateId from) => true;
     }
 
@@ -59,22 +59,24 @@ namespace Combat.Core
         readonly TagComp _tags;
         readonly InputBufferComp _input;
         readonly CombatTime _time;
-        public JumpState(ComboTableSO combo, TagComp tags, InputBufferComp input, CombatTime time)
+        public JumpState(TagComp tags, InputBufferComp input)
         {
-            _combo = combo;
             _tags = tags;
             _input = input;
-            _time = time;
         }
-        public override string Name => "Hit";
+        public override string Name => "Jump";
 
         public override void OnEnter(StateEnterArgs args)
         {
-            // 清理已在 StateMachineComp.TryEnter 中统一
+
+            base.OnEnter(args);
         }
 
         public override void Tick(float dt) { }
-        public override void OnExit(StateExitReason reason) { }
+        public override void OnExit(StateExitReason reason)
+        {
+            base.OnExit(reason);
+        }
         public override bool CanEnterFrom(ActorStateId from) => true;
     }
 
@@ -84,22 +86,24 @@ namespace Combat.Core
         readonly TagComp _tags;
         readonly InputBufferComp _input;
         readonly CombatTime _time;
-        public AttackState(ComboTableSO combo, TagComp tags, InputBufferComp input, CombatTime time)
+        public AttackState(TagComp tags, InputBufferComp input)
         {
-            _combo = combo;
             _tags = tags;
             _input = input;
-            _time = time;
         }
-        public override string Name => "Hit";
+        public override string Name => "Attack";
 
         public override void OnEnter(StateEnterArgs args)
         {
-            // 清理已在 StateMachineComp.TryEnter 中统一
+
+            base.OnEnter(args);
         }
 
         public override void Tick(float dt) { }
-        public override void OnExit(StateExitReason reason) { }
+        public override void OnExit(StateExitReason reason)
+        {
+            base.OnExit(reason);
+        }
         public override bool CanEnterFrom(ActorStateId from) => true;
     }
     sealed class DeadState : ActorState
@@ -109,22 +113,26 @@ namespace Combat.Core
         readonly InputBufferComp _input;
         readonly CombatTime _time;
 
-        public DeadState(ComboTableSO combo, TagComp tags, InputBufferComp input, CombatTime time)
+        public DeadState(TagComp tags, InputBufferComp input)
         {
-            _combo = combo;
+
             _tags = tags;
             _input = input;
-            _time = time;
+
         }
-        public override string Name => "Hit";
+        public override string Name => "Dead";
 
         public override void OnEnter(StateEnterArgs args)
         {
-            // 清理已在 StateMachineComp.TryEnter 中统一
+            base.OnEnter(args);
+
         }
 
         public override void Tick(float dt) { }
-        public override void OnExit(StateExitReason reason) { }
+        public override void OnExit(StateExitReason reason)
+        {
+            base.OnExit(reason);
+        }
         public override bool CanEnterFrom(ActorStateId from) => true;
     }
 }

@@ -38,6 +38,8 @@ namespace Combat.Core
         SkillDirectorComp _director;
         TagComp _tags;
         ActorStateId _current = ActorStateId.Root;
+        ActorState? _currentState;
+
         float _hitTimer;
         float _hitDuration = 0.35f;
         public ActorStateId Current => _current;
@@ -64,6 +66,12 @@ namespace Combat.Core
                 return true;
             if (_current == ActorStateId.Dead)
                 return false;
+
+            // 状态验证（可扩展：每个状态子类实现 CanEnterFrom）
+            var targetState = GetState(next);
+            if (targetState == null || !targetState.CanEnterFrom(_current))
+                return false;
+
             // 简化：Hit 中只允许 Dead 或 Recover→Root（走 Notify/Recover）
             if (_current == ActorStateId.Hit &&
                 next != ActorStateId.Dead &&
@@ -71,6 +79,13 @@ namespace Combat.Core
                 return false;
             var prev = _current;
             _current = next;
+
+            // 当前退出
+            if (_currentState != null)
+                _currentState.OnExit(new StateExitReason { Reason = args.Reason });
+            _currentState = targetState;
+            _currentState.OnEnter(args);
+
             if (next == ActorStateId.Hit)
                 _hitTimer = _hitDuration;
             else
@@ -99,6 +114,9 @@ namespace Combat.Core
         }
         public override void Tick(float dt)
         {
+            if (_currentState != null)
+                _currentState.Tick(dt);
+
             if (_current != ActorStateId.Hit)
                 return;
             _hitTimer -= dt;
@@ -120,6 +138,19 @@ namespace Combat.Core
                 _tags.Add(CommonTags.Grounded, 1, TagSource.StateEnter("Root"));
             if (next == ActorStateId.Dead)
                 _tags.Add(CommonTags.Dead, 1, TagSource.StateEnter("Dead"));
+        }
+
+        ActorState? GetState(ActorStateId id)
+        {
+            return id switch
+            {
+                var i when i == ActorStateId.Root => new RootState(_tags, _input),
+                var i when i == ActorStateId.Jump => new JumpState(_tags, _input),
+                var i when i == ActorStateId.Attack => new AttackState(_tags, _input),
+                var i when i == ActorStateId.Hit => new HitState( _tags, _input),
+                var i when i == ActorStateId.Dead => new DeadState( _tags, _input),
+                _ => null
+            };
         }
     }
 }

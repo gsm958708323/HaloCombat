@@ -4,40 +4,6 @@ using UnityEngine;
 
 namespace Combat.TimelineEffectDemo
 {
-    public sealed class FighterActorFactory : IActorFactory
-    {
-        readonly CombatTime _time;
-        readonly ComboTableSO _combos;
-        readonly TimelineLibrary _timelines;
-        readonly EffectFactory _effects;
-        public FighterActorFactory(
-            CombatTime time,
-            ComboTableSO combos,
-            TimelineLibrary timelines,
-            EffectFactory effects)
-        {
-            _time = time;
-            _combos = combos;
-            _timelines = timelines;
-            _effects = effects;
-        }
-        public Actor Create(in ActorSpawnSpec spec)
-        {
-            var actor = new Actor();
-            actor.SetActive(true);
-            var tagComp = new TagComp();
-            actor.AddComp(tagComp);
-            var inputComp = new InputBufferComp(_time);
-            actor.AddComp(inputComp);
-            actor.AddComp(new StateMachineComp());
-            actor.AddComp(new SkillDirectorComp(_timelines, _effects));
-            actor.AddComp(new ComboComp(_combos));
-            actor.AddComp(new PlayerCombatDriverComp());
-            return actor;
-        }
-        public void Release(Actor actor) => actor?.ResetForPool();
-    }
-
     public class TimelineEffectDemo : MonoBehaviour
     {
         public void Awake()
@@ -45,37 +11,7 @@ namespace Combat.TimelineEffectDemo
             var time = new CombatTime();
             var intents = new IntentQueue();
             var events = new EventBus();
-
-            var library = TimelineLibrary.Create();
-            var combos = new ComboTableSO
-            {
-                Entries = new[]
-                {
-                    // 开招：无当前技能节点 → G1
-                    new ComboEntry
-                    {
-                        PreSkills = Array.Empty<SkillNodeId>(),
-                        Input = InputToken.Attack,
-                        RequiredTags = Array.Empty<int>(),
-                        Priority = 0,
-                        ToSkill = SkillNodeId.G1,
-                        Timeline = TimelineId.TL_G1
-                    },
-                    // G1 取消窗接 G2
-                    new ComboEntry
-                    {
-                        PreSkills = new[] { SkillNodeId.G1 },
-                        Input = InputToken.Attack,
-                        RequiredTags = new[] { CommonTags.Cancel.Value },
-                        Priority = 10,
-                        ToSkill = SkillNodeId.G2,
-                        Timeline = TimelineId.TL_G2
-                    },
-                }
-            };
-
-            var effects = new EffectFactory(intents);
-            var factory = new FighterActorFactory(time, combos, library, effects);
+            var factory = new CombatActorFactory(time, ComboTableSO.Create(), TimelineLibrary.Create(), new EffectFactory(intents), intents, new ProjectileSpecLibrary());
             var world = new CombatWorld(factory, intents, events, time);
 
             // Service 阶段仅打印跨实体 Intent（投射物真正生成留给下一步）

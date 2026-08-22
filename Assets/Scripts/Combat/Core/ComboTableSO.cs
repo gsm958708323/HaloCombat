@@ -6,6 +6,37 @@ namespace Combat.Core
     [Serializable]
     public sealed class ComboTableSO
     {
+        public static ComboTableSO Create()
+        {
+            var combos = new ComboTableSO
+            {
+                Entries = new[]
+                {
+                    // 开招：无当前技能节点 → G1
+                    new ComboEntry
+                    {
+                        PreSkills = Array.Empty<SkillNodeId>(),
+                        Input = InputToken.Attack,
+                        RequiredTags = Array.Empty<int>(),
+                        Priority = 0,
+                        ToSkill = SkillNodeId.G1,
+                        Timeline = TimelineId.TL_G1
+                    },
+                    // G1 取消窗接 G2
+                    new ComboEntry
+                    {
+                        PreSkills = new[] { SkillNodeId.G1 },
+                        Input = InputToken.Attack,
+                        RequiredTags = new[] { CommonTags.Cancel.Value },
+                        Priority = 10,
+                        ToSkill = SkillNodeId.G2,
+                        Timeline = TimelineId.TL_G2
+                    },
+                }
+            };
+            return combos;
+        }
+
         public ComboEntry[] Entries = Array.Empty<ComboEntry>();
         public bool TryResolve(
             SkillNodeId currentSkill,

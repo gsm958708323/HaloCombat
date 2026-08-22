@@ -224,7 +224,7 @@ namespace Combat.Core
             move.SetVelocity(ctx.Velocity);
             var life = projectile.GetComp<ProjectileLifetimeComp>();
             life.Arm(ctx.Spec.Lifetime);
-            var contact = projectile.GetComp<ProjectileContactComp>();
+            var contact = projectile.GetComp<ProjectileContactComp>(); // todo 
             contact.Setup(
                 ctx.Owner,
                 ctx.OwnerTeam,
