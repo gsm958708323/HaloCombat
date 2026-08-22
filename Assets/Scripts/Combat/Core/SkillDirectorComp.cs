@@ -37,6 +37,8 @@ namespace Combat.Core
             Stop(DirectorStopReason.Detach);
             _fsm = null;
         }
+
+        /// <summary>换招 = 换轴。先停旧轴，再播新轴。</summary>
         public void Play(SkillNodeId skill, TimelineId timelineId)
         {
             if (!_library.TryGet(timelineId, out var so))

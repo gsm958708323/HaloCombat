@@ -93,20 +93,6 @@ namespace Combat.Core
         }
     }
 
-    public readonly struct RemoveTagEffectArgs
-    {
-        public readonly TagComp Tags;
-        public readonly TagId Tag;
-        public readonly int Stacks;
-
-        public RemoveTagEffectArgs(TagComp tags, TagId tag, int stacks)
-        {
-            Tags = tags;
-            Tag = tag;
-            Stacks = stacks;
-        }
-    }
-
     public sealed class RemoveTagEffect : Effect
     {
         readonly TagComp _tags;
@@ -176,6 +162,84 @@ namespace Combat.Core
         public override void Enter()
         {
             _args.Intents.Post(new SpawnProjectileIntent(_args.Owner, _args.SpecValue));
+            MarkFinished();
+        }
+    }
+
+    public readonly struct AoEBurstEffectArgs
+    {
+        public readonly IntentQueue Intents;
+        public readonly Actor Self;
+        public readonly AoESpecLibrary Library;
+        public readonly int SpecValue;
+        public AoEBurstEffectArgs(
+            IntentQueue intents,
+            Actor self,
+            AoESpecLibrary library,
+            int specValue)
+        {
+            Intents = intents;
+            Self = self;
+            Library = library;
+            SpecValue = specValue;
+        }
+    }
+    public sealed class AoEBurstEffect : Effect
+    {
+        readonly AoEBurstEffectArgs _args;
+        public AoEBurstEffect(in AoEBurstEffectArgs args) => _args = args;
+        public override void Enter()
+        {
+            if (!_args.Library.TryGet(_args.SpecValue, out var spec))
+            {
+                MarkFinished();
+                return;
+            }
+            var self = _args.Self;
+            var tf = self.GetComp<TransformComp>();
+            int team = 0;
+            if (self.TryGetComp<TeamComp>(out var teamComp))
+                team = teamComp.Team;
+            int skill = 0;
+            if (self.TryGetComp<SkillDirectorComp>(out var director))
+                skill = director.CurrentSkill.Value;
+            float cx = tf.Position.X + spec.OffsetX;
+            float cy = tf.Position.Y + spec.OffsetY;
+            float cz = tf.Position.Z + spec.OffsetZ;
+            _args.Intents.Post(new AoEIntent(
+                source: self.Id,
+                owner: self.Id,
+                ownerTeam: team,
+                shape: spec.Shape,
+                cx, cy, cz,
+                radius: spec.Radius,
+                attackSpecValue: spec.AttackSpecValue,
+                sourceSkillValue: skill,
+                hitOwner: spec.HitOwner));
+            MarkFinished();
+        }
+    }
+
+
+    public readonly struct SpawnPulseZoneEffectArgs
+    {
+        public readonly IntentQueue Intents;
+        public readonly EntityId Owner;
+        public readonly int SpecValue;
+        public SpawnPulseZoneEffectArgs(IntentQueue intents, EntityId owner, int specValue)
+        {
+            Intents = intents;
+            Owner = owner;
+            SpecValue = specValue;
+        }
+    }
+    public sealed class SpawnPulseZoneEffect : Effect
+    {
+        readonly SpawnPulseZoneEffectArgs _args;
+        public SpawnPulseZoneEffect(in SpawnPulseZoneEffectArgs args) => _args = args;
+        public override void Enter()
+        {
+            _args.Intents.Post(new SpawnPulseZoneIntent(_args.Owner, _args.SpecValue));
             MarkFinished();
         }
     }

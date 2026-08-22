@@ -9,6 +9,8 @@ namespace Combat.Core
         SpawnProjectile = 3,
         AnimSignal = 4,
         MoveOffset = 5,          // 区间或瞬时位移
+        AoEBurst = 6,   // 瞬时
+        PulseZone = 7,  // 生成火池 Actor（可选）
     }
 
     /// <summary>
@@ -31,6 +33,8 @@ namespace Combat.Core
         public float MoveZ;
         public bool MoveAsVelocity; // true: 每秒；false: 整段总位移按时长均分，或瞬时一次施加
         public bool IsInterval => EndTime >= Time;
+        public int AoESpecValue;
+        public int PulseZoneSpecValue;
         public static TimelineKey Instant(float time, EffectType type)
         {
             return new TimelineKey { Time = time, EndTime = -1f, Type = type };

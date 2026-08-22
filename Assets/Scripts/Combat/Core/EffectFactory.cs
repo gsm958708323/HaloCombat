@@ -5,12 +5,14 @@ namespace Combat.Core
     /// <summary>
     /// 调度器不 new 万能 Context；按类型组装专属 args。
     /// </summary>
-     public sealed class EffectFactory
+    public sealed class EffectFactory
     {
         readonly IntentQueue _intents;
-        public EffectFactory(IntentQueue intents)
+        readonly AoESpecLibrary _aoeSpecs;
+        public EffectFactory(IntentQueue intents, AoESpecLibrary aoeSpecs = null)
         {
             _intents = intents ?? throw new ArgumentNullException(nameof(intents));
+            _aoeSpecs = aoeSpecs; // Pulse/Burst 用到时再要求非空
         }
         public Effect Create(in TimelineKey key, Actor self)
         {
@@ -32,16 +34,26 @@ namespace Combat.Core
                     return new SpawnProjectileEffect(new SpawnProjectileEffectArgs(
                         _intents, self.Id, key.ProjectileSpecValue));
                 case EffectType.MoveOffset:
-                {
-                    var loco = self.GetComp<LocomotionComp>();
-                    float dur = key.IsInterval ? (key.EndTime - key.Time) : 0f;
-                    return new MoveOffsetEffect(
-                        loco,
-                        key.MoveX, key.MoveY, key.MoveZ,
-                        key.MoveAsVelocity,
-                        key.IsInterval,
-                        dur);
-                }
+                    {
+                        var loco = self.GetComp<LocomotionComp>();
+                        float dur = key.IsInterval ? (key.EndTime - key.Time) : 0f;
+                        return new MoveOffsetEffect(
+                            loco,
+                            key.MoveX, key.MoveY, key.MoveZ,
+                            key.MoveAsVelocity,
+                            key.IsInterval,
+                            dur);
+                    }
+                case EffectType.AoEBurst:
+                    if (_aoeSpecs == null)
+                        throw new InvalidOperationException("AoESpecLibrary not injected");
+                    return new AoEBurstEffect(new AoEBurstEffectArgs(
+                        _intents, self, _aoeSpecs, key.AoESpecValue));
+                case EffectType.PulseZone:
+                    if (_aoeSpecs == null)
+                        throw new InvalidOperationException("AoESpecLibrary not injected");
+                    return new SpawnPulseZoneEffect(new SpawnPulseZoneEffectArgs(
+                        _intents, self.Id, key.PulseZoneSpecValue));
                 default:
                     throw new NotSupportedException(key.Type.ToString());
             }

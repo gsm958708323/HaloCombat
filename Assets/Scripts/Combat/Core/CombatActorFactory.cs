@@ -2,6 +2,18 @@
 
 namespace Combat.Core
 {
+    public struct PulseZoneSpawnContext
+    {
+        public bool IsValid;
+        public EntityId Owner;
+        public int OwnerTeam;
+        public SimVec3 Position;
+        public float Radius;
+        public float Interval;
+        public float Lifetime;
+        public int AttackSpecValue;
+        public int SourceSkillValue;
+    }
     public sealed class CombatActorFactory : IActorFactory
     {
         readonly CombatTime _time;
@@ -10,6 +22,8 @@ namespace Combat.Core
         readonly EffectFactory _effects;
         readonly IntentQueue _intents;
         readonly ProjectileSpecLibrary _projSpecs;
+        PulseZoneSpawnContext _pendingPulse;
+        public void SetPendingPulseZone(in PulseZoneSpawnContext ctx) => _pendingPulse = ctx;
 
         // Spawn 投射物时由 Service 写入的临时上下文（避免万能 World 进 Comp）
         ProjectileSpawnContext _pendingProj;
@@ -49,9 +63,20 @@ namespace Combat.Core
                 BuildDummy(actor);
                 return actor;
             }
+            if (spec.BlueprintId == "pulse_zone")
+            {
+                var ctx = _pendingPulse;
+                _pendingPulse = default;
+                if (!ctx.IsValid)
+                    throw new InvalidOperationException("pulse_zone without context");
+                actor.AddComp(new TransformComp());
+                actor.AddComp(new PulseZoneComp(_intents));
+                // 场地通常不可被弹道打；不挂 Hurtbox
+                return actor;
+            }
 
             // 默认 fighter
-            BuildFighter(actor);        
+            BuildFighter(actor);
             return actor;
         }
 

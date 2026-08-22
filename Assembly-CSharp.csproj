@@ -67,6 +67,8 @@
   <ItemGroup>
     <Compile Include="Assets\Scripts\Combat\Core\Actor.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Pool.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\PulseZoneService.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\PulseZoneComp.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\ProjectileSpec.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\SkillDirectorComp.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\PlayerCombatDriverComp.cs" />
@@ -94,13 +96,17 @@
     <Compile Include="Assets\Scripts\Combat\Core\CombatTime.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\EffectFactory.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\InputBufferComp.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\AoEService.cs" />
+    <Compile Include="Assets\Scripts\Combat\Demos\AoEDemo.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\TimelineSO.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\RootState.cs" />
     <Compile Include="Assets\Scripts\Combat\Demos\StateMachineDemo.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\ProjectileService.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\AoESpecLibrary.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\CombatWorld.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\EventBus.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\AttackSpec.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\PulseZoneSpecLibrary.cs" />
     <Compile Include="Assets\Scripts\Combat\Demos\ProjectileDemo.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\CombatActorFactory.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Effect.cs" />

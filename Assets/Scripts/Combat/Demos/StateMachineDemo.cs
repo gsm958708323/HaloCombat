@@ -49,33 +49,8 @@ namespace Combat.Demos
             var intents = new IntentQueue();
             var events = new EventBus();
 
-            var library = TimelineLibrary.Create();
-            var combos = new ComboTableSO
-            {
-                Entries = new[]
-                {
-                    new ComboEntry
-                    {
-                        PreSkills = Array.Empty<SkillNodeId>(),
-                        Input = InputToken.Attack,
-                        RequiredTags = Array.Empty<int>(),
-                        Priority = 0,
-                        ToSkill = SkillNodeId.G1,
-                        Timeline = TimelineId.TL_G1
-                    },
-                    new ComboEntry
-                    {
-                        PreSkills = new[] { SkillNodeId.G1 },
-                        Input = InputToken.Attack,
-                        RequiredTags = new[] { CommonTags.Cancel.Value },
-                        Priority = 10,
-                        ToSkill = SkillNodeId.G2,
-                        Timeline = TimelineId.TL_G2
-                    },
-                }
-            };
             var effects = new EffectFactory(intents);
-            var factory = new FighterActorFactory(time, combos, library, effects);
+            var factory = new FighterActorFactory(time, ComboTableSO.Create(), TimelineLibrary.Create(), effects);
             var world = new CombatWorld(factory, intents, events, time);
             world.AddServicePhase(() =>
             {
@@ -158,6 +133,15 @@ namespace Combat.Demos
             loco.SetMoveIntent(0f, 0f);
             Dump("Attack ignores walk intent (move only if axis key active)");
             print("StateMachineDemo PASSED");
+
+            /*
+Root:  走路公式 → Transform
+Jump:  走路 + 重力 → 落地 NotifyActivityFinished(Jump) → Root
+Attack: 仅 AxisDelta（MoveOffset Effect）→ 轴结束 NotifyActivityFinished(Attack) → Root
+Hit:   清缓冲 + Stop 轴 → 计时结束 → Root
+Dead:  不回 Root
+区间:  Enter/Tick/Exit；打断 Stop 也走 Exit（Cancel 会掉）
+            */
         }
     }
 }
