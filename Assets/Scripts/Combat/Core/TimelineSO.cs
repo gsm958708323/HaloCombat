@@ -11,6 +11,7 @@ namespace Combat.Core
         MoveOffset = 5,          // 区间或瞬时位移
         AoEBurst = 6,   // 瞬时
         PulseZone = 7,  // 生成火池 Actor（可选）
+        Buff = 8,       // 应用状态效果     
     }
 
     /// <summary>
@@ -35,6 +36,11 @@ namespace Combat.Core
         public bool IsInterval => EndTime >= Time;
         public int AoESpecValue;
         public int PulseZoneSpecValue;
+        public int BuffTypeValue;
+        public int BuffStacks;
+        public float BuffDuration;
+        public bool BuffRefreshIfExist;
+
         public static TimelineKey Instant(float time, EffectType type)
         {
             return new TimelineKey { Time = time, EndTime = -1f, Type = type };

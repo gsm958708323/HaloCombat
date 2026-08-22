@@ -121,7 +121,7 @@ namespace Combat.DamageDemo
             dummyHp.Invulnerable = false;
             // C. 打死 → Dead，且不回 Root
             // 抬高攻击力快速杀
-            player.GetComp<AttrComp>().Atk = 1000f;
+            player.GetComp<AttrComp>().BaseAtk = 1000f;
             player.GetComp<InputBufferComp>().Push(InputToken.Attack);
             for (int i = 0; i < 25; i++)
                 world.Tick(0.05f);

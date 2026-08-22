@@ -54,6 +54,12 @@ namespace Combat.Core
                         throw new InvalidOperationException("AoESpecLibrary not injected");
                     return new SpawnPulseZoneEffect(new SpawnPulseZoneEffectArgs(
                         _intents, self.Id, key.PulseZoneSpecValue));
+                case EffectType.Buff:
+                    var buffComp = self.GetComp<BuffComp>();
+                    return new BuffEffect(new BuffEffectArgs(
+                        buffComp, new BuffTypeId(key.BuffTypeValue), key.BuffStacks,
+                        key.BuffDuration, TagSource.Effect(nameof(BuffEffect)),
+                        key.BuffRefreshIfExist));
                 default:
                     throw new NotSupportedException(key.Type.ToString());
             }

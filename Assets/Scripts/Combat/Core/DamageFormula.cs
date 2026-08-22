@@ -13,8 +13,8 @@ namespace Combat.Core
             AttrComp defender,
             AttackSpec spec)
         {
-            float atk = attacker != null ? attacker.Atk : 0f;
-            float def = defender != null ? defender.Def : 0f;
+            float atk = attacker != null ? attacker.BaseAtk : 0f;
+            float def = defender != null ? defender.BaseDef : 0f;
             float deal = attacker != null ? attacker.DamageDealMul : 1f;
             float taken = defender != null ? defender.DamageTakenMul : 1f;
 

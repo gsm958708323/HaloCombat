@@ -10,25 +10,6 @@ namespace Combat.Core
         public void SetTeam(int team) => Team = team;
     }
 
-    /// <summary>
-    /// 基础战斗属性（MVP）。Buff 叠层下一步再做；本步先提供只读战斗数值。
-    /// </summary>
-    public sealed class AttrComp : Comp
-    {
-        public float Atk = 10f;
-        public float Def = 0f;
-        public float MaxHp = 100f;
-        public float DamageTakenMul = 1f; // 易伤/减伤总乘区（MVP 一个口）
-        public float DamageDealMul = 1f;
-
-        public void Setup(float atk, float def, float maxHp)
-        {
-            Atk = atk;
-            Def = def;
-            MaxHp = maxHp > 1f ? maxHp : 1f;
-        }
-    }
-
     public readonly struct DamageApplyArgs
     {
         public readonly EntityId Source;
@@ -78,7 +59,7 @@ namespace Combat.Core
         bool _invulnerable;
 
         public float Hp => _hp;
-        public float MaxHp => _attr != null ? _attr.MaxHp : 0f;
+        public float MaxHp => _attr != null ? _attr.BaseMaxHp : 0f;
         public bool IsDead => _hp <= 0f;
         public bool Invulnerable
         {
@@ -89,7 +70,7 @@ namespace Combat.Core
         protected override void OnAttach()
         {
             _attr = Self.GetComp<AttrComp>();
-            _hp = _attr.MaxHp;
+            _hp = _attr.BaseMaxHp;
         }
 
         protected override void OnDetach()
@@ -100,7 +81,7 @@ namespace Combat.Core
         public void ResetToFull()
         {
             if (_attr != null)
-                _hp = _attr.MaxHp;
+                _hp = _attr.BaseMaxHp;
         }
 
         /// <summary>仅 DamageService 应调用。</summary>

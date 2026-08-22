@@ -243,4 +243,32 @@ namespace Combat.Core
             MarkFinished();
         }
     }
+    public readonly struct BuffEffectArgs
+    {
+        public readonly BuffComp Buffs;
+        public readonly BuffTypeId Type;
+        public readonly int Stacks;
+        public readonly float Duration;
+        public readonly TagSource Source;
+        public readonly bool RefreshIfExist;
+        public BuffEffectArgs(BuffComp buffs, BuffTypeId type, int stacks, float duration, TagSource source, bool refreshIfExist)
+        {
+            Buffs = buffs;
+            Type = type;
+            Stacks = stacks;
+            Duration = duration;
+            Source = source;
+            RefreshIfExist = refreshIfExist;
+        }
+    }
+    public sealed class BuffEffect : Effect
+    {
+        readonly BuffEffectArgs _args;
+        public BuffEffect(in BuffEffectArgs args) => _args = args;
+        public override void Enter()
+        {
+            _args.Buffs.Apply(new BuffApplyArgs(
+                _args.Type, _args.Stacks, _args.Duration, _args.Source, _args.RefreshIfExist));
+        }
+    }
 }

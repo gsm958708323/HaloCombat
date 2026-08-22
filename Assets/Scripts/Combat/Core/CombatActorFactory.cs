@@ -91,6 +91,7 @@ namespace Combat.Core
             actor.AddComp(new HealthComp());
             actor.AddComp(new TransformComp());
             actor.AddComp(new TagComp());
+            actor.AddComp(new BuffComp());
             actor.AddComp(new InputBufferComp(_time));
             actor.AddComp(new StateMachineComp());
             actor.AddComp(new LocomotionComp(_time));
