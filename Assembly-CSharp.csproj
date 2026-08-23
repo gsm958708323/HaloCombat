@@ -85,6 +85,7 @@
     <Compile Include="Assets\Scripts\Combat\Unity\ActorView.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\LocomotionComp.cs" />
     <Compile Include="Assets\Scripts\Combat\Demos\TimelineEffectDemo.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\AttrSheet.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\AttrComp.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\DamageService.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Intent.cs" />
