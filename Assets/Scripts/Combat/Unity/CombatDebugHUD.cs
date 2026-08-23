@@ -27,6 +27,7 @@ namespace Combat.Unity
             float y = 40f;
             GUI.Label(new Rect(20, y, 400, 20), $"Frame={_s.Time.Frame}  State={fsm.Current}  Skill={dir.CurrentSkill}"); y += 18;
             GUI.Label(new Rect(20, y, 400, 20), $"Pos=({tf.Position.X:F2},{tf.Position.Y:F2},{tf.Position.Z:F2}) Buf={buf.HasBuffered}"); y += 18;
+            GUI.Label(new Rect(20, y, 400, 20), $"IFrame={hp.InIFrame} HitT={fsm.HitTimer:F2} Yaw={tf.YawDegrees:F0}"); y += 18;
             GUI.Label(new Rect(20, y, 400, 20), $"Cancel={tags.Has(CommonTags.Cancel)} Grounded={tags.Has(CommonTags.Grounded)} Air={tags.Has(CommonTags.Airborne)}"); y += 18;
             GUI.Label(new Rect(20, y, 400, 20), $"ATK base/total={attr.BaseAtk:F1}/{attr.TotalAtk:F1}  HP={hp.Hp:F1}/{hp.MaxHp:F1}"); y += 18;
             GUI.Label(new Rect(20, y, 400, 20), $"Buffs={buff.AllBuffs.Count}"); y += 22;

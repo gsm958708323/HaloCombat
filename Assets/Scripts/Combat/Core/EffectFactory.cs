@@ -60,6 +60,19 @@ namespace Combat.Core
                         buffComp, new BuffTypeId(key.BuffTypeValue), key.BuffStacks,
                         key.BuffDuration, TagSource.Effect(nameof(BuffEffect)),
                         key.BuffRefreshIfExist));
+                case EffectType.HitboxWindow:
+                    {
+                        var box = self.GetComp<HitboxComp>();
+                        int skill = 0;
+                        if (self.TryGetComp<SkillDirectorComp>(out var d)) skill = d.CurrentSkill.Value;
+                        return new HitboxWindowEffect(
+                            box,
+                            key.HitboxAttackSpecValue != 0 ? key.HitboxAttackSpecValue : 42,
+                            skill,
+                            key.HitboxRadius,
+                            key.HitboxOffsetForward,
+                            key.IsInterval);
+                    }
                 default:
                     throw new NotSupportedException(key.Type.ToString());
             }

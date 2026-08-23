@@ -48,7 +48,15 @@ namespace Combat.Unity
             World.AddServicePhase(() => hitDetect.Tick());
             World.AddServicePhase(() => aoeService.Tick());
             World.AddServicePhase(() => damage.Tick());
+            World.AddServicePhase(() => ApplyAllHitMotion());
             World.AddServicePhase(() => despawn.Tick());
+        }
+
+        void ApplyAllHitMotion()
+        {
+            foreach (var a in World.CopyActiveActors())
+                if (a.TryGetComp<LocomotionComp>(out var loco))
+                    loco.ApplyHitMotionImmediate();
         }
 
         public void SpawnDemoActors()

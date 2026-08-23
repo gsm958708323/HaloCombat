@@ -57,38 +57,30 @@ namespace Combat.Core
 
         void ResolveHit(HitIntent hit)
         {
-            if (!_world.TryGetActor(hit.Target, out var target))
-                return;
+            if (!_world.TryGetActor(hit.Target, out var target)) return;
+            if (!target.TryGetComp<HealthComp>(out var health) || health.IsDead) return;
 
-            // 目标已死：不再结算
-            if (!target.TryGetComp<HealthComp>(out var health) || health.IsDead)
-                return;
+            // i-frame / 无敌：直接吞掉（可选择不发事件）
+            if (health.Invulnerable) return;
 
-            // 攻击者属性：优先 Owner（投射物归属），否则 Source
             AttrComp atkAttr = null;
-            EntityId atkActorId = hit.Owner.IsValid ? hit.Owner : hit.Source;
-            if (_world.TryGetActor(atkActorId, out var attacker))
+            EntityId atkId = hit.Owner.IsValid ? hit.Owner : hit.Source;
+            Actor attacker = null;
+            if (_world.TryGetActor(atkId, out attacker))
                 attacker.TryGetComp(out atkAttr);
 
             target.TryGetComp(out AttrComp defAttr);
 
             if (!_attacks.TryGet(hit.AttackSpecValue, out var spec))
-            {
-                // 未知规格：保底
-                spec = new AttackSpec { Id = hit.AttackSpecValue, Power = 1f, ApplyHitStun = true, StunDuration = 0.35f };
-            }
+                spec = new AttackSpec { Id = hit.AttackSpecValue, Power = 1f, StunDuration = 0.35f };
 
             float amount = DamageFormula.Compute(atkAttr, defAttr, spec);
+            var result = health.ApplyDamage(new DamageApplyArgs(
+                hit.Source, hit.Owner, amount, hit.AttackSpecValue,
+                spec.ApplyHitStun, spec.StunDuration));
 
-            var applyArgs = new DamageApplyArgs(
-                hit.Source,
-                hit.Owner,
-                amount,
-                hit.AttackSpecValue,
-                spec.ApplyHitStun,
-                spec.StunDuration);
-
-            var result = health.ApplyDamage(applyArgs);
+            if (result.FinalDamage <= 0f && !result.Died)
+                return;
 
             bool enteredHit = false;
             if (target.TryGetComp<StateMachineComp>(out var fsm))
@@ -101,17 +93,47 @@ namespace Combat.Core
                 {
                     fsm.SetHitDuration(spec.StunDuration);
                     enteredHit = fsm.TryEnter(ActorStateId.Hit, new StateEnterArgs(fsm.Current, "Damage"));
+                    // 已在 Hit 时 TryEnter 会刷新 timer
+
+                    if (spec.HitIFrame > 0f)
+                        health.BeginIFrame(spec.HitIFrame);
+
+                    ApplyKnockback(attacker, target, spec);
                 }
             }
 
             _events?.Publish(new DamageAppliedEvent(
-                hit.Source,
-                hit.Target,
-                hit.Owner,
-                result.FinalDamage,
-                result.HpAfter,
-                result.Died,
-                enteredHit));
+                hit.Source, hit.Target, hit.Owner,
+                result.FinalDamage, result.HpAfter, result.Died, enteredHit));
+        }
+
+        static void ApplyKnockback(Actor attacker, Actor target, AttackSpec spec)
+        {
+            if (spec.KnockbackDistance <= 0f) return;
+            if (!target.TryGetComp<LocomotionComp>(out var loco)) return;
+            if (!target.TryGetComp<TransformComp>(out var ttf)) return;
+
+            float dx, dz;
+            if (spec.KnockbackUseAttackerFacing && attacker != null &&
+                attacker.TryGetComp<TransformComp>(out var atf))
+            {
+                var f = atf.ForwardXZ();
+                dx = f.X; dz = f.Z;
+            }
+            else if (attacker != null && attacker.TryGetComp<TransformComp>(out var a2))
+            {
+                dx = ttf.Position.X - a2.Position.X;
+                dz = ttf.Position.Z - a2.Position.Z;
+            }
+            else
+            {
+                dx = 1f; dz = 0f;
+            }
+
+            float lenSq = dx * dx + dz * dz;
+            if (lenSq < 1e-8f) { dx = 1f; dz = 0f; lenSq = 1f; }
+            float inv = 1f / MathF.Sqrt(lenSq);
+            loco.AddHitDelta(dx * inv * spec.KnockbackDistance, 0f, dz * inv * spec.KnockbackDistance);
         }
     }
 }

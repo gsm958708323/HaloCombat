@@ -12,6 +12,7 @@ namespace Combat.Core
         AoEBurst = 6,   // 瞬时
         PulseZone = 7,  // 生成火池 Actor（可选）
         Buff = 8,       // 应用状态效果     
+        HitboxWindow = 9,
     }
 
     /// <summary>
@@ -40,6 +41,10 @@ namespace Combat.Core
         public int BuffStacks;
         public float BuffDuration;
         public bool BuffRefreshIfExist;
+
+        public int HitboxAttackSpecValue;
+        public float HitboxRadius;
+        public float HitboxOffsetForward;
 
         public static TimelineKey Instant(float time, EffectType type)
         {

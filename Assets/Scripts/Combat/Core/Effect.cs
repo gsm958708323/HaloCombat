@@ -39,7 +39,7 @@ namespace Combat.Core
             if (_interval)
                 return;
             // 瞬时：一次性位移
-            _loco.AddLocalAxisDelta(_x, _y, _z);
+            _loco.AddAxisDelta(_x, _y, _z);
             _instantApplied = true;
             MarkFinished();
         }
@@ -49,12 +49,12 @@ namespace Combat.Core
                 return;
             if (_asVelocity)
             {
-                _loco.AddLocalAxisDelta(_x * dt, _y * dt, _z * dt);
+                _loco.AddAxisDelta(_x * dt, _y * dt, _z * dt);
             }
             else
             {
                 // 总位移在区间内均分
-                _loco.AddLocalAxisDelta(
+                _loco.AddAxisDelta(
                     _x * (dt / _duration),
                     _y * (dt / _duration),
                     _z * (dt / _duration));
@@ -203,10 +203,11 @@ namespace Combat.Core
             int skill = 0;
             if (self.TryGetComp<SkillDirectorComp>(out var director))
                 skill = director.CurrentSkill.Value;
-            var offset = tf.LocalToWorld(spec.OffsetX, spec.OffsetY, spec.OffsetZ);
-            float cx = tf.Position.X + offset.X;
-            float cy = tf.Position.Y + offset.Y;
-            float cz = tf.Position.Z + offset.Z;
+            var foff = TransformComp.RotateYaw(
+                new SimVec3(spec.OffsetX, spec.OffsetY, spec.OffsetZ), tf.YawDegrees);
+            float cx = tf.Position.X + foff.X;
+            float cy = tf.Position.Y + foff.Y;
+            float cz = tf.Position.Z + foff.Z;
             _args.Intents.Post(new AoEIntent(
                 source: self.Id,
                 owner: self.Id,
@@ -270,6 +271,38 @@ namespace Combat.Core
         {
             _args.Buffs.Apply(new BuffApplyArgs(
                 _args.Type, _args.Stacks, _args.Duration, _args.Source, _args.RefreshIfExist));
+        }
+    }
+
+    public sealed class HitboxWindowEffect : Effect
+    {
+        readonly HitboxComp _box;
+        readonly int _atkSpec;
+        readonly int _skill;
+        readonly float _radius;
+        readonly float _offsetFwd;
+        readonly bool _interval;
+        public HitboxWindowEffect(
+            HitboxComp box, int atkSpec, int skill,
+            float radius, float offsetFwd, bool interval)
+        {
+            _box = box;
+            _atkSpec = atkSpec;
+            _skill = skill;
+            _radius = radius;
+            _offsetFwd = offsetFwd;
+            _interval = interval;
+        }
+        public override void Enter()
+        {
+            if (_radius > 0f) _box.Radius = _radius;
+            if (_offsetFwd > 0f) _box.OffsetForward = _offsetFwd;
+            _box.Open(_atkSpec, _skill);
+            if (!_interval) { _box.Close(); MarkFinished(); }
+        }
+        public override void Exit()
+        {
+            if (_interval) _box.Close();
         }
     }
 }

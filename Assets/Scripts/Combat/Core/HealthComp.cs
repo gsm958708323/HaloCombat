@@ -52,53 +52,58 @@ namespace Combat.Core
         }
     }
 
-    public sealed class HealthComp : Comp
+   public sealed class HealthComp : Comp
     {
         AttrComp _attr;
         float _hp;
-        bool _invulnerable;
-
+        float _iframeLeft;
+        bool _debugInvulnerable;
         public float Hp => _hp;
-        public float MaxHp => _attr != null ? _attr.BaseMaxHp : 0f;
+        public float MaxHp => _attr != null ? _attr.TotalMaxHp : (_attr?.BaseMaxHp ?? 0f);
         public bool IsDead => _hp <= 0f;
+        public bool InIFrame => _iframeLeft > 0f;
+        /// <summary>GM/技能霸体等；与 i-frame 叠加为「不可受伤」。</summary>
         public bool Invulnerable
         {
-            get => _invulnerable;
-            set => _invulnerable = value;
+            get => _debugInvulnerable || _iframeLeft > 0f;
+            set => _debugInvulnerable = value;
         }
-
+        public override bool WantsTick => true;
         protected override void OnAttach()
         {
             _attr = Self.GetComp<AttrComp>();
-            _hp = _attr.BaseMaxHp;
+            _hp = MaxHp;
+            _iframeLeft = 0f;
         }
-
-        protected override void OnDetach()
-        {
-            _attr = null;
-        }
-
         public void ResetToFull()
         {
-            if (_attr != null)
-                _hp = _attr.BaseMaxHp;
+            _hp = MaxHp;
+            _iframeLeft = 0f;
         }
-
-        /// <summary>仅 DamageService 应调用。</summary>
+        public void BeginIFrame(float seconds)
+        {
+            if (seconds <= 0f) return;
+            if (seconds > _iframeLeft)
+                _iframeLeft = seconds;
+        }
+        public override void Tick(float dt)
+        {
+            if (_iframeLeft > 0f)
+            {
+                _iframeLeft -= dt;
+                if (_iframeLeft < 0f) _iframeLeft = 0f;
+            }
+        }
         public DamageApplyResult ApplyDamage(in DamageApplyArgs args)
         {
             if (IsDead)
                 return new DamageApplyResult(0f, _hp, true, false);
-
-            if (_invulnerable || args.Amount <= 0f)
+            if (Invulnerable || args.Amount <= 0f)
                 return new DamageApplyResult(0f, _hp, false, false);
-
             _hp -= args.Amount;
-            if (_hp < 0f)
-                _hp = 0f;
-
+            if (_hp < 0f) _hp = 0f;
             bool died = _hp <= 0f;
-            bool stun = !died && args.ApplyHitStun && args.Amount > 0f;
+            bool stun = !died && args.ApplyHitStun;
             return new DamageApplyResult(args.Amount, _hp, died, stun);
         }
     }

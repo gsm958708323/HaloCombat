@@ -48,24 +48,17 @@ namespace Combat.Core
             if (!_world.TryGetActor(intent.Owner, out var owner))
                 return;
 
-            var ownerTf = owner.GetComp<TransformComp>();
             int ownerTeam = 0;
             if (owner.TryGetComp<TeamComp>(out var team))
                 ownerTeam = team.Team;
 
-            // 方向：MVP 用 spec 本地方向；有 Yaw 时可按朝向旋转
-            var dir = ownerTf.LocalToWorld(spec.DirX, spec.DirY, spec.DirZ);
-            float lenSq = dir.X * dir.X + dir.Y * dir.Y + dir.Z * dir.Z;
-            if (lenSq < 1e-8f) dir = new SimVec3(1f, 0f, 0f);
-            else
-            {
-                float inv = 1f / MathF.Sqrt(lenSq);
-                dir = new SimVec3(dir.X * inv, dir.Y * inv, dir.Z * inv);
-            }
-
-            var spawnOffset = ownerTf.LocalToWorld(
-                spec.SpawnOffsetX, spec.SpawnOffsetY, spec.SpawnOffsetZ);
-            var pos = ownerTf.Position + spawnOffset;
+            var ownerTf = owner.GetComp<TransformComp>();
+            var localDir = new SimVec3(spec.DirX, spec.DirY, spec.DirZ);
+            var dir = TransformComp.RotateYaw(localDir, ownerTf.YawDegrees);
+            // 再归一化 * Speed …
+            var pos = ownerTf.Position + TransformComp.RotateYaw(
+                new SimVec3(spec.SpawnOffsetX, spec.SpawnOffsetY, spec.SpawnOffsetZ),
+                ownerTf.YawDegrees);
 
             var vel = new SimVec3(dir.X * spec.Speed, dir.Y * spec.Speed, dir.Z * spec.Speed);
 
@@ -114,7 +107,12 @@ namespace Combat.Core
         public void Tick()
         {
             CollectHurtboxes();
+            DetectProjectiles();
+            DetectMeleeHitboxes();
+        }
 
+        void DetectProjectiles()
+        {
             var list = _projectiles.ActiveProjectiles;
             for (int i = 0; i < list.Count; i++)
             {
@@ -168,6 +166,40 @@ namespace Combat.Core
                         _intents.Post(new DespawnEntityIntent(proj.Id));
                         break;
                     }
+                }
+            }
+        }
+
+        void DetectMeleeHitboxes()
+        {
+            var actors = _world.CopyActiveActors();
+            for (int i = 0; i < actors.Count; i++)
+            {
+                var attacker = actors[i];
+                if (!attacker.TryGetComp<HitboxComp>(out var box) || !box.Active)
+                    continue;
+                if (!attacker.TryGetComp<TransformComp>(out var atf))
+                    continue;
+                int team = 0;
+                if (attacker.TryGetComp<TeamComp>(out var tc)) team = tc.Team;
+                var center = box.WorldCenter(atf);
+                for (int h = 0; h < _hurtScratch.Count; h++)
+                {
+                    var target = _hurtScratch[h];
+                    if (target.Id == attacker.Id) continue;
+                    if (!target.TryGetComp<TeamComp>(out var tt) || tt.Team == team) continue;
+                    if (!target.TryGetComp<HurtboxComp>(out var hurt) || !hurt.CanBeHit) continue;
+                    if (box.HasHit(target.Id)) continue;
+                    var ttf = target.GetComp<TransformComp>();
+                    float dx = center.X - ttf.Position.X;
+                    float dy = center.Y - ttf.Position.Y;
+                    float dz = center.Z - ttf.Position.Z;
+                    float r = box.Radius + hurt.Radius;
+                    if (dx * dx + dy * dy + dz * dz > r * r) continue;
+                    box.Record(target.Id);
+                    _intents.Post(new HitIntent(
+                        attacker.Id, target.Id, attacker.Id,
+                        box.AttackSpecValue, box.SourceSkillValue));
                 }
             }
         }

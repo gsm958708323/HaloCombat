@@ -98,6 +98,7 @@ namespace Combat.Core
             actor.AddComp(new SkillDirectorComp(_timelines, _effects));
             actor.AddComp(new ComboComp(_combos));
             actor.AddComp(new PlayerCombatDriverComp());
+            actor.AddComp(new HitboxComp());
             var hurt = new HurtboxComp();
             hurt.SetRadius(0.5f);
             hurt.CanBeHit = true;

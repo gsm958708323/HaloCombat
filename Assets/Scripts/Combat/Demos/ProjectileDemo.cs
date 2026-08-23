@@ -26,6 +26,14 @@ namespace Combat.ProjectileDemo
                     },
                     new TimelineKey
                     {
+                        Time = 0.12f, EndTime = 0.28f,
+                        Type = EffectType.HitboxWindow,
+                        HitboxAttackSpecValue = 45,
+                        HitboxRadius = 0.7f,
+                        HitboxOffsetForward = 0.9f
+                    },
+                    new TimelineKey
+                    {
                         Time = 0.15f, EndTime = -1f,
                         Type = EffectType.SpawnProjectile,
                         ProjectileSpecValue = 901
