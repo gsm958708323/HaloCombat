@@ -53,10 +53,8 @@ namespace Combat.Core
                 atk = aoe.AttackSpecValue;
             }
 
-            var pos = new SimVec3(
-                otf.Position.X + spec.OffsetX,
-                otf.Position.Y + spec.OffsetY,
-                otf.Position.Z + spec.OffsetZ);
+            var offset = otf.LocalToWorld(spec.OffsetX, spec.OffsetY, spec.OffsetZ);
+            var pos = otf.Position + offset;
 
             var ctx = new PulseZoneSpawnContext
             {

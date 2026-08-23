@@ -39,7 +39,7 @@ namespace Combat.Core
             if (_interval)
                 return;
             // 瞬时：一次性位移
-            _loco.AddAxisDelta(_x, _y, _z);
+            _loco.AddLocalAxisDelta(_x, _y, _z);
             _instantApplied = true;
             MarkFinished();
         }
@@ -49,12 +49,12 @@ namespace Combat.Core
                 return;
             if (_asVelocity)
             {
-                _loco.AddAxisDelta(_x * dt, _y * dt, _z * dt);
+                _loco.AddLocalAxisDelta(_x * dt, _y * dt, _z * dt);
             }
             else
             {
                 // 总位移在区间内均分
-                _loco.AddAxisDelta(
+                _loco.AddLocalAxisDelta(
                     _x * (dt / _duration),
                     _y * (dt / _duration),
                     _z * (dt / _duration));
@@ -203,9 +203,10 @@ namespace Combat.Core
             int skill = 0;
             if (self.TryGetComp<SkillDirectorComp>(out var director))
                 skill = director.CurrentSkill.Value;
-            float cx = tf.Position.X + spec.OffsetX;
-            float cy = tf.Position.Y + spec.OffsetY;
-            float cz = tf.Position.Z + spec.OffsetZ;
+            var offset = tf.LocalToWorld(spec.OffsetX, spec.OffsetY, spec.OffsetZ);
+            float cx = tf.Position.X + offset.X;
+            float cy = tf.Position.Y + offset.Y;
+            float cz = tf.Position.Z + offset.Z;
             _args.Intents.Post(new AoEIntent(
                 source: self.Id,
                 owner: self.Id,

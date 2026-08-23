@@ -54,7 +54,7 @@ namespace Combat.Core
                 ownerTeam = team.Team;
 
             // 方向：MVP 用 spec 本地方向；有 Yaw 时可按朝向旋转
-            var dir = new SimVec3(spec.DirX, spec.DirY, spec.DirZ);
+            var dir = ownerTf.LocalToWorld(spec.DirX, spec.DirY, spec.DirZ);
             float lenSq = dir.X * dir.X + dir.Y * dir.Y + dir.Z * dir.Z;
             if (lenSq < 1e-8f) dir = new SimVec3(1f, 0f, 0f);
             else
@@ -63,10 +63,9 @@ namespace Combat.Core
                 dir = new SimVec3(dir.X * inv, dir.Y * inv, dir.Z * inv);
             }
 
-            var pos = new SimVec3(
-                ownerTf.Position.X + spec.SpawnOffsetX,
-                ownerTf.Position.Y + spec.SpawnOffsetY,
-                ownerTf.Position.Z + spec.SpawnOffsetZ);
+            var spawnOffset = ownerTf.LocalToWorld(
+                spec.SpawnOffsetX, spec.SpawnOffsetY, spec.SpawnOffsetZ);
+            var pos = ownerTf.Position + spawnOffset;
 
             var vel = new SimVec3(dir.X * spec.Speed, dir.Y * spec.Speed, dir.Z * spec.Speed);
 

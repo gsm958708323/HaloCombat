@@ -81,17 +81,21 @@
     <Compile Include="Assets\Scripts\Combat\Demos\TagInputDemo.cs" />
     <Compile Include="Assets\Scripts\Combat\Demos\ComboDirectorDemo.cs" />
     <Compile Include="Assets\Scripts\Combat\Demos\InfraDemo.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\ActorView.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\LocomotionComp.cs" />
     <Compile Include="Assets\Scripts\Combat\Demos\TimelineEffectDemo.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\AttrComp.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\DamageService.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Intent.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\CombatRunner.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\EntityRegistry.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\ProjectileComp.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\IntentQueue.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\CombatDebugHUD.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\ComboTableSO.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\ActorState.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\SkillIds.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\DemoCombatInstaller.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\TagComp.cs" />
     <Compile Include="Assets\TutorialInfo\Scripts\Readme.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\StateMachineComp.cs" />
@@ -112,10 +116,12 @@
     <Compile Include="Assets\Scripts\Combat\Core\PulseZoneSpecLibrary.cs" />
     <Compile Include="Assets\Scripts\Combat\Demos\ProjectileDemo.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\CombatActorFactory.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\UnityInputAdapter.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Effect.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Comp.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\BuffStack.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\ComboComp.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\BuffAttrBridgeComp.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">

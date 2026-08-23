@@ -5,20 +5,43 @@ namespace Combat.Core
     public struct SimVec3
     {
         public float X, Y, Z;
-        public SimVec3(float x, float y, float z) { X = x; Y = y; Z = z; }
-        public static SimVec3 Zero => new SimVec3(0, 0, 0);
+
+        public SimVec3(float x, float y, float z)
+        {
+            X = x;
+            Y = y;
+            Z = z;
+        }
+
+        public static SimVec3 Zero => new SimVec3(0f, 0f, 0f);
+
         public static SimVec3 operator +(SimVec3 a, SimVec3 b)
             => new SimVec3(a.X + b.X, a.Y + b.Y, a.Z + b.Z);
     }
+
     public sealed class TransformComp : Comp
     {
         public SimVec3 Position;
-        public float YawDegrees; // MVP 只要平面朝向
+        // 0 degrees faces +X. Skill data uses this same local forward axis.
+        public float YawDegrees;
+
         public void Teleport(in SimVec3 pos) => Position = pos;
+
+        public SimVec3 LocalToWorld(float x, float y, float z)
+        {
+            float radians = YawDegrees * (MathF.PI / 180f);
+            float cos = MathF.Cos(radians);
+            float sin = MathF.Sin(radians);
+            return new SimVec3(
+                x * cos - z * sin,
+                y,
+                x * sin + z * cos);
+        }
     }
 
     /// <summary>
-    /// 位移权总闸。帧内先收轴位移，再按主状态决定是否走路，最后写 Transform。
+    /// Owns per-frame movement. Timeline offsets are accumulated first, then
+    /// the current state decides whether walking and/or airborne motion applies.
     /// </summary>
     public sealed class LocomotionComp : Comp
     {
@@ -26,16 +49,20 @@ namespace Combat.Core
 
         TransformComp _tf;
         StateMachineComp _fsm;
-        InputBufferComp _input; // 仅 Demo：用 Jump/无方向；商用另接 MoveAxis 通道
+        InputBufferComp _input;
 
-        SimVec3 _axisDelta;     // 本帧轴位移（Attack 专用累计）
-        SimVec3 _moveIntent;    // Root/Jump 方向意图（-1..1）
+        SimVec3 _axisDelta;
+        SimVec3 _moveIntent;
         float _walkSpeed = 5f;
         float _jumpSpeed = 6f;
         float _gravity = -20f;
         float _verticalVel;
 
+        const float GroundEpsilon = 1e-5f;
+
         public override bool WantsTick => true;
+        public bool IsGrounded => _tf == null ||
+            (_tf.Position.Y <= GroundEpsilon && _verticalVel <= 0f);
 
         public LocomotionComp(CombatTime time)
         {
@@ -55,17 +82,40 @@ namespace Combat.Core
             _fsm = null;
             _input = null;
             _axisDelta = SimVec3.Zero;
+            _moveIntent = SimVec3.Zero;
+            _verticalVel = 0f;
         }
 
-        public void SetWalkSpeed(float s) => _walkSpeed = s;
-        public void SetMoveIntent(float x, float z) => _moveIntent = new SimVec3(x, 0f, z);
+        public void SetWalkSpeed(float speed) => _walkSpeed = speed;
 
-        /// <summary>仅供轴 Effect 调用。</summary>
+        public void SetMoveIntent(float x, float z)
+        {
+            _moveIntent = new SimVec3(x, 0f, z);
+
+            // Keep the last facing while an action is playing. This makes a
+            // dash/projectile use the direction at the time the action began.
+            float lenSq = x * x + z * z;
+            if (lenSq >= GroundEpsilon &&
+                (_fsm == null || (_fsm.Current != ActorStateId.Attack &&
+                                  _fsm.Current != ActorStateId.Hit &&
+                                  _fsm.Current != ActorStateId.Dead)))
+            {
+                _tf.YawDegrees = MathF.Atan2(z, x) * (180f / MathF.PI);
+            }
+        }
+
+        // World-space delta API retained for callers that already provide world coordinates.
         public void AddAxisDelta(float x, float y, float z)
         {
             _axisDelta.X += x;
             _axisDelta.Y += y;
             _axisDelta.Z += z;
+        }
+
+        public void AddLocalAxisDelta(float x, float y, float z)
+        {
+            var world = _tf.LocalToWorld(x, y, z);
+            AddAxisDelta(world.X, world.Y, world.Z);
         }
 
         public override void Tick(float dt)
@@ -77,42 +127,55 @@ namespace Combat.Core
             {
                 case 1: // Root
                     delta = IntegrateWalk(dt);
-                    _verticalVel = 0f;
+                    if (!IsGrounded)
+                        delta = IntegrateAirborne(delta, dt);
+                    else
+                        _verticalVel = 0f;
                     break;
 
                 case 2: // Jump
-                    delta = IntegrateWalk(dt); // 空中也可给水平（可再拆 AirControl）
-                    _verticalVel += _gravity * dt;
-                    delta.Y += _verticalVel * dt;
-                    // 落地：简化 Y<=0
-                    if (_tf.Position.Y + delta.Y <= 0f)
-                    {
-                        delta.Y = -_tf.Position.Y;
-                        _verticalVel = 0f;
-                        _fsm.NotifyActivityFinished(ActorStateId.Jump, "Land");
-                    }
+                    delta = IntegrateAirborne(IntegrateWalk(dt), dt);
                     break;
 
-                case 3: // Attack：只吃轴位移
+                case 3: // Attack
                     delta = _axisDelta;
+                    if (!IsGrounded)
+                        delta = IntegrateAirborne(delta, dt);
                     break;
 
-                case 4: // Hit：本步不加受击位移
+                case 4: // Hit
                 case 5: // Dead
-                    delta = SimVec3.Zero;
+                    delta = !IsGrounded
+                        ? IntegrateAirborne(SimVec3.Zero, dt)
+                        : SimVec3.Zero;
                     break;
             }
 
-            // 轴累计每帧消费掉，防止泄漏到下一状态
             _axisDelta = SimVec3.Zero;
 
             if (delta.X != 0f || delta.Y != 0f || delta.Z != 0f)
                 _tf.Position = _tf.Position + delta;
         }
 
+        SimVec3 IntegrateAirborne(SimVec3 delta, float dt)
+        {
+            _verticalVel += _gravity * dt;
+            delta.Y += _verticalVel * dt;
+
+            if (_tf.Position.Y + delta.Y > 0f)
+                return delta;
+
+            delta.Y = -_tf.Position.Y;
+            _verticalVel = 0f;
+            if (_fsm.Current == ActorStateId.Jump)
+                _fsm.NotifyActivityFinished(ActorStateId.Jump, "Land");
+            else
+                _fsm.NotifyLanded();
+            return delta;
+        }
+
         SimVec3 IntegrateWalk(float dt)
         {
-            // 无独立摇杆通道时 Demo 用 0；测试里会 SetMoveIntent
             float lenSq = _moveIntent.X * _moveIntent.X + _moveIntent.Z * _moveIntent.Z;
             if (lenSq < 1e-6f)
                 return SimVec3.Zero;

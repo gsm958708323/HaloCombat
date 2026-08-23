@@ -2,6 +2,17 @@ using System.Collections.Generic;
 
 namespace Combat.Core
 {
+    /// <summary>
+    /// 属性读取统一走这里，供 DamageFormula 使用。
+    /// Total* 已含 AttrComp 的 flat/percent 登记。
+    /// </summary>
+    public static class AttrQuery
+    {
+        public static float Atk(AttrComp a) => a != null ? a.TotalAtk : 0f;
+        public static float Def(AttrComp a) => a != null ? a.TotalDef : 0f;
+        public static float MaxHp(AttrComp a) => a != null ? a.TotalMaxHp : 1f;
+    }
+    
     public sealed class AttrComp : Comp
     {
         readonly Dictionary<BuffTypeId, float> _flat = new Dictionary<BuffTypeId, float>();
