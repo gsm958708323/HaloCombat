@@ -6,8 +6,29 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/01InfraDemo.unity
-    guid: 99c9720ab356a0642a771bea13969a05
+    path: Assets/Scenes/HaloCombat/01TagInputDemo.unity
+    guid: deb6fa804e5794546ba52f6fc3ee4431
+  - enabled: 1
+    path: Assets/Scenes/HaloCombat/02AttributeDemo.unity
+    guid: 81eda6d58133eb549981c408fa010fa6
+  - enabled: 1
+    path: Assets/Scenes/HaloCombat/03BuffDemo.unity
+    guid: a4cb53650516ee344904930f60d74b0f
+  - enabled: 1
+    path: Assets/Scenes/HaloCombat/04ActivityMotorDemo.unity
+    guid: ac37d2f5fb8f3dc4c853e0737a7ef2ba
+  - enabled: 1
+    path: Assets/Scenes/HaloCombat/05ClipPayloadDemo.unity
+    guid: 0efb9d0e263eaf54a88224843b518d2c
+  - enabled: 1
+    path: Assets/Scenes/HaloCombat/06MeleeDamageDemo.unity
+    guid: 6c380a2350eb21745b31a794bd9015fb
+  - enabled: 1
+    path: Assets/Scenes/HaloCombat/07ProjectileAoeDemo.unity
+    guid: f1d634776a98bd34a8c7b8658acaf1b7
+  - enabled: 1
+    path: Assets/Scenes/HaloCombat/08SeasonOneDemo.unity
+    guid: 2a7ebd10e7ffb294686f007db0d6208d
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0
