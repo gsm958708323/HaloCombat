@@ -1,0 +1,153 @@
+using System;
+using System.Collections.Generic;
+
+namespace Combat.Core
+{
+    public sealed class CombatWorld
+    {
+        readonly CombatTime _time;
+        readonly EntityRegistry _registry;
+        readonly IntentQueue _intents;
+        readonly EventBus _events;
+        readonly EffectPipeline _pipeline;
+        readonly IRandom _random;
+        readonly SimpleTargetQuery _query;
+        readonly HitDetectService _hitDetect;
+        readonly ProjectileService _projectilesSvc;
+        readonly AoeService _aoe;
+        readonly ProjectileCatalog _projectiles = new ProjectileCatalog();
+        readonly AoeCatalog _aoes = new AoeCatalog();
+        readonly CueLibrary _cues;
+        readonly List<Action> _servicePhase = new List<Action>(8);
+        int _buffIds;
+
+        public CombatTime Time => _time;
+        public IntentQueue Intents => _intents;
+        public EventBus Events => _events;
+        public IRandom Random => _random;
+        public ITargetQuery Query => _query;
+        public ProjectileCatalog Projectiles => _projectiles;
+        public AoeCatalog Aoes => _aoes;
+        public CueLibrary Cues => _cues;
+
+        public CombatWorld(
+            IActorFactory actorFactory,
+            IntentQueue intents = null,
+            EventBus events = null,
+            CombatTime time = null,
+            IRandom random = null,
+            CueLibrary cues = null)
+        {
+            _time = time ?? new CombatTime();
+            _intents = intents ?? new IntentQueue();
+            _events = events ?? new EventBus();
+            _pipeline = new EffectPipeline();
+            _random = random ?? new SeededRandom(1);
+            _cues = cues ?? CueLibrary.DefaultCombat();
+            _query = new SimpleTargetQuery();
+            _query.Bind(this);
+            _registry = new EntityRegistry(actorFactory ?? throw new ArgumentNullException(nameof(actorFactory)), this);
+            _hitDetect = new HitDetectService(this);
+            _projectilesSvc = new ProjectileService(this);
+            _aoe = new AoeService(this);
+        }
+
+        public int NextBuffInstanceId() => ++_buffIds;
+
+        public EntityId SpawnActor(in ActorSpawnSpec spec) => _registry.Spawn(spec);
+        public bool TryGetActor(EntityId id, out Actor actor) => _registry.TryGet(id, out actor);
+        public void RequestDespawn(EntityId id) => _registry.RequestDespawn(id);
+        public List<Actor> RegistryActive() => _registry.CopyActiveActors();
+
+        public void AddServicePhase(Action phase)
+        {
+            if (phase == null) throw new ArgumentNullException(nameof(phase));
+            _servicePhase.Add(phase);
+        }
+
+        public void Deliver(
+            IEffect[] effects,
+            Actor source,
+            Actor target,
+            float snapshotAtk,
+            SimVec3? point = null,
+            SimVec3? dir = null,
+            int buffStacks = 0)
+        {
+            if (effects == null || effects.Length == 0) return;
+            var ctx = new EffectContext
+            {
+                World = this,
+                Source = source,
+                Target = target,
+                SnapshotAtk = snapshotAtk,
+                BuffStacks = buffStacks
+            };
+            if (point.HasValue) { ctx.Point = point.Value; ctx.HasPoint = true; }
+            if (dir.HasValue) { ctx.Dir = dir.Value; ctx.HasDir = true; }
+            _pipeline.Run(ref ctx, effects);
+        }
+
+        public void CleanupByOwner(EntityId owner)
+        {
+            if (!owner.IsValid) return;
+            var actors = _registry.CopyActiveActors();
+            for (int i = 0; i < actors.Count; i++)
+            {
+                var a = actors[i];
+                if (a.TryGetComp<ProjectileComp>(out var p) && p.OwnerId == owner)
+                {
+                    RequestDespawn(a.Id);
+                    a.SetActive(false);
+                }
+                else if (a.TryGetComp<AoeComp>(out var ao) && ao.OwnerId == owner)
+                {
+                    TryGetActor(owner, out var src);
+                    _aoe.DespawnAoe(a, ao, src);
+                }
+            }
+        }
+
+        public void Tick(float dt)
+        {
+            _time.Advance(dt);
+
+            var actors = _registry.CopyActiveActors();
+            for (int i = 0; i < actors.Count; i++)
+                actors[i].TickAll(_time.Delta);
+
+            for (int i = 0; i < _servicePhase.Count; i++)
+                _servicePhase[i]();
+
+            _projectilesSvc.Tick(_time.Delta);
+            _hitDetect.Tick();
+
+            _intents.Drain<ApplyEffectsIntent>(intent =>
+            {
+                TryGetActor(intent.SourceId, out var src);
+                if (!TryGetActor(intent.TargetId, out var dst) || dst == null)
+                    return;
+                SimVec3? pt = intent.HasPoint ? intent.Point : (SimVec3?)null;
+                Deliver(intent.Effects, src, dst, intent.SnapshotAtk, pt, null, intent.BuffStacks);
+            });
+
+            _aoe.Tick(_time.Delta);
+
+            actors = _registry.CopyActiveActors();
+            for (int i = 0; i < actors.Count; i++)
+            {
+                if (actors[i].TryGetComp<BuffComp>(out var buffs))
+                    buffs.Tick(_time.Delta);
+            }
+
+            actors = _registry.CopyActiveActors();
+            for (int i = 0; i < actors.Count; i++)
+            {
+                if (actors[i].TryGetComp<LocomotionComp>(out var loco))
+                    loco.Integrate(_time.Delta);
+            }
+
+            _registry.FlushDespawn();
+        }
+    }
+}
