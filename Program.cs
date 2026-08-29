@@ -1,4 +1,5 @@
 using System;
+using Combat.Core;
 using Combat.Demos;
 
 namespace Combat
@@ -7,7 +8,14 @@ namespace Combat
     {
         static int Main(string[] args)
         {
-            string which = (args != null && args.Length > 0) ? args[0] : "season";
+            CombatLog.SetSink(new ConsoleLogSink());
+            string which;
+            string category;
+            int parseResult = ParseArguments(args, out which, out category);
+            if (parseResult != 0)
+                return parseResult;
+
+            CombatLog.SetCategoryFilter(category);
             switch (which)
             {
                 case "tag": TagInputDemo.Run(); break;
@@ -23,6 +31,66 @@ namespace Combat
                     break;
             }
 
+            return 0;
+        }
+
+        static int ParseArguments(string[] args, out string which, out string category)
+        {
+            which = "season";
+            category = null;
+            bool hasDemo = false;
+
+            if (args == null)
+                return 0;
+
+            for (int i = 0; i < args.Length; i++)
+            {
+                string argument = args[i];
+                if (argument == "--category")
+                {
+                    if (i + 1 >= args.Length)
+                    {
+                        Console.Error.WriteLine("--category requires a category name or All.");
+                        return 2;
+                    }
+
+                    category = args[++i];
+                    continue;
+                }
+
+                const string categoryPrefix = "--category=";
+                if (argument != null && argument.StartsWith(categoryPrefix, StringComparison.OrdinalIgnoreCase))
+                {
+                    category = argument.Substring(categoryPrefix.Length);
+                    continue;
+                }
+
+                if (!hasDemo)
+                {
+                    which = argument;
+                    hasDemo = true;
+                    continue;
+                }
+
+                Console.Error.WriteLine("Only one demo argument is supported.");
+                return 2;
+            }
+
+            if (string.IsNullOrWhiteSpace(category) ||
+                string.Equals(category.Trim(), "All", StringComparison.OrdinalIgnoreCase))
+            {
+                category = null;
+                return 0;
+            }
+
+            string canonical = CombatCategories.Canonicalize(category);
+            if (string.IsNullOrEmpty(canonical))
+            {
+                Console.Error.WriteLine("Unknown category '" + category + "'. Use All, TagInput, Attribute, Buff, ActivityMotor, ClipPayload, MeleeDamage, ProjectileAoe, or SeasonOne.");
+                return 2;
+            }
+
+            category = canonical;
             return 0;
         }
     }

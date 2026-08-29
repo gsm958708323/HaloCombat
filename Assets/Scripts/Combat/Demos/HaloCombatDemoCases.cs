@@ -14,14 +14,14 @@ namespace Combat.Demos
             var input = actor.GetComp<InputBufferComp>();
             tags.Add(CommonTags.Grounded, 1, TagSource.Debug);
             tags.Add(CommonTags.Cancel, 1, TagSource.Debug);
-            Console.WriteLine("Has Cancel=" + tags.Has(CommonTags.Cancel));
+            CombatLog.Debug(CombatCategories.TagInput, "Has Cancel=" + tags.Has(CommonTags.Cancel));
             tags.Remove(CommonTags.Cancel, 1, TagSource.Debug);
-            Console.WriteLine("After remove Cancel=" + tags.Has(CommonTags.Cancel));
+            CombatLog.Debug(CombatCategories.TagInput, "After remove Cancel=" + tags.Has(CommonTags.Cancel));
             input.Push(InputToken.Attack);
-            Console.WriteLine("Peek=" + input.TryPeek(out _));
+            CombatLog.Debug(CombatCategories.TagInput, "Peek=" + input.TryPeek(out _));
             world.Tick(0.25f);
-            Console.WriteLine("Peek expired=" + input.TryPeek(out _));
-            Console.WriteLine("TagInputDemo PASSED");
+            CombatLog.Debug(CombatCategories.TagInput, "Peek expired=" + input.TryPeek(out _));
+            CombatLog.Info(CombatCategories.TagInput, "TagInputDemo PASSED");
         }
 
         static CombatWorld NewWorld()
@@ -36,19 +36,19 @@ namespace Combat.Demos
             var id = world.SpawnActor(new ActorSpawnSpec("stake"));
             world.TryGetActor(id, out var actor);
             var attr = actor.GetComp<AttributeSet>();
-            Console.WriteLine("born Hp=" + attr.GetBase(AttrId.Hp) + " Atk=" + attr.GetFinal(AttrId.Atk));
+            CombatLog.Debug(CombatCategories.Attribute, "born Hp=" + attr.GetBase(AttrId.Hp) + " Atk=" + attr.GetFinal(AttrId.Atk));
             attr.AddMod(new Modifier { Attr = AttrId.Atk, Op = ModOp.Add, Value = 50f, SourceId = 1 });
             attr.AddMod(new Modifier { Attr = AttrId.Atk, Op = ModOp.Mul, Value = 1.2f, SourceId = 1 });
-            Console.WriteLine("add+mul Atk=" + attr.GetFinal(AttrId.Atk));
+            CombatLog.Debug(CombatCategories.Attribute, "add+mul Atk=" + attr.GetFinal(AttrId.Atk));
             attr.AddMod(new Modifier { Attr = AttrId.Atk, Op = ModOp.Override, Value = 999f, SourceId = 2, Priority = 1 });
-            Console.WriteLine("override Atk=" + attr.GetFinal(AttrId.Atk));
+            CombatLog.Debug(CombatCategories.Attribute, "override Atk=" + attr.GetFinal(AttrId.Atk));
             attr.RemoveBySource(2);
             if (Math.Abs(attr.GetFinal(AttrId.Atk) - 72f) > 1e-3f) throw new Exception("72");
             attr.RemoveBySource(1);
             if (Math.Abs(attr.GetFinal(AttrId.Atk) - 10f) > 1e-3f) throw new Exception("restore");
             attr.SetBase(AttrId.Hp, 800f);
             if (Math.Abs(attr.GetBase(AttrId.Hp) - 100f) > 1e-3f) throw new Exception("clamp");
-            Console.WriteLine("AttributeDemo PASSED");
+            CombatLog.Info(CombatCategories.Attribute, "AttributeDemo PASSED");
         }
     }
 
@@ -100,7 +100,7 @@ namespace Combat.Demos
             world.Deliver(new IEffect[] { new DispelEffect(DispelMode.BySource, BuffComp.Pack(actor)) }, actor, actor, 0f);
             if (buffs.Count != 0) throw new Exception("dispel");
             if (Math.Abs(attr.GetFinal(AttrId.Atk) - 10f) > 1e-3f) throw new Exception("mods");
-            Console.WriteLine("BuffDemo PASSED");
+            CombatLog.Info(CombatCategories.Buff, "BuffDemo PASSED");
         }
     }
 
@@ -145,7 +145,7 @@ namespace Combat.Demos
             if (fsm.Current != ActivityId.Dead) throw new Exception("dead");
             if (fsm.TryEnter(ActivityId.Root, new ActivityEnterArgs { Reason = "cheat" }))
                 throw new Exception("dead stick");
-            Console.WriteLine("ActivityMotorDemo PASSED");
+            CombatLog.Info(CombatCategories.ActivityMotor, "ActivityMotorDemo PASSED");
         }
     }
 
@@ -181,7 +181,7 @@ namespace Combat.Demos
             }
 
             float dx = tf.Position.X - x0;
-            Console.WriteLine("G1 dx=" + dx.ToString("F3") + " cancel=" + sawCancel + " box=" + sawBox + " cues=" + cues);
+            CombatLog.Debug(CombatCategories.ClipPayload, "G1 dx=" + dx.ToString("F3") + " cancel=" + sawCancel + " box=" + sawBox + " cues=" + cues);
             if (dx < 0.50f || dx > 0.75f) throw new Exception("move ~0.6");
             if (!sawCancel || !sawBox || cues < 1) throw new Exception("clips/payload");
             if (fsm.Current != ActivityId.Root) throw new Exception("root");
@@ -202,7 +202,7 @@ namespace Combat.Demos
             float xHit = tf.Position.X;
             for (int i = 0; i < 8; i++) Step(0.02f);
             if (Math.Abs(tf.Position.X - xHit) > 0.05f) throw new Exception("no leftover");
-            Console.WriteLine("ClipPayloadDemo PASSED");
+            CombatLog.Info(CombatCategories.ClipPayload, "ClipPayloadDemo PASSED");
         }
     }
 
@@ -274,7 +274,7 @@ namespace Combat.Demos
             world.Deliver(new IEffect[] { new DamageEffect { Coeff = 1f, CanCrit = false } }, player, stake2, pAttr.GetFinal(AttrId.Atk));
             if (stake2.GetComp<AttributeSet>().GetBase(AttrId.Hp) != hpE || immune < 1)
                 throw new Exception("iframe");
-            Console.WriteLine("MeleeDamageDemo PASSED");
+            CombatLog.Info(CombatCategories.MeleeDamage, "MeleeDamageDemo PASSED");
         }
     }
 
@@ -327,7 +327,7 @@ namespace Combat.Demos
             }
 
             if (leftover != 0) throw new Exception("cleanup");
-            Console.WriteLine("ProjectileAoeDemo PASSED");
+            CombatLog.Info(CombatCategories.ProjectileAoe, "ProjectileAoeDemo PASSED");
         }
     }
 
@@ -351,7 +351,7 @@ namespace Combat.Demos
             events.Subscribe<EvDamage>(e =>
             {
                 floaters++;
-                Console.WriteLine("[F" + time.Frame + "] floater dmg=" + e.Amount.ToString("F1") + " crit=" + e.IsCrit + " kill=" + e.IsKill);
+                CombatLog.Debug(CombatCategories.SeasonOne, "[F" + time.Frame + "] floater dmg=" + e.Amount.ToString("F1") + " crit=" + e.IsCrit + " kill=" + e.IsKill);
             });
             int deadEvents = 0, cleanups = 0;
             events.Subscribe<EvEntityDead>(_ => deadEvents++);
@@ -387,7 +387,7 @@ namespace Combat.Demos
             for (int i = 0; i < 20; i++) Step(0.02f);
             if (sBuff.StacksOf(CombatIds.Burn) < 1) throw new Exception("fireball burn");
             if (floaters < 1) throw new Exception("floater");
-            Console.WriteLine("1 melee+burn stacks=" + sBuff.StacksOf(CombatIds.Burn) + " cues=" + listener.Count);
+            CombatLog.Debug(CombatCategories.SeasonOne, "1 melee+burn stacks=" + sBuff.StacksOf(CombatIds.Burn) + " cues=" + listener.Count);
             for (int i = 0; i < 15; i++) Step(0.05f);
 
             stf.Position = new SimVec3(0.2f, 0, 0);
@@ -396,7 +396,7 @@ namespace Combat.Demos
             input.Push(InputToken.Attack);
             for (int i = 0; i < 50; i++) Step(0.05f);
             int stacks = sBuff.StacksOf(CombatIds.Burn);
-            Console.WriteLine("2 ground stacks=" + stacks);
+            CombatLog.Debug(CombatCategories.SeasonOne, "2 ground stacks=" + stacks);
             if (stacks != 3) throw new Exception("cap 3");
 
             input.Push(InputToken.Attack);
@@ -420,7 +420,7 @@ namespace Combat.Demos
             dummy.GetComp<StateMachineComp>().TryEnter(ActivityId.Root, new ActivityEnterArgs { Reason = "reset" });
             world.Deliver(TimelineSO.G1Melee.Bake(), player, dummy, atk);
             float hpAfter2 = dummy.GetComp<AttributeSet>().GetBase(AttrId.Hp);
-            Console.WriteLine("4 bake hp " + hpAfter1 + " vs " + hpAfter2);
+            CombatLog.Debug(CombatCategories.SeasonOne, "4 bake hp " + hpAfter1 + " vs " + hpAfter2);
             if (hpAfter2 >= hpAfter1) throw new Exception("ClearCache");
             TimelineSO.G1Melee.Damage.Coeff = 1f;
             TimelineSO.G1Melee.ClearCache();
@@ -442,8 +442,8 @@ namespace Combat.Demos
             }
 
             if (leftover != 0) throw new Exception("runtime leftover");
-            Console.WriteLine("5 deadEvents=" + deadEvents + " cleanups=" + cleanups + " bladeCues=" + listener.CountId(101));
-            Console.WriteLine("SeasonOneDemo PASSED");
+            CombatLog.Debug(CombatCategories.SeasonOne, "5 deadEvents=" + deadEvents + " cleanups=" + cleanups + " bladeCues=" + listener.CountId(101));
+            CombatLog.Info(CombatCategories.SeasonOne, "SeasonOneDemo PASSED");
         }
     }
 }

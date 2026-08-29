@@ -32,5 +32,28 @@ IEffect.Apply(ref EffectContext) + World.Deliver
 `Assets/Scenes/HaloCombat`；场景中的 `HaloCombatDemoRunner` 会在 Play Mode 启动时运行对应
 Demo，并把结果写入 Unity Console。
 
+## 日志
+
+共享代码使用 `Combat.Core.CombatLog` 输出同步过程日志。日志格式为
+`[等级][category] message`，默认 `MinimumLevel` 为 `Debug`；将其设置为 `Info`、`Warn`
+或 `Error` 可以减少过程输出。
+
+`.NET` 入口会注册 `ConsoleLogSink`，Unity 的 `HaloCombatDemoRunner` 会注册
+`UnityLogSink`，因此 Demo 调用点不需要依赖具体平台。日志 Sink 自身发生异常时会被忽略，
+不会中断战斗流程。
+
+Demo 使用 `TagInput`、`Attribute`、`Buff`、`ActivityMotor`、`ClipPayload`、`MeleeDamage`、
+`ProjectileAoe` 和 `SeasonOne` 作为 category。`CombatLog.SetCategoryFilter("TagInput")`
+会立即只保留该 category 的日志；传入 `null`、空字符串或 `All` 会恢复全部输出。Unity 中可在
+`HaloCombatDemoRunner` 的 `Category Filter` 下拉框选择筛选条件，Play Mode 修改会立即生效。
+
+`.NET` 命令行可传入 `--category TagInput` 或 `--category=TagInput`，例如：
+
+```powershell
+dotnet run --project Combat.csproj -- --category TagInput tag
+```
+
+Unity Console 会为 category 添加颜色；`.NET` Console 保持纯文本，便于重定向和解析。
+
 也可在 Unity 菜单使用 `Tools/HaloCombat/Create Demo Scenes` 重建场景，或使用
 `Tools/HaloCombat/Verify Demo Scenes` 在编辑器中验证所有场景配置和 Demo。

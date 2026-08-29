@@ -80,9 +80,11 @@
     <Compile Include="Assets\TutorialInfo\Scripts\Readme.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Timeline.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\ActorModel.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\Logging.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\QueryRandom.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Factory.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\RuntimeBodies.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\UnityLogSink.cs" />
     <Compile Include="Assets\Scripts\Combat\Unity\HaloCombatDemoRunner.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Activity.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Primitives.cs" />
