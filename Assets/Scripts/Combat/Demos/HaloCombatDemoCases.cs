@@ -3,6 +3,7 @@ using Combat.Core;
 
 namespace Combat.Demos
 {
+    // 验证特性：Tag 增删，以及输入缓冲在有效窗口内可读、超时后自动失效。
     public static class TagInputDemo
     {
         public static void Run()
@@ -12,11 +13,15 @@ namespace Combat.Demos
             world.TryGetActor(id, out var actor);
             var tags = actor.GetComp<TagComp>();
             var input = actor.GetComp<InputBufferComp>();
+
+            // Tag 是可叠加计数；移除足够层数后 Has 应返回 false。
             tags.Add(CommonTags.Grounded, 1, TagSource.Debug);
             tags.Add(CommonTags.Cancel, 1, TagSource.Debug);
             CombatLog.Debug(CombatCategories.TagInput, "Has Cancel=" + tags.Has(CommonTags.Cancel));
             tags.Remove(CommonTags.Cancel, 1, TagSource.Debug);
             CombatLog.Debug(CombatCategories.TagInput, "After remove Cancel=" + tags.Has(CommonTags.Cancel));
+
+            // 输入缓冲默认窗口为 0.2 秒；推进 0.25 秒后应过期。
             input.Push(InputToken.Attack);
             CombatLog.Debug(CombatCategories.TagInput, "Peek=" + input.TryPeek(out _));
             world.Tick(0.25f);
@@ -28,6 +33,7 @@ namespace Combat.Demos
             => new CombatWorld(new FighterActorFactory(DemoTables.G1G2(), DemoTables.MakeLib()));
     }
 
+    // 验证特性：属性 Add/Mul/Override 计算、按来源移除 Modifier，以及 HP 上限钳制。
     public static class AttributeDemo
     {
         public static void Run()
@@ -37,21 +43,30 @@ namespace Combat.Demos
             world.TryGetActor(id, out var actor);
             var attr = actor.GetComp<AttributeSet>();
             CombatLog.Debug(CombatCategories.Attribute, "born Hp=" + attr.GetBase(AttrId.Hp) + " Atk=" + attr.GetFinal(AttrId.Atk));
+
+            // 普通 Modifier 按 (Base + Add) * Mul 计算。
             attr.AddMod(new Modifier { Attr = AttrId.Atk, Op = ModOp.Add, Value = 50f, SourceId = 1 });
             attr.AddMod(new Modifier { Attr = AttrId.Atk, Op = ModOp.Mul, Value = 1.2f, SourceId = 1 });
             CombatLog.Debug(CombatCategories.Attribute, "add+mul Atk=" + attr.GetFinal(AttrId.Atk));
+
+            // Override 存在时直接覆盖普通 Add/Mul 结果。
             attr.AddMod(new Modifier { Attr = AttrId.Atk, Op = ModOp.Override, Value = 999f, SourceId = 2, Priority = 1 });
             CombatLog.Debug(CombatCategories.Attribute, "override Atk=" + attr.GetFinal(AttrId.Atk));
+
+            // 按来源移除后，属性应恢复到此前的计算结果，再恢复到基础值。
             attr.RemoveBySource(2);
             if (Math.Abs(attr.GetFinal(AttrId.Atk) - 72f) > 1e-3f) throw new Exception("72");
             attr.RemoveBySource(1);
             if (Math.Abs(attr.GetFinal(AttrId.Atk) - 10f) > 1e-3f) throw new Exception("restore");
+
+            // HP 写入不能超过 MaxHp。
             attr.SetBase(AttrId.Hp, 800f);
             if (Math.Abs(attr.GetBase(AttrId.Hp) - 100f) > 1e-3f) throw new Exception("clamp");
             CombatLog.Info(CombatCategories.Attribute, "AttributeDemo PASSED");
         }
     }
 
+    // 验证特性：Buff 堆叠上限、周期触发、互斥组，以及驱散后的 Modifier/Tag 清理。
     public static class BuffDemo
     {
         public static void Run()
@@ -87,23 +102,40 @@ namespace Combat.Demos
                 Modifiers = new[] { new Modifier { Attr = AttrId.Atk, Op = ModOp.Add, Value = 100f } }
             };
 
+            // AddStack 只能把同一个 Buff 实例叠到 MaxStacks，不会创建第 4 层。
             for (int i = 0; i < 4; i++)
                 world.Deliver(new IEffect[] { new ApplyDurationEffect(burn) }, actor, actor, 0f);
             if (buffs.StacksOf(1) != 3) throw new Exception("cap 3");
+
+            // 当前语义：层数是运行时计数，属性 Modifier 只在实例创建时挂载一次。
+            if (Math.Abs(attr.GetFinal(AttrId.Atk) - 15f) > 1e-3f)
+                throw new Exception("stack modifier value");
+            if (attr.ModCount != 1)
+                throw new Exception("stack modifier duplicated");
+            CombatLog.Debug(CombatCategories.Buff,
+                "burn stacks=" + buffs.StacksOf(1) +
+                " atk=" + attr.GetFinal(AttrId.Atk) +
+                " modifiers=" + attr.ModCount);
+            // Buff 出生帧不立即触发周期效果；下一帧累计满 1 秒后触发一次。
             world.Tick(0.5f);
             if (periodHits != 0) throw new Exception("skip same frame period");
             world.Tick(1f);
             if (periodHits != 1) throw new Exception("period");
+            // Wet 与 Ignite 共享互斥组 10；应用 Ignite 会移除 Wet 及其授予的 Tag。
             world.Deliver(new IEffect[] { new ApplyDurationEffect(wet) }, actor, actor, 0f);
             world.Deliver(new IEffect[] { new ApplyDurationEffect(ignite) }, actor, actor, 0f);
             if (tags.Has(new TagId(2102))) throw new Exception("mutex");
+            // 按来源驱散所有 Buff，并验证 Modifier、Tag、Buff 实例都被清理。
             world.Deliver(new IEffect[] { new DispelEffect(DispelMode.BySource, BuffComp.Pack(actor)) }, actor, actor, 0f);
             if (buffs.Count != 0) throw new Exception("dispel");
+            if (tags.Has(slow)) throw new Exception("tag cleanup");
+            if (attr.ModCount != 0) throw new Exception("modifier cleanup");
             if (Math.Abs(attr.GetFinal(AttrId.Atk) - 10f) > 1e-3f) throw new Exception("mods");
             CombatLog.Info(CombatCategories.Buff, "BuffDemo PASSED");
         }
     }
 
+    // 验证特性：地面移动、跳跃、空中攻击、重力落地、受击恢复，以及死亡状态不可逆。
     public static class ActivityMotorDemo
     {
         public static void Run()
@@ -119,10 +151,12 @@ namespace Combat.Demos
             var input = actor.GetComp<InputBufferComp>();
             var director = actor.GetComp<SkillDirectorComp>();
 
+            // Root 状态允许移动，并保持 Grounded。
             loco.RequestMoveIntent(1f, 0f);
             world.Tick(0.10f);
             if (tf.Position.X <= 0f) throw new Exception("walk");
             if (!tags.Has(CommonTags.Grounded)) throw new Exception("grounded");
+            // Jump 不切换到独立 Activity，而是让 Root 进入 Airborne；空中仍可接 Attack。
             loco.RequestMoveIntent(0f, 0f);
             input.Push(InputToken.Jump);
             world.Tick(0.02f);
@@ -137,6 +171,7 @@ namespace Combat.Demos
             if (tf.Position.Y >= descendingY) throw new Exception("gravity");
             for (int i = 0; i < 30; i++) world.Tick(0.05f);
             if (fsm.Current != ActivityId.Root) throw new Exception("back root");
+            // Hit 会停止技能并在计时结束后回到 Root；Dead 则阻止返回 Root。
             fsm.TryEnter(ActivityId.Hit, new ActivityEnterArgs { Reason = "Hit", HitDuration = 0.30f, IFrameDuration = 0.10f });
             if (director.IsPlaying) throw new Exception("stop");
             for (int i = 0; i < 10; i++) world.Tick(0.05f);
@@ -149,6 +184,7 @@ namespace Combat.Demos
         }
     }
 
+    // 验证特性：Timeline Clip 时间窗、Payload 定时触发、取消窗口、Hitbox、连招和受击中断清理。
     public static class ClipPayloadDemo
     {
         public static void Run()
@@ -173,6 +209,8 @@ namespace Combat.Demos
             float x0 = tf.Position.X;
             input.Push(InputToken.Attack);
             bool sawCancel = false, sawBox = false;
+
+            // G1 的 Move/CancelTag/Hitbox Clip 和 Cue/Projectile Payload 应在各自时间点生效。
             for (int i = 0; i < 35; i++)
             {
                 Step(0.02f);
@@ -186,6 +224,7 @@ namespace Combat.Demos
             if (!sawCancel || !sawBox || cues < 1) throw new Exception("clips/payload");
             if (fsm.Current != ActivityId.Root) throw new Exception("root");
 
+            // 在 Cancel 窗口内再次输入 Attack，应从 G1 解析到 G2。
             input.Push(InputToken.Attack);
             for (int i = 0; i < 7; i++) Step(0.02f);
             input.Push(InputToken.Attack);
@@ -196,6 +235,8 @@ namespace Combat.Demos
             x0 = tf.Position.X;
             input.Push(InputToken.Attack);
             for (int i = 0; i < 6; i++) Step(0.02f);
+
+            // 受击中断必须关闭 Timeline 的活动 Clip，并清除未消费的位移。
             fsm.TryEnter(ActivityId.Hit, new ActivityEnterArgs { Reason = "Hit", HitDuration = 0.2f });
             if (director.IsPlaying || tags.Has(CommonTags.Cancel) || box.IsOpen)
                 throw new Exception("interrupt close");
@@ -206,6 +247,7 @@ namespace Combat.Demos
         }
     }
 
+    // 验证特性：近战命中扣血、单次命中去重、霸体免硬直、暴击、击杀和无敌帧。
     public static class MeleeDamageDemo
     {
         public static void Run()
@@ -236,6 +278,8 @@ namespace Combat.Demos
 
             float hp0 = sAttr.GetBase(AttrId.Hp);
             input.Push(InputToken.Attack);
+
+            // 普通命中应扣血并进入 Hit；同一 Hitbox 期间不能重复命中同一目标。
             for (int i = 0; i < 12; i++) Step(0.02f);
             if (dmgCount < 1) throw new Exception("hit");
             if (sAttr.GetBase(AttrId.Hp) >= hp0) throw new Exception("hp");
@@ -245,6 +289,7 @@ namespace Combat.Demos
             if (dmgCount != hits) throw new Exception("dedup");
             for (int i = 0; i < 20; i++) Step(0.02f);
 
+            // SuperArmor 只免疫 HitStun，不免疫伤害。
             sTags.Add(CommonTags.SuperArmor, 1, TagSource.Debug);
             for (int i = 0; i < 10 && sFsm.Current == ActivityId.Hit; i++) Step(0.05f);
             float hpB = sAttr.GetBase(AttrId.Hp);
@@ -255,6 +300,7 @@ namespace Combat.Demos
             sTags.Remove(CommonTags.SuperArmor, 1, TagSource.Debug);
             for (int i = 0; i < 20; i++) Step(0.02f);
 
+            // CritRate=1 且使用 FixedRandom(0) 时，本次攻击必须暴击。
             pAttr.SetBase(AttrId.CritRate, 1f);
             input.Push(InputToken.Attack);
             for (int i = 0; i < 12; i++) Step(0.02f);
@@ -262,6 +308,7 @@ namespace Combat.Demos
             pAttr.SetBase(AttrId.CritRate, 0f);
             for (int i = 0; i < 20; i++) Step(0.02f);
 
+            // HP 降到 0 时发布击杀伤害并进入 Dead。
             sAttr.SetBase(AttrId.Hp, 1f);
             input.Push(InputToken.Attack);
             for (int i = 0; i < 12; i++) Step(0.02f);
@@ -269,6 +316,8 @@ namespace Combat.Demos
 
             world.TryGetActor(world.SpawnActor(new ActorSpawnSpec("stake")), out var stake2);
             stake2.GetComp<TransformComp>().Position = new SimVec3(0.6f, 0, 0);
+
+            // IFrame 期间伤害不改变 HP，并发布 EvImmune。
             world.Deliver(new IEffect[] { new IFrameEffect { Duration = 1f } }, player, stake2, pAttr.GetFinal(AttrId.Atk));
             float hpE = stake2.GetComp<AttributeSet>().GetBase(AttrId.Hp);
             world.Deliver(new IEffect[] { new DamageEffect { Coeff = 1f, CanCrit = false } }, player, stake2, pAttr.GetFinal(AttrId.Atk));
@@ -278,6 +327,7 @@ namespace Combat.Demos
         }
     }
 
+    // 验证特性：投射物命中、AoE 周期脉冲、Burn 叠层，以及拥有者死亡时的运行时清理。
     public static class ProjectileAoeDemo
     {
         public static void Run()
@@ -295,6 +345,8 @@ namespace Combat.Demos
             var sBuff = stake.GetComp<BuffComp>();
             var sAttr = stake.GetComp<AttributeSet>();
             world.Projectiles.TryGet(CombatIds.Fireball, out var fb);
+
+            // 直接执行 Fireball 的 OnHit，验证命中后可无脚本地施加 Burn。
             world.Deliver(fb.OnHit, player, stake, pAttr.GetFinal(AttrId.Atk));
             if (sBuff.StacksOf(CombatIds.Burn) != 1) throw new Exception("scriptless burn");
             world.Deliver(new IEffect[] { new DispelEffect(DispelMode.ByBuffId, CombatIds.Burn) }, player, stake, 0f);
@@ -306,8 +358,11 @@ namespace Combat.Demos
                 world.Tick(0.02f);
             }
 
+            // 通过技能生成 Fireball，验证飞行命中路径同样施加 Burn。
             if (sBuff.StacksOf(CombatIds.Burn) < 1) throw new Exception("fly burn");
             stake.GetComp<TransformComp>().Position = new SimVec3(0, 0, 0);
+
+            // Ground AoE 按 PulseInterval 触发 OnPulse，Burn 层数最多为 3。
             world.Deliver(new IEffect[] { new SpawnAoeEffect(CombatIds.FireGround) }, player, null, pAttr.GetFinal(AttrId.Atk), player.GetComp<TransformComp>().Position);
             for (int i = 0; i < 50; i++)
             {
@@ -316,6 +371,7 @@ namespace Combat.Demos
             }
 
             if (sBuff.StacksOf(CombatIds.Burn) != 3) throw new Exception("stacks 3");
+            // 拥有者死亡后，仍存在的 Projectile/AoE 必须被清理。
             player.GetComp<StateMachineComp>().TryEnter(ActivityId.Dead, new ActivityEnterArgs { Reason = "DemoKill" });
             world.Tick(0.02f);
             int leftover = 0;
@@ -331,6 +387,7 @@ namespace Combat.Demos
         }
     }
 
+    // 验证特性：把输入、连招、Timeline、Cue、伤害、Burn、受击中断、Bake 缓存和死亡清理串成完整流程。
     public static class SeasonOneDemo
     {
         public static void Run()
@@ -381,6 +438,7 @@ namespace Combat.Demos
                 world.Tick(dt);
             }
 
+            // 1. G1 近战应触发 Cue、Fireball、Burn 和伤害飘字。
             input.Push(InputToken.Attack);
             for (int i = 0; i < 30; i++) Step(0.02f);
             if (listener.CountId(101) < 1) throw new Exception("blade cue");
@@ -391,6 +449,8 @@ namespace Combat.Demos
             for (int i = 0; i < 15; i++) Step(0.05f);
 
             stf.Position = new SimVec3(0.2f, 0, 0);
+
+            // 2. 在 Cancel 窗口接续输入，进入 G2 并把地面 Burn 叠到上限 3 层。
             input.Push(InputToken.Attack);
             for (int i = 0; i < 7; i++) Step(0.02f);
             input.Push(InputToken.Attack);
@@ -399,6 +459,7 @@ namespace Combat.Demos
             CombatLog.Debug(CombatCategories.SeasonOne, "2 ground stacks=" + stacks);
             if (stacks != 3) throw new Exception("cap 3");
 
+            // 3. 受击时停止技能并清空输入缓存，恢复后回到 Root。
             input.Push(InputToken.Attack);
             Step(0.02f);
             input.Push(InputToken.Attack);
@@ -412,6 +473,7 @@ namespace Combat.Demos
             dummy.GetComp<TransformComp>().Position = new SimVec3(100, 0, 0);
             float atk = pAttr.GetFinal(AttrId.Atk);
             dummy.GetComp<AttributeSet>().SetBase(AttrId.Hp, 100f);
+            // 4. 修改可配置伤害后清缓存，新的 Bake 结果必须生效。
             world.Deliver(TimelineSO.G1Melee.Bake(), player, dummy, atk);
             float hpAfter1 = dummy.GetComp<AttributeSet>().GetBase(AttrId.Hp);
             TimelineSO.G1Melee.Damage.Coeff = 3f;
@@ -425,6 +487,7 @@ namespace Combat.Demos
             TimelineSO.G1Melee.Damage.Coeff = 1f;
             TimelineSO.G1Melee.ClearCache();
 
+            // 5. 死亡时清理 Buff、Projectile、AoE，并发布 EvEntityDead。
             input.Push(InputToken.Attack);
             Step(0.05f);
             world.Deliver(new IEffect[] { new SpawnAoeEffect(CombatIds.FireGround) }, player, null, atk, ptf.Position);
