@@ -13,6 +13,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Assets/Scripts/Combat/Core/**/*.cs" />
     <Compile Include="Assets/Scripts/Combat/Demos/HaloCombatDemoCases.cs" />
+    <Compile Include="Assets/Scripts/Combat/Demos/DemoTrace.cs" />
     <Compile Include="Assets/Scripts/Combat/Demos/SeasonTwoDemoSupport.cs" />
     <Compile Include="Assets/Scripts/Combat/Demos/KnockdownDemo.cs" />
     <Compile Include="Assets/Scripts/Combat/Demos/DodgeHitstopDemo.cs" />

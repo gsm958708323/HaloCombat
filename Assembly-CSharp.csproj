@@ -71,6 +71,7 @@
     <Compile Include="Assets\Scripts\Combat\Demos\AuraHomingDemo.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\CombatComps.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Motor.cs" />
+    <Compile Include="Assets\Scripts\Combat\Demos\DemoTrace.cs" />
     <Compile Include="Assets\Scripts\Combat\Demos\SeasonTwoDemo.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Summons.cs" />
     <Compile Include="Assets\Scripts\Combat\Demos\SeasonTwoDemoSupport.cs" />

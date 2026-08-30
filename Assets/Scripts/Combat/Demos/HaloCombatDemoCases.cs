@@ -15,19 +15,28 @@ namespace Combat.Demos
             var tags = actor.GetComp<TagComp>();
             var input = actor.GetComp<InputBufferComp>();
 
+            var trace = new DemoTrace("TagInput", CombatCategories.TagInput, world);
+            trace.Step("init", "初始化 Tag 与输入缓冲", () => DemoTrace.Snapshot(actor));
+
             // Tag 是可叠加计数；移除足够层数后 Has 应返回 false。
             tags.Add(CommonTags.Grounded, 1, TagSource.Debug);
             tags.Add(CommonTags.Cancel, 1, TagSource.Debug);
-            CombatLog.Debug(CombatCategories.TagInput, "Has Cancel=" + tags.Has(CommonTags.Cancel));
+            trace.Check("tag-add", "添加 Grounded 与 Cancel", tags.Has(CommonTags.Grounded) && tags.Stack(CommonTags.Cancel) == 1,
+                "Grounded=true Cancel层数=1", "Grounded=" + tags.Has(CommonTags.Grounded) + " Cancel层数=" + tags.Stack(CommonTags.Cancel),
+                () => DemoTrace.Snapshot(actor));
             tags.Remove(CommonTags.Cancel, 1, TagSource.Debug);
-            CombatLog.Debug(CombatCategories.TagInput, "After remove Cancel=" + tags.Has(CommonTags.Cancel));
+            trace.Check("tag-remove", "移除 Cancel 后归零", !tags.Has(CommonTags.Cancel), "Cancel=false",
+                "Cancel=" + tags.Has(CommonTags.Cancel), () => DemoTrace.Snapshot(actor));
 
             // 输入缓冲默认窗口为 0.2 秒；推进 0.25 秒后应过期。
             input.Push(InputToken.Attack);
-            CombatLog.Debug(CombatCategories.TagInput, "Peek=" + input.TryPeek(out _));
-            world.Tick(0.25f);
-            CombatLog.Debug(CombatCategories.TagInput, "Peek expired=" + input.TryPeek(out _));
-            CombatLog.Info(CombatCategories.TagInput, "TagInputDemo PASSED");
+            trace.Check("buffer-push", "写入 Attack 输入", input.TryPeek(out _), "缓冲存在", "存在=" + input.HasBuffered,
+                () => "token=Attack " + DemoTrace.Snapshot(actor));
+            trace.AdvanceFor("buffer-window", "推进输入有效窗口之外", 0.25f, 1,
+                () => "buffered=" + input.HasBuffered + " " + DemoTrace.Snapshot(actor));
+            trace.Check("buffer-expire", "输入缓冲自动过期", !input.TryPeek(out _), "Attack 不可读取",
+                "可读取=" + input.HasBuffered, () => DemoTrace.Snapshot(actor));
+            trace.Complete("Tag 计数与输入窗口验证完成");
         }
 
         static CombatWorld NewWorld()
@@ -44,27 +53,33 @@ namespace Combat.Demos
             var id = world.SpawnActor(new ActorSpawnSpec("stake"));
             world.TryGetActor(id, out var actor);
             var attr = actor.GetComp<AttributeSet>();
-            CombatLog.Debug(CombatCategories.Attribute, "born Hp=" + attr.GetBase(AttrId.Hp) + " Atk=" + attr.GetFinal(AttrId.Atk));
+            var trace = new DemoTrace("Attribute", CombatCategories.Attribute, world);
+            trace.Step("init", "初始化属性载体", () => "Hp=" + attr.GetBase(AttrId.Hp) + " Atk=" + attr.GetFinal(AttrId.Atk) + " " + DemoTrace.Snapshot(actor));
 
             // 普通 Modifier 按 (Base + Add) * Mul 计算。
             attr.AddMod(new Modifier { Attr = AttrId.Atk, Op = ModOp.Add, Value = 50f, SourceId = 1 });
             attr.AddMod(new Modifier { Attr = AttrId.Atk, Op = ModOp.Mul, Value = 1.2f, SourceId = 1 });
-            CombatLog.Debug(CombatCategories.Attribute, "add+mul Atk=" + attr.GetFinal(AttrId.Atk));
+            trace.Check("add-mul", "应用 Add 与 Mul Modifier", Math.Abs(attr.GetFinal(AttrId.Atk) - 72f) < 1e-3f,
+                "Atk=72", "Atk=" + attr.GetFinal(AttrId.Atk).ToString("F1"), () => DemoTrace.Snapshot(actor));
 
             // Override 存在时直接覆盖普通 Add/Mul 结果。
             attr.AddMod(new Modifier { Attr = AttrId.Atk, Op = ModOp.Override, Value = 999f, SourceId = 2, Priority = 1 });
-            CombatLog.Debug(CombatCategories.Attribute, "override Atk=" + attr.GetFinal(AttrId.Atk));
+            trace.Check("override", "应用高优先级 Override", Math.Abs(attr.GetFinal(AttrId.Atk) - 999f) < 1e-3f,
+                "Atk=999", "Atk=" + attr.GetFinal(AttrId.Atk).ToString("F1"), () => DemoTrace.Snapshot(actor));
 
             // 按来源移除后，属性应恢复到此前的计算结果，再恢复到基础值。
             attr.RemoveBySource(2);
-            if (Math.Abs(attr.GetFinal(AttrId.Atk) - 72f) > 1e-3f) throw new Exception("72");
+            trace.Check("restore-add-mul", "移除 Override 后恢复 Add/Mul 结果", Math.Abs(attr.GetFinal(AttrId.Atk) - 72f) <= 1e-3f,
+                "Atk=72", "Atk=" + attr.GetFinal(AttrId.Atk).ToString("F1"), () => DemoTrace.Snapshot(actor));
             attr.RemoveBySource(1);
-            if (Math.Abs(attr.GetFinal(AttrId.Atk) - 10f) > 1e-3f) throw new Exception("restore");
+            trace.Check("restore-base", "移除全部 Modifier 后恢复基础值", Math.Abs(attr.GetFinal(AttrId.Atk) - 10f) <= 1e-3f,
+                "Atk=10", "Atk=" + attr.GetFinal(AttrId.Atk).ToString("F1"), () => DemoTrace.Snapshot(actor));
 
             // HP 写入不能超过 MaxHp。
             attr.SetBase(AttrId.Hp, 800f);
-            if (Math.Abs(attr.GetBase(AttrId.Hp) - 100f) > 1e-3f) throw new Exception("clamp");
-            CombatLog.Info(CombatCategories.Attribute, "AttributeDemo PASSED");
+            trace.Check("hp-clamp", "写入 HP 时限制在 MaxHp", Math.Abs(attr.GetBase(AttrId.Hp) - 100f) <= 1e-3f,
+                "Hp=100", "Hp=" + attr.GetBase(AttrId.Hp).ToString("F1"), () => DemoTrace.Snapshot(actor));
+            trace.Complete("属性计算与清理验证完成");
         }
     }
 
@@ -82,6 +97,8 @@ namespace Combat.Demos
             var buffs = actor.GetComp<BuffComp>();
             var slow = new TagId(2101);
             int periodHits = 0;
+            var trace = new DemoTrace("Buff", CombatCategories.Buff, world);
+            trace.Step("init", "初始化 Buff、Modifier 与周期效果", () => DemoTrace.Snapshot(actor));
             var burn = new DurationSpec
             {
                 BuffId = 1,
@@ -95,46 +112,52 @@ namespace Combat.Demos
             };
             var wet = new DurationSpec
             {
-                BuffId = 2, Duration = 5f, MutexGroup = 10,
+                BuffId = 2,
+                Duration = 5f,
+                MutexGroup = 10,
                 GrantedTags = new[] { new TagId(2102) },
                 Modifiers = new[] { new Modifier { Attr = AttrId.MoveSpeed, Op = ModOp.Mul, Value = 0.5f } }
             };
             var ignite = new DurationSpec
             {
-                BuffId = 3, Duration = 5f, MutexGroup = 10,
+                BuffId = 3,
+                Duration = 5f,
+                MutexGroup = 10,
                 Modifiers = new[] { new Modifier { Attr = AttrId.Atk, Op = ModOp.Add, Value = 100f } }
             };
 
             // AddStack 只能把同一个 Buff 实例叠到 MaxStacks，不会创建第 4 层。
             for (int i = 0; i < 4; i++)
                 world.Deliver(new IEffect[] { new ApplyDurationEffect(burn) }, actor, actor, 0f);
-            if (buffs.StacksOf(1) != 3) throw new Exception("cap 3");
+            trace.Check("stack-cap", "Burn 叠层达到上限", buffs.StacksOf(1) == 3, "层数=3", "层数=" + buffs.StacksOf(1),
+                () => "Atk=" + attr.GetFinal(AttrId.Atk).ToString("F1") + " " + DemoTrace.Snapshot(actor));
 
             // 当前语义：层数是运行时计数，属性 Modifier 只在实例创建时挂载一次。
-            if (Math.Abs(attr.GetFinal(AttrId.Atk) - 15f) > 1e-3f)
-                throw new Exception("stack modifier value");
-            if (attr.ModCount != 1)
-                throw new Exception("stack modifier duplicated");
-            CombatLog.Debug(CombatCategories.Buff,
-                "burn stacks=" + buffs.StacksOf(1) +
-                " atk=" + attr.GetFinal(AttrId.Atk) +
-                " modifiers=" + attr.ModCount);
+            trace.Check("stack-modifier", "叠层不重复挂载 Modifier", Math.Abs(attr.GetFinal(AttrId.Atk) - 15f) <= 1e-3f && attr.ModCount == 1,
+                "Atk=15 且 Modifier数量=1", "Atk=" + attr.GetFinal(AttrId.Atk).ToString("F1") + " Modifier数量=" + attr.ModCount,
+                () => DemoTrace.Snapshot(actor));
             // Buff 出生帧不立即触发周期效果；下一帧累计满 1 秒后触发一次。
-            world.Tick(0.5f);
-            if (periodHits != 0) throw new Exception("skip same frame period");
-            world.Tick(1f);
-            if (periodHits != 1) throw new Exception("period");
+            trace.AdvanceFor("period-before", "推进不足一个周期", 0.5f, 1,
+                () => "周期回调次数=" + periodHits + " " + DemoTrace.Snapshot(actor));
+            trace.Check("period-before-check", "出生后不足周期不触发回调", periodHits == 0, "回调次数=0", "回调次数=" + periodHits,
+                () => DemoTrace.Snapshot(actor));
+            trace.AdvanceFor("period-trigger", "推进至一个周期", 1f, 1,
+                () => "周期回调次数=" + periodHits + " " + DemoTrace.Snapshot(actor));
+            trace.Check("period-check", "周期效果触发一次", periodHits == 1, "回调次数=1", "回调次数=" + periodHits,
+                () => DemoTrace.Snapshot(actor));
             // Wet 与 Ignite 共享互斥组 10；应用 Ignite 会移除 Wet 及其授予的 Tag。
             world.Deliver(new IEffect[] { new ApplyDurationEffect(wet) }, actor, actor, 0f);
             world.Deliver(new IEffect[] { new ApplyDurationEffect(ignite) }, actor, actor, 0f);
-            if (tags.Has(new TagId(2102))) throw new Exception("mutex");
+            trace.Check("mutex", "互斥组替换 Wet", !tags.Has(new TagId(2102)), "Wet Tag=false",
+                "Wet Tag=" + tags.Has(new TagId(2102)), () => "Burn层数=" + buffs.StacksOf(1) + " " + DemoTrace.Snapshot(actor));
             // 按来源驱散所有 Buff，并验证 Modifier、Tag、Buff 实例都被清理。
             world.Deliver(new IEffect[] { new DispelEffect(DispelMode.BySource, BuffComp.Pack(actor)) }, actor, actor, 0f);
-            if (buffs.Count != 0) throw new Exception("dispel");
-            if (tags.Has(slow)) throw new Exception("tag cleanup");
-            if (attr.ModCount != 0) throw new Exception("modifier cleanup");
-            if (Math.Abs(attr.GetFinal(AttrId.Atk) - 10f) > 1e-3f) throw new Exception("mods");
-            CombatLog.Info(CombatCategories.Buff, "BuffDemo PASSED");
+            trace.Check("dispel-cleanup", "驱散后清理 Buff、Tag 与 Modifier",
+                buffs.Count == 0 && !tags.Has(slow) && attr.ModCount == 0 && Math.Abs(attr.GetFinal(AttrId.Atk) - 10f) <= 1e-3f,
+                "Buff=0 Tag=false Modifier数量=0 Atk=10",
+                "Buff=" + buffs.Count + " Tag=" + tags.Has(slow) + " Modifier数量=" + attr.ModCount + " Atk=" + attr.GetFinal(AttrId.Atk).ToString("F1"),
+                () => DemoTrace.Snapshot(actor));
+            trace.Complete("叠层、周期、互斥与驱散验证完成");
         }
     }
 
@@ -154,37 +177,48 @@ namespace Combat.Demos
             var tags = actor.GetComp<TagComp>();
             var input = actor.GetComp<InputBufferComp>();
             var director = actor.GetComp<SkillDirectorComp>();
+            var trace = new DemoTrace("ActivityMotor", CombatCategories.ActivityMotor, world);
+            trace.Step("init", "初始化状态机与运动组件", () => DemoTrace.Snapshot(actor));
 
             // Root 状态允许移动，并保持 Grounded。
             loco.RequestMoveIntent(1f, 0f);
             world.Tick(0.10f);
-            if (tf.Position.X <= 0f) throw new Exception("walk");
-            if (!tags.Has(CommonTags.Grounded)) throw new Exception("grounded");
+            trace.Check("walk", "Root 状态推进移动", tf.Position.X > 0f && tags.Has(CommonTags.Grounded),
+                "位置X>0 且 Grounded=true", "位置X=" + tf.Position.X.ToString("F2") + " Grounded=" + tags.Has(CommonTags.Grounded),
+                () => DemoTrace.Snapshot(actor));
             // Jump 不切换到独立 Activity，而是让 Root 进入 Airborne；空中仍可接 Attack。
             loco.RequestMoveIntent(0f, 0f);
             input.Push(InputToken.Jump);
             world.Tick(0.02f);
-            if (fsm.Current != ActivityId.Root) throw new Exception("jump not activity");
-            if (!tags.Has(CommonTags.Airborne)) throw new Exception("air");
+            trace.Check("jump", "Root 内进入空中状态", fsm.Current == ActivityId.Root && tags.Has(CommonTags.Airborne),
+                "Activity=Root 且 Airborne=true", "Activity=" + fsm.Current + " Airborne=" + tags.Has(CommonTags.Airborne),
+                () => DemoTrace.Snapshot(actor));
             input.Push(InputToken.Attack);
             world.Tick(0.05f);
-            if (fsm.Current != ActivityId.Attack) throw new Exception("air attack");
-            for (int i = 0; i < 5; i++) world.Tick(0.05f);
+            trace.Check("air-attack", "空中接续 Attack", fsm.Current == ActivityId.Attack, "Activity=Attack", "Activity=" + fsm.Current,
+                () => DemoTrace.Snapshot(actor));
+            trace.AdvanceFor("air-motion", "观察空中重力积分", 0.05f, 5,
+                () => "Y=" + tf.Position.Y.ToString("F2") + " " + DemoTrace.Snapshot(actor));
             float descendingY = tf.Position.Y;
             world.Tick(0.05f);
-            if (tf.Position.Y >= descendingY) throw new Exception("gravity");
-            for (int i = 0; i < 30; i++) world.Tick(0.05f);
-            if (fsm.Current != ActivityId.Root) throw new Exception("back root");
+            trace.Check("gravity", "空中继续受重力影响", tf.Position.Y < descendingY, "Y 下降", "此前Y=" + descendingY.ToString("F2") + " 当前Y=" + tf.Position.Y.ToString("F2"),
+                () => DemoTrace.Snapshot(actor));
+            trace.AdvanceUntil("land", "等待落地恢复 Root", () => fsm.Current == ActivityId.Root, 0.05f, 30,
+                () => "Activity=" + fsm.Current + " " + DemoTrace.Snapshot(actor));
             // Hit 会停止技能并在计时结束后回到 Root；Dead 则阻止返回 Root。
             fsm.TryEnter(ActivityId.Hit, new ActivityEnterArgs { Reason = "Hit", HitDuration = 0.30f, IFrameDuration = 0.10f });
-            if (director.IsPlaying) throw new Exception("stop");
-            for (int i = 0; i < 10; i++) world.Tick(0.05f);
-            if (fsm.Current != ActivityId.Root) throw new Exception("hit recover");
+            trace.Check("hit-stop", "进入 Hit 时停止技能", !director.IsPlaying && fsm.Current == ActivityId.Hit,
+                "Activity=Hit 且技能停止", "Activity=" + fsm.Current + " playing=" + director.IsPlaying,
+                () => DemoTrace.Snapshot(actor));
+            trace.AdvanceUntil("hit-recover", "等待受击恢复 Root", () => fsm.Current == ActivityId.Root, 0.05f, 10,
+                () => "Activity=" + fsm.Current + " " + DemoTrace.Snapshot(actor));
             fsm.TryEnter(ActivityId.Dead, new ActivityEnterArgs { Reason = "Kill" });
-            if (fsm.Current != ActivityId.Dead) throw new Exception("dead");
-            if (fsm.TryEnter(ActivityId.Root, new ActivityEnterArgs { Reason = "cheat" }))
-                throw new Exception("dead stick");
-            CombatLog.Info(CombatCategories.ActivityMotor, "ActivityMotorDemo PASSED");
+            trace.Check("dead", "Dead 成为不可逆终态", fsm.Current == ActivityId.Dead, "Activity=Dead", "Activity=" + fsm.Current,
+                () => DemoTrace.Snapshot(actor));
+            bool canReturn = fsm.TryEnter(ActivityId.Root, new ActivityEnterArgs { Reason = "cheat" });
+            trace.Check("dead-gate", "Dead 阻止返回 Root", !canReturn, "无法进入 Root", "TryEnter Root=" + canReturn,
+                () => DemoTrace.Snapshot(actor));
+            trace.Complete("活动状态、运动和终态验证完成");
         }
     }
 
@@ -209,46 +243,102 @@ namespace Combat.Demos
             var tf = actor.GetComp<TransformComp>();
             var loco = actor.GetComp<LocomotionComp>();
             var box = actor.GetComp<HitboxComp>();
+            world.TryGetActor(world.SpawnActor(new ActorSpawnSpec("stake")), out var hitTarget);
+            hitTarget.GetComp<TransformComp>().Position = new SimVec3(0.6f, 0f, 0.6f);
+            EntityId actorId = actor.Id;
+            EntityId hitTargetId = hitTarget.Id;
+            int hitboxHits = 0;
+            events.Subscribe<EvDamage>(e =>
+            {
+                // 只记录本 Timeline 的明确 Source/Target，避免其它伤害事件污染命中阶段。
+                if (e.Source == actorId && e.Target == hitTargetId && box.IsOpen)
+                    hitboxHits++;
+            });
             void Step(float dt) { loco.RequestMoveIntent(0, 0); world.Tick(dt); }
+            int CountProjectiles()
+            {
+                int count = 0;
+                var active = world.RegistryActive();
+                for (int i = 0; i < active.Count; i++)
+                    if (active[i].TryGetComp<ProjectileComp>(out var p) && p.OwnerId == actor.Id)
+                        count++;
+                return count;
+            }
+
+            var trace = new DemoTrace("ClipPayload", CombatCategories.ClipPayload, world, Step);
+            trace.Step("init", "初始化 G1 Timeline、Actor 与事件监听", () => DemoTrace.Snapshot(actor) + " target=" + DemoTrace.Snapshot(hitTarget));
 
             float x0 = tf.Position.X;
             input.Push(InputToken.Attack);
-            bool sawCancel = false, sawBox = false;
-
-            // G1 的 Move/CancelTag/Hitbox Clip 和 Cue/Projectile Payload 应在各自时间点生效。
-            for (int i = 0; i < 35; i++)
+            trace.AdvanceUntil("g1-start", "启动 G1", () => director.IsPlaying && director.CurrentSkill == SkillNodeId.G1,
+                0.02f, 3, () => "skill=" + director.CurrentSkill + " playing=" + director.IsPlaying + " " + DemoTrace.Snapshot(actor));
+            float timelineStart = world.Time.Time;
+            string TimelineState(string clip)
             {
-                Step(0.02f);
-                if (tags.Has(CommonTags.Cancel)) sawCancel = true;
-                if (box.IsOpen) sawBox = true;
+                return "clip=" + clip +
+                       " timelineTime=" + (world.Time.Time - timelineStart).ToString("F3") +
+                       " skill=" + director.CurrentSkill +
+                       " cancel=" + tags.Has(CommonTags.Cancel) +
+                       " hitbox=" + box.IsOpen +
+                       " pos=" + tf.Position.X.ToString("F3") + "," + tf.Position.Z.ToString("F3");
             }
 
+            // Move Clip 开始后位置持续变化；范围检查能说明位移来自 Timeline，而不是普通移动输入。
+            trace.AdvanceUntil("move-open", "Move Clip 开始并产生位移", () => tf.Position.X > x0 + 0.001f,
+                0.02f, 10, () => TimelineState("Move.Begin"));
+            trace.AdvanceUntil("cancel-open", "Cancel Tag 开始", () => tags.Has(CommonTags.Cancel),
+                0.02f, 10, () => TimelineState("Cancel.Begin"));
+            trace.AdvanceUntil("hitbox-open", "Hitbox Clip 开始", () => box.IsOpen,
+                0.02f, 10, () => TimelineState("Hitbox.Begin"));
+            trace.AdvanceUntil("hitbox-hit", "Hitbox 命中明确目标", () => hitboxHits >= 1,
+                0.02f, 4, () => TimelineState("Hitbox.Hit") + " hits=" + hitboxHits + " targetHp=" + hitTarget.GetComp<AttributeSet>().GetBase(AttrId.Hp).ToString("F1"));
+            trace.AdvanceUntil("cue-fireball", "Cue 与 Fireball Payload 触发", () => cues >= 1 && CountProjectiles() >= 1,
+                0.02f, 8, () => TimelineState("Cue.Payload") + " cues=" + cues + " projectiles=" + CountProjectiles());
+            trace.AdvanceUntil("move-close", "Move Clip 结束", () => world.Time.Time - timelineStart >= 0.28f && tf.Position.X >= x0 + 0.55f,
+                0.02f, 10, () => TimelineState("Move.End"));
+            trace.AdvanceUntil("hitbox-close", "Hitbox Clip 结束", () => !box.IsOpen,
+                0.02f, 8, () => TimelineState("Hitbox.End") + " hits=" + hitboxHits);
+            trace.AdvanceUntil("cancel-close", "Cancel Tag 结束", () => !tags.Has(CommonTags.Cancel),
+                0.02f, 8, () => TimelineState("Cancel.End"));
+            trace.AdvanceUntil("g1-end", "G1 Timeline 结束", () => !director.IsPlaying && fsm.Current == ActivityId.Root,
+                0.02f, 12, () => TimelineState("Timeline.End") + " activity=" + fsm.Current);
+
             float dx = tf.Position.X - x0;
-            CombatLog.Debug(CombatCategories.ClipPayload, "G1 dx=" + dx.ToString("F3") + " cancel=" + sawCancel + " box=" + sawBox + " cues=" + cues);
-            if (dx < 0.50f || dx > 0.75f) throw new Exception("move ~0.6");
-            if (!sawCancel || !sawBox || cues < 1) throw new Exception("clips/payload");
-            if (fsm.Current != ActivityId.Root) throw new Exception("root");
+            trace.Check("g1-summary", "G1 完成并回到 Root", !director.IsPlaying && fsm.Current == ActivityId.Root && dx >= 0.50f && dx <= 0.75f,
+                "Root、位移约0.6", "Activity=" + fsm.Current + " playing=" + director.IsPlaying + " dx=" + dx.ToString("F3"),
+                () => DemoTrace.Snapshot(actor));
 
             // 在 Cancel 窗口内再次输入 Attack，应从 G1 解析到 G2。
             input.Push(InputToken.Attack);
-            for (int i = 0; i < 7; i++) Step(0.02f);
+            float comboTimelineStart = world.Time.Time;
+            trace.AdvanceUntil("g2-cancel-window", "再次启动 G1 并等待 Cancel 窗口", () => director.IsPlaying && tags.Has(CommonTags.Cancel),
+                0.02f, 20, () => "skill=" + director.CurrentSkill + " cancel=" + tags.Has(CommonTags.Cancel) +
+                    " timelineTime=" + (world.Time.Time - comboTimelineStart).ToString("F3"));
             input.Push(InputToken.Attack);
-            Step(0.02f);
-            if (director.CurrentSkill != SkillNodeId.G2) throw new Exception("G2");
-            for (int i = 0; i < 25; i++) Step(0.02f);
+            trace.AdvanceUntil("g2-start", "Cancel 窗口接续 G2", () => director.CurrentSkill == SkillNodeId.G2,
+                0.02f, 3, () => "skill=" + director.CurrentSkill + " " + DemoTrace.Snapshot(actor));
+            trace.AdvanceUntil("g2-end", "G2 Timeline 结束", () => !director.IsPlaying && fsm.Current == ActivityId.Root,
+                0.02f, 30, () => "skill=" + director.CurrentSkill + " activity=" + fsm.Current);
+            trace.Check("g2-summary", "G2 接续完成", fsm.Current == ActivityId.Root && !director.IsPlaying,
+                "Root 且技能停止", "Activity=" + fsm.Current + " playing=" + director.IsPlaying, () => DemoTrace.Snapshot(actor));
 
+            // 重新启动 G1 后立即受击，必须关闭所有活动 Clip，并清除未消费的位移。
             x0 = tf.Position.X;
             input.Push(InputToken.Attack);
-            for (int i = 0; i < 6; i++) Step(0.02f);
-
-            // 受击中断必须关闭 Timeline 的活动 Clip，并清除未消费的位移。
+            trace.AdvanceUntil("interrupt-prepare", "准备一个可被中断的 G1", () => director.IsPlaying,
+                0.02f, 3, () => "skill=" + director.CurrentSkill + " " + DemoTrace.Snapshot(actor));
+            trace.AdvanceFor("interrupt-window", "推进到 G1 中段", 0.02f, 6,
+                () => "skill=" + director.CurrentSkill + " cancel=" + tags.Has(CommonTags.Cancel) + " hitbox=" + box.IsOpen);
             fsm.TryEnter(ActivityId.Hit, new ActivityEnterArgs { Reason = "Hit", HitDuration = 0.2f });
-            if (director.IsPlaying || tags.Has(CommonTags.Cancel) || box.IsOpen)
-                throw new Exception("interrupt close");
             float xHit = tf.Position.X;
-            for (int i = 0; i < 8; i++) Step(0.02f);
-            if (Math.Abs(tf.Position.X - xHit) > 0.05f) throw new Exception("no leftover");
-            CombatLog.Info(CombatCategories.ClipPayload, "ClipPayloadDemo PASSED");
+            trace.Check("interrupt-close", "受击中断清理 Timeline", !director.IsPlaying && !tags.Has(CommonTags.Cancel) && !box.IsOpen,
+                "技能停止、Cancel=false、Hitbox=false", "playing=" + director.IsPlaying + " cancel=" + tags.Has(CommonTags.Cancel) + " hitbox=" + box.IsOpen,
+                () => DemoTrace.Snapshot(actor));
+            trace.AdvanceUntil("interrupt-recover", "受击恢复 Root 且无残留位移", () => fsm.Current == ActivityId.Root,
+                0.02f, 15, () => "Activity=" + fsm.Current + " dx=" + (tf.Position.X - xHit).ToString("F3"));
+            trace.Check("interrupt-no-leftover", "中断后不再应用 Clip 位移", Math.Abs(tf.Position.X - xHit) <= 0.05f,
+                "位移残留<=0.05", "残留=" + Math.Abs(tf.Position.X - xHit).ToString("F3"), () => DemoTrace.Snapshot(actor));
+            trace.Complete("Timeline Clip、Payload、连招与中断验证完成");
         }
     }
 
@@ -260,14 +350,30 @@ namespace Combat.Demos
             var events = new EventBus();
             var world = new CombatWorld(new FighterActorFactory(DemoTables.G1G2(), DemoTables.MakeLib()), new IntentQueue(), events, new CombatTime(), new FixedRandom(0f));
             CombatCatalog.RegisterDefaults(world.Projectiles, world.Aoes, CombatCatalog.Burn(), world.Summons);
+            world.TryGetActor(world.SpawnActor(new ActorSpawnSpec("fighter")), out var player);
+            world.TryGetActor(world.SpawnActor(new ActorSpawnSpec("stake")), out var stake);
+            EntityId playerId = player.Id;
+            EntityId stakeId = stake.Id;
+            EntityId iframeTargetId = EntityId.Invalid;
             int dmgCount = 0;
             bool lastCrit = false, lastKill = false;
             int immune = 0;
-            events.Subscribe<EvDamage>(e => { dmgCount++; lastCrit = e.IsCrit; lastKill = e.IsKill; });
-            events.Subscribe<EvImmune>(_ => immune++);
-
-            world.TryGetActor(world.SpawnActor(new ActorSpawnSpec("fighter")), out var player);
-            world.TryGetActor(world.SpawnActor(new ActorSpawnSpec("stake")), out var stake);
+            events.Subscribe<EvDamage>(e =>
+            {
+                // 只统计明确的玩家到目标事件，排除同一世界中的其它 Payload 伤害。
+                if (e.Source != playerId || (e.Target != stakeId && e.Target != iframeTargetId)) return;
+                if (e.Target == stakeId)
+                {
+                    dmgCount++;
+                    lastCrit = e.IsCrit;
+                    lastKill = e.IsKill;
+                }
+            });
+            events.Subscribe<EvImmune>(e =>
+            {
+                if (e.Source == playerId && e.Target == iframeTargetId)
+                    immune++;
+            });
             player.GetComp<TransformComp>().Position = new SimVec3(0, 0, 0);
             stake.GetComp<TransformComp>().Position = new SimVec3(0.6f, 0, 0);
             var input = player.GetComp<InputBufferComp>();
@@ -280,58 +386,75 @@ namespace Combat.Demos
                 player.GetComp<LocomotionComp>().RequestMoveIntent(0, 0);
                 world.Tick(dt);
             }
+            var trace = new DemoTrace("MeleeDamage", CombatCategories.MeleeDamage, world, Step);
+            trace.Step("init", "初始化近战命中与目标事件过滤", () => DemoTrace.Snapshot(player) + " target=" + DemoTrace.Snapshot(stake));
 
             float hp0 = sAttr.GetBase(AttrId.Hp);
             input.Push(InputToken.Attack);
 
             // 普通命中应扣血并进入 Hit；同一 Hitbox 期间不能重复命中同一目标。
-            for (int i = 0; i < 12; i++) Step(0.02f);
-            if (dmgCount < 1) throw new Exception("hit");
-            if (sAttr.GetBase(AttrId.Hp) >= hp0) throw new Exception("hp");
-            if (sFsm.Current != ActivityId.Hit) throw new Exception("stun");
+            trace.AdvanceUntil("normal-hit", "等待普通 Hitbox 命中", () => dmgCount >= 1,
+                0.02f, 15, () => "过滤后 damage=" + dmgCount + " " + DemoTrace.Snapshot(stake));
+            trace.Check("normal-result", "普通命中扣血并进入 Hit", sAttr.GetBase(AttrId.Hp) < hp0 && sFsm.Current == ActivityId.Hit,
+                "目标HP下降且 Activity=Hit", "hp=" + sAttr.GetBase(AttrId.Hp).ToString("F1") + " Activity=" + sFsm.Current,
+                () => "source=" + playerId + " target=" + stakeId + " " + DemoTrace.Snapshot(stake));
             int hits = dmgCount;
             // 第二季 G1 配置要求三帧顿帧；在冻结窗口附近检查去重，避免后续 Fireball
             // Payload 的伤害被误认为近战 Hitbox 重复命中。
-            for (int i = 0; i < 2; i++) Step(0.02f);
-            if (dmgCount != hits) throw new Exception("dedup");
-            for (int i = 0; i < 20; i++) Step(0.02f);
+            trace.AdvanceFor("hitbox-dedup-window", "推进同一 Hitbox 的剩余窗口", 0.02f, 2,
+                () => "过滤后 damage=" + dmgCount + " 目标HP=" + sAttr.GetBase(AttrId.Hp).ToString("F1"));
+            trace.Check("hitbox-dedup", "同一 Hitbox 不重复命中目标", dmgCount == hits,
+                "命中次数不增加", "命中次数=" + dmgCount + "（此前=" + hits + ")", () => DemoTrace.Snapshot(stake));
+            trace.AdvanceUntil("hit-recover", "等待目标从 Hit 恢复", () => sFsm.Current == ActivityId.Root, 0.02f, 30,
+                () => DemoTrace.Snapshot(stake));
 
             // SuperArmor 只免疫 HitStun，不免疫伤害。
             sTags.Add(CommonTags.SuperArmor, 1, TagSource.Debug);
-            for (int i = 0; i < 10 && sFsm.Current == ActivityId.Hit; i++) Step(0.05f);
+            trace.Step("super-armor", "开启 SuperArmor", () => DemoTrace.Snapshot(stake));
             float hpB = sAttr.GetBase(AttrId.Hp);
+            int armorDamageBefore = dmgCount;
             input.Push(InputToken.Attack);
-            for (int i = 0; i < 12; i++) Step(0.02f);
-            if (sAttr.GetBase(AttrId.Hp) >= hpB) throw new Exception("armor dmg");
-            if (sFsm.Current == ActivityId.Hit) throw new Exception("armor stun");
+            trace.AdvanceUntil("armor-hit", "SuperArmor 下等待再次命中", () => dmgCount > armorDamageBefore,
+                0.02f, 15, () => "damage=" + dmgCount + " " + DemoTrace.Snapshot(stake));
+            trace.Check("armor-result", "SuperArmor 免硬直但不免伤害", sAttr.GetBase(AttrId.Hp) < hpB && sFsm.Current != ActivityId.Hit,
+                "HP下降且不在 Hit", "hp=" + sAttr.GetBase(AttrId.Hp).ToString("F1") + " Activity=" + sFsm.Current,
+                () => DemoTrace.Snapshot(stake));
             sTags.Remove(CommonTags.SuperArmor, 1, TagSource.Debug);
-            for (int i = 0; i < 20; i++) Step(0.02f);
+            trace.AdvanceFor("armor-close", "关闭 SuperArmor 并等待技能结束", 0.02f, 20, () => DemoTrace.Snapshot(stake));
 
             // CritRate=1 且使用 FixedRandom(0) 时，本次攻击必须暴击。
             pAttr.SetBase(AttrId.CritRate, 1f);
+            lastCrit = false;
             input.Push(InputToken.Attack);
-            for (int i = 0; i < 12; i++) Step(0.02f);
-            if (!lastCrit) throw new Exception("crit");
+            trace.AdvanceUntil("critical-hit", "CritRate=1 时等待暴击", () => lastCrit,
+                0.02f, 20, () => "crit=" + lastCrit + " " + DemoTrace.Snapshot(stake));
+            trace.Check("critical-result", "命中事件标记为暴击", lastCrit, "IsCrit=true", "IsCrit=" + lastCrit,
+                () => DemoTrace.Snapshot(stake));
             pAttr.SetBase(AttrId.CritRate, 0f);
-            for (int i = 0; i < 20; i++) Step(0.02f);
+            trace.AdvanceFor("critical-close", "恢复普通暴击率", 0.02f, 20, () => DemoTrace.Snapshot(player));
 
             // HP 降到 0 时发布击杀伤害并进入 Dead。
             sAttr.SetBase(AttrId.Hp, 1f);
             lastKill = false;
             input.Push(InputToken.Attack);
-            for (int i = 0; i < 60 && sFsm.Current != ActivityId.Dead; i++) Step(0.02f);
-            if (!lastKill || sFsm.Current != ActivityId.Dead) throw new Exception("kill");
+            trace.AdvanceUntil("kill-hit", "等待致死命中", () => sFsm.Current == ActivityId.Dead,
+                0.02f, 60, () => "IsKill=" + lastKill + " " + DemoTrace.Snapshot(stake));
+            trace.Check("kill-result", "击杀事件与 Dead 状态同时成立", lastKill && sFsm.Current == ActivityId.Dead,
+                "IsKill=true 且 Activity=Dead", "IsKill=" + lastKill + " Activity=" + sFsm.Current,
+                () => DemoTrace.Snapshot(stake));
 
             world.TryGetActor(world.SpawnActor(new ActorSpawnSpec("stake")), out var stake2);
             stake2.GetComp<TransformComp>().Position = new SimVec3(0.6f, 0, 0);
+            iframeTargetId = stake2.Id;
 
             // IFrame 期间伤害不改变 HP，并发布 EvImmune。
             world.Deliver(new IEffect[] { new IFrameEffect { Duration = 1f } }, player, stake2, pAttr.GetFinal(AttrId.Atk));
             float hpE = stake2.GetComp<AttributeSet>().GetBase(AttrId.Hp);
             world.Deliver(new IEffect[] { new DamageEffect { Coeff = 1f, CanCrit = false } }, player, stake2, pAttr.GetFinal(AttrId.Atk));
-            if (stake2.GetComp<AttributeSet>().GetBase(AttrId.Hp) != hpE || immune < 1)
-                throw new Exception("iframe");
-            CombatLog.Info(CombatCategories.MeleeDamage, "MeleeDamageDemo PASSED");
+            trace.Check("iframe", "无敌帧阻止伤害并发布 EvImmune", stake2.GetComp<AttributeSet>().GetBase(AttrId.Hp) == hpE && immune >= 1,
+                "HP不变且 Immune>=1", "HP变化=" + (stake2.GetComp<AttributeSet>().GetBase(AttrId.Hp) - hpE).ToString("F1") + " Immune=" + immune,
+                () => DemoTrace.Snapshot(stake2));
+            trace.Complete("普通命中、去重、霸体、暴击、击杀与无敌帧验证完成");
         }
     }
 
@@ -354,45 +477,60 @@ namespace Combat.Demos
             var sBuff = stake.GetComp<BuffComp>();
             var sAttr = stake.GetComp<AttributeSet>();
             world.Projectiles.TryGet(CombatIds.Fireball, out var fb);
+            void Step(float dt)
+            {
+                if (player.IsActive)
+                    player.GetComp<LocomotionComp>().RequestMoveIntent(0, 0);
+                world.Tick(dt);
+            }
+            int CountOwnedRuntime()
+            {
+                int count = 0;
+                var active = world.RegistryActive();
+                for (int i = 0; i < active.Count; i++)
+                {
+                    if (active[i].TryGetComp<ProjectileComp>(out var p) && p.OwnerId == player.Id) count++;
+                    if (active[i].TryGetComp<AoeComp>(out var ao) && ao.OwnerId == player.Id) count++;
+                }
+                return count;
+            }
+            var trace = new DemoTrace("ProjectileAoe", CombatCategories.ProjectileAoe, world, Step);
+            trace.Step("init", "初始化 Projectile、AoE 与 Burn 注册", () => DemoTrace.Snapshot(player) + " target=" + DemoTrace.Snapshot(stake));
 
             // 直接执行 Fireball 的 OnHit，验证命中后可无脚本地施加 Burn。
             world.Deliver(fb.OnHit, player, stake, pAttr.GetFinal(AttrId.Atk));
-            if (sBuff.StacksOf(CombatIds.Burn) != 1) throw new Exception("scriptless burn");
+            trace.Check("direct-onhit", "直接执行 Fireball OnHit", sBuff.StacksOf(CombatIds.Burn) == 1,
+                "Burn层数=1", "Burn层数=" + sBuff.StacksOf(CombatIds.Burn), () => DemoTrace.Snapshot(stake));
             world.Deliver(new IEffect[] { new DispelEffect(DispelMode.ByBuffId, CombatIds.Burn) }, player, stake, 0f);
             sAttr.SetBase(AttrId.Hp, 100f);
             player.GetComp<InputBufferComp>().Push(InputToken.Attack);
-            for (int i = 0; i < 40; i++)
-            {
-                player.GetComp<LocomotionComp>().RequestMoveIntent(0, 0);
-                world.Tick(0.02f);
-            }
+            trace.AdvanceUntil("fireball-spawn", "技能 Payload 生成 Fireball", () => CountOwnedRuntime() > 0,
+                0.02f, 30, () => "runtime=" + CountOwnedRuntime() + " " + DemoTrace.Snapshot(player));
 
             // 通过技能生成 Fireball，验证飞行命中路径同样施加 Burn。
-            if (sBuff.StacksOf(CombatIds.Burn) < 1) throw new Exception("fly burn");
+            trace.AdvanceUntil("fireball-hit", "等待 Fireball 实际飞行命中", () => sBuff.StacksOf(CombatIds.Burn) >= 1,
+                0.02f, 60, () => "Burn层数=" + sBuff.StacksOf(CombatIds.Burn) + " Hp=" + sAttr.GetBase(AttrId.Hp).ToString("F1") + " " + DemoTrace.Snapshot(stake));
+            trace.Check("fireball-result", "飞行命中同样施加 Burn", sBuff.StacksOf(CombatIds.Burn) >= 1,
+                "Burn层数>=1", "Burn层数=" + sBuff.StacksOf(CombatIds.Burn), () => DemoTrace.Snapshot(stake));
             stake.GetComp<TransformComp>().Position = new SimVec3(0, 0, 0);
 
             // Ground AoE 按 PulseInterval 触发 OnPulse，Burn 层数最多为 3。
             world.Deliver(new IEffect[] { new SpawnAoeEffect(CombatIds.FireGround) }, player, null, pAttr.GetFinal(AttrId.Atk), player.GetComp<TransformComp>().Position);
-            for (int i = 0; i < 50; i++)
-            {
-                player.GetComp<LocomotionComp>().RequestMoveIntent(0, 0);
-                world.Tick(0.05f);
-            }
-
-            if (sBuff.StacksOf(CombatIds.Burn) != 3) throw new Exception("stacks 3");
+            trace.AdvanceFor("aoe-pulses", "推进 Ground AoE 的 Pulse 周期", 0.05f, 50,
+                () => "Burn层数=" + sBuff.StacksOf(CombatIds.Burn) + " runtime=" + CountOwnedRuntime() + " " + DemoTrace.Snapshot(stake));
+            trace.Check("aoe-pulse-result", "AoE Pulse 叠加 Burn 至上限", sBuff.StacksOf(CombatIds.Burn) == 3,
+                "Burn层数=3", "Burn层数=" + sBuff.StacksOf(CombatIds.Burn), () => DemoTrace.Snapshot(stake));
             // 拥有者死亡后，仍存在的 Projectile/AoE 必须被清理。
+            world.Deliver(new IEffect[] { new SpawnProjectileEffect(CombatIds.Fireball), new SpawnAoeEffect(CombatIds.FireGround) }, player, null,
+                pAttr.GetFinal(AttrId.Atk), player.GetComp<TransformComp>().Position);
+            trace.AdvanceFor("cleanup-prepare", "准备仍在生命周期内的 Projectile 与 AoE", 0.02f, 1,
+                () => "runtime=" + CountOwnedRuntime() + " " + DemoTrace.Snapshot(player));
             player.GetComp<StateMachineComp>().TryEnter(ActivityId.Dead, new ActivityEnterArgs { Reason = "DemoKill" });
-            world.Tick(0.02f);
-            int leftover = 0;
-            var all = world.RegistryActive();
-            for (int i = 0; i < all.Count; i++)
-            {
-                if (all[i].TryGetComp<ProjectileComp>(out var p) && p.OwnerId == player.Id) leftover++;
-                if (all[i].TryGetComp<AoeComp>(out var ao) && ao.OwnerId == player.Id) leftover++;
-            }
-
-            if (leftover != 0) throw new Exception("cleanup");
-            CombatLog.Info(CombatCategories.ProjectileAoe, "ProjectileAoeDemo PASSED");
+            trace.AdvanceFor("owner-cleanup", "Owner 死亡后清理后代运行时对象", 0.02f, 1,
+                () => "runtime=" + CountOwnedRuntime() + " " + DemoTrace.Snapshot(player));
+            trace.Check("cleanup-result", "死亡清理 Projectile 与 AoE", CountOwnedRuntime() == 0,
+                "Owner 后代数量=0", "Owner 后代数量=" + CountOwnedRuntime(), () => DemoTrace.Snapshot(player));
+            trace.Complete("直接 OnHit、飞行命中、AoE Pulse 与死亡清理验证完成");
         }
     }
 
@@ -401,6 +539,7 @@ namespace Combat.Demos
     {
         public static void Run()
         {
+            DemoTables.ResetG1MeleeDefaults();
             // 该用例故意使用真实的事件监听器，模拟表现层消费 Cue 和伤害事件。
             var time = new CombatTime();
             var intents = new IntentQueue();
@@ -415,17 +554,27 @@ namespace Combat.Demos
             CombatCatalog.RegisterDefaults(world.Projectiles, world.Aoes, burn, world.Summons);
 
             int floaters = 0;
-            events.Subscribe<EvDamage>(e =>
-            {
-                floaters++;
-                CombatLog.Debug(CombatCategories.SeasonOne, "[F" + time.Frame + "] floater dmg=" + e.Amount.ToString("F1") + " crit=" + e.IsCrit + " kill=" + e.IsKill);
-            });
             int deadEvents = 0, cleanups = 0;
-            events.Subscribe<EvEntityDead>(_ => deadEvents++);
-            events.Subscribe<EvEntityCleanup>(_ => cleanups++);
 
             world.TryGetActor(world.SpawnActor(new ActorSpawnSpec("fighter")), out var player);
             world.TryGetActor(world.SpawnActor(new ActorSpawnSpec("stake")), out var stake);
+            EntityId playerId = player.Id;
+            EntityId stakeId = stake.Id;
+            events.Subscribe<EvDamage>(e =>
+            {
+                // 只消费本主线玩家到目标桩的伤害事件，避免其它运行时对象污染飘字计数。
+                if (e.Source != playerId || e.Target != stakeId) return;
+                floaters++;
+                CombatLog.Debug(CombatCategories.SeasonOne, "[帧" + time.Frame + "] 伤害飘字 伤害=" + e.Amount.ToString("F1") + " 暴击=" + e.IsCrit + " 击杀=" + e.IsKill);
+            });
+            events.Subscribe<EvEntityDead>(e =>
+            {
+                if (e.Id == playerId) deadEvents++;
+            });
+            events.Subscribe<EvEntityCleanup>(e =>
+            {
+                if (e.Id == playerId) cleanups++;
+            });
             var ptf = player.GetComp<TransformComp>();
             var stf = stake.GetComp<TransformComp>();
             var input = player.GetComp<InputBufferComp>();
@@ -433,11 +582,12 @@ namespace Combat.Demos
             var pAttr = player.GetComp<AttributeSet>();
             var pFsm = player.GetComp<StateMachineComp>();
             var pDir = player.GetComp<SkillDirectorComp>();
+            var pTags = player.GetComp<TagComp>();
             var loadout = player.GetComp<LoadoutComp>();
             var sAttr = stake.GetComp<AttributeSet>();
             var sBuff = stake.GetComp<BuffComp>();
-            if (!loadout.TryGet(SkillSlot.Normal, out var ns, out var nt) || ns != SkillNodeId.G1 || nt != TimelineId.TL_G1)
-                throw new Exception("loadout");
+            bool loadoutValid = loadout.TryGet(SkillSlot.Normal, out var ns, out var nt) &&
+                ns == SkillNodeId.G1 && nt == TimelineId.TL_G1;
 
             ptf.Position = new SimVec3(0, 0, 0);
             ptf.YawDegrees = 0f;
@@ -447,65 +597,80 @@ namespace Combat.Demos
                 if (player.IsActive) pLoco.RequestMoveIntent(0, 0);
                 world.Tick(dt);
             }
+            var trace = new DemoTrace("SeasonOne", CombatCategories.SeasonOne, world, Step);
+            trace.Step("init", "初始化 Season One 主线与 Loadout", () => DemoTrace.Snapshot(player) + " target=" + DemoTrace.Snapshot(stake));
+            trace.Check("loadout", "Loadout 将 Normal 映射到 G1 Timeline", loadoutValid,
+                "Normal=G1 且 Timeline=TL_G1", "Normal=" + ns + " Timeline=" + nt, () => DemoTrace.Snapshot(player));
 
             // 1. G1 近战应触发 Cue、Fireball、Burn 和伤害飘字。
             input.Push(InputToken.Attack);
-            for (int i = 0; i < 30; i++) Step(0.02f);
-            if (listener.CountId(101) < 1) throw new Exception("blade cue");
-            for (int i = 0; i < 20; i++) Step(0.02f);
-            if (sBuff.StacksOf(CombatIds.Burn) < 1) throw new Exception("fireball burn");
-            if (floaters < 1) throw new Exception("floater");
-            CombatLog.Debug(CombatCategories.SeasonOne, "1 melee+burn stacks=" + sBuff.StacksOf(CombatIds.Burn) + " cues=" + listener.Count);
-            for (int i = 0; i < 15; i++) Step(0.05f);
+            trace.AdvanceUntil("g1-cue", "G1 触发近战 Cue", () => listener.CountId(101) >= 1,
+                0.02f, 30, () => "bladeCue=" + listener.CountId(101) + " " + DemoTrace.Snapshot(player));
+            trace.AdvanceUntil("g1-burn", "G1 Payload 生成 Fireball 并施加 Burn", () => sBuff.StacksOf(CombatIds.Burn) >= 1,
+                0.02f, 30, () => "Burn层数=" + sBuff.StacksOf(CombatIds.Burn) + " " + DemoTrace.Snapshot(stake));
+            trace.Check("g1-result", "G1 同时完成 Cue、Burn 与伤害事件", listener.CountId(101) >= 1 && sBuff.StacksOf(CombatIds.Burn) >= 1 && floaters >= 1,
+                "Cue、Burn 与伤害事件均发生",
+                "bladeCue=" + listener.CountId(101) + " Burn层数=" + sBuff.StacksOf(CombatIds.Burn) + " floaters=" + floaters,
+                () => DemoTrace.Snapshot(stake));
+            trace.AdvanceFor("g1-recover", "推进 G1 完整结束", 0.05f, 15, () => DemoTrace.Snapshot(player));
 
             stf.Position = new SimVec3(0.2f, 0, 0);
 
             // 2. 在 Cancel 窗口接续输入，进入 G2 并把地面 Burn 叠到上限 3 层。
             input.Push(InputToken.Attack);
-            for (int i = 0; i < 7; i++) Step(0.02f);
+            trace.AdvanceUntil("g2-cancel", "再次启动 G1 并进入 Cancel 窗口", () => pDir.IsPlaying && pTags.Has(CommonTags.Cancel),
+                0.02f, 20, () => "skill=" + pDir.CurrentSkill + " cancel=" + pTags.Has(CommonTags.Cancel));
             input.Push(InputToken.Attack);
-            for (int i = 0; i < 50; i++) Step(0.05f);
+            trace.AdvanceUntil("g2-start", "Cancel 接续进入 G2", () => pDir.CurrentSkill == SkillNodeId.G2,
+                0.02f, 3, () => "skill=" + pDir.CurrentSkill + " " + DemoTrace.Snapshot(player));
+            trace.AdvanceFor("g2-aoe", "推进 G2 Ground AoE Pulse", 0.05f, 50,
+                () => "Burn层数=" + sBuff.StacksOf(CombatIds.Burn) + " " + DemoTrace.Snapshot(stake));
             int stacks = sBuff.StacksOf(CombatIds.Burn);
-            CombatLog.Debug(CombatCategories.SeasonOne, "2 ground stacks=" + stacks);
-            if (stacks != 3) throw new Exception("cap 3");
+            trace.Check("g2-result", "G2 Ground AoE 将 Burn 叠到上限", stacks == 3, "Ground AoE Burn层数=3", "Burn层数=" + stacks, () => DemoTrace.Snapshot(stake));
 
             // 3. 受击时停止技能并清空输入缓存，恢复后回到 Root。
             input.Push(InputToken.Attack);
-            Step(0.02f);
+            trace.AdvanceUntil("interrupt-start", "准备可被中断的技能", () => pDir.IsPlaying, 0.02f, 3,
+                () => "skill=" + pDir.CurrentSkill + " " + DemoTrace.Snapshot(player));
             input.Push(InputToken.Attack);
             pFsm.TryEnter(ActivityId.Hit, new ActivityEnterArgs { Reason = "P1Hit", HitDuration = 0.25f });
-            if (pDir.IsPlaying) throw new Exception("hit stop");
-            if (input.HasBuffered) throw new Exception("clear buf");
-            for (int i = 0; i < 8; i++) Step(0.05f);
-            if (pFsm.Current != ActivityId.Root) throw new Exception("recover");
+            trace.Check("interrupt", "受击中断停止技能并清空输入", !pDir.IsPlaying && !input.HasBuffered && pFsm.Current == ActivityId.Hit,
+                "技能停止、输入清空、Activity=Hit", "playing=" + pDir.IsPlaying + " buffered=" + input.HasBuffered + " Activity=" + pFsm.Current,
+                () => DemoTrace.Snapshot(player));
+            trace.AdvanceUntil("interrupt-recover", "受击恢复 Root", () => pFsm.Current == ActivityId.Root, 0.05f, 8,
+                () => DemoTrace.Snapshot(player));
+            trace.Check("interrupt-recover-result", "受击结束后恢复 Root", pFsm.Current == ActivityId.Root, "Activity=Root", "Activity=" + pFsm.Current,
+                () => DemoTrace.Snapshot(player));
 
             world.TryGetActor(world.SpawnActor(new ActorSpawnSpec("stake")), out var dummy);
             dummy.GetComp<TransformComp>().Position = new SimVec3(100, 0, 0);
             float atk = pAttr.GetFinal(AttrId.Atk);
             dummy.GetComp<AttributeSet>().SetBase(AttrId.Hp, 100f);
             // 4. 修改可配置伤害后清缓存，新的 Bake 结果必须生效。
-            world.Deliver(TimelineSO.G1Melee.Bake(), player, dummy, atk);
+            var profile = TimelineSO.G1Melee;
+            var profileDamage = profile.Damage;
+            float oldCoeff = profileDamage.Coeff;
+            trace.Step("bake-init", "准备 Bake 缓存对比", () => "Coeff=" + oldCoeff + " " + DemoTrace.Snapshot(dummy));
+            world.Deliver(profile.Bake(), player, dummy, atk);
             float hpAfter1 = dummy.GetComp<AttributeSet>().GetBase(AttrId.Hp);
-            TimelineSO.G1Melee.Damage.Coeff = 3f;
-            TimelineSO.G1Melee.ClearCache();
+            profileDamage.Coeff = 3f;
+            profile.ClearCache();
             dummy.GetComp<AttributeSet>().SetBase(AttrId.Hp, 100f);
             dummy.GetComp<StateMachineComp>().TryEnter(ActivityId.Root, new ActivityEnterArgs { Reason = "reset" });
-            world.Deliver(TimelineSO.G1Melee.Bake(), player, dummy, atk);
+            world.Deliver(profile.Bake(), player, dummy, atk);
             float hpAfter2 = dummy.GetComp<AttributeSet>().GetBase(AttrId.Hp);
-            CombatLog.Debug(CombatCategories.SeasonOne, "4 bake hp " + hpAfter1 + " vs " + hpAfter2);
-            if (hpAfter2 >= hpAfter1) throw new Exception("ClearCache");
-            TimelineSO.G1Melee.Damage.Coeff = 1f;
-            TimelineSO.G1Melee.ClearCache();
+            trace.Check("bake-result", "清除 Bake 缓存后使用新的伤害系数", hpAfter2 < hpAfter1,
+                "清缓存后新 Coeff 生效", "原配置后HP=" + hpAfter1.ToString("F1") + " 新配置后HP=" + hpAfter2.ToString("F1"),
+                () => DemoTrace.Snapshot(dummy));
 
             // 5. 死亡时清理 Buff、Projectile、AoE，并发布 EvEntityDead。
             input.Push(InputToken.Attack);
-            Step(0.05f);
+            trace.AdvanceFor("cleanup-prepare", "准备玩家的活动 Timeline 与 AoE", 0.05f, 1,
+                () => "skill=" + pDir.CurrentSkill + " " + DemoTrace.Snapshot(player));
             world.Deliver(new IEffect[] { new SpawnAoeEffect(CombatIds.FireGround) }, player, null, atk, ptf.Position);
             pFsm.TryEnter(ActivityId.Dead, new ActivityEnterArgs { Reason = "SeasonOneKill", Killer = stake.Id });
-            Step(0.02f);
-            if (pFsm.Current != ActivityId.Dead) throw new Exception("dead");
-            if (player.GetComp<BuffComp>().Count != 0) throw new Exception("buffs");
-            if (deadEvents < 1) throw new Exception("EvEntityDead");
+            trace.AdvanceFor("death-cleanup", "玩家死亡并清理运行时对象", 0.02f, 1,
+                () => "deadEvents=" + deadEvents + " cleanups=" + cleanups + " " + DemoTrace.Snapshot(player));
             int leftover = 0;
             var all = world.RegistryActive();
             for (int i = 0; i < all.Count; i++)
@@ -514,9 +679,12 @@ namespace Combat.Demos
                 if (all[i].TryGetComp<AoeComp>(out var ao) && ao.OwnerId == player.Id) leftover++;
             }
 
-            if (leftover != 0) throw new Exception("runtime leftover");
-            CombatLog.Debug(CombatCategories.SeasonOne, "5 deadEvents=" + deadEvents + " cleanups=" + cleanups + " bladeCues=" + listener.CountId(101));
-            CombatLog.Info(CombatCategories.SeasonOne, "SeasonOneDemo PASSED");
+            trace.Check("death-result", "玩家死亡时清理 Buff 与 Owner 后代", pFsm.Current == ActivityId.Dead && player.GetComp<BuffComp>().Count == 0 &&
+                deadEvents >= 1 && leftover == 0,
+                "Activity=Dead、Buff=0、EvEntityDead已发布、Owner后代=0",
+                "Activity=" + pFsm.Current + " Buff=" + player.GetComp<BuffComp>().Count + " deadEvents=" + deadEvents + " leftover=" + leftover,
+                () => DemoTrace.Snapshot(player));
+            trace.Complete("G1 主线、G2 AoE、受击中断、Bake 缓存与死亡清理验证完成");
         }
     }
 }
