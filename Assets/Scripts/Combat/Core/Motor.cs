@@ -78,10 +78,10 @@ namespace Combat.Core
         public void RequestSnapYaw()
         {
             if (StickMag(_moveIntent) >= StickDeadzone)
+            {
                 _pendingYaw = YawFromStick(_moveIntent);
-            else
-                _pendingYaw = _tf != null ? _tf.YawDegrees : 0f;
-            _hasSnapYaw = true;
+                _hasSnapYaw = true;
+            }
         }
 
         public void RequestSnapYawDegrees(float yaw)

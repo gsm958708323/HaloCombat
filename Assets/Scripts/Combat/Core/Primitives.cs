@@ -78,6 +78,7 @@ namespace Combat.Core
         public static readonly TagId Stunned = new TagId(1007);
         public static readonly TagId Silence = new TagId(1008);
         public static readonly TagId Invincible = new TagId(1009);
+        public static readonly TagId Downed = new TagId(1010);
     }
 
     public readonly struct SkillNodeId : IEquatable<SkillNodeId>
@@ -85,6 +86,8 @@ namespace Combat.Core
         public static readonly SkillNodeId None = new SkillNodeId(0);
         public static readonly SkillNodeId G1 = new SkillNodeId(101);
         public static readonly SkillNodeId G2 = new SkillNodeId(102);
+        public static readonly SkillNodeId Ranged = new SkillNodeId(201);
+        public static readonly SkillNodeId Dodge = new SkillNodeId(301);
         public readonly int Value;
         public SkillNodeId(int value) => Value = value;
         public bool IsValid => Value != 0;
@@ -101,6 +104,8 @@ namespace Combat.Core
         public static readonly TimelineId None = new TimelineId(0);
         public static readonly TimelineId TL_G1 = new TimelineId(1001);
         public static readonly TimelineId TL_G2 = new TimelineId(1002);
+        public static readonly TimelineId TL_Dodge = new TimelineId(1003);
+        public static readonly TimelineId TL_Homing = new TimelineId(1004);
         public readonly int Value;
         public TimelineId(int value) => Value = value;
         public bool IsValid => Value != 0;

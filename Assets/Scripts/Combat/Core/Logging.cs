@@ -43,6 +43,14 @@ namespace Combat.Core
         public const string MeleeDamage = "MeleeDamage";
         public const string ProjectileAoe = "ProjectileAoe";
         public const string SeasonOne = "SeasonOne";
+        public const string Knockdown = "Knockdown";
+        public const string DodgeHitstop = "DodgeHitstop";
+        public const string AuraHoming = "AuraHoming";
+        public const string BehaviorTree = "BehaviorTree";
+        public const string Perception = "Perception";
+        public const string EnemyAi = "EnemyAi";
+        public const string Summon = "Summon";
+        public const string SeasonTwo = "SeasonTwo";
 
         static readonly string[] All =
         {
@@ -53,7 +61,15 @@ namespace Combat.Core
             ClipPayload,
             MeleeDamage,
             ProjectileAoe,
-            SeasonOne
+            SeasonOne,
+            Knockdown,
+            DodgeHitstop,
+            AuraHoming,
+            BehaviorTree,
+            Perception,
+            EnemyAi,
+            Summon,
+            SeasonTwo
         };
 
         public static bool IsKnown(string category)

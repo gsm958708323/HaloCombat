@@ -7,7 +7,8 @@ namespace Combat.Core
     {
         CancelTag = 1,
         Move = 2,
-        Hitbox = 3
+        Hitbox = 3,
+        IFrame = 4
     }
 
     [Serializable]
@@ -33,7 +34,12 @@ namespace Combat.Core
     [Serializable]
     public sealed class TimelineSO
     {
-        public static readonly HitProfileBake G1Melee = new HitProfileBake();
+        public static readonly HitProfileBake G1Melee = new HitProfileBake
+        {
+            // The baseline G1 bag owns the short melee hitstop. Knockdown is opt-in and
+            // deliberately remains outside the default Season One profile.
+            Damage = new DamageEffect { Coeff = 1f, CanCrit = true, UseSnapshotAtk = true, HitstopFrames = 3 }
+        };
 
         public TimelineId Id;
         public float Duration = 0.55f;
@@ -97,6 +103,39 @@ namespace Combat.Core
                 }
             };
         }
+
+        public static TimelineSO Dodge()
+        {
+            return new TimelineSO
+            {
+                Id = TimelineId.TL_Dodge,
+                Duration = 0.40f,
+                Clips = new[]
+                {
+                    new TimelineClip { Start = 0.00f, End = 0.28f, Kind = ClipKind.Move, MoveX = 1.2f, Steer = 0f },
+                    new TimelineClip { Start = 0.04f, End = 0.22f, Kind = ClipKind.IFrame },
+                    new TimelineClip { Start = 0.24f, End = 0.40f, Kind = ClipKind.CancelTag }
+                },
+                Payloads = Array.Empty<TimelinePayload>()
+            };
+        }
+
+        public static TimelineSO Homing()
+        {
+            return new TimelineSO
+            {
+                Id = TimelineId.TL_Homing,
+                Duration = 0.20f,
+                Payloads = new[]
+                {
+                    new TimelinePayload
+                    {
+                        Time = 0.02f,
+                        Effects = new IEffect[] { new SpawnProjectileEffect(CombatIds.HomingBolt) }
+                    }
+                }
+            };
+        }
     }
 
     public sealed class TimelineLibrary
@@ -138,6 +177,7 @@ namespace Combat.Core
                 case ClipKind.CancelTag: return new CancelTagClipHandler();
                 case ClipKind.Move: return new MoveClipHandler();
                 case ClipKind.Hitbox: return new HitboxClipHandler();
+                case ClipKind.IFrame: return new IFrameClipHandler();
                 default: throw new NotSupportedException(kind.ToString());
             }
         }
@@ -204,6 +244,17 @@ namespace Combat.Core
 
         public void Close(in ClipRuntime rt, bool interrupted)
             => rt.Self.GetComp<HitboxComp>().Close();
+    }
+
+    public sealed class IFrameClipHandler : IClipHandler
+    {
+        public void Open(in ClipRuntime rt)
+            => rt.Self.GetComp<TagComp>().Add(CommonTags.Invincible, 1, TagSource.Effect("Clip.IFrame"));
+
+        public void Tick(in ClipRuntime rt, float dt) { }
+
+        public void Close(in ClipRuntime rt, bool interrupted)
+            => rt.Self.GetComp<TagComp>().Remove(CommonTags.Invincible, 1, TagSource.Effect("Clip.IFrame"));
     }
 
     struct LiveClip
@@ -295,6 +346,9 @@ namespace Combat.Core
             float atk = 0f;
             if (self.TryGetComp<AttributeSet>(out var attr))
                 atk = attr.GetFinal(AttrId.Atk);
+            Actor target = null;
+            if (self.TryGetComp<BehaviorTreeComp>(out var bt) && self.World.TryGetActor(bt.Board.Target, out var selected))
+                target = selected;
             for (int i = 0; i < payloads.Length; i++)
             {
                 if (_payloadFired[i]) continue;
@@ -302,7 +356,7 @@ namespace Combat.Core
                 bool due = (t > prev && t <= _time) || (prev <= 0f && t <= _time && t >= 0f && !_payloadFired[i]);
                 if (!due) continue;
                 _payloadFired[i] = true;
-                self.World.Deliver(payloads[i].Effects, self, null, atk);
+                self.World.Deliver(payloads[i].Effects, self, target, atk);
             }
         }
 

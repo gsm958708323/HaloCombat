@@ -67,14 +67,25 @@
   <ItemGroup>
     <Compile Include="Assets\Scripts\Combat\Demos\HaloCombatDemoCases.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Pipeline.cs" />
+    <Compile Include="Assets\Scripts\Combat\Demos\PerceptionDemo.cs" />
+    <Compile Include="Assets\Scripts\Combat\Demos\AuraHomingDemo.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\CombatComps.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Motor.cs" />
+    <Compile Include="Assets\Scripts\Combat\Demos\SeasonTwoDemo.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\Summons.cs" />
+    <Compile Include="Assets\Scripts\Combat\Demos\SeasonTwoDemoSupport.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\BehaviorTree.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Attributes.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\BehaviorTreeComp.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\Season2Contracts.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Effects.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\PerceptionComp.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Buffs.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Catalog.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Presentation.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\TagsInput.cs" />
+    <Compile Include="Assets\Scripts\Combat\Demos\DodgeHitstopDemo.cs" />
+    <Compile Include="Assets\Scripts\Combat\Demos\KnockdownDemo.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Infrastructure.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\World.cs" />
     <Compile Include="Assets\TutorialInfo\Scripts\Readme.cs" />
@@ -84,10 +95,13 @@
     <Compile Include="Assets\Scripts\Combat\Core\QueryRandom.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Factory.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\RuntimeBodies.cs" />
+    <Compile Include="Assets\Scripts\Combat\Demos\SummonDemo.cs" />
+    <Compile Include="Assets\Scripts\Combat\Demos\BehaviorTreeDemo.cs" />
     <Compile Include="Assets\Scripts\Combat\Unity\UnityLogSink.cs" />
     <Compile Include="Assets\Scripts\Combat\Unity\HaloCombatDemoRunner.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Activity.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Primitives.cs" />
+    <Compile Include="Assets\Scripts\Combat\Demos\EnemyAiDemo.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Events.cs" />
   </ItemGroup>
   <ItemGroup>

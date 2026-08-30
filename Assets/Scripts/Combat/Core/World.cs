@@ -17,9 +17,12 @@ namespace Combat.Core
         readonly AoeService _aoe;
         readonly ProjectileCatalog _projectiles = new ProjectileCatalog();
         readonly AoeCatalog _aoes = new AoeCatalog();
+        readonly SummonCatalog _summons = new SummonCatalog();
         readonly CueLibrary _cues;
         readonly List<Action> _servicePhase = new List<Action>(8);
         int _buffIds;
+        int _hitstopPending;
+        int _hitstopLeft;
 
         public CombatTime Time => _time;
         public IntentQueue Intents => _intents;
@@ -28,6 +31,9 @@ namespace Combat.Core
         public ITargetQuery Query => _query;
         public ProjectileCatalog Projectiles => _projectiles;
         public AoeCatalog Aoes => _aoes;
+        public SummonCatalog Summons => _summons;
+        public int HitstopLeft => _hitstopLeft;
+        public bool InHitstop => _hitstopLeft > 0;
         public CueLibrary Cues => _cues;
 
         public CombatWorld(
@@ -57,6 +63,10 @@ namespace Combat.Core
         public EntityId SpawnActor(in ActorSpawnSpec spec) => _registry.Spawn(spec);
         public bool TryGetActor(EntityId id, out Actor actor) => _registry.TryGet(id, out actor);
         public void RequestDespawn(EntityId id) => _registry.RequestDespawn(id);
+        public void RequestHitstop(int frames)
+        {
+            if (frames > _hitstopPending) _hitstopPending = frames;
+        }
         public List<Actor> RegistryActive() => _registry.CopyActiveActors();
 
         public void AddServicePhase(Action phase)
@@ -102,8 +112,37 @@ namespace Combat.Core
                 }
                 else if (a.TryGetComp<AoeComp>(out var ao) && ao.OwnerId == owner)
                 {
-                    TryGetActor(owner, out var src);
-                    _aoe.DespawnAoe(a, ao, src);
+                    // Occupancy OnExit is attributed to the AoE actor itself; the
+                    // owner is only the lifetime/cleanup relationship.
+                    _aoe.DespawnAoe(a, ao, null);
+                }
+                else if (a.TryGetComp<SummonComp>(out var summon) && summon.OwnerId == owner)
+                {
+                    // A summon may already have emitted projectiles or fields. Clean
+                    // those descendants before removing the summon itself. Do not
+                    // recurse through the summon branch itself.
+                    CleanupRuntimeByOwner(a.Id);
+                    RequestDespawn(a.Id);
+                    a.SetActive(false);
+                }
+            }
+        }
+
+        void CleanupRuntimeByOwner(EntityId owner)
+        {
+            if (!owner.IsValid) return;
+            var actors = _registry.CopyActiveActors();
+            for (int i = 0; i < actors.Count; i++)
+            {
+                var a = actors[i];
+                if (a.TryGetComp<ProjectileComp>(out var p) && p.OwnerId == owner)
+                {
+                    RequestDespawn(a.Id);
+                    a.SetActive(false);
+                }
+                else if (a.TryGetComp<AoeComp>(out var ao) && ao.OwnerId == owner)
+                {
+                    _aoe.DespawnAoe(a, ao, null);
                 }
             }
         }
@@ -111,6 +150,22 @@ namespace Combat.Core
         public void Tick(float dt)
         {
             _time.Advance(dt);
+
+            if (_hitstopLeft > 0)
+            {
+                _hitstopLeft--;
+                _registry.FlushDespawn();
+                return;
+            }
+
+            if (_hitstopPending > 0)
+            {
+                _hitstopLeft = _hitstopPending;
+                _hitstopPending = 0;
+                _hitstopLeft--;
+                _registry.FlushDespawn();
+                return;
+            }
 
             var actors = _registry.CopyActiveActors();
             for (int i = 0; i < actors.Count; i++)

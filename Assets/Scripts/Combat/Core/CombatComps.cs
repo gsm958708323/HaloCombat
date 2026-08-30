@@ -10,7 +10,8 @@ namespace Combat.Core
         Hit = 2,
         Dead = 3,
         Manual = 4,
-        Detach = 5
+        Detach = 5,
+        Knockdown = 6
     }
 
     public enum SkillSlot : byte { Normal = 0, Skill1 = 1, Skill2 = 2 }
@@ -281,7 +282,8 @@ namespace Combat.Core
         public bool Play(SkillNodeId skill, TimelineId timelineId)
         {
             if (_tags != null &&
-                (_tags.Has(CommonTags.Dead) || _tags.Has(CommonTags.Stunned) || _tags.Has(CommonTags.Silence)))
+                (_tags.Has(CommonTags.Dead) || _tags.Has(CommonTags.Stunned) ||
+                 _tags.Has(CommonTags.Downed) || _tags.Has(CommonTags.Silence)))
                 return false;
             if (!_library.TryGet(timelineId, out var so))
                 throw new InvalidOperationException("Missing timeline " + timelineId);
@@ -349,7 +351,7 @@ namespace Combat.Core
 
         public override void Tick(float dt)
         {
-            if (_tags.Has(CommonTags.Dead) || _tags.Has(CommonTags.Stunned))
+            if (_tags.Has(CommonTags.Dead) || _tags.Has(CommonTags.Stunned) || _tags.Has(CommonTags.Downed))
                 return;
 
             if (_input.TryPeek(out var token) && token.Equals(InputToken.Jump))
@@ -360,6 +362,16 @@ namespace Combat.Core
                     _loco.ImpulseJump();
                     return;
                 }
+            }
+
+            if (_input.TryPeek(out token) && token.Equals(Season2Tokens.Dodge))
+            {
+                if (_tags.Has(CommonTags.Silence))
+                    return;
+
+                if (_director.Play(SkillNodeId.Dodge, TimelineId.TL_Dodge))
+                    _input.Consume();
+                return;
             }
 
             if (!_combo.TryResolve(out var resolved))

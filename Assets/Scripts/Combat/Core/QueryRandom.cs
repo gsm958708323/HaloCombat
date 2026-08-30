@@ -77,6 +77,11 @@ namespace Combat.Core
 
         static bool PassesFilter(Actor source, Actor target, int hostileMask)
         {
+            // Runtime bodies are not combatants. They carry a TeamComp only so
+            // spawned projectiles/AoEs can inherit ownership, but must never become
+            // AI or hit-scan targets themselves.
+            if (target.TryGetComp<ProjectileComp>(out _) || target.TryGetComp<AoeComp>(out _))
+                return false;
             if (target.TryGetComp<TagComp>(out var tags) && tags.Has(CommonTags.Dead))
                 return false;
             if (!target.TryGetComp<TeamComp>(out var tt))

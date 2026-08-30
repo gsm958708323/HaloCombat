@@ -70,7 +70,10 @@ namespace Combat.Core
         public void Apply(ref EffectContext ctx)
         {
             if (ctx.Target == null) return;
-            ctx.Target.GetComp<BuffComp>().Dispel(_mode, _key, _tag, _maxCount);
+            int key = _key;
+            if (_mode == DispelMode.BySource && key == 0)
+                key = BuffComp.Pack(ctx.Source);
+            ctx.Target.GetComp<BuffComp>().Dispel(_mode, key, _tag, _maxCount);
         }
     }
 
@@ -99,13 +102,15 @@ namespace Combat.Core
         public readonly SimVec3 Origin;
         public readonly float Yaw;
         public readonly float SnapshotAtk;
-        public SpawnProjectileIntent(EntityId owner, int specId, SimVec3 origin, float yaw, float snapshotAtk)
+        public readonly EntityId Target;
+        public SpawnProjectileIntent(EntityId owner, int specId, SimVec3 origin, float yaw, float snapshotAtk, EntityId target = default)
         {
             Owner = owner;
             SpecId = specId;
             Origin = origin;
             Yaw = yaw;
             SnapshotAtk = snapshotAtk;
+            Target = target;
         }
     }
 
@@ -122,7 +127,8 @@ namespace Combat.Core
             if (atk == 0f && ctx.Source.TryGetComp<AttributeSet>(out var attr))
                 atk = attr.GetFinal(AttrId.Atk);
             ctx.World.Intents.Post(new SpawnProjectileIntent(
-                ctx.Source.Id, _specId, tf.Position, tf.YawDegrees, atk));
+                ctx.Source.Id, _specId, tf.Position, tf.YawDegrees, atk,
+                ctx.Target != null ? ctx.Target.Id : EntityId.Invalid));
         }
     }
 
@@ -206,6 +212,7 @@ namespace Combat.Core
         public bool ScaleByBuffStacks;
         public float CritMul = 2f;
         public bool FireOnHurted = true;
+        public int HitstopFrames;
 
         public void Apply(ref EffectContext ctx)
         {
@@ -271,6 +278,13 @@ namespace Combat.Core
                 source != null ? source.Id : EntityId.Invalid,
                 target.Id, raw + absorb, crit, absorb, kill));
 
+            if (HitstopFrames > 0 && raw + absorb > 0f)
+            {
+                ctx.World.RequestHitstop(HitstopFrames);
+                ctx.World.Events.Publish(new EvHitstop(
+                    source != null ? source.Id : EntityId.Invalid, target.Id, HitstopFrames));
+            }
+
             if (kill && target.TryGetComp<StateMachineComp>(out var fsm))
             {
                 fsm.TryEnter(ActivityId.Dead, new ActivityEnterArgs
@@ -307,7 +321,7 @@ namespace Combat.Core
         {
             if (ctx.Target == null) return;
             if (ctx.Target.TryGetComp<TagComp>(out var tags) &&
-                (tags.Has(CommonTags.SuperArmor) || tags.Has(CommonTags.Dead)))
+                (tags.Has(CommonTags.SuperArmor) || tags.Has(CommonTags.Dead) || tags.Has(CommonTags.Downed)))
                 return;
             ctx.Target.GetComp<StateMachineComp>().TryEnter(ActivityId.Hit, new ActivityEnterArgs
             {
@@ -355,6 +369,26 @@ namespace Combat.Core
             if (ctx.Target == null) return;
             if (ctx.Target.TryGetComp<HealthComp>(out var hp))
                 hp.BeginIFrame(Duration);
+        }
+    }
+
+    public sealed class KnockdownEffect : IEffect
+    {
+        public float Duration = 0.80f;
+
+        public void Apply(ref EffectContext ctx)
+        {
+            if (ctx.Target == null) return;
+            if (ctx.Target.TryGetComp<TagComp>(out var tags) &&
+                (tags.Has(CommonTags.Dead) || tags.Has(CommonTags.SuperArmor)))
+                return;
+            ctx.Target.GetComp<StateMachineComp>().TryEnter(
+                ActivityId.Knockdown,
+                new ActivityEnterArgs
+                {
+                    Reason = "Knockdown",
+                    HitDuration = Duration > 0f ? Duration : 0.80f
+                });
         }
     }
 }

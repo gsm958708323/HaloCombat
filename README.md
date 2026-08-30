@@ -11,6 +11,15 @@ dotnet run -- clip
 dotnet run -- melee
 dotnet run -- proj
 dotnet run -- season
+dotnet run --project Combat.csproj -- knock
+dotnet run --project Combat.csproj -- dodge
+dotnet run --project Combat.csproj -- aura
+dotnet run --project Combat.csproj -- bt
+dotnet run --project Combat.csproj -- perc
+dotnet run --project Combat.csproj -- enemy
+dotnet run --project Combat.csproj -- summon
+dotnet run --project Combat.csproj -- season2
+dotnet run --project Combat.csproj -- regress
 
 默认 `season` = 第一期验收：G1 近战+刀光 Cue+火球灼烧、G2 火地叠 3、受击停轴、Bake 清缓存、死亡清弹圈。
 
@@ -28,9 +37,10 @@ IEffect.Apply(ref EffectContext) + World.Deliver
 
 ## Unity
 
-运行时源码位于 `Assets/Scripts/Combat/Core`。每个总装 Demo 都有一个场景，位于
-`Assets/Scenes/HaloCombat`；场景中的 `HaloCombatDemoRunner` 会在 Play Mode 启动时运行对应
-Demo，并把结果写入 Unity Console。
+运行时源码位于 `Assets/Scripts/Combat/Core`。第一、二季共 16 个 Demo 都有对应 Unity
+验证场景，位于 `Assets/Scenes/HaloCombat`；场景中的 `HaloCombatDemoRunner` 会在 Play Mode
+启动时运行对应 Demo，并把结果写入 Unity Console。第二季场景仍是逻辑验证场景，不包含
+SO、Bake 或可操作表现层关卡。
 
 ## 日志
 
@@ -43,7 +53,8 @@ Demo，并把结果写入 Unity Console。
 不会中断战斗流程。
 
 Demo 使用 `TagInput`、`Attribute`、`Buff`、`ActivityMotor`、`ClipPayload`、`MeleeDamage`、
-`ProjectileAoe` 和 `SeasonOne` 作为 category。`CombatLog.SetCategoryFilter("TagInput")`
+`ProjectileAoe`、`SeasonOne`、`Knockdown`、`DodgeHitstop`、`AuraHoming`、`BehaviorTree`、
+`Perception`、`EnemyAi`、`Summon` 和 `SeasonTwo` 作为 category。`CombatLog.SetCategoryFilter("TagInput")`
 会立即只保留该 category 的日志；传入 `null`、空字符串或 `All` 会恢复全部输出。Unity 中可在
 `HaloCombatDemoRunner` 的 `Category Filter` 下拉框选择筛选条件，Play Mode 修改会立即生效。
 

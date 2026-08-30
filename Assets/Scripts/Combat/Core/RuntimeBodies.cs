@@ -10,6 +10,10 @@ namespace Combat.Core
         public const int FireGround = 801;
         public const int CueFireballHit = 201;
         public const int CueFireGround = 202;
+        public const int AuraSlow = 2;
+        public const int AuraField = 802;
+        public const int HomingBolt = 902;
+        public const int MeleeSummon = 701;
     }
 
     public sealed class ProjectileDefinition
@@ -23,6 +27,10 @@ namespace Combat.Core
         public int HostileMask;
         public int CueId;
         public float SpawnForward = 0.4f;
+        public float HomingRate;
+        public float HomingMaxTurn;
+        public bool HomingRetarget;
+        public float HomingAcquireRadius = 12f;
         public IEffect[] OnHit = Array.Empty<IEffect>();
         public IEffect[] OnExpire = Array.Empty<IEffect>();
     }
@@ -76,8 +84,9 @@ namespace Combat.Core
         public float Age { get; set; }
         public int HitCount { get; set; }
         public bool Exhausted { get; set; }
+        public EntityId HomingTarget { get; set; }
 
-        public void Setup(ProjectileDefinition def, EntityId owner, float snapshotAtk)
+        public void Setup(ProjectileDefinition def, EntityId owner, float snapshotAtk, EntityId homingTarget = default)
         {
             Def = def;
             OwnerId = owner;
@@ -85,6 +94,7 @@ namespace Combat.Core
             Age = 0f;
             HitCount = 0;
             Exhausted = false;
+            HomingTarget = homingTarget;
             _hits.Clear();
         }
 
@@ -193,7 +203,7 @@ namespace Combat.Core
                 float snap = def.SnapshotAtk ? intent.SnapshotAtk : 0f;
                 if (!def.SnapshotAtk && owner != null && owner.TryGetComp<AttributeSet>(out var attr))
                     snap = attr.GetFinal(AttrId.Atk);
-                proj.GetComp<ProjectileComp>().Setup(def, intent.Owner, snap);
+                proj.GetComp<ProjectileComp>().Setup(def, intent.Owner, snap, intent.Target);
             });
         }
 
@@ -206,6 +216,8 @@ namespace Combat.Core
                 if (!a.TryGetComp<ProjectileComp>(out var body) || body.Def == null || body.Exhausted) continue;
                 if (!a.TryGetComp<TransformComp>(out var tf)) continue;
                 var def = body.Def;
+                _world.TryGetActor(body.OwnerId, out var owner);
+                SteerHoming(a, body, tf, dt, owner);
                 var fwd = LocomotionComp.ForwardFromYaw(tf.YawDegrees);
                 tf.Position = new SimVec3(
                     tf.Position.X + fwd.X * def.Speed * dt,
@@ -218,7 +230,6 @@ namespace Combat.Core
                     continue;
                 }
 
-                _world.TryGetActor(body.OwnerId, out var owner);
                 int n = _world.Query.OverlapCircle(tf.Position, def.HitRadius, owner, def.HostileMask, _buffer);
                 for (int k = 0; k < n; k++)
                 {
@@ -237,6 +248,62 @@ namespace Combat.Core
                     }
                 }
             }
+        }
+
+        void SteerHoming(Actor proj, ProjectileComp body, TransformComp tf, float dt, Actor owner)
+        {
+            var def = body.Def;
+            if (def == null || def.HomingRate <= 0f) return;
+            if (!body.HomingTarget.IsValid)
+                body.HomingTarget = AcquireNearest(tf.Position, owner, def);
+            else if (!IsValid(body.HomingTarget))
+            {
+                // A projectile keeps its last heading when the locked target dies.
+                // Optional retargeting is an explicit definition flag.
+                if (!def.HomingRetarget) return;
+                body.HomingTarget = AcquireNearest(tf.Position, owner, def);
+            }
+            if (!IsValid(body.HomingTarget) || !_world.TryGetActor(body.HomingTarget, out var target) ||
+                !target.TryGetComp<TransformComp>(out var targetTf)) return;
+
+            float want = LocomotionComp.YawFromStick(new SimVec3(
+                targetTf.Position.X - tf.Position.X, 0f, targetTf.Position.Z - tf.Position.Z));
+            float delta = NormalizeDeg(want - tf.YawDegrees);
+            float step = def.HomingRate * dt;
+            if (def.HomingMaxTurn > 0f && step > def.HomingMaxTurn) step = def.HomingMaxTurn;
+            if (delta > step) delta = step;
+            else if (delta < -step) delta = -step;
+            tf.YawDegrees += delta;
+        }
+
+        bool IsValid(EntityId id)
+        {
+            if (!_world.TryGetActor(id, out var a) || a == null) return false;
+            return !a.TryGetComp<TagComp>(out var tags) || !tags.Has(CommonTags.Dead);
+        }
+
+        EntityId AcquireNearest(SimVec3 origin, Actor owner, ProjectileDefinition def)
+        {
+            int n = _world.Query.OverlapCircle(origin, def.HomingAcquireRadius, owner, def.HostileMask, _buffer);
+            float best = float.MaxValue;
+            EntityId pick = EntityId.Invalid;
+            for (int i = 0; i < n; i++)
+            {
+                var v = _buffer[i];
+                if (v == null || !v.TryGetComp<TransformComp>(out var tf)) continue;
+                float dx = tf.Position.X - origin.X;
+                float dz = tf.Position.Z - origin.Z;
+                float d2 = dx * dx + dz * dz;
+                if (d2 < best) { best = d2; pick = v.Id; }
+            }
+            return pick;
+        }
+
+        static float NormalizeDeg(float deg)
+        {
+            while (deg > 180f) deg -= 360f;
+            while (deg < -180f) deg += 360f;
+            return deg;
         }
 
         void Expire(Actor proj, ProjectileComp body)
@@ -283,7 +350,7 @@ namespace Combat.Core
 
                 HashSet<long> entered = null;
                 if (def.TrackOccupancy)
-                    entered = DiffOccupancy(body, owner, n, tf.Position);
+                    entered = DiffOccupancy(a, body, owner, n, tf.Position);
 
                 bool doPulse = false;
                 if (def.PulseInterval > 0f && def.OnPulse != null && def.OnPulse.Length > 0)
@@ -307,12 +374,22 @@ namespace Combat.Core
                     }
                 }
 
+                if (def.TrackOccupancy && def.OnStay != null && def.OnStay.Length > 0)
+                {
+                    for (int k = 0; k < n; k++)
+                    {
+                        var target = _buffer[k];
+                        if (target == null || !target.IsActive) continue;
+                        AoePulse.DeliverBag(_world, def.OnStay, a, target, body.SnapshotAtk, tf.Position);
+                    }
+                }
+
                 if (def.Duration > 0f && body.Age >= def.Duration)
                     DespawnAoe(a, body, owner);
             }
         }
 
-        HashSet<long> DiffOccupancy(AoeComp body, Actor owner, int n, SimVec3 point)
+        HashSet<long> DiffOccupancy(Actor aoe, AoeComp body, Actor owner, int n, SimVec3 point)
         {
             var inside = body.Inside;
             if (inside == null) return null;
@@ -327,7 +404,7 @@ namespace Combat.Core
                 if (inside.Add(p))
                 {
                     entered.Add(p);
-                    AoePulse.DeliverBag(_world, body.Def.OnEnter, owner, t, body.SnapshotAtk, point);
+                    AoePulse.DeliverBag(_world, body.Def.OnEnter, aoe, t, body.SnapshotAtk, point);
                 }
             }
 
@@ -340,7 +417,7 @@ namespace Combat.Core
                 inside.Remove(p);
                 var ent = HitboxComp.Unpack(p);
                 if (_world.TryGetActor(ent, out var leaver) && leaver != null)
-                    AoePulse.DeliverBag(_world, body.Def.OnExit, owner, leaver, body.SnapshotAtk, point);
+                    AoePulse.DeliverBag(_world, body.Def.OnExit, aoe, leaver, body.SnapshotAtk, point);
             }
 
             return entered;
@@ -355,7 +432,7 @@ namespace Combat.Core
                 {
                     var ent = HitboxComp.Unpack(p);
                     if (_world.TryGetActor(ent, out var t) && t != null)
-                        AoePulse.DeliverBag(_world, body.Def.OnExit, owner, t, body.SnapshotAtk, tf.Position);
+                        AoePulse.DeliverBag(_world, body.Def.OnExit, aoe, t, body.SnapshotAtk, tf.Position);
                 }
 
                 body.Inside.Clear();

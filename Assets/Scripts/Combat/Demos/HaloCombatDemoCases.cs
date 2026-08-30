@@ -192,7 +192,7 @@ namespace Combat.Demos
             var intents = new IntentQueue();
             var events = new EventBus();
             var world = new CombatWorld(new FighterActorFactory(DemoTables.G1G2(), DemoTables.MakeLib()), intents, events);
-            CombatCatalog.RegisterDefaults(world.Projectiles, world.Aoes, CombatCatalog.Burn());
+            CombatCatalog.RegisterDefaults(world.Projectiles, world.Aoes, CombatCatalog.Burn(), world.Summons);
             int cues = 0;
             events.Subscribe<EvCue>(_ => cues++);
             var id = world.SpawnActor(new ActorSpawnSpec("fighter"));
@@ -254,7 +254,7 @@ namespace Combat.Demos
         {
             var events = new EventBus();
             var world = new CombatWorld(new FighterActorFactory(DemoTables.G1G2(), DemoTables.MakeLib()), new IntentQueue(), events, new CombatTime(), new FixedRandom(0f));
-            CombatCatalog.RegisterDefaults(world.Projectiles, world.Aoes, CombatCatalog.Burn());
+            CombatCatalog.RegisterDefaults(world.Projectiles, world.Aoes, CombatCatalog.Burn(), world.Summons);
             int dmgCount = 0;
             bool lastCrit = false, lastKill = false;
             int immune = 0;
@@ -285,7 +285,10 @@ namespace Combat.Demos
             if (sAttr.GetBase(AttrId.Hp) >= hp0) throw new Exception("hp");
             if (sFsm.Current != ActivityId.Hit) throw new Exception("stun");
             int hits = dmgCount;
-            for (int i = 0; i < 8; i++) Step(0.02f);
+            // The Season Two G1 profile requests three frames of hitstop. Keep the
+            // dedup assertion inside that frozen window so the later fireball payload
+            // is not mistaken for a repeated melee hit.
+            for (int i = 0; i < 2; i++) Step(0.02f);
             if (dmgCount != hits) throw new Exception("dedup");
             for (int i = 0; i < 20; i++) Step(0.02f);
 
@@ -310,8 +313,9 @@ namespace Combat.Demos
 
             // HP 降到 0 时发布击杀伤害并进入 Dead。
             sAttr.SetBase(AttrId.Hp, 1f);
+            lastKill = false;
             input.Push(InputToken.Attack);
-            for (int i = 0; i < 12; i++) Step(0.02f);
+            for (int i = 0; i < 60 && sFsm.Current != ActivityId.Dead; i++) Step(0.02f);
             if (!lastKill || sFsm.Current != ActivityId.Dead) throw new Exception("kill");
 
             world.TryGetActor(world.SpawnActor(new ActorSpawnSpec("stake")), out var stake2);
@@ -335,7 +339,7 @@ namespace Combat.Demos
             var events = new EventBus();
             var world = new CombatWorld(new FighterActorFactory(DemoTables.G1G2(), DemoTables.MakeLib()), new IntentQueue(), events);
             var burn = CombatCatalog.Burn();
-            CombatCatalog.RegisterDefaults(world.Projectiles, world.Aoes, burn);
+            CombatCatalog.RegisterDefaults(world.Projectiles, world.Aoes, burn, world.Summons);
             world.TryGetActor(world.SpawnActor(new ActorSpawnSpec("fighter")), out var player);
             world.TryGetActor(world.SpawnActor(new ActorSpawnSpec("stake")), out var stake);
             player.GetComp<TransformComp>().Position = new SimVec3(0, 0, 0);
@@ -402,7 +406,7 @@ namespace Combat.Demos
             var world = new CombatWorld(new FighterActorFactory(DemoTables.G1G2(), lib), intents, events, time, new FixedRandom(0f), cues);
             var burnBake = new DurationBake(CombatCatalog.Burn());
             var burn = burnBake.Bake();
-            CombatCatalog.RegisterDefaults(world.Projectiles, world.Aoes, burn);
+            CombatCatalog.RegisterDefaults(world.Projectiles, world.Aoes, burn, world.Summons);
 
             int floaters = 0;
             events.Subscribe<EvDamage>(e =>

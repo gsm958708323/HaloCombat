@@ -25,6 +25,19 @@ namespace Combat
                 case "clip": ClipPayloadDemo.Run(); break;
                 case "melee": MeleeDamageDemo.Run(); break;
                 case "proj": ProjectileAoeDemo.Run(); break;
+                case "knock": KnockdownDemo.Run(); break;
+                case "dodge": DodgeHitstopDemo.Run(); break;
+                case "aura": AuraHomingDemo.Run(); break;
+                case "bt": BehaviorTreeDemo.Run(); break;
+                case "perc": PerceptionDemo.Run(); break;
+                case "enemy": EnemyAiDemo.Run(); break;
+                case "summon": SummonDemo.Run(); break;
+                case "season2":
+                case "s2": SeasonTwoDemo.Run(); break;
+                case "regress": SeasonTwoDemo.Regression(); break;
+                case "all":
+                    SeasonTwoDemo.Regression();
+                    break;
                 case "season":
                 default:
                     SeasonOneDemo.Run();
@@ -86,7 +99,7 @@ namespace Combat
             string canonical = CombatCategories.Canonicalize(category);
             if (string.IsNullOrEmpty(canonical))
             {
-                Console.Error.WriteLine("Unknown category '" + category + "'. Use All, TagInput, Attribute, Buff, ActivityMotor, ClipPayload, MeleeDamage, ProjectileAoe, or SeasonOne.");
+                Console.Error.WriteLine("Unknown category '" + category + "'. Use All, TagInput, Attribute, Buff, ActivityMotor, ClipPayload, MeleeDamage, ProjectileAoe, SeasonOne, Knockdown, DodgeHitstop, AuraHoming, BehaviorTree, Perception, EnemyAi, Summon, or SeasonTwo.");
                 return 2;
             }
 

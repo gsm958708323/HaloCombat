@@ -33,7 +33,15 @@ namespace Combat.Unity.Editor
             new SceneSpec("05ClipPayloadDemo.unity", HaloCombatDemoKind.ClipPayload),
             new SceneSpec("06MeleeDamageDemo.unity", HaloCombatDemoKind.MeleeDamage),
             new SceneSpec("07ProjectileAoeDemo.unity", HaloCombatDemoKind.ProjectileAoe),
-            new SceneSpec("08SeasonOneDemo.unity", HaloCombatDemoKind.SeasonOne)
+            new SceneSpec("08SeasonOneDemo.unity", HaloCombatDemoKind.SeasonOne),
+            new SceneSpec("09KnockdownDemo.unity", HaloCombatDemoKind.Knockdown),
+            new SceneSpec("10DodgeHitstopDemo.unity", HaloCombatDemoKind.DodgeHitstop),
+            new SceneSpec("11AuraHomingDemo.unity", HaloCombatDemoKind.AuraHoming),
+            new SceneSpec("12BehaviorTreeDemo.unity", HaloCombatDemoKind.BehaviorTree),
+            new SceneSpec("13PerceptionDemo.unity", HaloCombatDemoKind.Perception),
+            new SceneSpec("14EnemyAiDemo.unity", HaloCombatDemoKind.EnemyAi),
+            new SceneSpec("15SummonDemo.unity", HaloCombatDemoKind.Summon),
+            new SceneSpec("16SeasonTwoDemo.unity", HaloCombatDemoKind.SeasonTwo)
         };
 
         [MenuItem("Tools/HaloCombat/Create Demo Scenes")]

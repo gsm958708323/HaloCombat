@@ -6,7 +6,8 @@ namespace Combat.Core
         Root = 1,
         Attack = 3,
         Hit = 4,
-        Dead = 5
+        Dead = 5,
+        Knockdown = 6
     }
 
     public struct LocoProfile
@@ -192,12 +193,62 @@ namespace Combat.Core
         public bool Tick(in ActivityContext ctx, float dt) => false;
     }
 
+    public sealed class KnockdownActivity : IActivity
+    {
+        float _timer;
+
+        public ActivityId Id => ActivityId.Knockdown;
+        public ActivityMotorPolicy Motor { get; } = new ActivityMotorPolicy
+        {
+            Loco = new LocoProfile
+            {
+                MotorScale = 0f,
+                UseSkill = false,
+                UseHit = true,
+                ApplyGravity = true
+            },
+            Facing = new FacingPolicy { Mode = FacingMode.Lock }
+        };
+
+        public bool CanEnter(ActivityId from) => from != ActivityId.Dead;
+
+        public void Enter(in ActivityContext ctx, in ActivityEnterArgs args)
+            => Apply(ctx, args, false);
+
+        public void Refresh(in ActivityContext ctx, in ActivityEnterArgs args)
+            => Apply(ctx, args, true);
+
+        void Apply(in ActivityContext ctx, in ActivityEnterArgs args, bool refresh)
+        {
+            _timer = args.HitDuration > 0f ? args.HitDuration : 0.80f;
+            ctx.Input?.Clear();
+            ctx.Director?.Stop(DirectorStopReason.Knockdown);
+            ctx.Loco?.ClearClipSteer();
+            ctx.Loco?.ClearPendingSkill();
+            if (!refresh)
+                ctx.Tags.Add(CommonTags.Downed, 1, TagSource.StateEnter("Knockdown"));
+        }
+
+        public void Exit(in ActivityContext ctx, in ActivityEnterArgs toNext)
+        {
+            ctx.Tags.Remove(CommonTags.Downed, 1, TagSource.StateExit("Knockdown"));
+            _timer = 0f;
+        }
+
+        public bool Tick(in ActivityContext ctx, float dt)
+        {
+            _timer -= dt;
+            return _timer <= 0f;
+        }
+    }
+
     public sealed class StateMachineComp : Comp
     {
         readonly RootActivity _root = new RootActivity();
         readonly AttackActivity _attack = new AttackActivity();
         readonly HitActivity _hit = new HitActivity();
         readonly DeadActivity _dead = new DeadActivity();
+        readonly KnockdownActivity _knockdown = new KnockdownActivity();
 
         TagComp _tags;
         SkillDirectorComp _director;
@@ -243,10 +294,20 @@ namespace Combat.Core
                 return true;
             }
 
+            if (_currentId == ActivityId.Knockdown && next == ActivityId.Knockdown)
+            {
+                args.From = ActivityId.Knockdown;
+                _knockdown.Refresh(MakeCtx(), args);
+                return true;
+            }
+
             if (next == _currentId)
                 return true;
 
-            if (_currentId == ActivityId.Hit && next != ActivityId.Dead && next != ActivityId.Root)
+            if (_currentId == ActivityId.Hit && next != ActivityId.Dead && next != ActivityId.Root && next != ActivityId.Knockdown)
+                return false;
+
+            if (_currentId == ActivityId.Knockdown && next != ActivityId.Dead && next != ActivityId.Root)
                 return false;
 
             var target = Get(next);
@@ -283,12 +344,20 @@ namespace Combat.Core
                 case ActivityId.Root: return _root;
                 case ActivityId.Attack: return _attack;
                 case ActivityId.Hit: return _hit;
+                case ActivityId.Knockdown: return _knockdown;
                 case ActivityId.Dead: return _dead;
                 default: return null;
             }
         }
 
         ActivityContext MakeCtx()
-            => new ActivityContext(Self, _tags, _director, _input, _loco);
+        {
+            // Components may be attached in the state-machine-first order used by
+            // enemy/AI blueprints. Resolve optional peers lazily once they exist.
+            if (_director == null) Self.TryGetComp(out _director);
+            if (_input == null) Self.TryGetComp(out _input);
+            if (_loco == null) Self.TryGetComp(out _loco);
+            return new ActivityContext(Self, _tags, _director, _input, _loco);
+        }
     }
 }

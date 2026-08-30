@@ -43,6 +43,25 @@ namespace Combat.Core
         }
     }
 
+    public readonly struct EvHitstop
+    {
+        public readonly EntityId Source;
+        public readonly EntityId Target;
+        public readonly int LogicFrames;
+        public readonly bool FreezeSource;
+        public readonly bool FreezeTarget;
+        public int Frames => LogicFrames;
+
+        public EvHitstop(EntityId source, EntityId target, int logicFrames)
+        {
+            Source = source;
+            Target = target;
+            LogicFrames = logicFrames;
+            FreezeSource = true;
+            FreezeTarget = true;
+        }
+    }
+
     public readonly struct EvHeal
     {
         public readonly EntityId Target;

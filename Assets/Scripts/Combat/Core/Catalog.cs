@@ -54,7 +54,62 @@ namespace Combat.Core
             };
         }
 
-        public static void RegisterDefaults(ProjectileCatalog proj, AoeCatalog aoe, DurationSpec burn)
+        public static DurationSpec AuraSlow()
+        {
+            return new DurationSpec
+            {
+                BuffId = CombatIds.AuraSlow,
+                Duration = 0f,
+                MaxStacks = 1,
+                Stack = StackPolicy.Independent,
+                Modifiers = new[] { new Modifier { Attr = AttrId.MoveSpeed, Op = ModOp.Mul, Value = 0.5f } }
+            };
+        }
+
+        public static AoeDefinition AuraField()
+        {
+            return new AoeDefinition
+            {
+                SpecId = CombatIds.AuraField,
+                Radius = 1.2f,
+                Duration = 8f,
+                PulseInterval = 0f,
+                PulseOnSpawn = false,
+                TrackOccupancy = true,
+                OnEnter = new IEffect[] { new ApplyDurationEffect(AuraSlow()) },
+                OnExit = new IEffect[] { new DispelEffect(DispelMode.BySource) }
+            };
+        }
+
+        public static ProjectileDefinition HomingBolt()
+        {
+            return new ProjectileDefinition
+            {
+                SpecId = CombatIds.HomingBolt,
+                Speed = 8f,
+                Lifetime = 2.5f,
+                HitRadius = 0.35f,
+                MaxHits = 1,
+                SnapshotAtk = true,
+                SpawnForward = 0.2f,
+                HomingRate = 270f,
+                OnHit = new IEffect[] { new DamageEffect { Coeff = 1f, CanCrit = false, UseSnapshotAtk = true } }
+            };
+        }
+
+        public static SummonDefinition MeleeSummon()
+        {
+            return new SummonDefinition
+            {
+                SpecId = CombatIds.MeleeSummon,
+                Lifetime = 0f,
+                FollowRange = 2f,
+                AcquireRadius = 8f,
+                Tree = BtFactory.SummonMelee(SkillNodeId.G1, TimelineId.TL_G1)
+            };
+        }
+
+        public static void RegisterDefaults(ProjectileCatalog proj, AoeCatalog aoe, DurationSpec burn, SummonCatalog summons = null)
         {
             var fb = Fireball();
             fb.OnHit = new IEffect[]
@@ -68,6 +123,10 @@ namespace Combat.Core
             var ground = FireGround();
             ground.OnPulse = new IEffect[] { new ApplyDurationEffect(burn) };
             aoe.Register(ground);
+            aoe.Register(AuraField());
+            proj.Register(HomingBolt());
+            if (summons != null)
+                summons.Register(MeleeSummon());
         }
     }
 
