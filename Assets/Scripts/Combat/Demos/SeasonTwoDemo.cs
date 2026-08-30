@@ -115,7 +115,7 @@ namespace Combat.Demos
             }
 
             var trace = new DemoTrace("SeasonTwo", CombatCategories.SeasonTwo, world, Step);
-            trace.Step("init", "初始化第二季跨系统契约场景", () => DemoTrace.Snapshot(player) + " guard=" + DemoTrace.Snapshot(guard));
+            trace.Step("init", "初始化第二季跨系统契约场景", () => $"{DemoTrace.Snapshot(player)} guard={DemoTrace.Snapshot(guard)}");
 
             Actor FindPet()
             {
@@ -148,7 +148,7 @@ namespace Combat.Demos
             gBoard.Home = gtf.Position;
             pInput.Push(Season2Tokens.Dodge);
             trace.AdvanceUntil("dodge-iframe", "Dodge IFrame 窗口开启", () => pTags.Has(CommonTags.Invincible),
-                0.02f, 8, () => "iframe=" + pTags.Has(CommonTags.Invincible) + " " + DemoTrace.Snapshot(player));
+                0.02f, 8, () => $"iframe={pTags.Has(CommonTags.Invincible)} {DemoTrace.Snapshot(player)}");
 
             int hs0 = hitstops;
             float hpP = pAttr.GetBase(AttrId.Hp);
@@ -167,12 +167,12 @@ namespace Combat.Demos
                 guard, player, 50f);
             trace.Check("dodge-iframe-hit", "IFrame 内受击不扣血且不增加顿帧", pAttr.GetBase(AttrId.Hp) == hpP && dodgeImmuneEvents > immune0 && hitstops == hs0,
                 "HP不变、Immune增加、Hitstop不增加",
-                "HP=" + pAttr.GetBase(AttrId.Hp).ToString("F1") + " Immune=" + immune + " Hitstop=" + hitstops,
+                $"HP={pAttr.GetBase(AttrId.Hp).ToString("F1")} Immune={immune} Hitstop={hitstops}",
                 () => DemoTrace.Snapshot(player));
             trace.AdvanceUntil("dodge-recovery", "Dodge IFrame 结束并恢复 Root", () => pFsm.Current == ActivityId.Root && !pTags.Has(CommonTags.Invincible),
                 0.02f, 25, () => DemoTrace.Snapshot(player));
             trace.Check("dodge-summary", "闪避结束后玩家回到 Root", pFsm.Current == ActivityId.Root,
-                "Activity=Root", "Activity=" + pFsm.Current, () => DemoTrace.Snapshot(player));
+                "Activity=Root", $"Activity={pFsm.Current}", () => DemoTrace.Snapshot(player));
             ptf.Position = new SimVec3(0f, 0f, 0f);
 
             // Projectile Freeze 前置：冻结前先生成并让 Homing 弹进入飞行阶段。
@@ -189,12 +189,12 @@ namespace Combat.Demos
             {
                 bolt = FindBolt();
                 return bolt != null;
-            }, 0.02f, 8, () => "bolt=" + (bolt != null) + " runtime=" + CountOwnedRuntime(player.Id));
-            trace.Check("projectile-spawn-result", "Homing Projectile 成功生成", bolt != null, "Projectile 存在", "bolt=" + (bolt != null),
+            }, 0.02f, 8, () => $"bolt={(bolt != null)} runtime={CountOwnedRuntime(player.Id)}");
+            trace.Check("projectile-spawn-result", "Homing Projectile 成功生成", bolt != null, "Projectile 存在", $"bolt={(bolt != null)}",
                 () => bolt == null ? "无 bolt" : DemoTrace.Snapshot(bolt));
             var boltTf = bolt.GetComp<TransformComp>();
             trace.AdvanceFor("projectile-flight", "冻结前推进 Projectile 飞行", 0.02f, 4,
-                () => "position=" + boltTf.Position.X.ToString("F3") + "," + boltTf.Position.Z.ToString("F3"));
+                () => $"position={boltTf.Position.X.ToString("F3")},{boltTf.Position.Z.ToString("F3")}");
             SimVec3 flew = boltTf.Position;
             stakeMelee.GetComp<TransformComp>().Position = new SimVec3(0.55f, 0f, 0f);
             // 光环测试桩暂时移开，避免 G1 Hitbox 同帧命中两个目标，影响近战断言。
@@ -210,30 +210,30 @@ namespace Combat.Demos
                 meleeHit = lastDmgSrc == player.Id && lastDmgDst == stakeMelee.Id &&
                            meleeDamageEvents > meleeDamage0 && meleeHitstopEvents > hs1;
                 return meleeHit;
-            }, 0.02f, 20, () => "meleeHit=" + meleeHit + " source=" + lastDmgSrc + " target=" + lastDmgDst + " hitstops=" + hitstops + " " + DemoTrace.Snapshot(stakeMelee));
+            }, 0.02f, 20, () => $"meleeHit={meleeHit} source={lastDmgSrc} target={lastDmgDst} hitstops={hitstops} {DemoTrace.Snapshot(stakeMelee)}");
             trace.Check("g1-hitstop-result", "G1 命中事件来源和目标正确", meleeHit,
-                "Source=player、Target=stakeMelee 且 Hitstop 增加", "source=" + lastDmgSrc + " target=" + lastDmgDst + " hitstops=" + hitstops,
+                "Source=player、Target=stakeMelee 且 Hitstop 增加", $"source={lastDmgSrc} target={lastDmgDst} hitstops={hitstops}",
                 () => DemoTrace.Snapshot(stakeMelee));
 
             // Projectile Freeze：命中结算当帧完成；下一 Tick 开始冻结服务，弹的位置保持不变。
             trace.AdvanceFor("projectile-freeze-enter", "进入顿帧服务阶段", 0.02f, 1,
-                () => "frame=" + time.Frame + " InHitstop=" + world.InHitstop + " left=" + world.HitstopLeft + " actorPos=" + ptf.Position.X.ToString("F3") + " projectilePos=" + boltTf.Position.X.ToString("F3"));
+                () => $"frame={time.Frame} InHitstop={world.InHitstop} left={world.HitstopLeft} actorPos={ptf.Position.X.ToString("F3")} projectilePos={boltTf.Position.X.ToString("F3")}");
             trace.Check("projectile-freeze-enter-result", "下一逻辑帧进入顿帧状态", world.InHitstop,
-                "InHitstop=true", "InHitstop=" + world.InHitstop + " left=" + world.HitstopLeft,
+                "InHitstop=true", $"InHitstop={world.InHitstop} left={world.HitstopLeft}",
                 () => DemoTrace.Snapshot(player));
             SimVec3 frozen = boltTf.Position;
             float frozenActorX = ptf.Position.X;
             float frozenActorZ = ptf.Position.Z;
             int freezeFrame = time.Frame;
             trace.AdvanceFor("projectile-freeze-window", "顿帧窗口内冻结 Actor 与 Projectile", 0.02f, 2,
-                () => "frame=" + time.Frame + " InHitstop=" + world.InHitstop + " actorPos=" + ptf.Position.X.ToString("F3") + " projectilePos=" + boltTf.Position.X.ToString("F3"));
+                () => $"frame={time.Frame} InHitstop={world.InHitstop} actorPos={ptf.Position.X.ToString("F3")} projectilePos={boltTf.Position.X.ToString("F3")}");
             trace.Check("projectile-freeze-result", "顿帧期间 Actor 与 Projectile 位置不变", Math.Abs(boltTf.Position.X - frozen.X) <= 1e-4f &&
                 Math.Abs(boltTf.Position.Z - frozen.Z) <= 1e-4f && Math.Abs(ptf.Position.X - frozenActorX) <= 1e-4f &&
                 Math.Abs(ptf.Position.Z - frozenActorZ) <= 1e-4f,
-                "顿帧期间 Actor 与 Projectile 位置保持不变", "冻结前Actor=" + frozenActorX.ToString("F3") + "," + frozenActorZ.ToString("F3") + " 当前Actor=" + ptf.Position.X.ToString("F3") + "," + ptf.Position.Z.ToString("F3") + " 冻结前Projectile=" + frozen.X.ToString("F3") + "," + frozen.Z.ToString("F3") + " 当前Projectile=" + boltTf.Position.X.ToString("F3") + "," + boltTf.Position.Z.ToString("F3") + " freezeFrame=" + freezeFrame + " currentFrame=" + time.Frame,
+                "顿帧期间 Actor 与 Projectile 位置保持不变", $"冻结前Actor={frozenActorX.ToString("F3")},{frozenActorZ.ToString("F3")} 当前Actor={ptf.Position.X.ToString("F3")},{ptf.Position.Z.ToString("F3")} 冻结前Projectile={frozen.X.ToString("F3")},{frozen.Z.ToString("F3")} 当前Projectile={boltTf.Position.X.ToString("F3")},{boltTf.Position.Z.ToString("F3")} freezeFrame={freezeFrame} currentFrame={time.Frame}",
                 () => DemoTrace.Snapshot(bolt));
             stakeAura.GetComp<TransformComp>().Position = new SimVec3(0f, 0f, 0f);
-            trace.Step("projectile-freeze-summary", "记录冻前飞行与冻结后位置", () => "冻前位置=" + flew.X.ToString("F3") + "," + flew.Z.ToString("F3") + " 冻中位置=" + boltTf.Position.X.ToString("F3") + "," + boltTf.Position.Z.ToString("F3"));
+            trace.Step("projectile-freeze-summary", "记录冻前飞行与冻结后位置", () => $"冻前位置={flew.X.ToString("F3")},{flew.Z.ToString("F3")} 冻中位置={boltTf.Position.X.ToString("F3")},{boltTf.Position.Z.ToString("F3")}");
 
             // Homing Recovery：解冻后继续追踪并命中偏置桩。
             int homingDamage0 = homingDamageEvents;
@@ -243,9 +243,9 @@ namespace Combat.Demos
                 homingHit = stakeHoming.GetComp<AttributeSet>().GetBase(AttrId.Hp) < hpH0 - 0.1f &&
                             homingDamageEvents > homingDamage0;
                 return homingHit;
-            }, 0.02f, 80, () => "homingHit=" + homingHit + " targetHp=" + stakeHoming.GetComp<AttributeSet>().GetBase(AttrId.Hp).ToString("F1") + " " + DemoTrace.Snapshot(stakeHoming));
+            }, 0.02f, 80, () => $"homingHit={homingHit} targetHp={stakeHoming.GetComp<AttributeSet>().GetBase(AttrId.Hp).ToString("F1")} {DemoTrace.Snapshot(stakeHoming)}");
             trace.Check("homing-recovery-result", "解冻后 Homing 继续追踪并命中", homingHit,
-                "Homing 目标HP下降", "homingHit=" + homingHit + " targetHp=" + stakeHoming.GetComp<AttributeSet>().GetBase(AttrId.Hp).ToString("F1"),
+                "Homing 目标HP下降", $"homingHit={homingHit} targetHp={stakeHoming.GetComp<AttributeSet>().GetBase(AttrId.Hp).ToString("F1")}",
                 () => DemoTrace.Snapshot(stakeHoming));
 
             // Knockdown Gate：倒地是单独姿态效果；倒地期间 BT 不得继续 Play(G1)。
@@ -259,12 +259,12 @@ namespace Combat.Demos
                 player, guard, 0f);
             trace.Check("knockdown-gate", "Guard 进入 Knockdown 并获得 Downed Tag", guard.GetComp<StateMachineComp>().Current == ActivityId.Knockdown &&
                 guard.GetComp<TagComp>().Has(CommonTags.Downed),
-                "Activity=Knockdown 且 Downed=true", "Activity=" + guard.GetComp<StateMachineComp>().Current + " Downed=" + guard.GetComp<TagComp>().Has(CommonTags.Downed),
+                "Activity=Knockdown 且 Downed=true", $"Activity={guard.GetComp<StateMachineComp>().Current} Downed={guard.GetComp<TagComp>().Has(CommonTags.Downed)}",
                 () => DemoTrace.Snapshot(guard));
             trace.AdvanceFor("knockdown-window", "倒地期间推进并观察 BT 停机", 0.02f, 12,
-                () => "playing=" + gDir.IsPlaying + " skill=" + gDir.CurrentSkill + " " + DemoTrace.Snapshot(guard));
+                () => $"playing={gDir.IsPlaying} skill={gDir.CurrentSkill} {DemoTrace.Snapshot(guard)}");
             trace.Check("knockdown-window-result", "倒地期间行为树不再播放 G1", !gDir.IsPlaying || gDir.CurrentSkill != SkillNodeId.G1,
-                "倒地期间不播放 G1", "playing=" + gDir.IsPlaying + " skill=" + gDir.CurrentSkill,
+                "倒地期间不播放 G1", $"playing={gDir.IsPlaying} skill={gDir.CurrentSkill}",
                 () => DemoTrace.Snapshot(guard));
 
             // Aura Occupancy：进入、离开和速度恢复。
@@ -274,19 +274,19 @@ namespace Combat.Demos
                 new IEffect[] { new SpawnAoeEffect(CombatIds.AuraField) },
                 player, null, 0f, SimVec3.Zero);
             trace.AdvanceFor("aura-occupancy-enter", "Aura 进入目标并施加减速", 0.05f, 1,
-                () => "stacks=" + stakeAura.GetComp<BuffComp>().StacksOf(CombatIds.AuraSlow) + " speed=" + stakeAura.GetComp<AttributeSet>().GetFinal(AttrId.MoveSpeed).ToString("F2"));
+                () => $"stacks={stakeAura.GetComp<BuffComp>().StacksOf(CombatIds.AuraSlow)} speed={stakeAura.GetComp<AttributeSet>().GetFinal(AttrId.MoveSpeed).ToString("F2")}");
             trace.Check("aura-occupancy-enter-result", "Aura 进入目标后施加减速", stakeAura.GetComp<BuffComp>().StacksOf(CombatIds.AuraSlow) >= 1 &&
                 Math.Abs(stakeAura.GetComp<AttributeSet>().GetFinal(AttrId.MoveSpeed) - baseSpd * 0.5f) <= 1e-3f,
-                "AuraSlow>=1 且速度为0.5倍", "stacks=" + stakeAura.GetComp<BuffComp>().StacksOf(CombatIds.AuraSlow) + " speed=" + stakeAura.GetComp<AttributeSet>().GetFinal(AttrId.MoveSpeed).ToString("F2"),
+                "AuraSlow>=1 且速度为0.5倍", $"stacks={stakeAura.GetComp<BuffComp>().StacksOf(CombatIds.AuraSlow)} speed={stakeAura.GetComp<AttributeSet>().GetFinal(AttrId.MoveSpeed).ToString("F2")}",
                 () => DemoTrace.Snapshot(stakeAura));
             stakeAura.GetComp<TransformComp>().Position = new SimVec3(10f, 0f, 0f);
             trace.AdvanceFor("aura-occupancy-exit", "目标离开 Aura 并驱散减速", 0.05f, 1,
-                () => "stacks=" + stakeAura.GetComp<BuffComp>().StacksOf(CombatIds.AuraSlow) + " speed=" + stakeAura.GetComp<AttributeSet>().GetFinal(AttrId.MoveSpeed).ToString("F2"));
+                () => $"stacks={stakeAura.GetComp<BuffComp>().StacksOf(CombatIds.AuraSlow)} speed={stakeAura.GetComp<AttributeSet>().GetFinal(AttrId.MoveSpeed).ToString("F2")}");
             trace.Check("aura-occupancy-exit-result", "Aura 离开目标后清理减速", stakeAura.GetComp<BuffComp>().StacksOf(CombatIds.AuraSlow) == 0 &&
                 Math.Abs(stakeAura.GetComp<AttributeSet>().GetFinal(AttrId.MoveSpeed) - baseSpd) <= 1e-3f,
-                "AuraSlow=0 且速度恢复基础值", "stacks=" + stakeAura.GetComp<BuffComp>().StacksOf(CombatIds.AuraSlow) + " speed=" + stakeAura.GetComp<AttributeSet>().GetFinal(AttrId.MoveSpeed).ToString("F2"),
+                "AuraSlow=0 且速度恢复基础值", $"stacks={stakeAura.GetComp<BuffComp>().StacksOf(CombatIds.AuraSlow)} speed={stakeAura.GetComp<AttributeSet>().GetFinal(AttrId.MoveSpeed).ToString("F2")}",
                 () => DemoTrace.Snapshot(stakeAura));
-            trace.Step("aura-occupancy-summary", "Aura Occupancy 契约完成", () => "owner=" + player.Id + " target=" + stakeAura.Id);
+            trace.Step("aura-occupancy-summary", "Aura Occupancy 契约完成", () => $"owner={player.Id} target={stakeAura.Id}");
 
             // Summon Ownership：召唤宠物通过自己的 BT/Timeline 命中第三桩，Source 必须是宠物。
             stakePet.GetComp<TransformComp>().Position = new SimVec3(1.3f, 0f, 0f);
@@ -298,25 +298,25 @@ namespace Combat.Demos
             {
                 pet = FindPet();
                 return pet != null;
-            }, 0.02f, 5, () => "pet=" + (pet != null) + " runtime=" + CountOwnedRuntime(player.Id));
-            trace.Check("summon-spawn-result", "召唤物成功建立 Owner 关系", pet != null, "召唤物存在", "pet=" + (pet != null),
+            }, 0.02f, 5, () => $"pet={(pet != null)} runtime={CountOwnedRuntime(player.Id)}");
+            trace.Check("summon-spawn-result", "召唤物成功建立 Owner 关系", pet != null, "召唤物存在", $"pet={(pet != null)}",
                 () => pet == null ? "无 pet" : DemoTrace.Snapshot(pet));
             float hpPet0 = stakePet.GetComp<AttributeSet>().GetBase(AttrId.Hp);
             lastDmgSrc = EntityId.Invalid;
             summonId = pet.Id;
             int summonDamage0 = summonDamageEvents;
             trace.AdvanceUntil("summon-attack", "召唤物通过自己的 BT/Timeline 命中目标", () => stakePet.GetComp<AttributeSet>().GetBase(AttrId.Hp) < hpPet0 - 0.1f,
-                0.02f, 90, () => "targetHp=" + stakePet.GetComp<AttributeSet>().GetBase(AttrId.Hp).ToString("F1") + " source=" + lastDmgSrc + " target=" + lastDmgDst + " pet=" + pet.Id);
+                0.02f, 90, () => $"targetHp={stakePet.GetComp<AttributeSet>().GetBase(AttrId.Hp).ToString("F1")} source={lastDmgSrc} target={lastDmgDst} pet={pet.Id}");
             trace.Check("summon-attack-result", "召唤物攻击命中且 Source 为召唤物", stakePet.GetComp<AttributeSet>().GetBase(AttrId.Hp) < hpPet0 &&
                 summonDamageEvents > summonDamage0 && lastDmgSrc == pet.Id && lastDmgDst == stakePet.Id,
-                "目标HP下降且最后伤害 Source=召唤物", "targetHp=" + stakePet.GetComp<AttributeSet>().GetBase(AttrId.Hp).ToString("F1") + " source=" + lastDmgSrc + " pet=" + pet.Id,
-                () => "target=" + stakePet.Id + " " + DemoTrace.Snapshot(pet));
-            trace.Step("summon-ownership-summary", "Summon Ownership 契约完成", () => "owner=" + player.Id + " pet=" + pet.Id);
+                "目标HP下降且最后伤害 Source=召唤物", $"targetHp={stakePet.GetComp<AttributeSet>().GetBase(AttrId.Hp).ToString("F1")} source={lastDmgSrc} pet={pet.Id}",
+                () => $"target={stakePet.Id} {DemoTrace.Snapshot(pet)}");
+            trace.Step("summon-ownership-summary", "Summon Ownership 契约完成", () => $"owner={player.Id} pet={pet.Id}");
 
             // Owner Cleanup：玩家死亡只清理其 Owner 运行时对象；无 Owner 的 guard 必须存活。
             pFsm.TryEnter(ActivityId.Dead, new ActivityEnterArgs { Reason = "S2-7", Killer = guard.Id });
             trace.AdvanceFor("owner-cleanup", "Owner 死亡并清理召唤物、Projectile 与 AoE", 0.02f, 1,
-                () => "pet=" + (FindPet() != null) + " playerRuntime=" + CountOwnedRuntime(player.Id) + " " + DemoTrace.Snapshot(player));
+                () => $"pet={(FindPet() != null)} playerRuntime={CountOwnedRuntime(player.Id)} {DemoTrace.Snapshot(player)}");
 
             int auras = 0;
             var live = world.RegistryActive();
@@ -328,20 +328,18 @@ namespace Combat.Demos
 
             trace.Check("owner-cleanup-result", "Owner 死亡后清理所有后代运行时对象", pFsm.Current == ActivityId.Dead && FindPet() == null && FindBolt() == null &&
                 CountOwnedRuntime(player.Id) == 0 && auras == 0,
-                "玩家 Dead、Pet/Projectile/AoE 均清理", "Activity=" + pFsm.Current + " pet=" + (FindPet() != null) + " playerRuntime=" + CountOwnedRuntime(player.Id) + " auras=" + auras,
+                "玩家 Dead、Pet/Projectile/AoE 均清理", $"Activity={pFsm.Current} pet={(FindPet() != null)} playerRuntime={CountOwnedRuntime(player.Id)} auras={auras}",
                 () => DemoTrace.Snapshot(player));
             trace.Check("ownerless-survival", "无 Owner 的 Guard 继续存活", guard.IsActive && guard.GetComp<StateMachineComp>().Current != ActivityId.Dead,
-                "无 Owner 的 guard 继续存活", "guardActive=" + guard.IsActive + " guardActivity=" + guard.GetComp<StateMachineComp>().Current,
+                "无 Owner 的 guard 继续存活", $"guardActive={guard.IsActive} guardActivity={guard.GetComp<StateMachineComp>().Current}",
                 () => DemoTrace.Snapshot(guard));
 
             trace.Check("g1-baseline", "SeasonTwo 保持 G1 默认 Coeff", Math.Abs(TimelineSO.G1Melee.Damage.Coeff - 1f) <= 1e-4f,
-                "SeasonTwo 不修改 G1 默认 Coeff", "Coeff=" + TimelineSO.G1Melee.Damage.Coeff, () => DemoTrace.Snapshot(player));
+                "SeasonTwo 不修改 G1 默认 Coeff", $"Coeff={TimelineSO.G1Melee.Damage.Coeff}", () => DemoTrace.Snapshot(player));
 
             CombatLog.Info(CombatCategories.SeasonTwo,
-                "[DemoSummary][SeasonTwo] 八个阶段计数 immune=" + immune +
-                " hitstops=" + hitstops +
-                " damages=" + damages);
-            trace.Complete("八个跨系统契约阶段完成 immune=" + immune + " hitstops=" + hitstops + " damages=" + damages);
+                $"[DemoSummary][SeasonTwo] 八个阶段计数 immune={immune} hitstops={hitstops} damages={damages}");
+            trace.Complete($"八个跨系统契约阶段完成 immune={immune} hitstops={hitstops} damages={damages}");
         }
 
         public static void Regression()
@@ -371,7 +369,7 @@ namespace Combat.Demos
 
             for (int i = 0; i < steps.Length; i++)
             {
-                Console.WriteLine("======== REGRESS " + steps[i].name + " ========");
+                Console.WriteLine($"======== REGRESS {steps[i].name} ========");
                 DemoTables.ResetG1MeleeDefaults();
                 steps[i].run();
             }

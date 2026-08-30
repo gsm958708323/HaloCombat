@@ -49,17 +49,13 @@ namespace Combat.Demos
             string status = condition ? "通过" : "失败";
             BeginStep(id, title, status, () =>
             {
-                string text = "期望=" + (expected ?? string.Empty) + " 实际=" + (actual ?? string.Empty);
-                return string.IsNullOrEmpty(extra) ? text : text + " " + extra;
+                string text = $"期望={expected ?? string.Empty} 实际={actual ?? string.Empty}";
+                return string.IsNullOrEmpty(extra) ? text : $"{text} {extra}";
             });
 
             if (!condition)
                 throw new InvalidOperationException(
-                    "Demo " + _caseId + " 步骤 " + id + " 失败：" + title +
-                    "；期望=" + (expected ?? string.Empty) +
-                    "；实际=" + (actual ?? string.Empty) +
-                    "；帧=" + Frame() + "；时间=" + Time() +
-                    "；状态=" + (extra ?? "无"));
+                    $"Demo {_caseId} 步骤 {id} 失败：{title}；期望={expected ?? string.Empty}；实际={actual ?? string.Empty}；帧={Frame()}；时间={Time()}；状态={(extra ?? "无")}");
         }
 
         // 简短断言可省略重复的标题；详细教学断言仍使用带 title 的重载。
@@ -82,9 +78,9 @@ namespace Combat.Demos
 
             BeginStep(id, title, "完成", () =>
             {
-                string text = "推进=" + count + " 帧 dt=" + dt.ToString("F3");
+                string text = $"推进={count} 帧 dt={dt.ToString("F3")}";
                 string extra = details?.Invoke();
-                return string.IsNullOrEmpty(extra) ? text : text + " " + extra;
+                return string.IsNullOrEmpty(extra) ? text : $"{text} {extra}";
             });
         }
 
@@ -111,15 +107,13 @@ namespace Combat.Demos
             string actual = details?.Invoke();
             BeginStep(id, title, reached ? "通过" : "超时", () =>
             {
-                string text = "推进=" + steps + "/" + maxSteps + " 帧 dt=" + dt.ToString("F3");
-                return string.IsNullOrEmpty(actual) ? text : text + " " + actual;
+                string text = $"推进={steps}/{maxSteps} 帧 dt={dt.ToString("F3")}";
+                return string.IsNullOrEmpty(actual) ? text : $"{text} {actual}";
             });
 
             if (!reached)
                 throw new InvalidOperationException(
-                    "Demo " + _caseId + " 步骤 " + id + " 超时：" + title +
-                    "；最大帧数=" + maxSteps + "；帧=" + Frame() + "；时间=" + Time() +
-                    "；状态=" + (actual ?? "无"));
+                    $"Demo {_caseId} 步骤 {id} 超时：{title}；最大帧数={maxSteps}；帧={Frame()}；时间={Time()}；状态={(actual ?? "无")}");
             return true;
         }
 
@@ -127,9 +121,9 @@ namespace Combat.Demos
         {
             if (_completed) return;
             _completed = true;
-            string text = "[DemoComplete][" + _caseId + "] 通过 steps=" + _step;
-            if (!string.IsNullOrEmpty(summary)) text += " " + summary;
-            CombatLog.Info(_category, text + " status=PASSED");
+            string text = $"[DemoComplete][{_caseId}] 通过 steps={_step}";
+            if (!string.IsNullOrEmpty(summary)) text = $"{text} {summary}";
+            CombatLog.Info(_category, $"{text} status=PASSED");
         }
 
         void BeginStep(string id, string title, string status, Func<string> details)
@@ -140,10 +134,9 @@ namespace Combat.Demos
                 throw new ArgumentException("步骤标题不能为空。", nameof(title));
 
             _step++;
-            string text = "[DemoStep][" + _caseId + "][" + id + "] " + title +
-                          " 状态=" + status + " step=" + _step + " frame=" + Frame() + " time=" + Time();
+            string text = $"[DemoStep][{_caseId}][{id}] {title} 状态={status} step={_step} frame={Frame()} time={Time()}";
             string extra = details?.Invoke();
-            if (!string.IsNullOrEmpty(extra)) text += " " + extra;
+            if (!string.IsNullOrEmpty(extra)) text = $"{text} {extra}";
             CombatLog.Info(_category, text);
         }
 
@@ -167,18 +160,15 @@ namespace Combat.Demos
 
             string pos = "-";
             if (actor.TryGetComp<TransformComp>(out var tf))
-                pos = "(" + tf.Position.X.ToString("F2") + "," + tf.Position.Y.ToString("F2") + "," + tf.Position.Z.ToString("F2") + ")";
+                pos = $"({tf.Position.X.ToString("F2")},{tf.Position.Y.ToString("F2")},{tf.Position.Z.ToString("F2")})";
 
             string tags = "";
             if (actor.TryGetComp<TagComp>(out var tagComp))
             {
-                tags = " grounded=" + tagComp.Has(CommonTags.Grounded) +
-                       " cancel=" + tagComp.Has(CommonTags.Cancel) +
-                       " iframe=" + tagComp.Has(CommonTags.Invincible) +
-                       " downed=" + tagComp.Has(CommonTags.Downed);
+                tags = $" grounded={tagComp.Has(CommonTags.Grounded)} cancel={tagComp.Has(CommonTags.Cancel)} iframe={tagComp.Has(CommonTags.Invincible)} downed={tagComp.Has(CommonTags.Downed)}";
             }
 
-            return "actor=" + actor.Id + " active=" + actor.IsActive + " state=" + state + " hp=" + hp + " pos=" + pos + tags;
+            return $"actor={actor.Id} active={actor.IsActive} state={state} hp={hp} pos={pos}{tags}";
         }
     }
 }

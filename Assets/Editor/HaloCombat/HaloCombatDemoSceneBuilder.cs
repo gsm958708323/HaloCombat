@@ -59,14 +59,14 @@ namespace Combat.Unity.Editor
                 runner.Configure(spec.Demo);
 
                 if (!EditorSceneManager.SaveScene(scene, ScenePath(spec)))
-                    throw new InvalidOperationException("Unable to save " + ScenePath(spec));
+                    throw new InvalidOperationException($"Unable to save {ScenePath(spec)}");
                 buildScenes[i] = new EditorBuildSettingsScene(ScenePath(spec), true);
             }
 
             EditorBuildSettings.scenes = buildScenes;
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            Debug.Log("[HaloCombat] Created " + Specs.Length + " demo scenes.");
+            Debug.Log($"[HaloCombat] Created {Specs.Length} demo scenes.");
         }
 
         [MenuItem("Tools/HaloCombat/Verify Demo Scenes")]
@@ -81,21 +81,21 @@ namespace Combat.Unity.Editor
                     FindObjectsSortMode.None);
 
                 if (runners.Length != 1)
-                    throw new InvalidOperationException(ScenePath(spec) + " must contain exactly one HaloCombatDemoRunner.");
+                    throw new InvalidOperationException($"{ScenePath(spec)} must contain exactly one HaloCombatDemoRunner.");
                 if (runners[0].Demo != spec.Demo)
-                    throw new InvalidOperationException(ScenePath(spec) + " selects " + runners[0].Demo + ", expected " + spec.Demo + ".");
+                    throw new InvalidOperationException($"{ScenePath(spec)} selects {runners[0].Demo}, expected {spec.Demo}.");
 
                 runners[0].RunDemo();
                 if (!scene.isLoaded)
-                    throw new InvalidOperationException(ScenePath(spec) + " was not loaded.");
+                    throw new InvalidOperationException($"{ScenePath(spec)} was not loaded.");
             }
 
-            Debug.Log("[HaloCombat] Verified " + Specs.Length + " demo scenes.");
+            Debug.Log($"[HaloCombat] Verified {Specs.Length} demo scenes.");
         }
 
         static string ScenePath(in SceneSpec spec)
         {
-            return SceneRoot + "/" + spec.FileName;
+            return $"{SceneRoot}/{spec.FileName}";
         }
     }
 }

@@ -146,11 +146,11 @@ namespace Combat.Unity
                         throw new ArgumentOutOfRangeException();
                 }
 
-                CombatLog.Info(category, "" + _demo + " PASSED");
+                CombatLog.Info(category, $"{_demo} PASSED");
             }
             catch (Exception exception)
             {
-                CombatLog.Error(category, "" + _demo + " FAILED", exception);
+                CombatLog.Error(category, $"{_demo} FAILED", exception);
                 throw;
             }
         }

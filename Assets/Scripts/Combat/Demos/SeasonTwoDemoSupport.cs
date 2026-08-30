@@ -24,7 +24,7 @@ namespace Combat.Demos
             // Spawn 后立即设置平面坐标，调用方只需关注测试场景布局。
             var id = world.SpawnActor(new ActorSpawnSpec(blueprint));
             if (!world.TryGetActor(id, out var actor) || actor == null)
-                throw new Exception("生成 Actor 失败：blueprint=" + blueprint);
+                throw new Exception($"生成 Actor 失败：blueprint={blueprint}");
             actor.GetComp<TransformComp>().Position = new SimVec3(x, 0f, z);
             return actor;
         }
