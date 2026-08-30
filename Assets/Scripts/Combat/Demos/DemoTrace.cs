@@ -32,13 +32,12 @@ namespace Combat.Demos
             _tick = tick ?? (dt => _world?.Tick(dt));
         }
 
-        public void Step(string id, string title, Func<string> details = null)
+        public void Step(string title, Func<string> details = null)
         {
-            BeginStep(id, title, "进行中", details);
+            BeginStep(title, "进行中", details);
         }
 
         public void Check(
-            string id,
             string title,
             bool condition,
             string expected,
@@ -47,7 +46,7 @@ namespace Combat.Demos
         {
             string extra = details?.Invoke();
             string status = condition ? "通过" : "失败";
-            BeginStep(id, title, status, () =>
+            BeginStep(title, status, () =>
             {
                 string text = $"期望={expected ?? string.Empty} 实际={actual ?? string.Empty}";
                 return string.IsNullOrEmpty(extra) ? text : $"{text} {extra}";
@@ -55,37 +54,31 @@ namespace Combat.Demos
 
             if (!condition)
                 throw new InvalidOperationException(
-                    $"Demo {_caseId} 步骤 {id} 失败：{title}；期望={expected ?? string.Empty}；实际={actual ?? string.Empty}；帧={Frame()}；时间={Time()}；状态={(extra ?? "无")}");
+                    $"Demo {_caseId} 步骤 {_step} 失败：{title}；期望={expected ?? string.Empty}；实际={actual ?? string.Empty}；帧={Frame()}；时间={Time()}；状态={(extra ?? "无")}");
         }
 
-        // 简短断言可省略重复的标题；详细教学断言仍使用带 title 的重载。
-        public void Check(
-            string id,
-            bool condition,
-            string expected,
-            string actual,
-            Func<string> details = null)
-        {
-            Check(id, id, condition, expected, actual, details);
-        }
-
-        public void AdvanceFor(string id, string title, float dt, int count, Func<string> details = null)
+        /// <summary>
+        /// 明确要观察一段固定时间后的状态
+        /// </summary>
+        public void AdvanceFor(string title, float dt, int count, Func<string> details = null)
         {
             if (count < 0) count = 0;
             if (dt < 0f) dt = 0f;
             for (int i = 0; i < count; i++)
                 _tick(dt);
 
-            BeginStep(id, title, "完成", () =>
+            BeginStep(title, "完成", () =>
             {
-                string text = $"推进={count} 帧 dt={dt.ToString("F3")}";
+                string text = $"推进={count} 帧 dt={dt:F3}";
                 string extra = details?.Invoke();
                 return string.IsNullOrEmpty(extra) ? text : $"{text} {extra}";
             });
         }
 
+        /// <summary>
+        /// 明确要等待某个事件/状态出现，但不能无限等
+        /// </summary>
         public bool AdvanceUntil(
-            string id,
             string title,
             Func<bool> condition,
             float dt,
@@ -105,7 +98,7 @@ namespace Combat.Demos
 
             bool reached = condition();
             string actual = details?.Invoke();
-            BeginStep(id, title, reached ? "通过" : "超时", () =>
+            BeginStep(title, reached ? "通过" : "超时", () =>
             {
                 string text = $"推进={steps}/{maxSteps} 帧 dt={dt.ToString("F3")}";
                 return string.IsNullOrEmpty(actual) ? text : $"{text} {actual}";
@@ -113,7 +106,7 @@ namespace Combat.Demos
 
             if (!reached)
                 throw new InvalidOperationException(
-                    $"Demo {_caseId} 步骤 {id} 超时：{title}；最大帧数={maxSteps}；帧={Frame()}；时间={Time()}；状态={(actual ?? "无")}");
+                    $"Demo {_caseId} 步骤 {_step} 超时：{title}；最大帧数={maxSteps}；帧={Frame()}；时间={Time()}；状态={(actual ?? "无")}");
             return true;
         }
 
@@ -126,15 +119,13 @@ namespace Combat.Demos
             CombatLog.Info(_category, $"{text} status=PASSED");
         }
 
-        void BeginStep(string id, string title, string status, Func<string> details)
+        void BeginStep(string title, string status, Func<string> details)
         {
-            if (string.IsNullOrWhiteSpace(id))
-                throw new ArgumentException("步骤 ID 不能为空。", nameof(id));
             if (string.IsNullOrWhiteSpace(title))
                 throw new ArgumentException("步骤标题不能为空。", nameof(title));
 
             _step++;
-            string text = $"[DemoStep][{_caseId}][{id}] {title} 状态={status} step={_step} frame={Frame()} time={Time()}";
+            string text = $"[DemoStep][{_caseId}][step={_step}] {title} 状态={status} frame={Frame()} time={Time()}";
             string extra = details?.Invoke();
             if (!string.IsNullOrEmpty(extra)) text = $"{text} {extra}";
             CombatLog.Info(_category, text);
