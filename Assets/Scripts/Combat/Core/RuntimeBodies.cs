@@ -3,19 +3,6 @@ using System.Collections.Generic;
 
 namespace Combat.Core
 {
-    public static class CombatIds
-    {
-        public const int Burn = 1;
-        public const int Fireball = 901;
-        public const int FireGround = 801;
-        public const int CueFireballHit = 201;
-        public const int CueFireGround = 202;
-        public const int AuraSlow = 2;
-        public const int AuraField = 802;
-        public const int HomingBolt = 902;
-        public const int MeleeSummon = 701;
-    }
-
     public sealed class ProjectileDefinition
     {
         public int SpecId;

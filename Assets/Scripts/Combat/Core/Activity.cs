@@ -287,17 +287,17 @@ namespace Combat.Core
             if (_currentId == ActivityId.Dead)
                 return false;
 
-            if (_currentId == ActivityId.Hit && next == ActivityId.Hit)
-            {
-                args.From = ActivityId.Hit;
-                _hit.Refresh(MakeCtx(), args);
-                return true;
-            }
-
             if (_currentId == ActivityId.Knockdown && next == ActivityId.Knockdown)
             {
                 args.From = ActivityId.Knockdown;
                 _knockdown.Refresh(MakeCtx(), args);
+                return true;
+            }
+
+            if (_currentId == ActivityId.Hit && next == ActivityId.Hit)
+            {
+                args.From = ActivityId.Hit;
+                _hit.Refresh(MakeCtx(), args);
                 return true;
             }
 
@@ -350,14 +350,6 @@ namespace Combat.Core
             }
         }
 
-        ActivityContext MakeCtx()
-        {
-            // Components may be attached in the state-machine-first order used by
-            // enemy/AI blueprints. Resolve optional peers lazily once they exist.
-            if (_director == null) Self.TryGetComp(out _director);
-            if (_input == null) Self.TryGetComp(out _input);
-            if (_loco == null) Self.TryGetComp(out _loco);
-            return new ActivityContext(Self, _tags, _director, _input, _loco);
-        }
+        ActivityContext MakeCtx() => new ActivityContext(Self, _tags, _director, _input, _loco);
     }
 }

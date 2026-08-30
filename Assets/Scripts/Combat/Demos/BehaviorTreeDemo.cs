@@ -7,22 +7,43 @@ namespace Combat.Demos
         public static void Run()
         {
             var events = new EventBus();
-            int aiHits = 0;
+            int aiHits = 0, immune = 0;
             events.Subscribe<EvDamage>(e => { if (e.Source.IsValid) aiHits++; });
+            events.Subscribe<EvImmune>(_ => immune++);
             var world = SeasonTwoDemoSupport.NewWorld(events);
             var enemy = SeasonTwoDemoSupport.Spawn(world, "melee_ai", 2.5f, 0f);
             var stake = SeasonTwoDemoSupport.Spawn(world, "fighter", 0f, 0f);
             var secondEnemy = SeasonTwoDemoSupport.Spawn(world, "melee_ai_narrow", 4f, 0f);
             var enemyBt = enemy.GetComp<BehaviorTreeComp>();
+            var enemyDirector = enemy.GetComp<SkillDirectorComp>();
             SeasonTwoDemoSupport.Assert(enemyBt.Board.Target.IsValid == false, "bt target starts empty");
             SeasonTwoDemoSupport.Assert(!enemy.TryGetComp<InputBufferComp>(out _) && !enemy.TryGetComp<ComboComp>(out _), "ai has no player input path");
             SeasonTwoDemoSupport.Assert(!ReferenceEquals(enemyBt.Board, secondEnemy.GetComp<BehaviorTreeComp>().Board), "tree board cloned per actor");
-            for (int i = 0; i < 90; i++) SeasonTwoDemoSupport.Step(world, 0.02f);
+            bool sawG1 = false;
+            for (int i = 0; i < 90; i++)
+            {
+                SeasonTwoDemoSupport.Step(world, 0.02f);
+                if (enemyDirector.CurrentSkill == SkillNodeId.G1)
+                    sawG1 = true;
+            }
+            SeasonTwoDemoSupport.Assert(sawG1, "bt plays G1");
             SeasonTwoDemoSupport.Assert(stake.GetComp<AttributeSet>().GetBase(AttrId.Hp) < 100f && aiHits > 0, "bt play skill");
             enemy.GetComp<StateMachineComp>().TryEnter(ActivityId.Knockdown, new ActivityEnterArgs { Reason = "DemoDown" });
+            SeasonTwoDemoSupport.Assert(enemy.GetComp<StateMachineComp>().Current == ActivityId.Knockdown &&
+                !enemyDirector.IsPlaying, "downed stops active bt skill");
             float hp = stake.GetComp<AttributeSet>().GetBase(AttrId.Hp);
             for (int i = 0; i < 20; i++) SeasonTwoDemoSupport.Step(world, 0.02f);
             SeasonTwoDemoSupport.Assert(stake.GetComp<AttributeSet>().GetBase(AttrId.Hp) == hp, "downed stops bt");
+
+            for (int i = 0; i < 25; i++) SeasonTwoDemoSupport.Step(world, 0.02f);
+            var playerTags = stake.GetComp<TagComp>();
+            stake.GetComp<InputBufferComp>().Push(Season2Tokens.Dodge);
+            SeasonTwoDemoSupport.Step(world, 0.06f);
+            SeasonTwoDemoSupport.Assert(playerTags.Has(CommonTags.Invincible), "bt pipeline iframe");
+            float hpI = stake.GetComp<AttributeSet>().GetBase(AttrId.Hp);
+            world.Deliver(TimelineSO.G1Melee.Bake(), enemy, stake, 10f);
+            SeasonTwoDemoSupport.Assert(stake.GetComp<AttributeSet>().GetBase(AttrId.Hp) == hpI && immune > 0,
+                "bt damage uses central iframe pipeline");
             CombatLog.Info(CombatCategories.BehaviorTree, "BehaviorTreeDemo PASSED");
         }
     }

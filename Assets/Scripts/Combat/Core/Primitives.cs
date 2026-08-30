@@ -133,4 +133,26 @@ namespace Combat.Core
         public static bool operator !=(InputToken a, InputToken b) => !a.Equals(b);
         public override string ToString() => Action;
     }
+
+    public static class Season2Tokens
+    {
+        public static readonly InputToken Dodge = new InputToken("Dodge");
+    }
+    public static class Season2Contracts
+    {
+        public const bool AiMayStopDirector = false;
+        public const bool CloneTreePerActor = true;
+        public static void EnsureAiMustNotStopDirector()
+        {
+            if (AiMayStopDirector) throw new InvalidOperationException("AI must not Director.Stop");
+        }
+    }
+    public static class CombatIds
+    {
+        public const int Burn = 1, AuraSlow = 2;
+        public const int Fireball = 901, HomingBolt = 902;
+        public const int FireGround = 801, AuraField = 802;
+        public const int MeleeSummon = 701;
+        public const int CueFireballHit = 201, CueFireGround = 202;
+    }
 }

@@ -1,3 +1,4 @@
+using System;
 using Combat.Core;
 
 namespace Combat.Demos
@@ -17,6 +18,8 @@ namespace Combat.Demos
             var input = attacker.GetComp<InputBufferComp>();
             var director = attacker.GetComp<SkillDirectorComp>();
             var targetAttr = target.GetComp<AttributeSet>();
+            var fsm = attacker.GetComp<StateMachineComp>();
+            float x0 = attacker.GetComp<TransformComp>().Position.X;
             input.Push(Season2Tokens.Dodge);
             SeasonTwoDemoSupport.Step(world, 0.06f);
             SeasonTwoDemoSupport.Assert(director.CurrentSkill == SkillNodeId.Dodge, "dodge starts");
@@ -27,11 +30,65 @@ namespace Combat.Demos
             SeasonTwoDemoSupport.Assert(immune > 0 && hitstops == 0, "iframe events");
             SeasonTwoDemoSupport.Assert(targetAttr.GetBase(AttrId.Hp) == 100f, "dodge does not damage source");
             for (int i = 0; i < 25; i++) SeasonTwoDemoSupport.Step(world, 0.02f);
-            SeasonTwoDemoSupport.Assert(!attacker.GetComp<TagComp>().Has(CommonTags.Invincible), "dodge iframe closes");
+            float dx = attacker.GetComp<TransformComp>().Position.X - x0;
+            SeasonTwoDemoSupport.Assert(!attacker.GetComp<TagComp>().Has(CommonTags.Invincible) &&
+                fsm.Current == ActivityId.Root && dx >= 1f && dx <= 1.4f, "dodge iframe closes and moves");
+
+            // Downed is an activity gate: a buffered Dodge must not start until
+            // the posture has recovered.
+            world.Deliver(new IEffect[] { new KnockdownEffect { Duration = 0.4f } }, target, attacker, 0f);
+            input.Push(Season2Tokens.Dodge);
+            SeasonTwoDemoSupport.Step(world, 0.02f);
+            SeasonTwoDemoSupport.Assert(fsm.Current == ActivityId.Knockdown &&
+                director.CurrentSkill != SkillNodeId.Dodge, "downed blocks dodge");
+            input.Clear();
+            for (int i = 0; i < 12; i++) SeasonTwoDemoSupport.Step(world, 0.05f);
+            SeasonTwoDemoSupport.Assert(fsm.Current == ActivityId.Root, "downed recovery before melee");
+
+            // The normal melee timeline remains the source of hitstop. Settlement
+            // happens before the next frame's freeze, so the attacker must stop
+            // moving while the projectile/AI services are paused.
+            attacker.GetComp<TransformComp>().Position = new SimVec3(0f, 0f, 0f);
+            target.GetComp<TransformComp>().Position = new SimVec3(0.55f, 0f, 0f);
+            SeasonTwoDemoSupport.Assert(fsm.Current == ActivityId.Root && !input.HasBuffered &&
+                !attacker.GetComp<TagComp>().Has(CommonTags.Downed) && !attacker.GetComp<TagComp>().Has(CommonTags.Stunned),
+                "melee setup");
+            input.Push(InputToken.Attack);
+            int damageBeforeMelee = damage;
+            int hitstopBeforeMelee = hitstops;
+            bool meleeHit = false;
+            for (int i = 0; i < 20; i++)
+            {
+                SeasonTwoDemoSupport.Step(world, 0.02f);
+                if (damage > damageBeforeMelee && hitstops > hitstopBeforeMelee)
+                {
+                    meleeHit = true;
+                    break;
+                }
+            }
+            SeasonTwoDemoSupport.Assert(meleeHit, "melee hitstop (damage=" + damage + ", hitstops=" + hitstops +
+                ", targetHp=" + target.GetComp<AttributeSet>().GetBase(AttrId.Hp) + ", attackerState=" + fsm.Current + ")");
+            float frozenX = attacker.GetComp<TransformComp>().Position.X;
+            SeasonTwoDemoSupport.Step(world, 0.02f);
+            SeasonTwoDemoSupport.Assert(world.InHitstop, "freeze starts next tick");
+            for (int i = 0; i < 2; i++)
+            {
+                SeasonTwoDemoSupport.Step(world, 0.02f);
+                SeasonTwoDemoSupport.Assert(Math.Abs(attacker.GetComp<TransformComp>().Position.X - frozenX) < 1e-4f,
+                    "hitstop freezes attacker");
+            }
+            for (int i = 0; i < 5; i++) SeasonTwoDemoSupport.Step(world, 0.02f);
+
+            int damageBeforeDefault = damage;
+            int hitstopBeforeDefault = hitstops;
             world.Deliver(new IEffect[] { new DamageEffect() }, target, attacker, 10f);
-            SeasonTwoDemoSupport.Assert(damage == 1 && hitstops == 0, "default damage no hitstop");
+            SeasonTwoDemoSupport.Assert(damage == damageBeforeDefault + 1 && hitstops == hitstopBeforeDefault,
+                "default damage no hitstop");
+            int damageBeforeExplicit = damage;
+            int hitstopBeforeExplicit = hitstops;
             world.Deliver(new IEffect[] { new DamageEffect { HitstopFrames = 3 } }, target, attacker, 10f);
-            SeasonTwoDemoSupport.Assert(damage == 2 && hitstops == 1, "explicit hitstop");
+            SeasonTwoDemoSupport.Assert(damage == damageBeforeExplicit + 1 && hitstops == hitstopBeforeExplicit + 1,
+                "explicit hitstop");
             for (int i = 0; i < 5; i++) SeasonTwoDemoSupport.Step(world, 0.02f);
 
             var projectile = SeasonTwoDemoSupport.Spawn(world, "fighter", -10f, 0f);

@@ -77,7 +77,6 @@
     <Compile Include="Assets\Scripts\Combat\Core\BehaviorTree.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Attributes.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\BehaviorTreeComp.cs" />
-    <Compile Include="Assets\Scripts\Combat\Core\Season2Contracts.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Effects.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\PerceptionComp.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Buffs.cs" />
