@@ -10,8 +10,10 @@ namespace Combat.Demos
     {
         public static void Run()
         {
+            // 先恢复 G1 的基线配置，保证本用例不受其它 Demo 修改过的可配置数据影响。
             DemoTables.ResetG1MeleeDefaults();
 
+            // 第二季把闪避、顿帧、AI、光环和召唤物放进同一个 CombatWorld 做交点验证。
             var time = new CombatTime();
             var events = new EventBus();
             var world = new CombatWorld(
@@ -20,6 +22,7 @@ namespace Combat.Demos
             CombatCatalog.RegisterDefaults(
                 world.Projectiles, world.Aoes, CombatCatalog.Burn(), world.Summons);
 
+            // 事件计数用来验证结算顺序和来源，而不是只检查最终位置或 HP。
             int immune = 0, hitstops = 0, damages = 0;
             EntityId lastDmgSrc = EntityId.Invalid;
             EntityId lastDmgDst = EntityId.Invalid;
@@ -32,6 +35,7 @@ namespace Combat.Demos
                 lastDmgDst = e.Target;
             });
 
+            // 准备玩家、守卫和四个相互隔离的目标桩，分别用于近战、追踪弹、光环和宠物。
             world.TryGetActor(world.SpawnActor(new ActorSpawnSpec("fighter")), out var player);
             world.TryGetActor(world.SpawnActor(new ActorSpawnSpec("melee_guard")), out var guard);
             world.TryGetActor(world.SpawnActor(new ActorSpawnSpec("stake")), out var stakeMelee);
@@ -62,6 +66,7 @@ namespace Combat.Demos
 
             void Step(float dt)
             {
+                // 测试只推进逻辑时间；玩家没有额外移动意图，位置变化来自技能或运动系统。
                 if (player.IsActive)
                     pLoco.RequestMoveIntent(0f, 0f);
                 world.Tick(dt);
@@ -93,8 +98,7 @@ namespace Combat.Demos
             }
 
             // A. 闪避窗内受击只发布 Immune，不得触发顿帧。
-            // Keep the later guard interaction out of the dodge/hitstop timing window.
-            // It is restored to the documented home before the knockdown assertion.
+            // 暂时把守卫移出场景，避免它干扰闪避和后续顿帧的时序；后面会恢复出生点。
             gtf.Position = new SimVec3(20f, 0f, 0f);
             gBoard.Home = gtf.Position;
             pInput.Push(Season2Tokens.Dodge);
@@ -133,9 +137,8 @@ namespace Combat.Demos
 
             // C 前置：冻结前先生成并让 Homing 弹进入飞行阶段。
             float hpH0 = stakeHoming.GetComp<AttributeSet>().GetBase(AttrId.Hp);
-            // The projectile service resolves collisions after its first move. Move
-            // the near fixtures out of that first sweep so the pre-freeze flight is
-            // observable; restore the documented layout before G1/Aura assertions.
+            // 投射物服务会在生成后的首次移动中做碰撞检测，因此先移开近处目标，
+            // 让“冻结前已经飞行”可观察；验证近战和光环前再恢复目标布局。
             stakeMelee.GetComp<TransformComp>().Position = new SimVec3(20f, 0f, 0f);
             stakeAura.GetComp<TransformComp>().Position = new SimVec3(20f, 0f, 0f);
             world.Deliver(
@@ -157,8 +160,7 @@ namespace Combat.Demos
                 Step(0.02f);
             SimVec3 flew = boltTf.Position;
             stakeMelee.GetComp<TransformComp>().Position = new SimVec3(0.55f, 0f, 0f);
-            // Keep the aura fixture out of the G1 hitbox so the melee assertion
-            // observes the intended target rather than a second same-frame hit.
+            // 光环测试桩暂时移开，避免 G1 Hitbox 同帧命中两个目标，影响近战断言。
             stakeAura.GetComp<TransformComp>().Position = new SimVec3(20f, 0f, 0f);
 
             // B. G1 命中近桩必须保留默认三帧顿帧，且不把倒地焊入默认袋。
@@ -319,6 +321,7 @@ namespace Combat.Demos
 
         public static void Regression()
         {
+            // 回归入口逐个运行全部 Demo，并在每次运行前恢复共享的 G1 默认配置。
             Season2Contracts.EnsureAiMustNotStopDirector();
 
             var steps = new (string name, Action run)[]

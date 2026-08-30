@@ -2,18 +2,20 @@ using Combat.Core;
 
 namespace Combat.Demos
 {
+    // 倒地用例：验证 Knockdown 姿态的优先级、计时刷新、输入门控和死亡终态。
     public static class KnockdownDemo
     {
         public static void Run()
         {
+            // 先使用纯 stake 目标验证姿态规则，再使用 fighter 验证技能和输入清理。
             var world = SeasonTwoDemoSupport.NewWorld();
             var attacker = SeasonTwoDemoSupport.Spawn(world, "fighter", 0f, 0f);
             var target = SeasonTwoDemoSupport.Spawn(world, "stake", 0.6f, 0f);
             var targetFsm = target.GetComp<StateMachineComp>();
             var targetTags = target.GetComp<TagComp>();
 
-            // A target enters the real Knockdown activity, blocks attacks, and
-            // refreshes its timer without accumulating Downed stacks.
+            // 目标进入真实 Knockdown Activity，阻止攻击；重复施加只刷新计时器，
+            // 不会重复累加 Downed Tag。
             world.Deliver(new IEffect[] { new KnockdownEffect { Duration = 0.5f } }, attacker, target, 10f);
             SeasonTwoDemoSupport.Assert(targetFsm.Current == ActivityId.Knockdown && targetTags.Has(CommonTags.Downed), "knockdown enter");
             SeasonTwoDemoSupport.Assert(!targetFsm.TryEnter(ActivityId.Attack, new ActivityEnterArgs { Reason = "DownedAttack" }), "downed blocks attack");
@@ -25,15 +27,13 @@ namespace Combat.Demos
             for (int i = 0; i < 20; i++) SeasonTwoDemoSupport.Step(world, 0.05f);
             SeasonTwoDemoSupport.Assert(targetFsm.Current == ActivityId.Root && !targetTags.Has(CommonTags.Downed), "knockdown recover");
 
-            // A Hit activity can be covered by Knockdown, and the tag remains
-            // singular while the posture owns the actor.
+            // Knockdown 可以覆盖已有的 Hit 姿态；倒地期间只由 Downed 姿态持有状态 Tag。
             world.Deliver(new IEffect[] { new HitStunEffect { Duration = 1f } }, attacker, target, 10f);
             world.Deliver(new IEffect[] { new KnockdownEffect { Duration = 0.4f } }, attacker, target, 10f);
             SeasonTwoDemoSupport.Assert(targetFsm.Current == ActivityId.Knockdown && !targetTags.Has(CommonTags.Stunned), "knockdown covers hit");
             for (int i = 0; i < 16; i++) SeasonTwoDemoSupport.Step(world, 0.05f);
 
-            // Knockdown on a player clears pending input and stops an active
-            // timeline; Dead remains the terminal override.
+            // 玩家倒地时清空待处理输入并停止活动 Timeline；随后 Dead 仍然拥有最高优先级。
             var fsm = attacker.GetComp<StateMachineComp>();
             var tags = attacker.GetComp<TagComp>();
             var input = attacker.GetComp<InputBufferComp>();

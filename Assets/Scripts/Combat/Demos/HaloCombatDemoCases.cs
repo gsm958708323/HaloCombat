@@ -3,11 +3,12 @@ using Combat.Core;
 
 namespace Combat.Demos
 {
-    // 验证特性：Tag 增删，以及输入缓冲在有效窗口内可读、超时后自动失效。
+    // 基础输入用例：验证 Tag 的计数语义，以及输入缓冲的有效时间窗口。
     public static class TagInputDemo
     {
         public static void Run()
         {
+            // 每个基础用例都创建独立世界，避免前一个用例的状态污染当前验证。
             var world = NewWorld();
             var id = world.SpawnActor(new ActorSpawnSpec("fighter"));
             world.TryGetActor(id, out var actor);
@@ -33,11 +34,12 @@ namespace Combat.Demos
             => new CombatWorld(new FighterActorFactory(DemoTables.G1G2(), DemoTables.MakeLib()));
     }
 
-    // 验证特性：属性 Add/Mul/Override 计算、按来源移除 Modifier，以及 HP 上限钳制。
+    // 属性用例：验证 Add/Mul/Override 的计算顺序、Modifier 来源清理和 HP 上限钳制。
     public static class AttributeDemo
     {
         public static void Run()
         {
+            // 使用 stake 作为纯属性载体，不引入输入、连招等玩家行为组件。
             var world = new CombatWorld(new FighterActorFactory(DemoTables.G1G2(), DemoTables.MakeLib()));
             var id = world.SpawnActor(new ActorSpawnSpec("stake"));
             world.TryGetActor(id, out var actor);
@@ -66,11 +68,12 @@ namespace Combat.Demos
         }
     }
 
-    // 验证特性：Buff 堆叠上限、周期触发、互斥组，以及驱散后的 Modifier/Tag 清理。
+    // Buff 用例：验证叠层、周期事件、互斥组，以及驱散时附带状态的完整清理。
     public static class BuffDemo
     {
         public static void Run()
         {
+            // 下面的三个 DurationSpec 分别代表可叠层 Burn、互斥的 Wet 和 Ignite。
             var world = new CombatWorld(new FighterActorFactory(DemoTables.G1G2(), DemoTables.MakeLib()));
             var id = world.SpawnActor(new ActorSpawnSpec("stake"));
             world.TryGetActor(id, out var actor);
@@ -135,11 +138,12 @@ namespace Combat.Demos
         }
     }
 
-    // 验证特性：地面移动、跳跃、空中攻击、重力落地、受击恢复，以及死亡状态不可逆。
+    // 活动与运动用例：验证移动、跳跃、重力、受击恢复和 Dead 状态的终止语义。
     public static class ActivityMotorDemo
     {
         public static void Run()
         {
+            // Activity 决定当前 Actor 可以使用哪种运动策略，Locomotion 负责实际积分位置。
             var lib = DemoTables.MakeLib();
             var world = new CombatWorld(new FighterActorFactory(DemoTables.G1G2(), lib));
             var id = world.SpawnActor(new ActorSpawnSpec("fighter"));
@@ -184,11 +188,12 @@ namespace Combat.Demos
         }
     }
 
-    // 验证特性：Timeline Clip 时间窗、Payload 定时触发、取消窗口、Hitbox、连招和受击中断清理。
+    // Timeline 用例：验证 Clip 时间窗、Payload 定时触发、连招取消和受击中断清理。
     public static class ClipPayloadDemo
     {
         public static void Run()
         {
+            // 监听 Cue 事件，确认 Timeline 的表现层 Payload 确实被触发。
             var intents = new IntentQueue();
             var events = new EventBus();
             var world = new CombatWorld(new FighterActorFactory(DemoTables.G1G2(), DemoTables.MakeLib()), intents, events);
@@ -285,9 +290,8 @@ namespace Combat.Demos
             if (sAttr.GetBase(AttrId.Hp) >= hp0) throw new Exception("hp");
             if (sFsm.Current != ActivityId.Hit) throw new Exception("stun");
             int hits = dmgCount;
-            // The Season Two G1 profile requests three frames of hitstop. Keep the
-            // dedup assertion inside that frozen window so the later fireball payload
-            // is not mistaken for a repeated melee hit.
+            // 第二季 G1 配置要求三帧顿帧；在冻结窗口附近检查去重，避免后续 Fireball
+            // Payload 的伤害被误认为近战 Hitbox 重复命中。
             for (int i = 0; i < 2; i++) Step(0.02f);
             if (dmgCount != hits) throw new Exception("dedup");
             for (int i = 0; i < 20; i++) Step(0.02f);
@@ -331,11 +335,12 @@ namespace Combat.Demos
         }
     }
 
-    // 验证特性：投射物命中、AoE 周期脉冲、Burn 叠层，以及拥有者死亡时的运行时清理。
+    // 远程与范围用例：验证投射物命中、AoE 周期脉冲、Burn 叠层和拥有者死亡清理。
     public static class ProjectileAoeDemo
     {
         public static void Run()
         {
+            // 同时注册投射物、AoE 和 Burn，覆盖技能 Payload 到运行时对象的完整链路。
             var events = new EventBus();
             var world = new CombatWorld(new FighterActorFactory(DemoTables.G1G2(), DemoTables.MakeLib()), new IntentQueue(), events);
             var burn = CombatCatalog.Burn();
@@ -391,11 +396,12 @@ namespace Combat.Demos
         }
     }
 
-    // 验证特性：把输入、连招、Timeline、Cue、伤害、Burn、受击中断、Bake 缓存和死亡清理串成完整流程。
+    // 第一季集成用例：把输入、连招、Timeline、Cue、伤害、Buff、Bake 缓存和死亡清理串起来。
     public static class SeasonOneDemo
     {
         public static void Run()
         {
+            // 该用例故意使用真实的事件监听器，模拟表现层消费 Cue 和伤害事件。
             var time = new CombatTime();
             var intents = new IntentQueue();
             var events = new EventBus();
