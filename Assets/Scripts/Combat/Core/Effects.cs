@@ -153,7 +153,7 @@ namespace Combat.Core
             if (snap == 0f && ctx.Source != null && ctx.Source.TryGetComp<AttributeSet>(out var attr))
                 snap = attr.GetFinal(AttrId.Atk);
 
-            var id = ctx.World.SpawnActor(new ActorSpawnSpec("aoe"));
+            var id = ctx.World.SpawnActor(new ActorSpawnSpec("aoe"), publishSpawn: false);
             if (!ctx.World.TryGetActor(id, out var aoe) || aoe == null) return;
 
             aoe.GetComp<TransformComp>().Position = origin;
@@ -169,6 +169,8 @@ namespace Combat.Core
 
             if (def.PulseOnSpawn)
                 AoePulse.PulseNow(ctx.World, aoe, body);
+
+            ctx.World.PublishSpawn(id, "aoe");
         }
 
         public static void CopyTeam(Actor owner, Actor spawned)

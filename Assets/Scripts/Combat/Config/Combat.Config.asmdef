@@ -1,0 +1,14 @@
+{
+  "name": "Combat.Config",
+  "rootNamespace": "Combat.Config",
+  "references": ["Combat.Core"],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

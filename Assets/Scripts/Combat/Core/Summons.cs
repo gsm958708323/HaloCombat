@@ -67,7 +67,7 @@ namespace Combat.Core
         {
             if (ctx.World == null || ctx.Source == null) return;
             if (!ctx.World.Summons.TryGet(_specId, out var def)) throw new InvalidOperationException("Unknown summon " + _specId);
-            var id = ctx.World.SpawnActor(new ActorSpawnSpec("summon"));
+            var id = ctx.World.SpawnActor(new ActorSpawnSpec("summon"), publishSpawn: false);
             if (!ctx.World.TryGetActor(id, out var pet) || pet == null) return;
             SimVec3 origin;
             if (ctx.HasPoint) origin = ctx.Point;
@@ -82,6 +82,7 @@ namespace Combat.Core
             SpawnAoeEffect.CopyTeam(ctx.Source, pet);
             pet.GetComp<SummonComp>().Setup(ctx.Source.Id, def);
             if (def.OnSpawn != null && def.OnSpawn.Length > 0) ctx.World.Deliver(def.OnSpawn, ctx.Source, pet, ctx.SnapshotAtk);
+            ctx.World.PublishSpawn(id, "summon");
         }
     }
 }

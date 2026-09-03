@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b736701361a88546a2fa7ee6587d207, type: 3}
+  m_Name: TL_G1
+  m_EditorClassIdentifier: 
+  TimelineIdValue: 1001
+  Duration: 0.55
+  Clips:
+  - Start: 0.12
+    End: 0.4
+    Kind: 1
+    MoveX: 0
+    MoveY: 0
+    MoveZ: 0
+    Steer: 0
+    HitRadius: 0
+    HitOffsetX: 0
+    HitOffsetY: 0
+    HitOffsetZ: 0
+    HitProfile: {fileID: 0}
+  - Start: 0.08
+    End: 0.28
+    Kind: 2
+    MoveX: 0.6
+    MoveY: 0
+    MoveZ: 0
+    Steer: 0
+    HitRadius: 0
+    HitOffsetX: 0
+    HitOffsetY: 0
+    HitOffsetZ: 0
+    HitProfile: {fileID: 0}
+  - Start: 0.18
+    End: 0.3
+    Kind: 3
+    MoveX: 0
+    MoveY: 0
+    MoveZ: 0
+    Steer: 0
+    HitRadius: 0.8
+    HitOffsetX: 0
+    HitOffsetY: 0
+    HitOffsetZ: 0
+    HitProfile: {fileID: 11400000, guid: 906a89af8088d8244a37161a7e35f649, type: 2}
+  Payloads:
+  - Time: 0.18
+    Effects:
+    - {fileID: 11400000, guid: 4e0792fdf7cd52b478a2dcc7fe63034b, type: 2}
+  - Time: 0.22
+    Effects:
+    - {fileID: 11400000, guid: 218850732b9641442965e92a54da0b89, type: 2}

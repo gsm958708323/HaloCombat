@@ -65,44 +65,7 @@
     <Analyzer Include="D:\Work\UnityInstall\6000.0.32f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Scripts\Combat\Demos\HaloCombatDemoCases.cs" />
-    <Compile Include="Assets\Scripts\Combat\Core\Pipeline.cs" />
-    <Compile Include="Assets\Scripts\Combat\Demos\PerceptionDemo.cs" />
-    <Compile Include="Assets\Scripts\Combat\Demos\AuraHomingDemo.cs" />
-    <Compile Include="Assets\Scripts\Combat\Core\CombatComps.cs" />
-    <Compile Include="Assets\Scripts\Combat\Core\Motor.cs" />
-    <Compile Include="Assets\Scripts\Combat\Demos\DemoTrace.cs" />
-    <Compile Include="Assets\Scripts\Combat\Demos\SeasonTwoDemo.cs" />
-    <Compile Include="Assets\Scripts\Combat\Core\Summons.cs" />
-    <Compile Include="Assets\Scripts\Combat\Demos\SeasonTwoDemoSupport.cs" />
-    <Compile Include="Assets\Scripts\Combat\Core\BehaviorTree.cs" />
-    <Compile Include="Assets\Scripts\Combat\Core\Attributes.cs" />
-    <Compile Include="Assets\Scripts\Combat\Core\BehaviorTreeComp.cs" />
-    <Compile Include="Assets\Scripts\Combat\Core\Effects.cs" />
-    <Compile Include="Assets\Scripts\Combat\Core\PerceptionComp.cs" />
-    <Compile Include="Assets\Scripts\Combat\Core\Buffs.cs" />
-    <Compile Include="Assets\Scripts\Combat\Core\Catalog.cs" />
-    <Compile Include="Assets\Scripts\Combat\Core\Presentation.cs" />
-    <Compile Include="Assets\Scripts\Combat\Core\TagsInput.cs" />
-    <Compile Include="Assets\Scripts\Combat\Demos\DodgeHitstopDemo.cs" />
-    <Compile Include="Assets\Scripts\Combat\Demos\KnockdownDemo.cs" />
-    <Compile Include="Assets\Scripts\Combat\Core\Infrastructure.cs" />
-    <Compile Include="Assets\Scripts\Combat\Core\World.cs" />
     <Compile Include="Assets\TutorialInfo\Scripts\Readme.cs" />
-    <Compile Include="Assets\Scripts\Combat\Core\Timeline.cs" />
-    <Compile Include="Assets\Scripts\Combat\Core\ActorModel.cs" />
-    <Compile Include="Assets\Scripts\Combat\Core\Logging.cs" />
-    <Compile Include="Assets\Scripts\Combat\Core\QueryRandom.cs" />
-    <Compile Include="Assets\Scripts\Combat\Core\Factory.cs" />
-    <Compile Include="Assets\Scripts\Combat\Core\RuntimeBodies.cs" />
-    <Compile Include="Assets\Scripts\Combat\Demos\SummonDemo.cs" />
-    <Compile Include="Assets\Scripts\Combat\Demos\BehaviorTreeDemo.cs" />
-    <Compile Include="Assets\Scripts\Combat\Unity\UnityLogSink.cs" />
-    <Compile Include="Assets\Scripts\Combat\Unity\HaloCombatDemoRunner.cs" />
-    <Compile Include="Assets\Scripts\Combat\Core\Activity.cs" />
-    <Compile Include="Assets\Scripts\Combat\Core\Primitives.cs" />
-    <Compile Include="Assets\Scripts\Combat\Demos\EnemyAiDemo.cs" />
-    <Compile Include="Assets\Scripts\Combat\Core\Events.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">
@@ -1213,10 +1176,6 @@
       <HintPath>Library\ScriptAssemblies\Unity.TextMeshPro.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Unity.VisualScripting.SettingsProvider.Editor">
-      <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.SettingsProvider.Editor.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="Unity.VisualScripting.State.Editor">
       <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.State.Editor.dll</HintPath>
       <Private>False</Private>
@@ -1227,6 +1186,10 @@
     </Reference>
     <Reference Include="Unity.Mathematics">
       <HintPath>Library\ScriptAssemblies\Unity.Mathematics.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.VisualScripting.SettingsProvider.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.SettingsProvider.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.RenderPipelines.Core.Editor">
@@ -1283,6 +1246,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="Combat.Core.csproj" />
+    <ProjectReference Include="Combat.Presentation.csproj" />
+    <ProjectReference Include="Combat.Demos.csproj" />
+    <ProjectReference Include="Combat.Unity.csproj" />
+    <ProjectReference Include="Combat.Config.csproj" />
   </ItemGroup>
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
   <ItemGroup>

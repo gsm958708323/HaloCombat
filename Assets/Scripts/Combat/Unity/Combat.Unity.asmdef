@@ -1,0 +1,14 @@
+{
+  "name": "Combat.Unity",
+  "rootNamespace": "Combat.Unity",
+  "references": ["Combat.Core", "Combat.Presentation", "Combat.Config", "Combat.Demos"],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

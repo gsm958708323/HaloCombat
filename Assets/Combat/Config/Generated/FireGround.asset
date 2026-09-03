@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a166572b6688ae4798cd47a55b7f8b7, type: 3}
+  m_Name: FireGround
+  m_EditorClassIdentifier: 
+  SpecId: 801
+  Radius: 1.3
+  Duration: 2
+  PulseInterval: 0.45
+  PulseOnSpawn: 1
+  TrackOccupancy: 0
+  HostileMask: 0
+  CueId: 202
+  OnPulse:
+  - {fileID: 11400000, guid: 61b94cc09aef46f4ab6d554a4930d488, type: 2}
+  OnEnter: []
+  OnExit: []
+  OnStay: []

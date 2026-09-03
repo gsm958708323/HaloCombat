@@ -1,0 +1,14 @@
+{
+  "name": "Combat.Demos",
+  "rootNamespace": "Combat.Demos",
+  "references": ["Combat.Core", "Combat.Presentation"],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}

@@ -15,10 +15,11 @@ namespace Combat.Core
         readonly HitDetectService _hitDetect;
         readonly ProjectileService _projectilesSvc;
         readonly AoeService _aoe;
-        readonly ProjectileCatalog _projectiles = new ProjectileCatalog();
-        readonly AoeCatalog _aoes = new AoeCatalog();
-        readonly SummonCatalog _summons = new SummonCatalog();
-        readonly CueLibrary _cues;
+        ProjectileCatalog _projectiles = new ProjectileCatalog();
+        AoeCatalog _aoes = new AoeCatalog();
+        SummonCatalog _summons = new SummonCatalog();
+        CueLibrary _cues;
+        MotorConfig _motor;
         readonly List<Action> _servicePhase = new List<Action>(8);
         int _buffIds;
         int _hitstopPending;
@@ -35,6 +36,7 @@ namespace Combat.Core
         public int HitstopLeft => _hitstopLeft;
         public bool InHitstop => _hitstopLeft > 0;
         public CueLibrary Cues => _cues;
+        public MotorConfig Motor => _motor;
 
         public CombatWorld(
             IActorFactory actorFactory,
@@ -42,7 +44,8 @@ namespace Combat.Core
             EventBus events = null,
             CombatTime time = null,
             IRandom random = null,
-            CueLibrary cues = null)
+            CueLibrary cues = null,
+            MotorConfig? motor = null)
         {
             _time = time ?? new CombatTime();
             _intents = intents ?? new IntentQueue();
@@ -50,6 +53,7 @@ namespace Combat.Core
             _pipeline = new EffectPipeline();
             _random = random ?? new SeededRandom(1);
             _cues = cues ?? CueLibrary.DefaultCombat();
+            _motor = motor ?? MotorConfig.SeasonOneDefaults();
             _query = new SimpleTargetQuery();
             _query.Bind(this);
             _registry = new EntityRegistry(actorFactory ?? throw new ArgumentNullException(nameof(actorFactory)), this);
@@ -60,7 +64,39 @@ namespace Combat.Core
 
         public int NextBuffInstanceId() => ++_buffIds;
 
-        public EntityId SpawnActor(in ActorSpawnSpec spec) => _registry.Spawn(spec);
+        public void ReplaceCatalogs(ProjectileCatalog projectiles, AoeCatalog aoes, SummonCatalog summons)
+        {
+            if (projectiles != null) _projectiles = projectiles;
+            if (aoes != null) _aoes = aoes;
+            if (summons != null) _summons = summons;
+        }
+
+        public void ReplaceCues(CueLibrary cues)
+        {
+            if (cues != null) _cues = cues;
+        }
+
+        public EntityId SpawnActor(in ActorSpawnSpec spec, bool publishSpawn = true)
+        {
+            var id = _registry.Spawn(spec);
+            if (publishSpawn)
+                PublishSpawn(id, spec.BlueprintId);
+            return id;
+        }
+
+        public void PublishSpawn(EntityId id, string blueprintId)
+        {
+            if (!TryGetActor(id, out var actor) || actor == null)
+                return;
+            var owner = EntityId.Invalid;
+            if (actor.TryGetComp<ProjectileComp>(out var projectile) && projectile.OwnerId.IsValid)
+                owner = projectile.OwnerId;
+            else if (actor.TryGetComp<AoeComp>(out var aoe) && aoe.OwnerId.IsValid)
+                owner = aoe.OwnerId;
+            else if (actor.TryGetComp<SummonComp>(out var summon) && summon.OwnerId.IsValid)
+                owner = summon.OwnerId;
+            _events.Publish(new EvEntitySpawn(id, blueprintId, owner));
+        }
         public bool TryGetActor(EntityId id, out Actor actor) => _registry.TryGet(id, out actor);
         public void RequestDespawn(EntityId id) => _registry.RequestDespawn(id);
         public void RequestHitstop(int frames)

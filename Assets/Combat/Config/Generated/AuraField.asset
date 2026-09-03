@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a166572b6688ae4798cd47a55b7f8b7, type: 3}
+  m_Name: AuraField
+  m_EditorClassIdentifier: 
+  SpecId: 802
+  Radius: 1.2
+  Duration: 8
+  PulseInterval: 0
+  PulseOnSpawn: 0
+  TrackOccupancy: 1
+  HostileMask: 0
+  CueId: 0
+  OnPulse: []
+  OnEnter:
+  - {fileID: 11400000, guid: 37cda928f3b12f94785eb9dfd5708e67, type: 2}
+  OnExit:
+  - {fileID: 11400000, guid: f1562d6bae10f47419a0cef2a27586e1, type: 2}
+  OnStay: []

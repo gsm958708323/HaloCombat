@@ -4,6 +4,7 @@ namespace Combat.Core
 {
     public sealed class FighterActorFactory : IActorFactory
     {
+        readonly BakedCombatData _data;
         readonly ComboTableSO _combos;
         readonly TimelineLibrary _timelines;
 
@@ -11,6 +12,23 @@ namespace Combat.Core
         {
             _combos = combos ?? new ComboTableSO();
             _timelines = timelines ?? new TimelineLibrary();
+            _data = new BakedCombatData
+            {
+                Combo = _combos,
+                Timelines = _timelines,
+                Projectiles = new ProjectileCatalog(),
+                Aoes = new AoeCatalog(),
+                Summons = new SummonCatalog(),
+                Cues = CueLibrary.DefaultCombat(),
+                Motor = MotorConfig.SeasonOneDefaults()
+            };
+        }
+
+        public FighterActorFactory(BakedCombatData data)
+        {
+            _data = data ?? throw new ArgumentNullException(nameof(data));
+            _combos = data.Combo ?? new ComboTableSO();
+            _timelines = data.Timelines ?? new TimelineLibrary();
         }
 
         public Actor Create(in ActorSpawnSpec spec)

@@ -10,12 +10,6 @@ namespace Combat.Core
 
     public sealed class LocomotionComp : Comp
     {
-        public const float Gravity = -20f;
-        public const float JumpSpeed = 6f;
-        public const float AirSteer = 0.35f;
-        public const float GroundY = 0f;
-        public const float StickDeadzone = 0.25f;
-
         public override bool WantsTick => false;
 
         TransformComp _tf;
@@ -32,6 +26,11 @@ namespace Combat.Core
         float _clipSteer;
         float _verticalVel;
         bool _grounded = true;
+        float _gravity;
+        float _jumpSpeed;
+        float _airSteer;
+        float _groundY;
+        float _stickDeadzone;
 
         public float Yaw => _tf != null ? _tf.YawDegrees : 0f;
         public bool IsGrounded => _grounded;
@@ -40,11 +39,17 @@ namespace Combat.Core
 
         protected override void OnAttach()
         {
+            var motor = Self.World != null ? Self.World.Motor : MotorConfig.SeasonOneDefaults();
+            _gravity = motor.Gravity;
+            _jumpSpeed = motor.JumpSpeed;
+            _airSteer = motor.AirSteer;
+            _groundY = motor.GroundY;
+            _stickDeadzone = motor.StickDeadzone;
             _tf = Self.GetComp<TransformComp>();
             _fsm = Self.GetComp<StateMachineComp>();
             _tags = Self.GetComp<TagComp>();
             Self.TryGetComp(out _attr);
-            _grounded = _tf.Position.Y <= GroundY + 1e-4f;
+            _grounded = _tf.Position.Y <= _groundY + 1e-4f;
             WriteGroundTags(_grounded);
         }
 
@@ -77,7 +82,7 @@ namespace Combat.Core
 
         public void RequestSnapYaw()
         {
-            if (StickMag(_moveIntent) >= StickDeadzone)
+            if (StickMag(_moveIntent) >= _stickDeadzone)
             {
                 _pendingYaw = YawFromStick(_moveIntent);
                 _hasSnapYaw = true;
@@ -96,7 +101,7 @@ namespace Combat.Core
         public void ImpulseJump()
         {
             if (!_grounded) return;
-            _verticalVel = JumpSpeed;
+            _verticalVel = _jumpSpeed;
             _grounded = false;
             WriteGroundTags(false);
         }
@@ -168,7 +173,7 @@ namespace Combat.Core
         {
             if (_grounded)
                 return _clipSteer > 0f ? _clipSteer : loco.MotorScale;
-            return AirSteer;
+            return _airSteer;
         }
 
         SimVec3 HorizontalMotor(float dt, float scale)
@@ -186,21 +191,21 @@ namespace Combat.Core
             if (_grounded)
             {
                 _verticalVel = 0f;
-                if (_tf.Position.Y > GroundY)
+                if (_tf.Position.Y > _groundY)
                 {
                     _grounded = false;
                     WriteGroundTags(false);
                 }
                 else
-                    return GroundY - _tf.Position.Y;
+                    return _groundY - _tf.Position.Y;
             }
 
-            _verticalVel += Gravity * dt;
+            _verticalVel += _gravity * dt;
             float dy = _verticalVel * dt;
             float nextY = _tf.Position.Y + dy;
-            if (nextY <= GroundY)
+            if (nextY <= _groundY)
             {
-                dy = GroundY - _tf.Position.Y;
+                dy = _groundY - _tf.Position.Y;
                 _verticalVel = 0f;
                 _grounded = true;
                 WriteGroundTags(true);
@@ -211,7 +216,7 @@ namespace Combat.Core
 
         void ApplyFacing(in FacingPolicy facing)
         {
-            bool stick = StickMag(_moveIntent) >= StickDeadzone;
+            bool stick = StickMag(_moveIntent) >= _stickDeadzone;
             float want = stick ? YawFromStick(_moveIntent) : _tf.YawDegrees;
             switch (facing.Mode)
             {

@@ -365,6 +365,8 @@ namespace Combat.Demos
                 ("enemy", EnemyAiDemo.Run),
                 ("summon", SummonDemo.Run),
                 ("season2", SeasonTwoDemo.Run),
+                ("clock", ClockDemo.Run),
+                ("spawn", SpawnEventDemo.Run),
             };
 
             for (int i = 0; i < steps.Length; i++)

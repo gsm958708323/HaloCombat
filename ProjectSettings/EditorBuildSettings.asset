@@ -53,6 +53,18 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/HaloCombat/16SeasonTwoDemo.unity
     guid: 8df6e4fc19379b5e0a4c550a5bfd2867
+  - enabled: 1
+    path: Assets/Scenes/HaloCombat/V1Motor.unity
+    guid: b79949b527db09f4191a247b39167638
+  - enabled: 1
+    path: Assets/Scenes/HaloCombat/V2Melee.unity
+    guid: 9beef4b22c09cc844b5dfa5a01fef326
+  - enabled: 1
+    path: Assets/Scenes/HaloCombat/V3ProjectileAoe.unity
+    guid: c50072970e0e690458cd54df80be72b0
+  - enabled: 1
+    path: Assets/Scenes/HaloCombat/V4AiSummon.unity
+    guid: 2d6403fff7ddc86429a237309c7f30da
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

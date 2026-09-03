@@ -176,7 +176,7 @@ namespace Combat.Core
             _world.Intents.Drain<SpawnProjectileIntent>(intent =>
             {
                 if (!_world.Projectiles.TryGet(intent.SpecId, out var def)) return;
-                var id = _world.SpawnActor(new ActorSpawnSpec("projectile"));
+                var id = _world.SpawnActor(new ActorSpawnSpec("projectile"), publishSpawn: false);
                 if (!_world.TryGetActor(id, out var proj) || proj == null) return;
                 var tf = proj.GetComp<TransformComp>();
                 var fwd = LocomotionComp.ForwardFromYaw(intent.Yaw);
@@ -191,6 +191,7 @@ namespace Combat.Core
                 if (!def.SnapshotAtk && owner != null && owner.TryGetComp<AttributeSet>(out var attr))
                     snap = attr.GetFinal(AttrId.Atk);
                 proj.GetComp<ProjectileComp>().Setup(def, intent.Owner, snap, intent.Target);
+                _world.PublishSpawn(id, "projectile");
             });
         }
 

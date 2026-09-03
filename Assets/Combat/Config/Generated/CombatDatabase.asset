@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a09e9787d61b354495412c62a3af961, type: 3}
+  m_Name: CombatDatabase
+  m_EditorClassIdentifier: 
+  Combo: {fileID: 11400000, guid: 76b8c9f82538de045b53f128a030b321, type: 2}
+  Timelines:
+  - {fileID: 11400000, guid: 7ec16dfc6c28c434096c5aca73df1549, type: 2}
+  - {fileID: 11400000, guid: bb514288ef8417a4d882633fd608219b, type: 2}
+  - {fileID: 11400000, guid: d65e4c1b4b337824e848b47018830e5d, type: 2}
+  Projectiles:
+  - {fileID: 11400000, guid: 41be84cd4298d814492e7128a654004d, type: 2}
+  - {fileID: 11400000, guid: 240c1e9bf5e3a0743bb2c239a5a237fb, type: 2}
+  Aoes:
+  - {fileID: 11400000, guid: 7105e0680aef0fc47bfe822db4b55fd2, type: 2}
+  - {fileID: 11400000, guid: 36a3cecc0e546ca4294719a3e3217b48, type: 2}
+  Buffs:
+  - {fileID: 11400000, guid: 769a73c5af2788a4e814291c2518189d, type: 2}
+  - {fileID: 11400000, guid: 173973dd80b50fb458e51aa9df18e0ab, type: 2}
+  Summons:
+  - {fileID: 11400000, guid: 658580554681c934db90573595825285, type: 2}
+  Cues: {fileID: 11400000, guid: cf6af9b8eb0011445a4d012443d6c328, type: 2}
+  Motor: {fileID: 11400000, guid: ab60a048df46c64469594f38f5920cbd, type: 2}

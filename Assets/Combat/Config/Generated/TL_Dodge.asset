@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b736701361a88546a2fa7ee6587d207, type: 3}
+  m_Name: TL_Dodge
+  m_EditorClassIdentifier: 
+  TimelineIdValue: 1003
+  Duration: 0.4
+  Clips:
+  - Start: 0
+    End: 0.28
+    Kind: 2
+    MoveX: 1.2
+    MoveY: 0
+    MoveZ: 0
+    Steer: 0
+    HitRadius: 0
+    HitOffsetX: 0
+    HitOffsetY: 0
+    HitOffsetZ: 0
+    HitProfile: {fileID: 0}
+  - Start: 0.04
+    End: 0.22
+    Kind: 4
+    MoveX: 0
+    MoveY: 0
+    MoveZ: 0
+    Steer: 0
+    HitRadius: 0
+    HitOffsetX: 0
+    HitOffsetY: 0
+    HitOffsetZ: 0
+    HitProfile: {fileID: 0}
+  - Start: 0.24
+    End: 0.4
+    Kind: 1
+    MoveX: 0
+    MoveY: 0
+    MoveZ: 0
+    Steer: 0
+    HitRadius: 0
+    HitOffsetX: 0
+    HitOffsetY: 0
+    HitOffsetZ: 0
+    HitProfile: {fileID: 0}
+  Payloads: []

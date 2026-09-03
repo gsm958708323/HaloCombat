@@ -7,43 +7,18 @@ namespace Combat.Unity
 {
     public enum HaloCombatDemoKind
     {
-        TagInput = 0,
-        Attribute = 1,
-        Buff = 2,
-        ActivityMotor = 3,
-        ClipPayload = 4,
-        MeleeDamage = 5,
-        ProjectileAoe = 6,
-        SeasonOne = 7,
-        Knockdown = 8,
-        DodgeHitstop = 9,
-        AuraHoming = 10,
-        BehaviorTree = 11,
-        Perception = 12,
-        EnemyAi = 13,
-        Summon = 14,
-        SeasonTwo = 15
+        TagInput = 0, Attribute = 1, Buff = 2, ActivityMotor = 3, ClipPayload = 4,
+        MeleeDamage = 5, ProjectileAoe = 6, SeasonOne = 7, Knockdown = 8,
+        DodgeHitstop = 9, AuraHoming = 10, BehaviorTree = 11, Perception = 12,
+        EnemyAi = 13, Summon = 14, SeasonTwo = 15
     }
 
     public enum HaloCombatDemoCategoryFilter
     {
-        All = 0,
-        TagInput = 1,
-        Attribute = 2,
-        Buff = 3,
-        ActivityMotor = 4,
-        ClipPayload = 5,
-        MeleeDamage = 6,
-        ProjectileAoe = 7,
-        SeasonOne = 8,
-        Knockdown = 9,
-        DodgeHitstop = 10,
-        AuraHoming = 11,
-        BehaviorTree = 12,
-        Perception = 13,
-        EnemyAi = 14,
-        Summon = 15,
-        SeasonTwo = 16
+        All = 0, TagInput = 1, Attribute = 2, Buff = 3, ActivityMotor = 4,
+        ClipPayload = 5, MeleeDamage = 6, ProjectileAoe = 7, SeasonOne = 8,
+        Knockdown = 9, DodgeHitstop = 10, AuraHoming = 11, BehaviorTree = 12,
+        Perception = 13, EnemyAi = 14, Summon = 15, SeasonTwo = 16
     }
 
     [DisallowMultipleComponent]
@@ -55,34 +30,11 @@ namespace Combat.Unity
 
         public HaloCombatDemoKind Demo => _demo;
         public HaloCombatDemoCategoryFilter CategoryFilter => _categoryFilter;
-
-        public void Configure(HaloCombatDemoKind demo)
-        {
-            _demo = demo;
-        }
-
-        public void SetCategoryFilter(HaloCombatDemoCategoryFilter filter)
-        {
-            _categoryFilter = filter;
-            ApplyCategoryFilter();
-        }
-
-        void OnEnable()
-        {
-            ApplyCategoryFilter();
-        }
-
-        void OnValidate()
-        {
-            ApplyCategoryFilter();
-        }
-
-        void Start()
-        {
-            ApplyCategoryFilter();
-            if (_runOnStart)
-                RunDemo();
-        }
+        public void Configure(HaloCombatDemoKind demo) => _demo = demo;
+        public void SetCategoryFilter(HaloCombatDemoCategoryFilter filter) { _categoryFilter = filter; ApplyCategoryFilter(); }
+        void OnEnable() => ApplyCategoryFilter();
+        void OnValidate() => ApplyCategoryFilter();
+        void Start() { ApplyCategoryFilter(); if (_runOnStart) RunDemo(); }
 
         [ContextMenu("Run Selected Demo")]
         public void RunDemo()
@@ -94,72 +46,34 @@ namespace Combat.Unity
             {
                 switch (_demo)
                 {
-                    case HaloCombatDemoKind.TagInput:
-                        TagInputDemo.Run();
-                        break;
-                    case HaloCombatDemoKind.Attribute:
-                        AttributeDemo.Run();
-                        break;
-                    case HaloCombatDemoKind.Buff:
-                        BuffDemo.Run();
-                        break;
-                    case HaloCombatDemoKind.ActivityMotor:
-                        ActivityMotorDemo.Run();
-                        break;
-                    case HaloCombatDemoKind.ClipPayload:
-                        ClipPayloadDemo.Run();
-                        break;
-                    case HaloCombatDemoKind.MeleeDamage:
-                        MeleeDamageDemo.Run();
-                        break;
-                    case HaloCombatDemoKind.ProjectileAoe:
-                        ProjectileAoeDemo.Run();
-                        break;
-                    case HaloCombatDemoKind.SeasonOne:
-                        SeasonOneDemo.Run();
-                        break;
-                    case HaloCombatDemoKind.Knockdown:
-                        KnockdownDemo.Run();
-                        break;
-                    case HaloCombatDemoKind.DodgeHitstop:
-                        DodgeHitstopDemo.Run();
-                        break;
-                    case HaloCombatDemoKind.AuraHoming:
-                        AuraHomingDemo.Run();
-                        break;
-                    case HaloCombatDemoKind.BehaviorTree:
-                        BehaviorTreeDemo.Run();
-                        break;
-                    case HaloCombatDemoKind.Perception:
-                        PerceptionDemo.Run();
-                        break;
-                    case HaloCombatDemoKind.EnemyAi:
-                        EnemyAiDemo.Run();
-                        break;
-                    case HaloCombatDemoKind.Summon:
-                        SummonDemo.Run();
-                        break;
-                    case HaloCombatDemoKind.SeasonTwo:
-                        SeasonTwoDemo.Run();
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
+                    case HaloCombatDemoKind.TagInput: TagInputDemo.Run(); break;
+                    case HaloCombatDemoKind.Attribute: AttributeDemo.Run(); break;
+                    case HaloCombatDemoKind.Buff: BuffDemo.Run(); break;
+                    case HaloCombatDemoKind.ActivityMotor: ActivityMotorDemo.Run(); break;
+                    case HaloCombatDemoKind.ClipPayload: ClipPayloadDemo.Run(); break;
+                    case HaloCombatDemoKind.MeleeDamage: MeleeDamageDemo.Run(); break;
+                    case HaloCombatDemoKind.ProjectileAoe: ProjectileAoeDemo.Run(); break;
+                    case HaloCombatDemoKind.SeasonOne: SeasonOneDemo.Run(); break;
+                    case HaloCombatDemoKind.Knockdown: KnockdownDemo.Run(); break;
+                    case HaloCombatDemoKind.DodgeHitstop: DodgeHitstopDemo.Run(); break;
+                    case HaloCombatDemoKind.AuraHoming: AuraHomingDemo.Run(); break;
+                    case HaloCombatDemoKind.BehaviorTree: BehaviorTreeDemo.Run(); break;
+                    case HaloCombatDemoKind.Perception: PerceptionDemo.Run(); break;
+                    case HaloCombatDemoKind.EnemyAi: EnemyAiDemo.Run(); break;
+                    case HaloCombatDemoKind.Summon: SummonDemo.Run(); break;
+                    case HaloCombatDemoKind.SeasonTwo: SeasonTwoDemo.Run(); break;
+                    default: throw new ArgumentOutOfRangeException();
                 }
-
-                CombatLog.Info(category, $"{_demo} PASSED");
+                CombatLog.Info(category, _demo + " PASSED");
             }
             catch (Exception exception)
             {
-                CombatLog.Error(category, $"{_demo} FAILED", exception);
+                CombatLog.Error(category, _demo + " FAILED", exception);
                 throw;
             }
         }
 
-        void ApplyCategoryFilter()
-        {
-            CombatLog.SetCategoryFilter(FilterCategory(_categoryFilter));
-        }
-
+        void ApplyCategoryFilter() => CombatLog.SetCategoryFilter(FilterCategory(_categoryFilter));
         static string FilterCategory(HaloCombatDemoCategoryFilter filter)
         {
             switch (filter)
@@ -183,29 +97,6 @@ namespace Combat.Unity
                 default: return null;
             }
         }
-
-        static string DemoCategory(HaloCombatDemoKind demo)
-        {
-            switch (demo)
-            {
-                case HaloCombatDemoKind.TagInput: return CombatCategories.TagInput;
-                case HaloCombatDemoKind.Attribute: return CombatCategories.Attribute;
-                case HaloCombatDemoKind.Buff: return CombatCategories.Buff;
-                case HaloCombatDemoKind.ActivityMotor: return CombatCategories.ActivityMotor;
-                case HaloCombatDemoKind.ClipPayload: return CombatCategories.ClipPayload;
-                case HaloCombatDemoKind.MeleeDamage: return CombatCategories.MeleeDamage;
-                case HaloCombatDemoKind.ProjectileAoe: return CombatCategories.ProjectileAoe;
-                case HaloCombatDemoKind.SeasonOne: return CombatCategories.SeasonOne;
-                case HaloCombatDemoKind.Knockdown: return CombatCategories.Knockdown;
-                case HaloCombatDemoKind.DodgeHitstop: return CombatCategories.DodgeHitstop;
-                case HaloCombatDemoKind.AuraHoming: return CombatCategories.AuraHoming;
-                case HaloCombatDemoKind.BehaviorTree: return CombatCategories.BehaviorTree;
-                case HaloCombatDemoKind.Perception: return CombatCategories.Perception;
-                case HaloCombatDemoKind.EnemyAi: return CombatCategories.EnemyAi;
-                case HaloCombatDemoKind.Summon: return CombatCategories.Summon;
-                case HaloCombatDemoKind.SeasonTwo: return CombatCategories.SeasonTwo;
-                default: return string.Empty;
-            }
-        }
+        static string DemoCategory(HaloCombatDemoKind demo) => FilterCategory((HaloCombatDemoCategoryFilter)(int)demo);
     }
 }

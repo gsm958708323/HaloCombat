@@ -1,5 +1,19 @@
 namespace Combat.Core
 {
+    public readonly struct EvEntitySpawn
+    {
+        public readonly EntityId Id;
+        public readonly string BlueprintId;
+        public readonly EntityId Owner;
+
+        public EvEntitySpawn(EntityId id, string blueprintId, EntityId owner)
+        {
+            Id = id;
+            BlueprintId = blueprintId ?? string.Empty;
+            Owner = owner;
+        }
+    }
+
     public readonly struct EvCue
     {
         public readonly int CueId;
