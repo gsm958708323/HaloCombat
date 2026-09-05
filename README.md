@@ -21,7 +21,7 @@ dotnet run --project Combat.csproj -- summon
 dotnet run --project Combat.csproj -- season2
 dotnet run --project Combat.csproj -- lesson
 dotnet run --project Combat.csproj -- training-camp
-dotnet run --project Combat.csproj -- regress
+dotnet run --project Combat.csproj -- regress 
 
 默认 `season` = 第一期验收：G1 近战+刀光 Cue+火球灼烧、G2 火地叠 3、受击停轴、Bake 清缓存、死亡清弹圈。
 
