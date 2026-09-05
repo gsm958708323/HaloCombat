@@ -65,9 +65,18 @@
     <Analyzer Include="D:\Work\UnityInstall\6000.0.32f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Scripts\Combat\Unity\ArenaBootstrap.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\AppBootstrap.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\UnityVfxPool.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\HudView.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\TitleView.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\ResultView.cs" />
     <Compile Include="Assets\Scripts\Combat\Unity\TrainingCampVerificationDemo.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\UnityInputSource.cs" />
     <Compile Include="Assets\Scripts\Combat\Unity\UnityLogSink.cs" />
     <Compile Include="Assets\Scripts\Combat\Unity\HaloCombatDemoRunner.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\CameraRig.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\ViewPrefabTable.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Scripts\Combat\Unity\Combat.Unity.asmdef" />
@@ -1101,6 +1110,10 @@
       <HintPath>D:\Work\UnityInstall\6000.0.32f1\Editor\Data\NetStandard\compat\2.1.0\shims\netfx\System.Xml.Serialization.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Unity.InputSystem">
+      <HintPath>Library\ScriptAssemblies\Unity.InputSystem.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="UnityEditor.UI">
       <HintPath>Library\ScriptAssemblies\UnityEditor.UI.dll</HintPath>
       <Private>False</Private>
@@ -1112,6 +1125,9 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="Combat.Core.csproj" />
+    <ProjectReference Include="Combat.Presentation.csproj" />
+    <ProjectReference Include="Combat.Config.csproj" />
+    <ProjectReference Include="Combat.Game.csproj" />
   </ItemGroup>
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
   <ItemGroup>

@@ -2,6 +2,34 @@ using System;
 
 namespace Combat.Core
 {
+    public struct SpawnEntry
+    {
+        public string BlueprintId;
+        public SimVec3 Position;
+        public float YawDegrees;
+        public bool IsLocalPlayer;
+        public bool CountsForWin;
+        public float LeashOverride;
+        public float PatrolOverride;
+    }
+
+    public sealed class SpawnTable
+    {
+        public SpawnEntry[] Entries = System.Array.Empty<SpawnEntry>();
+    }
+
+    public sealed class BakedDatabase
+    {
+        public TimelineLibrary Timelines = new TimelineLibrary();
+        public ComboTableSO Combos = new ComboTableSO();
+        public ProjectileCatalog Projectiles = new ProjectileCatalog();
+        public AoeCatalog Aoes = new AoeCatalog();
+        public SummonCatalog Summons = new SummonCatalog();
+        public CueLibrary Cues = new CueLibrary();
+        public DurationSpec Burn;
+        public DurationSpec AuraSlow;
+        public SpawnTable Spawns = new SpawnTable();
+    }
     public sealed class BakedCombatData
     {
         public ComboTableSO Combo;

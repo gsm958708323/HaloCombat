@@ -13,6 +13,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Assets/Scripts/Combat/Core/**/*.cs" />
     <Compile Include="Assets/Scripts/Combat/Presentation/**/*.cs" />
+    <Compile Include="Assets/Scripts/Combat/Game/**/*.cs" />
     <Compile Include="Assets/Scripts/Combat/Demos/HaloCombatDemoCases.cs" />
     <Compile Include="Assets/Scripts/Combat/Demos/DemoTrace.cs" />
     <Compile Include="Assets/Scripts/Combat/Demos/SeasonTwoDemoSupport.cs" />
@@ -28,5 +29,6 @@
     <Compile Include="Assets/Scripts/Combat/Unity/TrainingCampVerificationDemo.cs" />
     <Compile Include="Assets/Scripts/Combat/Demos/DemoWorld.cs" />
     <Compile Include="Assets/Scripts/Combat/Demos/PresentationDemos.cs" />
+    <Compile Include="Assets/Scripts/Combat/Demos/PresentSeasonDemo.cs" />
   </ItemGroup>
 </Project>

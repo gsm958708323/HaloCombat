@@ -41,8 +41,17 @@ namespace Combat
                     if (!TrainingCampVerificationDemo.Run(Console.WriteLine)) return 1;
                     break;
                 case "season2":
-                case "s2": SeasonTwoDemo.Run(); break;
-                case "regress": SeasonTwoDemo.Regression(); break;
+                case "s2":
+                    SeasonTwoDemo.Run();
+                    break;
+                case "present-season":
+                case "s3":
+                    PresentSeasonDemo.Run();
+                    break;
+                case "regress":
+                    SeasonTwoDemo.Regression();
+                    PresentSeasonDemo.Run();
+                    break;
                 case "all":
                     SeasonTwoDemo.Regression();
                     break;

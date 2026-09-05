@@ -60,6 +60,24 @@
                     "initialStateCheck": false
                 },
                 {
+                    "name": "Dodge",
+                    "type": "Button",
+                    "id": "8d9f13c0-7d2e-4e0a-b07f-7c3a1a9b4d10",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Pause",
+                    "type": "Button",
+                    "id": "f2a4d8ef-8c6e-41ae-9a5f-3e6b1c0d2f11",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
                     "name": "Previous",
                     "type": "Button",
                     "id": "2776c80d-3c14-4091-8c56-d04ced07a2b0",
@@ -986,6 +1004,34 @@
                     "processors": "",
                     "groups": "XR",
                     "action": "TrackedDeviceOrientation",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        },
+        {
+            "name": "Debug",
+            "id": "d31f0d3e-3f6a-4fd6-8f8a-53ce42b2a901",
+            "actions": [
+                {
+                    "name": "Hitbox",
+                    "type": "Button",
+                    "id": "42c0b4dd-11e8-47af-92d5-f3b3b6a8c202",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "f8f4b4b4-4c78-4b76-9f2c-2a4d7b6e5303",
+                    "path": "<Keyboard>/f8",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "Hitbox",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

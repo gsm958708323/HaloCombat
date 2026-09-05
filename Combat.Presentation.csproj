@@ -65,11 +65,24 @@
     <Analyzer Include="D:\Work\UnityInstall\6000.0.32f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Scripts\Combat\Presentation\CueDirector.cs" />
     <Compile Include="Assets\Scripts\Combat\Presentation\ViewContracts.cs" />
+    <Compile Include="Assets\Scripts\Combat\Presentation\HudSnapshot.cs" />
     <Compile Include="Assets\Scripts\Combat\Presentation\PresentationRouter.cs" />
+    <Compile Include="Assets\Scripts\Combat\Presentation\PresentSettings.cs" />
+    <Compile Include="Assets\Scripts\Combat\Presentation\PresentHub.cs" />
     <Compile Include="Assets\Scripts\Combat\Presentation\CombatLesson.cs" />
+    <Compile Include="Assets\Scripts\Combat\Presentation\HitboxGizmoPresent.cs" />
+    <Compile Include="Assets\Scripts\Combat\Presentation\FloaterLayer.cs" />
+    <Compile Include="Assets\Scripts\Combat\Presentation\PlayerCameraPresent.cs" />
     <Compile Include="Assets\Scripts\Combat\Presentation\SimulationClock.cs" />
+    <Compile Include="Assets\Scripts\Combat\Presentation\RecordingPorts.cs" />
+    <Compile Include="Assets\Scripts\Combat\Presentation\BuffFxPresent.cs" />
+    <Compile Include="Assets\Scripts\Combat\Presentation\AnimationPresent.cs" />
+    <Compile Include="Assets\Scripts\Combat\Presentation\PoseFollowPresent.cs" />
     <Compile Include="Assets\Scripts\Combat\Presentation\ViewRegistry.cs" />
+    <Compile Include="Assets\Scripts\Combat\Presentation\PlayerFeedbackPresent.cs" />
+    <Compile Include="Assets\Scripts\Combat\Presentation\PresentActor.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Scripts\Combat\Presentation\Combat.Presentation.asmdef" />

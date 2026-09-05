@@ -121,7 +121,7 @@ namespace Combat.Core
                 if (box.BakedOnHit == null || box.BakedOnHit.Length == 0) continue;
                 if (!attacker.TryGetComp<TransformComp>(out var tf)) continue;
 
-                var center = WorldPoint(tf, box.LocalOffset);
+                var center = CombatGeom.WorldPoint(tf.Position, tf.YawDegrees, box.LocalOffset);
                 int n = _world.Query.OverlapCircle(center, box.Radius, attacker, 0, _buffer);
                 float snapshotAtk = 0f;
                 if (attacker.TryGetComp<AttributeSet>(out var attr))
@@ -138,15 +138,5 @@ namespace Combat.Core
             }
         }
 
-        static SimVec3 WorldPoint(TransformComp tf, SimVec3 local)
-        {
-            double r = tf.YawDegrees * Math.PI / 180.0;
-            float c = (float)Math.Cos(r);
-            float s = (float)Math.Sin(r);
-            return new SimVec3(
-                tf.Position.X + local.X * c - local.Z * s,
-                tf.Position.Y + local.Y,
-                tf.Position.Z + local.X * s + local.Z * c);
-        }
     }
 }

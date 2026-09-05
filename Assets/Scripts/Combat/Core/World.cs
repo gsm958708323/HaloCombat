@@ -35,6 +35,7 @@ namespace Combat.Core
         public SummonCatalog Summons => _summons;
         public int HitstopLeft => _hitstopLeft;
         public bool InHitstop => _hitstopLeft > 0;
+        public bool AllowsHitstopSkip => InHitstop;
         public CueLibrary Cues => _cues;
         public MotorConfig Motor => _motor;
 
@@ -74,6 +75,22 @@ namespace Combat.Core
         public void ReplaceCues(CueLibrary cues)
         {
             if (cues != null) _cues = cues;
+        }
+
+        public void ApplyCatalogs(BakedDatabase db)
+        {
+            if (db == null) return;
+            if (db.Projectiles != null) _projectiles = db.Projectiles;
+            if (db.Aoes != null) _aoes = db.Aoes;
+            if (db.Summons != null) _summons = db.Summons;
+            if (db.Cues != null) _cues = db.Cues;
+        }
+
+        public void Shutdown()
+        {
+            _registry.ClearAll();
+            _intents.ClearAll();
+            _servicePhase.Clear();
         }
 
         public EntityId SpawnActor(in ActorSpawnSpec spec, bool publishSpawn = true)

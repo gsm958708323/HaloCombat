@@ -69,6 +69,7 @@
     <Compile Include="Assets\Scripts\Combat\Demos\PresentationDemos.cs" />
     <Compile Include="Assets\Scripts\Combat\Demos\PerceptionDemo.cs" />
     <Compile Include="Assets\Scripts\Combat\Demos\AuraHomingDemo.cs" />
+    <Compile Include="Assets\Scripts\Combat\Demos\PresentSeasonDemo.cs" />
     <Compile Include="Assets\Scripts\Combat\Demos\DemoTrace.cs" />
     <Compile Include="Assets\Scripts\Combat\Demos\SeasonTwoDemo.cs" />
     <Compile Include="Assets\Scripts\Combat\Demos\SeasonTwoDemoSupport.cs" />
@@ -660,6 +661,7 @@
   <ItemGroup>
     <ProjectReference Include="Combat.Core.csproj" />
     <ProjectReference Include="Combat.Presentation.csproj" />
+    <ProjectReference Include="Combat.Game.csproj" />
   </ItemGroup>
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
   <ItemGroup>
