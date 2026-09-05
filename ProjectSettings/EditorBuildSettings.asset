@@ -5,52 +5,52 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/HaloCombat/01TagInputDemo.unity
     guid: deb6fa804e5794546ba52f6fc3ee4431
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/HaloCombat/02AttributeDemo.unity
     guid: 81eda6d58133eb549981c408fa010fa6
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/HaloCombat/03BuffDemo.unity
     guid: a4cb53650516ee344904930f60d74b0f
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/HaloCombat/04ActivityMotorDemo.unity
     guid: ac37d2f5fb8f3dc4c853e0737a7ef2ba
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/HaloCombat/05ClipPayloadDemo.unity
     guid: 0efb9d0e263eaf54a88224843b518d2c
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/HaloCombat/06MeleeDamageDemo.unity
     guid: 6c380a2350eb21745b31a794bd9015fb
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/HaloCombat/07ProjectileAoeDemo.unity
     guid: f1d634776a98bd34a8c7b8658acaf1b7
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/HaloCombat/08SeasonOneDemo.unity
     guid: 2a7ebd10e7ffb294686f007db0d6208d
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/HaloCombat/09KnockdownDemo.unity
     guid: 1c94b489b01b4e689ba2f26f829fd22a
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/HaloCombat/10DodgeHitstopDemo.unity
     guid: 2d8fe10f6b4b4b7a8a78bb2f67fa0e11
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/HaloCombat/11AuraHomingDemo.unity
     guid: 3ea1f9a7c4f24609b5f700b5c0aef312
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/HaloCombat/12BehaviorTreeDemo.unity
     guid: 4fb2a0b8d5f3571ac60811c6d1bfe423
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/HaloCombat/13PerceptionDemo.unity
     guid: 5ac3b1c9e604682bd71922d7e2caf534
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/HaloCombat/14EnemyAiDemo.unity
     guid: 6bd4c2daf715793ce82a33e8f3db0645
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/HaloCombat/15SummonDemo.unity
     guid: 7ce5d3eb08268a4df93b44f9a4ec1756
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/HaloCombat/16SeasonTwoDemo.unity
     guid: 8df6e4fc19379b5e0a4c550a5bfd2867
   - enabled: 1
@@ -65,6 +65,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/HaloCombat/V4AiSummon.unity
     guid: 2d6403fff7ddc86429a237309c7f30da
+  - enabled: 1
+    path: Assets/Scenes/HaloCombat/TrainingCamp.unity
+    guid: a1b2c3d4e5f6478899aabbccddeeff08
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

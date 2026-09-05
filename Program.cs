@@ -1,6 +1,7 @@
 using System;
 using Combat.Core;
 using Combat.Demos;
+using Combat.TrainingCamp;
 
 namespace Combat
 {
@@ -34,6 +35,11 @@ namespace Combat
                 case "summon": SummonDemo.Run(); break;
                 case "clock": ClockDemo.Run(); break;
                 case "spawn": SpawnEventDemo.Run(); break;
+                case "lesson": SeasonThreeLessonDemo.Run(); break;
+                case "training-camp":
+                case "trainingcamp":
+                    if (!TrainingCampVerificationDemo.Run(Console.WriteLine)) return 1;
+                    break;
                 case "season2":
                 case "s2": SeasonTwoDemo.Run(); break;
                 case "regress": SeasonTwoDemo.Regression(); break;

@@ -7,11 +7,13 @@ namespace Combat.Demos
         public static CombatWorld Create(
             out EventBus events,
             out CombatTime time,
-            IRandom random = null)
+            IRandom random = null,
+            EventBus eventsOverride = null,
+            CombatTime timeOverride = null)
         {
             var baked = new CodeCombatContent().Bake();
-            events = new EventBus();
-            time = new CombatTime();
+            events = eventsOverride ?? new EventBus();
+            time = timeOverride ?? new CombatTime();
             var world = new CombatWorld(
                 new FighterActorFactory(baked),
                 new IntentQueue(),

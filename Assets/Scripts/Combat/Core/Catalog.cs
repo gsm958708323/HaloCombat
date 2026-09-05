@@ -93,7 +93,12 @@ namespace Combat.Core
                 SnapshotAtk = true,
                 SpawnForward = 0.2f,
                 HomingRate = 270f,
-                OnHit = new IEffect[] { new DamageEffect { Coeff = 1f, CanCrit = false, UseSnapshotAtk = true } }
+                OnHit = new IEffect[]
+                {
+                    new DamageEffect { Coeff = 1f, CanCrit = false, UseSnapshotAtk = true },
+                    new HitStunEffect { Duration = 0.35f },
+                    new KnockbackEffect { Distance = 0.4f }
+                }
             };
         }
 
@@ -115,6 +120,8 @@ namespace Combat.Core
             fb.OnHit = new IEffect[]
             {
                 new DamageEffect { Coeff = 1f, CanCrit = true, UseSnapshotAtk = true },
+                new HitStunEffect { Duration = 0.35f },
+                new KnockbackEffect { Distance = 0.4f },
                 new ApplyDurationEffect(burn),
                 new PlayCueEffect(CombatIds.CueFireballHit, "FireballHit")
             };

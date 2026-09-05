@@ -48,7 +48,7 @@ namespace Combat.Unity.Editor
         public static void CreateAll()
         {
             Directory.CreateDirectory(Path.Combine(Application.dataPath, "Scenes", "HaloCombat"));
-            var buildScenes = new EditorBuildSettingsScene[Specs.Length];
+            var buildScenes = new System.Collections.Generic.List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
 
             for (int i = 0; i < Specs.Length; i++)
             {
@@ -60,10 +60,10 @@ namespace Combat.Unity.Editor
 
                 if (!EditorSceneManager.SaveScene(scene, ScenePath(spec)))
                     throw new InvalidOperationException($"Unable to save {ScenePath(spec)}");
-                buildScenes[i] = new EditorBuildSettingsScene(ScenePath(spec), true);
+                SetBuildScene(buildScenes, ScenePath(spec), false);
             }
 
-            EditorBuildSettings.scenes = buildScenes;
+            EditorBuildSettings.scenes = buildScenes.ToArray();
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log($"[HaloCombat] Created {Specs.Length} demo scenes.");
@@ -96,6 +96,20 @@ namespace Combat.Unity.Editor
         static string ScenePath(in SceneSpec spec)
         {
             return $"{SceneRoot}/{spec.FileName}";
+        }
+
+        static void SetBuildScene(System.Collections.Generic.List<EditorBuildSettingsScene> scenes, string path, bool enabled)
+        {
+            for (int i = 0; i < scenes.Count; i++)
+            {
+                if (scenes[i].path != path) continue;
+                scenes[i] = new EditorBuildSettingsScene(path, enabled);
+                return;
+            }
+
+            // Keep generated editor fixtures discoverable even when a fresh
+            // checkout has no prior build-settings entry for the scene.
+            scenes.Add(new EditorBuildSettingsScene(path, enabled));
         }
     }
 }

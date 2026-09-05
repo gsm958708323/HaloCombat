@@ -16,11 +16,7 @@ namespace Combat.Demos
             // 第二季把闪避、顿帧、AI、光环和召唤物放进同一个 CombatWorld 做交点验证。
             var time = new CombatTime();
             var events = new EventBus();
-            var world = new CombatWorld(
-                new FighterActorFactory(DemoTables.G1G2(), DemoTables.MakeLib()),
-                new IntentQueue(), events, time, new FixedRandom(0f));
-            CombatCatalog.RegisterDefaults(
-                world.Projectiles, world.Aoes, CombatCatalog.Burn(), world.Summons);
+            var world = DemoWorld.Create(out _, out _, new FixedRandom(0f), events, time);
 
             // 事件计数用来验证结算顺序和来源，而不是只检查最终位置或 HP。
             int immune = 0, hitstops = 0, damages = 0;

@@ -11,6 +11,7 @@ namespace Combat.Core
         Action<EvDamage> _onDamage;
         Action<EvImmune> _onImmune;
         public override bool WantsTick => true;
+        public bool Enabled { get; set; } = true;
         public float AlertRadius => _alertRadius;
         public EntityId Forced => _forced;
         public PerceptionComp(float alertRadius = 8f) => _alertRadius = alertRadius > 0f ? alertRadius : 8f;
@@ -34,6 +35,7 @@ namespace Combat.Core
         }
         public void Alert(EntityId attacker)
         {
+            if (!Enabled) return;
             BindBoard();
             if (_board != null && _board.Returning) return;
             if (!IsHostileAlive(attacker)) return;
@@ -47,6 +49,7 @@ namespace Combat.Core
         }
         public override void Tick(float dt)
         {
+            if (!Enabled) return;
             BindBoard();
             if (_board == null) return;
             if (_board.Returning) { _forced = EntityId.Invalid; return; }
@@ -62,6 +65,7 @@ namespace Combat.Core
         }
         public bool TryScan(float radius)
         {
+            if (!Enabled) return false;
             BindBoard();
             if (_board == null || Self.World == null || !Self.TryGetComp<TransformComp>(out var tf)) return false;
             int n = Self.World.Query.OverlapCircle(tf.Position, radius > 0f ? radius : _alertRadius, Self, 0, _scan);

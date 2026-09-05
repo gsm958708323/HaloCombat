@@ -354,8 +354,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _scene: 1
-  _database: {fileID: 0}
-  _useSoDatabase: 0
+  _database: {fileID: 11400000, guid: 6792dd4e9b537a0429311fdb74b64e94, type: 2}
+  _useSoDatabase: 1
   _logicHz: 50
   _pauseLogic: 0
   _enableCombatKeys: 1

@@ -5,30 +5,10 @@ namespace Combat.Core
     public sealed class FighterActorFactory : IActorFactory
     {
         readonly BakedCombatData _data;
-        readonly ComboTableSO _combos;
-        readonly TimelineLibrary _timelines;
-
-        public FighterActorFactory(ComboTableSO combos, TimelineLibrary timelines)
-        {
-            _combos = combos ?? new ComboTableSO();
-            _timelines = timelines ?? new TimelineLibrary();
-            _data = new BakedCombatData
-            {
-                Combo = _combos,
-                Timelines = _timelines,
-                Projectiles = new ProjectileCatalog(),
-                Aoes = new AoeCatalog(),
-                Summons = new SummonCatalog(),
-                Cues = CueLibrary.DefaultCombat(),
-                Motor = MotorConfig.SeasonOneDefaults()
-            };
-        }
 
         public FighterActorFactory(BakedCombatData data)
         {
             _data = data ?? throw new ArgumentNullException(nameof(data));
-            _combos = data.Combo ?? new ComboTableSO();
-            _timelines = data.Timelines ?? new TimelineLibrary();
         }
 
         public Actor Create(in ActorSpawnSpec spec)
@@ -86,9 +66,9 @@ namespace Combat.Core
             {
                 actor.AddComp(new InputBufferComp());
                 actor.AddComp(new HitboxComp());
-                actor.AddComp(new ComboComp(_combos));
+                actor.AddComp(new ComboComp(_data.Combo ?? new ComboTableSO()));
                 actor.AddComp(new PlayerCombatDriverComp());
-                actor.AddComp(new SkillDirectorComp(_timelines));
+                actor.AddComp(new SkillDirectorComp(_data.Timelines ?? new TimelineLibrary()));
                 var loadout = new LoadoutComp();
                 actor.AddComp(loadout);
                 loadout.EquipNormalG1G2Defaults();
@@ -119,7 +99,7 @@ namespace Combat.Core
                     board.LeashRange = bp == "melee_guard" ? 5f : 20f;
                     board.PatrolRadius = bp == "melee_guard" ? 1.5f : 0f;
                 }));
-                actor.AddComp(new SkillDirectorComp(_timelines));
+                actor.AddComp(new SkillDirectorComp(_data.Timelines ?? new TimelineLibrary()));
                 if (isSummon)
                     actor.AddComp(new SummonComp());
             }
@@ -166,6 +146,15 @@ namespace Combat.Core
                         Priority = 10,
                         ToSkill = SkillNodeId.G2,
                         Timeline = TimelineId.TL_G2
+                    },
+                    new ComboEntry
+                    {
+                        PreSkills = new[] { SkillNodeId.Dodge },
+                        Input = InputToken.Attack,
+                        RequiredTags = new[] { CommonTags.Cancel.Value },
+                        Priority = 5,
+                        ToSkill = SkillNodeId.G1,
+                        Timeline = TimelineId.TL_G1
                     }
                 }
             };

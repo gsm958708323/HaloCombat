@@ -9,6 +9,9 @@ namespace Combat.Unity
         bool _attack;
         bool _jump;
         bool _dodge;
+        bool _queuedAttack;
+        bool _queuedJump;
+        bool _queuedDodge;
         float _stickX;
         float _stickZ;
 
@@ -31,9 +34,18 @@ namespace Combat.Unity
             if (actor.TryGetComp<LocomotionComp>(out var loco))
                 loco.RequestMoveIntent(_stickX, _stickZ);
             if (!actor.TryGetComp<InputBufferComp>(out var buffer)) return;
-            if (_jump) { buffer.Push(InputToken.Jump); _jump = false; }
-            if (_dodge) { buffer.Push(Season2Tokens.Dodge); _dodge = false; }
-            if (_attack) { buffer.Push(InputToken.Attack); _attack = false; }
+            if (_jump || _queuedJump) { buffer.Push(InputToken.Jump); _jump = false; _queuedJump = false; }
+            if (_dodge || _queuedDodge) { buffer.Push(Season2Tokens.Dodge); _dodge = false; _queuedDodge = false; }
+            if (_attack || _queuedAttack) { buffer.Push(InputToken.Attack); _attack = false; _queuedAttack = false; }
+        }
+
+        // Test and tooling input is queued separately from Unity's sampled
+        // keyboard state, so normal runtime input behavior remains unchanged.
+        public void Queue(InputToken token)
+        {
+            if (token == InputToken.Jump) _queuedJump = true;
+            else if (token == Season2Tokens.Dodge) _queuedDodge = true;
+            else if (token == InputToken.Attack) _queuedAttack = true;
         }
     }
 }

@@ -40,7 +40,7 @@ namespace Combat.Demos
         }
 
         static CombatWorld NewWorld()
-            => new CombatWorld(new FighterActorFactory(DemoTables.G1G2(), DemoTables.MakeLib()));
+            => DemoWorld.Create(out _, out _, new FixedRandom(0f));
     }
 
     // 属性用例：验证 Add/Mul/Override 的计算顺序、Modifier 来源清理和 HP 上限钳制。
@@ -49,7 +49,7 @@ namespace Combat.Demos
         public static void Run()
         {
             // 使用 stake 作为纯属性载体，不引入输入、连招等玩家行为组件。
-            var world = new CombatWorld(new FighterActorFactory(DemoTables.G1G2(), DemoTables.MakeLib()));
+            var world = DemoWorld.Create(out _, out _, new FixedRandom(0f));
             var id = world.SpawnActor(new ActorSpawnSpec("stake"));
             world.TryGetActor(id, out var actor);
             var attr = actor.GetComp<AttributeSet>();
@@ -89,7 +89,7 @@ namespace Combat.Demos
         public static void Run()
         {
             // 下面的三个 DurationSpec 分别代表可叠层 Burn、互斥的 Wet 和 Ignite。
-            var world = new CombatWorld(new FighterActorFactory(DemoTables.G1G2(), DemoTables.MakeLib()));
+            var world = DemoWorld.Create(out _, out _, new FixedRandom(0f));
             var id = world.SpawnActor(new ActorSpawnSpec("stake"));
             world.TryGetActor(id, out var actor);
             var attr = actor.GetComp<AttributeSet>();
@@ -167,8 +167,7 @@ namespace Combat.Demos
         public static void Run()
         {
             // Activity 决定当前 Actor 可以使用哪种运动策略，Locomotion 负责实际积分位置。
-            var lib = DemoTables.MakeLib();
-            var world = new CombatWorld(new FighterActorFactory(DemoTables.G1G2(), lib));
+            var world = DemoWorld.Create(out _, out _, new FixedRandom(0f));
             var id = world.SpawnActor(new ActorSpawnSpec("fighter"));
             world.TryGetActor(id, out var actor);
             var fsm = actor.GetComp<StateMachineComp>();
@@ -228,9 +227,8 @@ namespace Combat.Demos
         public static void Run()
         {
             // 监听 Cue 事件，确认 Timeline 的表现层 Payload 确实被触发。
-            var intents = new IntentQueue();
             var events = new EventBus();
-            var world = new CombatWorld(new FighterActorFactory(DemoTables.G1G2(), DemoTables.MakeLib()), intents, events);
+            var world = DemoWorld.Create(out _, out _, new FixedRandom(0f), events);
             CombatCatalog.RegisterDefaults(world.Projectiles, world.Aoes, CombatCatalog.Burn(), world.Summons);
             int cues = 0;
             events.Subscribe<EvCue>(_ => cues++);
@@ -342,7 +340,7 @@ namespace Combat.Demos
         public static void Run()
         {
             var events = new EventBus();
-            var world = new CombatWorld(new FighterActorFactory(DemoTables.G1G2(), DemoTables.MakeLib()), new IntentQueue(), events, new CombatTime(), new FixedRandom(0f));
+            var world = DemoWorld.Create(out _, out var time, new FixedRandom(0f), events);
             CombatCatalog.RegisterDefaults(world.Projectiles, world.Aoes, CombatCatalog.Burn(), world.Summons);
             world.TryGetActor(world.SpawnActor(new ActorSpawnSpec("fighter")), out var player);
             world.TryGetActor(world.SpawnActor(new ActorSpawnSpec("stake")), out var stake);
@@ -459,7 +457,7 @@ namespace Combat.Demos
         {
             // 同时注册投射物、AoE 和 Burn，覆盖技能 Payload 到运行时对象的完整链路。
             var events = new EventBus();
-            var world = new CombatWorld(new FighterActorFactory(DemoTables.G1G2(), DemoTables.MakeLib()), new IntentQueue(), events);
+            var world = DemoWorld.Create(out _, out _, new FixedRandom(0f), events);
             var burn = CombatCatalog.Burn();
             CombatCatalog.RegisterDefaults(world.Projectiles, world.Aoes, burn, world.Summons);
             world.TryGetActor(world.SpawnActor(new ActorSpawnSpec("fighter")), out var player);
@@ -536,16 +534,11 @@ namespace Combat.Demos
             DemoTables.ResetG1MeleeDefaults();
             // 该用例故意使用真实的事件监听器，模拟表现层消费 Cue 和伤害事件。
             var time = new CombatTime();
-            var intents = new IntentQueue();
             var events = new EventBus();
             var cues = CueLibrary.DefaultCombat();
             var listener = new CueListener(cues);
             listener.Bind(events);
-            var lib = DemoTables.MakeLib();
-            var world = new CombatWorld(new FighterActorFactory(DemoTables.G1G2(), lib), intents, events, time, new FixedRandom(0f), cues);
-            var burnBake = new DurationBake(CombatCatalog.Burn());
-            var burn = burnBake.Bake();
-            CombatCatalog.RegisterDefaults(world.Projectiles, world.Aoes, burn, world.Summons);
+            var world = DemoWorld.Create(out _, out _, new FixedRandom(0f), events, time);
 
             int floaters = 0;
             int deadEvents = 0, cleanups = 0;

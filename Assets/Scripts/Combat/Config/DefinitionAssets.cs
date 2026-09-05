@@ -351,6 +351,10 @@ namespace Combat.Config
         public float Lifetime;
         public float FollowRange = 2f;
         public float AcquireRadius = 8f;
+        // Optional hand-authored graph. When omitted, the compact recipe
+        // remains the default so generated V4 content stays immediately
+        // runnable.
+        public BtNodeAsset Tree;
         public TreeRecipeKind Recipe = TreeRecipeKind.SummonMelee;
         public SummonDefinition Bake()
         {
@@ -360,7 +364,7 @@ namespace Combat.Config
                 Lifetime = Lifetime,
                 FollowRange = FollowRange,
                 AcquireRadius = AcquireRadius,
-                Tree = TreeRecipe.Build(Recipe)
+                Tree = Tree != null ? Tree.Bake() : TreeRecipe.Build(Recipe)
             };
         }
 
@@ -556,11 +560,13 @@ namespace Combat.Config
         public override BtNode Bake() => new BtSelector(BakeChildren(Children));
         static BtNode[] BakeChildren(BtNodeAsset[] children)
         {
-            var source = children ?? Array.Empty<BtNodeAsset>();
+            if (children == null || children.Length == 0)
+                throw new InvalidOperationException("BtSelectorAsset requires at least one child.");
+            var source = children;
             var result = new BtNode[source.Length];
             for (int i = 0; i < source.Length; i++)
             {
-                if (source[i] == null) throw new InvalidOperationException("empty BT child");
+                if (source[i] == null) throw new InvalidOperationException("BtSelectorAsset contains an empty child at index " + i + ".");
                 result[i] = source[i].Bake();
             }
             return result;
@@ -573,11 +579,13 @@ namespace Combat.Config
         public BtNodeAsset[] Children;
         public override BtNode Bake()
         {
-            var source = Children ?? Array.Empty<BtNodeAsset>();
+            if (Children == null || Children.Length == 0)
+                throw new InvalidOperationException("BtSequenceAsset requires at least one child.");
+            var source = Children;
             var result = new BtNode[source.Length];
             for (int i = 0; i < source.Length; i++)
             {
-                if (source[i] == null) throw new InvalidOperationException("empty BT child");
+                if (source[i] == null) throw new InvalidOperationException("BtSequenceAsset contains an empty child at index " + i + ".");
                 result[i] = source[i].Bake();
             }
             return new BtSequence(result);

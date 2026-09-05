@@ -1,6 +1,6 @@
 using System;
+using System.Reflection;
 using Combat.Core;
-using Combat.Demos;
 using UnityEngine;
 
 namespace Combat.Unity
@@ -44,32 +44,51 @@ namespace Combat.Unity
             string category = DemoCategory(_demo);
             try
             {
-                switch (_demo)
-                {
-                    case HaloCombatDemoKind.TagInput: TagInputDemo.Run(); break;
-                    case HaloCombatDemoKind.Attribute: AttributeDemo.Run(); break;
-                    case HaloCombatDemoKind.Buff: BuffDemo.Run(); break;
-                    case HaloCombatDemoKind.ActivityMotor: ActivityMotorDemo.Run(); break;
-                    case HaloCombatDemoKind.ClipPayload: ClipPayloadDemo.Run(); break;
-                    case HaloCombatDemoKind.MeleeDamage: MeleeDamageDemo.Run(); break;
-                    case HaloCombatDemoKind.ProjectileAoe: ProjectileAoeDemo.Run(); break;
-                    case HaloCombatDemoKind.SeasonOne: SeasonOneDemo.Run(); break;
-                    case HaloCombatDemoKind.Knockdown: KnockdownDemo.Run(); break;
-                    case HaloCombatDemoKind.DodgeHitstop: DodgeHitstopDemo.Run(); break;
-                    case HaloCombatDemoKind.AuraHoming: AuraHomingDemo.Run(); break;
-                    case HaloCombatDemoKind.BehaviorTree: BehaviorTreeDemo.Run(); break;
-                    case HaloCombatDemoKind.Perception: PerceptionDemo.Run(); break;
-                    case HaloCombatDemoKind.EnemyAi: EnemyAiDemo.Run(); break;
-                    case HaloCombatDemoKind.Summon: SummonDemo.Run(); break;
-                    case HaloCombatDemoKind.SeasonTwo: SeasonTwoDemo.Run(); break;
-                    default: throw new ArgumentOutOfRangeException();
-                }
+#if UNITY_EDITOR
+                var type = Type.GetType("Combat.Demos." + DemoTypeName(_demo) + ", Combat.Demos");
+                if (type == null) throw new InvalidOperationException("Demo type not found: " + _demo);
+                var method = type.GetMethod("Run", BindingFlags.Public | BindingFlags.Static);
+                if (method == null) throw new InvalidOperationException("Demo Run method not found: " + _demo);
+                method.Invoke(null, null);
+#else
+                Debug.LogWarning("HaloCombat demos are editor-only.", this);
+#endif
                 CombatLog.Info(category, _demo + " PASSED");
+            }
+            catch (TargetInvocationException exception)
+            {
+                var inner = exception.InnerException ?? exception;
+                CombatLog.Error(category, _demo + " FAILED", inner);
+                throw inner;
             }
             catch (Exception exception)
             {
                 CombatLog.Error(category, _demo + " FAILED", exception);
                 throw;
+            }
+        }
+
+        static string DemoTypeName(HaloCombatDemoKind demo)
+        {
+            switch (demo)
+            {
+                case HaloCombatDemoKind.TagInput: return "TagInputDemo";
+                case HaloCombatDemoKind.Attribute: return "AttributeDemo";
+                case HaloCombatDemoKind.Buff: return "BuffDemo";
+                case HaloCombatDemoKind.ActivityMotor: return "ActivityMotorDemo";
+                case HaloCombatDemoKind.ClipPayload: return "ClipPayloadDemo";
+                case HaloCombatDemoKind.MeleeDamage: return "MeleeDamageDemo";
+                case HaloCombatDemoKind.ProjectileAoe: return "ProjectileAoeDemo";
+                case HaloCombatDemoKind.SeasonOne: return "SeasonOneDemo";
+                case HaloCombatDemoKind.Knockdown: return "KnockdownDemo";
+                case HaloCombatDemoKind.DodgeHitstop: return "DodgeHitstopDemo";
+                case HaloCombatDemoKind.AuraHoming: return "AuraHomingDemo";
+                case HaloCombatDemoKind.BehaviorTree: return "BehaviorTreeDemo";
+                case HaloCombatDemoKind.Perception: return "PerceptionDemo";
+                case HaloCombatDemoKind.EnemyAi: return "EnemyAiDemo";
+                case HaloCombatDemoKind.Summon: return "SummonDemo";
+                case HaloCombatDemoKind.SeasonTwo: return "SeasonTwoDemo";
+                default: throw new ArgumentOutOfRangeException(nameof(demo));
             }
         }
 

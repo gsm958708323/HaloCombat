@@ -16,4 +16,5 @@ MonoBehaviour:
   Lifetime: 0
   FollowRange: 2
   AcquireRadius: 8
+  Tree: {fileID: 0}
   Recipe: 3

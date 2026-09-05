@@ -24,6 +24,8 @@
     <Compile Include="Assets/Scripts/Combat/Demos/EnemyAiDemo.cs" />
     <Compile Include="Assets/Scripts/Combat/Demos/SummonDemo.cs" />
     <Compile Include="Assets/Scripts/Combat/Demos/SeasonTwoDemo.cs" />
+    <Compile Include="Assets/Scripts/Combat/Demos/SeasonThreeLessonDemo.cs" />
+    <Compile Include="Assets/Scripts/Combat/Unity/TrainingCampVerificationDemo.cs" />
     <Compile Include="Assets/Scripts/Combat/Demos/DemoWorld.cs" />
     <Compile Include="Assets/Scripts/Combat/Demos/PresentationDemos.cs" />
   </ItemGroup>

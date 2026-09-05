@@ -67,6 +67,7 @@
   <ItemGroup>
     <Compile Include="Assets\Scripts\Combat\Presentation\ViewContracts.cs" />
     <Compile Include="Assets\Scripts\Combat\Presentation\PresentationRouter.cs" />
+    <Compile Include="Assets\Scripts\Combat\Presentation\CombatLesson.cs" />
     <Compile Include="Assets\Scripts\Combat\Presentation\SimulationClock.cs" />
     <Compile Include="Assets\Scripts\Combat\Presentation\ViewRegistry.cs" />
   </ItemGroup>

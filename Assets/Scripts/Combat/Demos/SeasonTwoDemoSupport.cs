@@ -9,17 +9,12 @@ namespace Combat.Demos
         public static CombatWorld NewWorld(EventBus events = null, CombatTime time = null, IRandom random = null)
         {
             // 默认使用固定随机数，保证暴击和其它随机分支在回归测试中稳定。
-            var baked = new CodeCombatContent().Bake();
-            var world = new CombatWorld(
-                new FighterActorFactory(baked),
-                new IntentQueue(),
-                events ?? new EventBus(),
-                time ?? new CombatTime(),
+            return DemoWorld.Create(
+                out _,
+                out _,
                 random ?? new FixedRandom(0f),
-                baked.Cues,
-                baked.Motor);
-            baked.Install(world);
-            return world;
+                events,
+                time);
         }
 
         public static Actor Spawn(CombatWorld world, string blueprint, float x, float z)

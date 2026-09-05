@@ -27,4 +27,6 @@ MonoBehaviour:
   HomingAcquireRadius: 12
   OnHit:
   - {fileID: 11400000, guid: 805c25fa1a59412478785fbf0e1a921b, type: 2}
+  - {fileID: 11400000, guid: b16c96523e6ee4242829914391fb6b8b, type: 2}
+  - {fileID: 11400000, guid: 203c38d897f6a9748b9aae938f3d324b, type: 2}
   OnExpire: []

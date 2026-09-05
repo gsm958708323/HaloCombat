@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Combat.Config;
 using Combat.Unity;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -30,6 +31,10 @@ namespace Combat.EditorTools
         [MenuItem("Combat/Create Season Three Scenes")]
         public static void CreateAll()
         {
+            var database = AssetDatabase.LoadAssetAtPath<CombatDatabaseAsset>(
+                "Assets/Combat/Config/Generated/CombatDatabase.asset");
+            if (database == null)
+                throw new InvalidOperationException("Generate CombatDatabase.asset before creating Season Three scenes.");
             Directory.CreateDirectory(Path.Combine(Application.dataPath, "Scenes", "HaloCombat"));
             var existing = new System.Collections.Generic.List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
             for (int i = 0; i < Specs.Length; i++)
@@ -39,7 +44,7 @@ namespace Combat.EditorTools
                 var root = new GameObject("CombatRunner");
                 var runner = root.AddComponent<CombatRunner>();
                 root.AddComponent<CombatGizmos>();
-                runner.Configure(Specs[i].Kind);
+                runner.Configure(Specs[i].Kind, database, true);
 
                 var plane = GameObject.CreatePrimitive(PrimitiveType.Plane);
                 plane.name = "Ground";
@@ -80,6 +85,8 @@ namespace Combat.EditorTools
                 var runners = UnityEngine.Object.FindObjectsByType<CombatRunner>(FindObjectsInactive.Include, FindObjectsSortMode.None);
                 if (runners.Length != 1) throw new InvalidOperationException(path + " must contain exactly one CombatRunner");
                 if (runners[0].Scene != Specs[i].Kind) throw new InvalidOperationException(path + " has wrong SceneKind");
+                if (!runners[0].IsUsingSoDatabase || runners[0].Database == null)
+                    throw new InvalidOperationException(path + " must use generated CombatDatabase.asset");
                 if (!scene.isLoaded) throw new InvalidOperationException(path + " was not loaded");
             }
             Debug.Log("[HaloCombat] Verified Season Three scenes: " + Specs.Length);

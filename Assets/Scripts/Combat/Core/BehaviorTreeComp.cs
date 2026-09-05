@@ -10,6 +10,7 @@ namespace Combat.Core
         readonly BtBlackboard _board = new BtBlackboard();
         bool _homeCaptured;
         public override bool WantsTick => true;
+        public bool Enabled { get; set; } = true;
         public BtBlackboard Board => _board;
         public BehaviorTreeComp(BtNode prototype, Action<BtBlackboard> configure = null)
         {
@@ -26,7 +27,7 @@ namespace Combat.Core
         protected override void OnDetach() { _root = null; _board.ClearTarget(); _board.Owner = EntityId.Invalid; _homeCaptured = false; }
         public override void Tick(float dt)
         {
-            if (_root == null || Self.World == null) return;
+            if (!Enabled || _root == null || Self.World == null) return;
             if (!_homeCaptured && Self.TryGetComp<TransformComp>(out var tf))
             {
                 // EntityRegistry attaches before gameplay code assigns the spawn

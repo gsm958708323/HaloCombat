@@ -66,12 +66,21 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\Combat\Unity\InputAdapter.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\CombatStageView.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\CombatLessonVfx.cs" />
     <Compile Include="Assets\Scripts\Combat\Unity\CueFloaterHitstop.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\TrainingCampRunner.cs" />
     <Compile Include="Assets\Scripts\Combat\Unity\UnityView.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\CombatLessonDirector.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\TrainingCampPanel.cs" />
     <Compile Include="Assets\Scripts\Combat\Unity\CombatGizmos.cs" />
     <Compile Include="Assets\Scripts\Combat\Unity\CombatRunner.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\TrainingCampController.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\TrainingCampVerificationDemo.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\TrainingCampVisuals.cs" />
     <Compile Include="Assets\Scripts\Combat\Unity\UnityLogSink.cs" />
     <Compile Include="Assets\Scripts\Combat\Unity\HaloCombatDemoRunner.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\TrainingCampProbe.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Scripts\Combat\Unity\Combat.Unity.asmdef" />
@@ -1118,7 +1127,6 @@
     <ProjectReference Include="Combat.Core.csproj" />
     <ProjectReference Include="Combat.Presentation.csproj" />
     <ProjectReference Include="Combat.Config.csproj" />
-    <ProjectReference Include="Combat.Demos.csproj" />
   </ItemGroup>
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
   <ItemGroup>

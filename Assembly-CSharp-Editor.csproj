@@ -1132,16 +1132,16 @@
       <HintPath>Library\ScriptAssemblies\UnityEditor.UI.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Unity.Searcher.Editor">
-      <HintPath>Library\ScriptAssemblies\Unity.Searcher.Editor.dll</HintPath>
+    <Reference Include="Unity.AI.Navigation">
+      <HintPath>Library\ScriptAssemblies\Unity.AI.Navigation.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.Rider.Editor">
       <HintPath>Library\ScriptAssemblies\Unity.Rider.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Unity.AI.Navigation">
-      <HintPath>Library\ScriptAssemblies\Unity.AI.Navigation.dll</HintPath>
+    <Reference Include="Unity.Searcher.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.Searcher.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.RenderPipeline.Universal.ShaderLibrary">
@@ -1329,7 +1329,8 @@
     <ProjectReference Include="Assembly-CSharp.csproj" />
     <ProjectReference Include="Combat.Core.csproj" />
     <ProjectReference Include="Combat.Presentation.csproj" />
-    <ProjectReference Include="Combat.Demos.csproj" />
+    <ProjectReference Include="cn.lys.aibridge.Runtime.csproj" />
+    <ProjectReference Include="cn.lys.aibridge.Editor.csproj" />
     <ProjectReference Include="Combat.Unity.csproj" />
     <ProjectReference Include="Combat.Config.csproj" />
   </ItemGroup>

@@ -88,6 +88,7 @@
     <Compile Include="Assets\Scripts\Combat\Config\ApplyDurationAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\DispelAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\BtNodeAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\BehaviorTreeAssets.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\SkillTimelineAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\CueLibraryAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\ComboTableAsset.cs" />
