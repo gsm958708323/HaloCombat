@@ -69,7 +69,6 @@
     <Compile Include="Assets\Scripts\Combat\Config\ProjectileDefAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\CharacterMotorAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\SpawnAoeAsset.cs" />
-    <Compile Include="Assets\Scripts\Combat\Config\EffectAssets.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\HitProfileAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\SpawnSummonAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\SummonDefAsset.cs" />

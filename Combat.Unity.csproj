@@ -65,22 +65,9 @@
     <Analyzer Include="D:\Work\UnityInstall\6000.0.32f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Scripts\Combat\Unity\InputAdapter.cs" />
-    <Compile Include="Assets\Scripts\Combat\Unity\CombatStageView.cs" />
-    <Compile Include="Assets\Scripts\Combat\Unity\CombatLessonVfx.cs" />
-    <Compile Include="Assets\Scripts\Combat\Unity\CueFloaterHitstop.cs" />
-    <Compile Include="Assets\Scripts\Combat\Unity\TrainingCampRunner.cs" />
-    <Compile Include="Assets\Scripts\Combat\Unity\UnityView.cs" />
-    <Compile Include="Assets\Scripts\Combat\Unity\CombatLessonDirector.cs" />
-    <Compile Include="Assets\Scripts\Combat\Unity\TrainingCampPanel.cs" />
-    <Compile Include="Assets\Scripts\Combat\Unity\CombatGizmos.cs" />
-    <Compile Include="Assets\Scripts\Combat\Unity\CombatRunner.cs" />
-    <Compile Include="Assets\Scripts\Combat\Unity\TrainingCampController.cs" />
     <Compile Include="Assets\Scripts\Combat\Unity\TrainingCampVerificationDemo.cs" />
-    <Compile Include="Assets\Scripts\Combat\Unity\TrainingCampVisuals.cs" />
     <Compile Include="Assets\Scripts\Combat\Unity\UnityLogSink.cs" />
     <Compile Include="Assets\Scripts\Combat\Unity\HaloCombatDemoRunner.cs" />
-    <Compile Include="Assets\Scripts\Combat\Unity\TrainingCampProbe.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Scripts\Combat\Unity\Combat.Unity.asmdef" />
@@ -1125,8 +1112,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="Combat.Core.csproj" />
-    <ProjectReference Include="Combat.Presentation.csproj" />
-    <ProjectReference Include="Combat.Config.csproj" />
   </ItemGroup>
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
   <ItemGroup>

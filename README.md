@@ -68,34 +68,11 @@ dotnet run --project Combat.csproj -- --category TagInput tag
 
 Unity Console 会为 category 添加颜色；`.NET` Console 保持纯文本，便于重定向和解析。
 
-## V1-V4 ARPG 教学演示
+## 纯 C# 回归 Demo
 
-`V1Motor`、`V2Melee`、`V3ProjectileAoe` 和 `V4AiSummon` 现在是四个可操作的
-ARPG 教学场景。场景会自动播放由 `CombatLesson` 驱动的确定性演示，并用 HUD 展示
-当前步骤、Actor 状态、事件流和技能时间轴。`CombatLesson` 位于纯 C# Presentation 层，
-因此可通过 `dotnet run --project Combat.csproj -- lesson` 在不启动 Unity 的情况下回归
-四个场景的核心行为。
-
-运行时控制：`Space` 暂停/继续，`N` 单步，`R` 重播，`F5` 显示底层调试信息。
-Unity 表现层使用程序化的玩家、敌人、目标桩、召唤物、Projectile 和 AoE 视觉 Profile，
-不承担伤害或状态结算。
-
-也可在 Unity 菜单使用 `Tools/HaloCombat/Create Demo Scenes` 重建场景，或使用
-`Tools/HaloCombat/Verify Demo Scenes` 在编辑器中验证所有场景配置和 Demo。
-
-## TrainingCamp 功能验证沙盒
-
-`Assets/Scenes/HaloCombat/TrainingCamp.unity` 是独立的手动验证场景，不改变上述教学
-Demo。场景默认生成玩家和无限生命 Passive Dummy；按 `Q` 可切换 AI Dummy。面板按钮与
-快捷键覆盖移动、跳跃、攻击、Dodge、Buff/Dispel、Fireball、Homing、Fire Ground、Aura、
-Summon、Knockdown、清理和检查。快捷键：`1-8` 执行对应运行时操作，`R` 重置，`Tab`
-隐藏面板，`F1` 清理运行时对象，`F2/F3` 执行当前/全量检查。
-
-纯 C# 验证不依赖 Unity Scene 或 RunnerTest：
+`CombatLesson`、`SeasonThreeLessonDemo` 和 `TrainingCampVerificationDemo` 都是纯 C# 验证，
+不依赖 Unity 场景或 Unity 测试工程：
 
 ```powershell
 dotnet run --project Combat.csproj -- training-camp
 ```
-
-场景可通过 `Combat/Create Training Camp Sandbox` 重建，并通过
-`Combat/Verify Training Camp Sandbox` 检查入口、无限血木桩和初始运行时契约。

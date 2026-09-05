@@ -9,7 +9,6 @@ namespace Combat.EditorTools
             GenerateDefaultDatabase.GenerateBatch();
             ValidateMenu.Validate();
             HaloCombatDemoSceneBuilder.VerifyAll();
-            SeasonThreeSceneBuilder.VerifyAll();
         }
     }
 }

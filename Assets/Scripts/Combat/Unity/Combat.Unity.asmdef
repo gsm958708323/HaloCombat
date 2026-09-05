@@ -1,7 +1,7 @@
 {
   "name": "Combat.Unity",
   "rootNamespace": "Combat.Unity",
-  "references": ["Combat.Core", "Combat.Presentation", "Combat.Config"],
+  "references": ["Combat.Core"],
   "includePlatforms": [],
   "excludePlatforms": [],
   "allowUnsafeCode": false,
