@@ -83,28 +83,17 @@ namespace Combat.Core
             else
             {
                 actor.AddComp(new HitboxComp());
-                if (definition.EnableAI && definition.BehaviorTree == null)
+                if (definition.BehaviorTree == null)
                     throw new InvalidOperationException("Enemy character " + definition.BlueprintId + " requires a BehaviorTree.");
-                if (definition.BehaviorTree != null)
+                actor.AddComp(new PerceptionComp(definition.AcquireRadius));
+                actor.AddComp(new BehaviorTreeComp(definition.BehaviorTree, board =>
                 {
-                    var perception = new PerceptionComp(definition.AcquireRadius)
-                    {
-                        Enabled = definition.EnableAI
-                    };
-                    actor.AddComp(perception);
-                    var behavior = new BehaviorTreeComp(definition.BehaviorTree, board =>
-                    {
-                        board.AcquireRadius = definition.AcquireRadius;
-                        board.AttackRange = definition.AttackRange;
-                        board.FollowRange = definition.FollowRange;
-                        board.LeashRange = definition.LeashRange;
-                        board.PatrolRadius = definition.PatrolRadius;
-                    })
-                    {
-                        Enabled = definition.EnableAI
-                    };
-                    actor.AddComp(behavior);
-                }
+                    board.AcquireRadius = definition.AcquireRadius;
+                    board.AttackRange = definition.AttackRange;
+                    board.FollowRange = definition.FollowRange;
+                    board.LeashRange = definition.LeashRange;
+                    board.PatrolRadius = definition.PatrolRadius;
+                }));
                 actor.AddComp(new SkillDirectorComp(_data.Timelines, _data.Skills));
             }
 

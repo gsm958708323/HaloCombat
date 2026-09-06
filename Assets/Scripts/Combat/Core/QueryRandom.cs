@@ -121,7 +121,7 @@ namespace Combat.Core
                 if (box.BakedOnHit == null || box.BakedOnHit.Length == 0) continue;
                 if (!attacker.TryGetComp<TransformComp>(out var tf)) continue;
 
-                var center = CombatGeom.WorldPoint(tf.Position, tf.YawDegrees, box.LocalOffset);
+                var center = CombatGeom.HitboxCenter(tf, box);
                 int n = _world.Query.OverlapCircle(center, box.Radius, attacker, 0, _buffer);
                 float snapshotAtk = 0f;
                 if (attacker.TryGetComp<AttributeSet>(out var attr))

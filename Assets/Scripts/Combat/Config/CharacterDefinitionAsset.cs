@@ -11,8 +11,6 @@ namespace Combat.Config
         public string DisplayName;
         public bool IsPlayer;
         public bool PlayerSelectable;
-        [Tooltip("Whether this enemy runs its perception and behavior tree. Ignored for player characters.")]
-        public bool EnableAI = true;
         public string ViewBlueprintId;
         public SkillDefinitionAsset[] Skills;
         public ComboTableAsset ComboTable;
@@ -49,7 +47,6 @@ namespace Combat.Config
                 DisplayName = string.IsNullOrEmpty(DisplayName) ? BlueprintId : DisplayName,
                 IsPlayer = IsPlayer,
                 PlayerSelectable = PlayerSelectable,
-                EnableAI = !IsPlayer && EnableAI,
                 Skills = bakedSkills,
                 Combo = ComboTable != null ? ComboTable.Bake() : null,
                 BehaviorTree = BehaviorTree != null ? BehaviorTree.Bake() : null,

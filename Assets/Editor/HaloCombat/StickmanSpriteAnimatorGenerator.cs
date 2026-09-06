@@ -203,17 +203,27 @@ namespace HaloCombat.Editor
         {
             var folder = $"{ViewRoot}/{spec.Id}";
             EnsureDirectory(folder);
+            var attack = spec.FilePrefix == "sword"
+                ? FirstSwordSlash(sprites.Attack)
+                : sprites.Attack;
             return new ClipSet
             {
                 Idle = CreateClip($"{folder}/Idle.anim", "Idle", sprites.Idle, true),
                 Run = CreateClip($"{folder}/Run.anim", "Run", sprites.Run, true),
-                Attack = CreateClip($"{folder}/Attack.anim", "Attack", sprites.Attack, false),
+                Attack = CreateClip($"{folder}/Attack.anim", "Attack", attack, false),
                 Air = CreateClip($"{folder}/Air.anim", "Air", sprites.Air, true),
                 Dash = CreateClip($"{folder}/Dash.anim", "Dash", sprites.Dash, false),
                 Slide = CreateClip($"{folder}/Slide.anim", "Slide", sprites.Slide, false),
                 Hit = CreateClip($"{folder}/Hit.anim", "Hit", sprites.Hit, false),
                 Death = CreateClip($"{folder}/Death.anim", "Death", sprites.Death, false)
             };
+        }
+
+        static List<Sprite> FirstSwordSlash(List<Sprite> combo)
+        {
+            if (combo == null || combo.Count <= 5)
+                return combo;
+            return combo.GetRange(0, 5);
         }
 
         static AnimationClip CreateClip(string path, string name, List<Sprite> sprites, bool loop)
@@ -239,6 +249,10 @@ namespace HaloCombat.Editor
             }
 
             AnimationUtility.SetObjectReferenceCurve(clip, binding, keys);
+            var settings = AnimationUtility.GetAnimationClipSettings(clip);
+            settings.loopTime = loop;
+            settings.loopBlend = loop;
+            AnimationUtility.SetAnimationClipSettings(clip, settings);
             AssetDatabase.CreateAsset(clip, path);
             return clip;
         }

@@ -16,7 +16,6 @@ MonoBehaviour:
   DisplayName: "\u62F3\u5E08"
   IsPlayer: 1
   PlayerSelectable: 1
-  EnableAI: 0
   ViewBlueprintId: fighter
   Skills:
   - {fileID: 11400000, guid: b61cc505242540845bb547d3f92b7e0c, type: 2}

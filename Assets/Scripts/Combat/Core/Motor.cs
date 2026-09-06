@@ -121,6 +121,12 @@ namespace Combat.Core
 
         public void Integrate(float dt)
         {
+            IntegrateBeforeHitDetection(dt);
+            IntegrateAfterHitDetection(dt);
+        }
+
+        public void IntegrateBeforeHitDetection(float dt)
+        {
             if (_tf == null || _fsm == null)
             {
                 ClearFrameRequests();
@@ -158,6 +164,24 @@ namespace Combat.Core
                 delta.Z += _skillDelta.Z;
             }
 
+            ApplyFacing(policy.Facing);
+
+            if (delta.X != 0f || delta.Y != 0f || delta.Z != 0f)
+                _tf.Position = _tf.Position + delta;
+
+            _skillDelta = SimVec3.Zero;
+        }
+
+        public void IntegrateAfterHitDetection(float dt)
+        {
+            if (_tf == null || _fsm == null)
+            {
+                _hitDelta = SimVec3.Zero;
+                return;
+            }
+
+            var loco = _fsm.Motor.Loco;
+            var delta = SimVec3.Zero;
             if (loco.UseHit)
             {
                 delta.X += _hitDelta.X;
@@ -170,12 +194,10 @@ namespace Combat.Core
             else if (_grounded)
                 _verticalVel = 0f;
 
-            ApplyFacing(policy.Facing);
-
             if (delta.X != 0f || delta.Y != 0f || delta.Z != 0f)
                 _tf.Position = _tf.Position + delta;
 
-            ClearFrameRequests();
+            _hitDelta = SimVec3.Zero;
         }
 
         float MotorScale(in LocoProfile loco)

@@ -259,6 +259,8 @@ namespace Combat.Core
 
         public SkillNodeId CurrentSkill => _currentSkill;
         public SkillAnimationMode CurrentAnimationMode => _currentAnimationMode;
+        public float CurrentTime => _player.Time;
+        public float CurrentDuration => _player.Duration;
         public bool UsesSkillCatalog => _skills != null;
         public bool IsPlaying => _player.IsPlaying;
         public override bool WantsTick => true;

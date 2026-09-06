@@ -102,7 +102,6 @@ namespace Combat.Core
         public string DisplayName;
         public bool IsPlayer;
         public bool PlayerSelectable;
-        public bool EnableAI;
         public SkillDefinition[] Skills = Array.Empty<SkillDefinition>();
         public ComboTableSO Combo;
         public BtNode BehaviorTree;

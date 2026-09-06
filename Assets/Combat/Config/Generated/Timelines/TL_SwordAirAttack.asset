@@ -47,7 +47,7 @@ MonoBehaviour:
     MoveZ: 0
     Steer: 0
     HitRadius: 0.7
-    HitOffsetX: 0
+    HitOffsetX: 0.525
     HitOffsetY: 0
     HitOffsetZ: 0
     HitProfile: {fileID: 11400000, guid: abcade8c820c7e24b950863a1e448d86, type: 2}

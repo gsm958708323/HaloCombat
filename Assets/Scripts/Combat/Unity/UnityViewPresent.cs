@@ -1,3 +1,4 @@
+using Combat.Core;
 using Combat.Presentation;
 using UnityEngine;
 
@@ -41,7 +42,7 @@ namespace Combat.Unity.Presentation
                 actor.Add(new PlayerFeedbackPresent { GhostPort = new UnityLoopVfxPort(_vfxRoot) });
                 actor.Add(new PlayerHudSourcePresent());
             }
-            var gizmo = new HitboxGizmoPresent { Port = new UnityGizmoDrawPort(Color.red) };
+            var gizmo = new HitboxGizmoPresent { Port = new UnityGizmoDrawPort(Color.red, _root) };
             actor.Add(gizmo);
             var prefab = _views != null ? _views.Find(blueprintId) : null;
             actor.Add(new UnityViewPresent(prefab, _root));
@@ -122,6 +123,17 @@ namespace Combat.Unity.Presentation
             SetFloat("Speed", flags.Speed);
             SetInteger("SkillId", flags.SkillId);
             SetInteger("SkillMode", (int)flags.AnimationMode);
+            if (flags.Attack && flags.SkillId != 0 && flags.SkillDuration > 0f)
+            {
+                var state = SkillState(flags.AnimationMode);
+                var progress = Mathf.Clamp01(flags.SkillTime / flags.SkillDuration);
+                if (_animator.HasState(0, state))
+                {
+                    _animator.speed = 0f;
+                    _animator.Play(state, 0, progress);
+                    return;
+                }
+            }
             _animator.speed = flags.Hitstop ? 0f : 1f;
         }
 
@@ -149,6 +161,21 @@ namespace Combat.Unity.Presentation
         {
             if (_animator.HasParameter(name, AnimatorControllerParameterType.Int))
                 _animator.SetInteger(name, value);
+        }
+
+        static int SkillState(SkillAnimationMode mode)
+        {
+            switch (mode)
+            {
+                case SkillAnimationMode.AirAttack:
+                    return Animator.StringToHash("AirAttack");
+                case SkillAnimationMode.Dash:
+                    return Animator.StringToHash("Dash");
+                case SkillAnimationMode.Slide:
+                    return Animator.StringToHash("Slide");
+                default:
+                    return Animator.StringToHash("Attack");
+            }
         }
 
     }

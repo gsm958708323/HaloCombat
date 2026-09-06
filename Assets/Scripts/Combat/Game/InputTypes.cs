@@ -11,7 +11,8 @@ namespace Combat.Game
             JumpPressed,
             DodgePressed,
             PausePressed,
-            DebugToggleHitbox;
+            DebugToggleHitbox,
+            DebugToggleEnemyAI;
     }
 
     public interface IGameplayInputSource

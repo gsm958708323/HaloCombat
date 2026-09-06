@@ -1,3 +1,4 @@
+using System;
 using Combat.Core;
 
 namespace Combat.Presentation
@@ -100,6 +101,8 @@ namespace Combat.Presentation
         protected override void OnDetach()
         {
             _port.Clear();
+            if (_port is IDisposable disposable)
+                disposable.Dispose();
             Frame = default(GizmoFrame);
         }
     }

@@ -16,7 +16,6 @@ MonoBehaviour:
   DisplayName: "\u5F92\u624B\u654C\u4EBA"
   IsPlayer: 0
   PlayerSelectable: 0
-  EnableAI: 1
   ViewBlueprintId: melee_ai
   Skills:
   - {fileID: 11400000, guid: b61cc505242540845bb547d3f92b7e0c, type: 2}

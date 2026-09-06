@@ -16,7 +16,6 @@ MonoBehaviour:
   DisplayName: "\u67AA\u624B\u654C\u4EBA"
   IsPlayer: 0
   PlayerSelectable: 0
-  EnableAI: 1
   ViewBlueprintId: ranged_ai
   Skills:
   - {fileID: 11400000, guid: d95a0e6412ce3244eb0b113b5f9d61e4, type: 2}

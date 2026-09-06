@@ -233,7 +233,6 @@ namespace Combat.EditorTools
             asset.DisplayName = displayName;
             asset.IsPlayer = player;
             asset.PlayerSelectable = selectable;
-            asset.EnableAI = !player;
             asset.ViewBlueprintId = viewId;
             asset.Skills = skills;
             asset.ComboTable = combo;
@@ -362,7 +361,15 @@ namespace Combat.EditorTools
             {
                 new TimelineClipAsset { Start = .08f, End = Math.Max(.1f, duration - .1f), Kind = ClipKind.CancelTag },
                 new TimelineClipAsset { Start = .04f, End = Math.Min(.25f, duration * .55f), Kind = ClipKind.Move, MoveX = .25f },
-                new TimelineClipAsset { Start = hitStart, End = hitEnd, Kind = ClipKind.Hitbox, HitRadius = hitRadius, HitProfile = profile }
+                new TimelineClipAsset
+                {
+                    Start = hitStart,
+                    End = hitEnd,
+                    Kind = ClipKind.Hitbox,
+                    HitRadius = hitRadius,
+                    HitOffsetX = hitRadius * .75f,
+                    HitProfile = profile
+                }
             };
             timeline.Payloads = Array.Empty<TimelinePayloadAsset>();
             return MakeSkill(name, skillId, displayName, timeline, animation);
@@ -600,8 +607,14 @@ namespace Combat.EditorTools
     {
       ""name"": ""Debug"",
       ""id"": ""22222222-2222-4222-8222-222222222222"",
-      ""actions"": [{""name"": ""Hitbox"", ""type"": ""Button"", ""id"": ""22222222-2222-4222-8222-222222222223""}],
-      ""bindings"": [{""id"": ""22222222-2222-4222-8222-222222222224"", ""path"": ""<Keyboard>/f3"", ""action"": ""Hitbox""}]
+      ""actions"": [
+        {""name"": ""Hitbox"", ""type"": ""Button"", ""id"": ""22222222-2222-4222-8222-222222222223""},
+        {""name"": ""ToggleEnemyAI"", ""type"": ""Button"", ""id"": ""22222222-2222-4222-8222-222222222225""}
+      ],
+      ""bindings"": [
+        {""id"": ""22222222-2222-4222-8222-222222222224"", ""path"": ""<Keyboard>/f3"", ""action"": ""Hitbox""},
+        {""id"": ""22222222-2222-4222-8222-222222222226"", ""path"": ""<Keyboard>/f4"", ""action"": ""ToggleEnemyAI""}
+      ]
     }
   ],
   ""controlSchemes"": []

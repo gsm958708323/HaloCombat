@@ -96,7 +96,7 @@ namespace Combat.Unity.Game
                 }
                 if (GUI.Button(new Rect(box.x + 90, box.y + 208, 260, 48), "START BATTLE", ButtonStyle(18)))
                     _flow.StartRun();
-                GUI.Label(new Rect(box.x + 38, box.y + 278, 360, 26), "F3 hitboxes   ESC pause", LabelStyle());
+                GUI.Label(new Rect(box.x + 38, box.y + 278, 360, 26), "F3 hitboxes   F4 enemy AI   ESC pause", LabelStyle());
             }
             else if (_flow.State == FlowState.Result && _flow.ResultReady)
             {

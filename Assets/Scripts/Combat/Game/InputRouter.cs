@@ -18,6 +18,8 @@ namespace Combat.Game
                 s.TogglePause();
             if (f.DebugToggleHitbox)
                 PresentSettings.ShowHitboxes = !PresentSettings.ShowHitboxes;
+            if (f.DebugToggleEnemyAI)
+                s.ToggleEnemyAI();
             if (!s.AllowsGameplayInput)
                 return;
             if (!s.World.TryGetActor(s.LocalPlayerId, out var p) || p == null)

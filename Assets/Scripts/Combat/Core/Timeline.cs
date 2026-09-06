@@ -274,6 +274,7 @@ namespace Combat.Core
 
         public bool IsPlaying => _playing;
         public float Time => _time;
+        public float Duration => _so != null ? _so.Duration : 0f;
         public TimelineId Id => _so != null ? _so.Id : TimelineId.None;
 
         public void Play(TimelineSO so)

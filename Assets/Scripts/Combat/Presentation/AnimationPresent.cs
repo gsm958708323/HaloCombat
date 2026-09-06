@@ -13,6 +13,8 @@ namespace Combat.Presentation
             Dead,
             IFrame;
         public int SkillId;
+        public float SkillTime,
+            SkillDuration;
         public bool Hitstop;
         public SkillAnimationMode AnimationMode;
 
@@ -40,6 +42,8 @@ namespace Combat.Presentation
             if (a.TryGetComp<SkillDirectorComp>(out var dir) && dir.IsPlaying)
             {
                 f.SkillId = dir.CurrentSkill.Value;
+                f.SkillTime = dir.CurrentTime;
+                f.SkillDuration = dir.CurrentDuration;
                 f.AnimationMode = dir.CurrentAnimationMode;
             }
             if (a.TryGetComp<LocomotionComp>(out var loco))

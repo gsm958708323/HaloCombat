@@ -14,6 +14,7 @@ namespace Combat.Game
         public bool AllowsGameplayInput => !Paused && !PlayFrozen && World != null;
         public bool Finished { get; private set; }
         public bool PlayerWin { get; private set; }
+        public bool EnemyAIEnabled { get; private set; } = true;
         public int Frame => World == null ? 0 : World.Time.Frame;
         public LogicTicker Ticker => _ticker;
         readonly PauseStack _pause = new PauseStack();
@@ -129,6 +130,38 @@ namespace Combat.Game
             else
                 _pause.Push();
             Hub.SetPaused(Paused);
+        }
+
+        public void ToggleEnemyAI() => SetEnemyAIEnabled(!EnemyAIEnabled);
+
+        public void SetEnemyAIEnabled(bool enabled)
+        {
+            if (World == null || EnemyAIEnabled == enabled)
+                return;
+            EnemyAIEnabled = enabled;
+            var actors = World.RegistryActive();
+            for (int i = 0; i < actors.Count; i++)
+            {
+                var actor = actors[i];
+                if (!IsEnemy(actor))
+                    continue;
+                if (actor.TryGetComp<PerceptionComp>(out var perception))
+                {
+                    perception.Enabled = enabled;
+                    if (!enabled)
+                        perception.ClearAlert();
+                }
+                if (actor.TryGetComp<BehaviorTreeComp>(out var behavior))
+                    behavior.SetEnabled(enabled);
+            }
+        }
+
+        static bool IsEnemy(Actor actor)
+        {
+            return actor != null
+                && actor.TryGetComp<BehaviorTreeComp>(out _)
+                && actor.TryGetComp<TeamComp>(out var team)
+                && team.TeamId == 2;
         }
 
         public void PumpLogic(float dt)

@@ -227,6 +227,15 @@ namespace Combat.Core
             for (int i = 0; i < _servicePhase.Count; i++)
                 _servicePhase[i]();
 
+            // Apply regular and skill movement before hit detection so the displayed
+            // hitbox and the position used for the actual query describe the same frame.
+            actors = _registry.CopyActiveActors();
+            for (int i = 0; i < actors.Count; i++)
+            {
+                if (actors[i].TryGetComp<LocomotionComp>(out var loco))
+                    loco.IntegrateBeforeHitDetection(_time.Delta);
+            }
+
             _projectilesSvc.Tick(_time.Delta);
             _hitDetect.Tick();
 
@@ -252,7 +261,7 @@ namespace Combat.Core
             for (int i = 0; i < actors.Count; i++)
             {
                 if (actors[i].TryGetComp<LocomotionComp>(out var loco))
-                    loco.Integrate(_time.Delta);
+                    loco.IntegrateAfterHitDetection(_time.Delta);
             }
 
             _registry.FlushDespawn();

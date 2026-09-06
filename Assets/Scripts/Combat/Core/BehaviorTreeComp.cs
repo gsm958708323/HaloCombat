@@ -43,5 +43,18 @@ namespace Combat.Core
             if (prototype == null) throw new ArgumentNullException(nameof(prototype));
             _root = prototype.Clone();
         }
+
+        public void SetEnabled(bool enabled)
+        {
+            if (Enabled == enabled)
+                return;
+            Enabled = enabled;
+            _board.ClearTarget();
+            _board.Returning = false;
+            if (enabled)
+                _root = _prototype.Clone();
+            else if (Self != null && Self.TryGetComp<LocomotionComp>(out var loco))
+                loco.RequestMoveIntent(0f, 0f);
+        }
     }
 }

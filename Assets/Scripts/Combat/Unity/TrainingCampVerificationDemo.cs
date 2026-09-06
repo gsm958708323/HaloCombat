@@ -1,5 +1,6 @@
 using System;
 using Combat.Core;
+using Combat.Game;
 
 namespace Combat.TrainingCamp
 {
@@ -8,8 +9,8 @@ namespace Combat.TrainingCamp
     {
         public static bool Run(Action<string> output = null)
         {
-            string[] names = { "Motor", "InputBuffer", "Combo", "Damage", "Buff", "Projectile", "AOE", "AI", "SummonOwnership", "Cleanup" };
-            Func<bool>[] checks = { Motor, InputBuffer, Combo, Damage, Buff, Projectile, Aoe, Ai, Summon, Cleanup };
+            string[] names = { "Motor", "InputBuffer", "Combo", "Damage", "Buff", "Projectile", "AOE", "AI", "AI Shortcut", "SummonOwnership", "Cleanup" };
+            Func<bool>[] checks = { Motor, InputBuffer, Combo, Damage, Buff, Projectile, Aoe, Ai, AiShortcut, Summon, Cleanup };
             bool all = true;
             for (int i = 0; i < checks.Length; i++)
             {
@@ -101,6 +102,39 @@ namespace Combat.TrainingCamp
             e.GetComp<BehaviorTreeComp>().Board.Target = p.Id; Tick(w, 3);
             return e.GetComp<BehaviorTreeComp>().Board.Target == p.Id;
         }
+        static bool AiShortcut()
+        {
+            using (var session = ArenaSession.StartHeadless())
+            {
+                Actor enemy = null;
+                foreach (var actor in session.World.RegistryActive())
+                {
+                    if (actor.TryGetComp<BehaviorTreeComp>(out _)
+                        && actor.TryGetComp<TeamComp>(out var team)
+                        && team.TeamId == 2)
+                    {
+                        enemy = actor;
+                        break;
+                    }
+                }
+                if (enemy == null
+                    || !enemy.TryGetComp<BehaviorTreeComp>(out var behavior)
+                    || !enemy.TryGetComp<PerceptionComp>(out var perception))
+                    return false;
+
+                var router = new InputRouter(new ToggleAiInputSource());
+                router.Apply(session);
+                bool disabled = !session.EnemyAIEnabled && !behavior.Enabled && !perception.Enabled;
+                router.Apply(session);
+                return disabled && session.EnemyAIEnabled && behavior.Enabled && perception.Enabled;
+            }
+        }
+
+        sealed class ToggleAiInputSource : IGameplayInputSource
+        {
+            public GameplayInputFrame Sample() => new GameplayInputFrame { DebugToggleEnemyAI = true };
+        }
+
         static bool Summon()
         {
             var w = World(); var p = Spawn(w, "fighter", 0, 0);

@@ -14,7 +14,8 @@ namespace Combat.Unity.Game
             _jump,
             _dodge,
             _pause,
-            _gizmo;
+            _gizmo,
+            _toggleEnemyAI;
         readonly Transform _cam;
 
         public UnityInputSource(InputActionAsset asset, Transform cameraYaw)
@@ -34,6 +35,7 @@ namespace Combat.Unity.Game
             _dodge = Require(gp, "Dodge");
             _pause = Require(gp, "Pause");
             _gizmo = dbg != null ? Require(dbg, "Hitbox") : null;
+            _toggleEnemyAI = dbg != null ? Require(dbg, "ToggleEnemyAI") : null;
             _cam = cameraYaw;
             gp.Enable();
             dbg?.Enable();
@@ -77,6 +79,7 @@ namespace Combat.Unity.Game
                 DodgePressed = _dodge.WasPressedThisFrame(),
                 PausePressed = _pause.WasPressedThisFrame(),
                 DebugToggleHitbox = _gizmo != null && _gizmo.WasPressedThisFrame(),
+                DebugToggleEnemyAI = _toggleEnemyAI != null && _toggleEnemyAI.WasPressedThisFrame(),
             };
         }
 

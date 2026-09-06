@@ -32,7 +32,10 @@ namespace Combat.Unity.Presentation
             var cameraRight = camera.transform.right;
             cameraRight.y = 0f;
             if (cameraRight.sqrMagnitude > 0.0001f)
-                _sprite.flipX = Vector3.Dot(transform.right, cameraRight.normalized) < 0f;
+                // The billboard faces the camera with its local +X axis mirrored. The
+                // source sprites face right, so movement toward camera-right needs the
+                // compensating flip.
+                _sprite.flipX = Vector3.Dot(transform.right, cameraRight.normalized) > 0f;
         }
     }
 }
