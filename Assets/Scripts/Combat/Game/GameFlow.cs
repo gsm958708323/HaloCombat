@@ -28,29 +28,6 @@ namespace Combat.Game
         const float Hold = .6f;
 
         public GameFlow(
-            IGameplayInputSource i,
-            Func<ArenaSession> c = null,
-            ISettingsStore s = null,
-            string[] playerClasses = null,
-            string defaultPlayerClassId = "swordsman"
-        )
-        {
-            _input = i ?? new NullInputSource();
-            if (c != null)
-                _create = _ => c();
-            else
-                _create = id => ArenaSession.StartHeadless();
-            _store = s ?? new MemorySettingsStore();
-            _playerClasses = playerClasses ?? new[] { "swordsman" };
-            SelectedPlayerClassId = ContainsPlayerClass(defaultPlayerClassId)
-                ? defaultPlayerClassId
-                : _playerClasses[0];
-            Settings = _store.Load() ?? new GameSettings();
-            Settings.Apply();
-            Router = new InputRouter(_input);
-        }
-
-        public GameFlow(
             IGameplayInputSource input,
             Func<string, ArenaSession> create,
             ISettingsStore store,

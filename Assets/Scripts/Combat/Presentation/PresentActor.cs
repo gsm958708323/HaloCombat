@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Combat.Core;
+using UnityEngine;
 
 namespace Combat.Presentation
 {
@@ -127,6 +128,93 @@ namespace Combat.Presentation
             _order.Clear();
             Id = EntityId.Invalid;
             BlueprintId = string.Empty;
+        }
+    }
+
+    internal sealed class LoopVfxController
+    {
+        struct Live
+        {
+            public GameObject View;
+            public int VisualId;
+        }
+
+        readonly Transform _root;
+        readonly Dictionary<int, Live> _live = new Dictionary<int, Live>();
+        readonly Dictionary<int, Stack<GameObject>> _free = new Dictionary<int, Stack<GameObject>>();
+        int _nextHandle = 1;
+
+        public LoopVfxController(Transform root) => _root = root;
+
+        public int PlayLoop(int visualId)
+        {
+            if (_root == null)
+                return 0;
+
+            GameObject view = null;
+            if (_free.TryGetValue(visualId, out var cached) && cached.Count > 0)
+            {
+                view = cached.Pop();
+                view.SetActive(true);
+            }
+            else
+                view = ProceduralVfxFactory.CreateLoop(_root, visualId);
+
+            if (view == null)
+                return 0;
+
+            int handle = _nextHandle++;
+            _live[handle] = new Live { View = view, VisualId = visualId };
+            return handle;
+        }
+
+        public void SetIntensity(int handle, int stacks)
+        {
+            if (!_live.TryGetValue(handle, out var live) || live.View == null)
+                return;
+            var particle = live.View.GetComponentInChildren<ParticleSystem>();
+            if (particle == null)
+                return;
+            var emission = particle.emission;
+            emission.rateOverTime = Mathf.Max(1, stacks) * 8f;
+        }
+
+        public void Stop(int handle)
+        {
+            if (!_live.TryGetValue(handle, out var live))
+                return;
+            if (live.View != null)
+            {
+                live.View.SetActive(false);
+                if (!_free.TryGetValue(live.VisualId, out var cached))
+                {
+                    cached = new Stack<GameObject>();
+                    _free[live.VisualId] = cached;
+                }
+                cached.Push(live.View);
+            }
+            _live.Remove(handle);
+        }
+
+        public void Release()
+        {
+            foreach (var pair in _live)
+                Destroy(pair.Value.View);
+            foreach (var pair in _free)
+                while (pair.Value.Count > 0)
+                    Destroy(pair.Value.Pop());
+            _live.Clear();
+            _free.Clear();
+        }
+
+        static void Destroy(UnityEngine.Object value)
+        {
+            if (value == null)
+                return;
+            if (Application.isPlaying)
+                UnityEngine.Object.Destroy(value);
+            else
+                UnityEngine.Object.DestroyImmediate(value);
         }
     }
 }

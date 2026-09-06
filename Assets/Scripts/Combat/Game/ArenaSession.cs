@@ -35,24 +35,6 @@ namespace Combat.Game
             _selectedPlayerBlueprint = selectedPlayerBlueprint;
         }
 
-        public static ArenaSession StartHeadless()
-        {
-            var baked = new CodeCombatContent().Bake();
-            var world = new CombatWorld(
-                new FighterActorFactory(baked),
-                new IntentQueue(),
-                new EventBus(),
-                new CombatTime(),
-                new FixedRandom(0f),
-                baked.Cues,
-                baked.Motor
-            );
-            baked.Install(world);
-            var s = new ArenaSession(world, new PresentHub(), DefaultArenaSpawns(), "fighter");
-            s.Start();
-            return s;
-        }
-
         public static SpawnTable DefaultArenaSpawns() =>
             new SpawnTable
             {
@@ -194,7 +176,6 @@ namespace Combat.Game
         void OnDead(EvEntityDead e)
         {
             _win.OnDead(e);
-            Hub.OnDead(e);
         }
 
         void OnHitstop(EvHitstop e) => Hub.NotifyLocalHitstop();

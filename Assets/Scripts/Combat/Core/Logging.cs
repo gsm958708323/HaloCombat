@@ -102,14 +102,6 @@ namespace Combat.Core
         }
     }
 
-    public sealed class ConsoleLogSink : ILogSink
-    {
-        public void Write(LogRecord record)
-        {
-            Console.WriteLine(CombatLog.Format(record));
-        }
-    }
-
     public static class CombatLog
     {
         const string DefaultCategory = "Combat";

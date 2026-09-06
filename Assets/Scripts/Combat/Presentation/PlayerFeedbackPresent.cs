@@ -1,4 +1,5 @@
 using Combat.Core;
+using UnityEngine;
 
 namespace Combat.Presentation
 {
@@ -15,13 +16,10 @@ namespace Combat.Presentation
         public float Rumble { get; private set; }
         public bool GhostOn { get; private set; }
         public int GhostHandle { get; private set; }
-        ILoopVfxPort _ghost = new NullLoopVfxPort();
+        readonly LoopVfxController _ghost;
         bool _wanted;
-        public ILoopVfxPort GhostPort
-        {
-            get => _ghost;
-            set => _ghost = value ?? new NullLoopVfxPort();
-        }
+
+        public PlayerFeedbackPresent(Transform vfxRoot) => _ghost = new LoopVfxController(vfxRoot);
 
         public void OnHurt(in EvDamage e)
         {
@@ -80,10 +78,11 @@ namespace Combat.Presentation
             }
             if (!GhostOn)
             {
-                GhostHandle = _ghost.PlayLoop(PresentFxIds.DodgeGhost, Self.Id);
-                GhostOn = true;
+                GhostHandle = _ghost.PlayLoop(PresentFxIds.DodgeGhost);
+                GhostOn = GhostHandle != 0;
             }
-            _ghost.SetIntensity(GhostHandle, 1);
+            if (GhostOn)
+                _ghost.SetIntensity(GhostHandle, 1);
         }
 
         void StopGhost()
@@ -98,6 +97,7 @@ namespace Combat.Presentation
         protected override void OnDetach()
         {
             StopGhost();
+            _ghost.Release();
             Flash = 0f;
             Rumble = 0f;
         }

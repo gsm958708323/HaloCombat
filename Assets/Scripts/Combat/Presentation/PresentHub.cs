@@ -10,38 +10,6 @@ namespace Combat.Presentation
         void Release(PresentActor actor);
     }
 
-    public sealed class DefaultPresentFactory : IPresentFactory
-    {
-        public PresentActor Create(string bp)
-        {
-            var p = new PresentActor();
-            p.Add(new PoseFollowPresent());
-            bool character =
-                bp == "fighter"
-                || bp == "swordsman"
-                || bp == "gunslinger"
-                || bp == "melee_guard"
-                || bp == "summon"
-                || bp == "melee_ai"
-                || bp == "melee_ai_narrow";
-            if (character)
-            {
-                p.Add(new AnimationPresent());
-                p.Add(new BuffFxPresent());
-            }
-            if (bp == "fighter" || bp == "swordsman" || bp == "gunslinger")
-            {
-                p.Add(new PlayerCameraPresent());
-                p.Add(new PlayerFeedbackPresent());
-                p.Add(new PlayerHudSourcePresent());
-            }
-            p.Add(new HitboxGizmoPresent());
-            return p;
-        }
-
-        public void Release(PresentActor a) => a?.Release();
-    }
-
     public sealed class PresentHub
     {
         readonly Dictionary<long, PresentActor> _map = new Dictionary<long, PresentActor>(64);
@@ -69,7 +37,7 @@ namespace Combat.Presentation
                 destination.Add(pair.Value);
         }
 
-        public PresentHub(IPresentFactory f = null) => _factory = f ?? new DefaultPresentFactory();
+        public PresentHub(IPresentFactory f) => _factory = f ?? throw new ArgumentNullException(nameof(f));
 
         public void SetWorld(CombatWorld w)
         {
@@ -170,15 +138,6 @@ namespace Combat.Presentation
                 _map.Remove(k);
                 _factory.Release(p);
             }
-        }
-
-        public void OnDead(EvEntityDead e)
-        {
-            if (
-                _map.TryGetValue(HitboxComp.Pack(e.Id), out var p)
-                && p.TryGet<AnimationPresent>(out var a)
-            )
-                a.PlayDeath();
         }
 
         public void NotifyLocalHitstop()

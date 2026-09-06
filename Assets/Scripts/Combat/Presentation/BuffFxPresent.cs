@@ -1,24 +1,9 @@
-using System.Collections.Generic;
 using Combat.Core;
+using System.Collections.Generic;
+using UnityEngine;
 
 namespace Combat.Presentation
 {
-    public interface ILoopVfxPort
-    {
-        int PlayLoop(int visualId, EntityId follow);
-        void SetIntensity(int handle, int stacks);
-        void Stop(int handle);
-    }
-
-    public sealed class NullLoopVfxPort : ILoopVfxPort
-    {
-        public int PlayLoop(int id, EntityId follow) => 0;
-
-        public void SetIntensity(int h, int s) { }
-
-        public void Stop(int h) { }
-    }
-
     public struct BuffVisualRule
     {
         public int BuffId,
@@ -38,15 +23,11 @@ namespace Combat.Presentation
         readonly List<BuffVisualRule> _buffs = new List<BuffVisualRule>(4);
         readonly List<TagVisualRule> _tags = new List<TagVisualRule>(2);
         readonly Dictionary<int, int> _handles = new Dictionary<int, int>(8);
-        ILoopVfxPort _port = new NullLoopVfxPort();
-        public ILoopVfxPort Port
-        {
-            get => _port;
-            set => _port = value ?? new NullLoopVfxPort();
-        }
+        readonly LoopVfxController _vfx;
 
-        public BuffFxPresent()
+        public BuffFxPresent(Transform vfxRoot)
         {
+            _vfx = new LoopVfxController(vfxRoot);
             AddBuff(CombatIds.Burn, CombatIds.Burn, true);
             AddBuff(CombatIds.AuraSlow, CombatIds.AuraSlow, true);
         }
@@ -91,26 +72,32 @@ namespace Combat.Presentation
             {
                 if (_handles.TryGetValue(id, out var h))
                 {
-                    _port.Stop(h);
+                    _vfx.Stop(h);
                     _handles.Remove(id);
                 }
                 return;
             }
             if (!_handles.TryGetValue(id, out var handle))
             {
-                handle = _port.PlayLoop(id, Self.Id);
+                handle = _vfx.PlayLoop(id);
+                if (handle == 0)
+                    return;
                 _handles[id] = handle;
             }
-            _port.SetIntensity(handle, stacks);
+            _vfx.SetIntensity(handle, stacks);
         }
 
         void StopAll()
         {
             foreach (var kv in _handles)
-                _port.Stop(kv.Value);
+                _vfx.Stop(kv.Value);
             _handles.Clear();
         }
 
-        protected override void OnDetach() => StopAll();
+        protected override void OnDetach()
+        {
+            StopAll();
+            _vfx.Release();
+        }
     }
 }

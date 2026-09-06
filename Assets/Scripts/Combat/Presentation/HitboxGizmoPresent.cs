@@ -1,5 +1,5 @@
-using System;
 using Combat.Core;
+using UnityEngine;
 
 namespace Combat.Presentation
 {
@@ -19,30 +19,47 @@ namespace Combat.Presentation
         public float Radius;
     }
 
-    public interface IGizmoDrawPort
-    {
-        void DrawCircle(in GizmoFrame frame);
-        void Clear();
-    }
-
-    public sealed class NullGizmoDrawPort : IGizmoDrawPort
-    {
-        public void DrawCircle(in GizmoFrame f) { }
-
-        public void Clear() { }
-    }
-
     public sealed class HitboxGizmoPresent : PresentComp
     {
+        const int Segments = 32;
+        readonly Transform _root;
+        GameObject _object;
+        LineRenderer _line;
+        Material _material;
         public override bool WantsLogicSync => true;
         public override bool WantsLateTick => true;
         public GizmoFrame Frame { get; private set; }
-        public IGizmoDrawPort Port
+
+        public HitboxGizmoPresent(Transform root)
         {
-            get => _port;
-            set => _port = value ?? new NullGizmoDrawPort();
+            _root = root;
         }
-        IGizmoDrawPort _port = new NullGizmoDrawPort();
+
+        protected override void OnAttach()
+        {
+            _object = new GameObject("CombatHitboxGizmo");
+            if (_root != null)
+                _object.transform.SetParent(_root, false);
+            _line = _object.AddComponent<LineRenderer>();
+            _line.useWorldSpace = true;
+            _line.loop = true;
+            _line.positionCount = Segments;
+            _line.startWidth = .035f;
+            _line.endWidth = .035f;
+            _line.startColor = Color.red;
+            _line.endColor = Color.red;
+            _line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            _line.receiveShadows = false;
+            var shader = Shader.Find("Universal Render Pipeline/Unlit")
+                ?? Shader.Find("Sprites/Default")
+                ?? Shader.Find("Unlit/Color");
+            if (shader != null)
+            {
+                _material = new Material(shader) { color = Color.red };
+                _line.sharedMaterial = _material;
+            }
+            _line.enabled = false;
+        }
 
         public override void SyncLogic(CombatWorld world)
         {
@@ -92,18 +109,47 @@ namespace Combat.Presentation
 
         public override void LateTick(float dt)
         {
-            if (!PresentSettings.ShowHitboxes || !Frame.Visible)
-                _port.Clear();
-            else
-                _port.DrawCircle(Frame);
+            if (_line == null)
+                return;
+            if (!PresentSettings.ShowHitboxes || !Frame.Visible || Frame.Radius <= 0f)
+            {
+                _line.enabled = false;
+                return;
+            }
+            var center = new Vector3(Frame.Center.X, Frame.Center.Y + .03f, Frame.Center.Z);
+            for (int i = 0; i < Segments; i++)
+            {
+                var angle = i * Mathf.PI * 2f / Segments;
+                _line.SetPosition(i, center + new Vector3(
+                    Mathf.Cos(angle) * Frame.Radius,
+                    0f,
+                    Mathf.Sin(angle) * Frame.Radius));
+            }
+            _line.enabled = true;
         }
 
         protected override void OnDetach()
         {
-            _port.Clear();
-            if (_port is IDisposable disposable)
-                disposable.Dispose();
+            if (_line != null)
+                _line.enabled = false;
+            if (_line != null)
+                _line.sharedMaterial = null;
+            Destroy(_material);
+            Destroy(_object);
+            _material = null;
+            _line = null;
+            _object = null;
             Frame = default(GizmoFrame);
+        }
+
+        static void Destroy(UnityEngine.Object value)
+        {
+            if (value == null)
+                return;
+            if (Application.isPlaying)
+                UnityEngine.Object.Destroy(value);
+            else
+                UnityEngine.Object.DestroyImmediate(value);
         }
     }
 }

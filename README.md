@@ -20,7 +20,6 @@ dotnet run --project Combat.csproj -- enemy
 dotnet run --project Combat.csproj -- summon
 dotnet run --project Combat.csproj -- season2
 dotnet run --project Combat.csproj -- lesson
-dotnet run --project Combat.csproj -- training-camp
 dotnet run --project Combat.csproj -- regress 
 
 默认 `season` = 第一期验收：G1 近战+刀光 Cue+火球灼烧、G2 火地叠 3、受击停轴、Bake 清缓存、死亡清弹圈。
@@ -70,9 +69,15 @@ Unity Console 会为 category 添加颜色；`.NET` Console 保持纯文本，�
 
 ## 纯 C# 回归 Demo
 
-`CombatLesson`、`SeasonThreeLessonDemo` 和 `TrainingCampVerificationDemo` 都是纯 C# 验证，
+`CombatLesson`、`SeasonTwoDemo` 都是纯 C# 验证，
 不依赖 Unity 场景或 Unity 测试工程：
 
-```powershell
-dotnet run --project Combat.csproj -- training-camp
-```
+## unity表现层
+HaloCombat 的战斗逻辑位于 `Assets/Scripts/Combat/Core`，表现层使用
+`PresentHub -> PresentActor -> PresentComp` 管理 Unity 视图、动画和特效。
+
+Unity Editor 中可以通过 `HaloCombatDemoRunner` 运行 16 个逻辑 Demo 场景，
+并将结果写入 Unity Console。`FinalVerification.Run` 会执行数据库生成、场景检查和 Demo 验证。
+
+正式 Arena 入口位于 `Assets/Scenes/Arena.unity`，运行时由 `ArenaBootstrap` 创建
+`ArenaSession` 和 Unity 表现工厂。
