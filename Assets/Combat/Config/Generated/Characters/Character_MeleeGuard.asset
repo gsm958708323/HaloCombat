@@ -16,6 +16,7 @@ MonoBehaviour:
   DisplayName: "\u5251\u58EB\u5B88\u536B"
   IsPlayer: 0
   PlayerSelectable: 0
+  EnableAI: 1
   ViewBlueprintId: melee_guard
   Skills:
   - {fileID: 11400000, guid: 51ec329092a604349815c0f236f32960, type: 2}

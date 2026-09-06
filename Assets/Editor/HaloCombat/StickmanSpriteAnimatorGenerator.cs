@@ -86,6 +86,7 @@ namespace HaloCombat.Editor
             for (int i = 0; i < Blueprints.Length; i++)
             {
                 var spec = Blueprints[i];
+                ConfigureAllSpriteImporters(spec);
                 var sprites = LoadSpriteSet(spec);
                 if (sprites == null || sprites.Idle.Count == 0)
                 {
@@ -154,6 +155,20 @@ namespace HaloCombat.Editor
             set.Hit = UseFallback(set.Hit, set.Idle);
             set.Death = UseFallback(set.Death, set.Hit);
             return set;
+        }
+
+        static void ConfigureAllSpriteImporters(BlueprintSpec spec)
+        {
+            var folder = spec.Palette == "Neutral"
+                ? $"{SourceRoot}/{spec.Folder}"
+                : $"{EnemyRoot}/{spec.Palette}/{spec.Folder}";
+            var absoluteFolder = ProjectFilePath(folder);
+            if (!Directory.Exists(absoluteFolder))
+                return;
+
+            var files = Directory.GetFiles(absoluteFolder, "*.png", SearchOption.TopDirectoryOnly);
+            for (int i = 0; i < files.Length; i++)
+                ConfigureSpriteImporter(AssetPath(files[i]));
         }
 
         static List<Sprite> LoadAction(string[] files, string prefix, string action)

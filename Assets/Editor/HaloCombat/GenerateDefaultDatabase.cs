@@ -44,7 +44,7 @@ namespace Combat.EditorTools
 
         static void Write()
         {
-            Directory.CreateDirectory(Root);
+            Directory.CreateDirectory(ProjectFilePath(Root));
             MigrateLegacyAssets();
             var baked = new CodeCombatContent().Bake();
 
