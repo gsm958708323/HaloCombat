@@ -1333,6 +1333,7 @@
     <ProjectReference Include="cn.lys.aibridge.Editor.csproj" />
     <ProjectReference Include="Combat.Unity.csproj" />
     <ProjectReference Include="Combat.Config.csproj" />
+    <ProjectReference Include="Combat.Game.csproj" />
   </ItemGroup>
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
   <ItemGroup>

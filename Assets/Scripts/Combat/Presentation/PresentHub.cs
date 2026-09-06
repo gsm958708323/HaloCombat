@@ -58,6 +58,15 @@ namespace Combat.Presentation
         public FloaterLayer Floaters => _floaters;
         public EntityId LocalId => _local;
 
+        public void CopyActors(List<PresentActor> destination)
+        {
+            if (destination == null)
+                throw new ArgumentNullException(nameof(destination));
+            destination.Clear();
+            foreach (var pair in _map)
+                destination.Add(pair.Value);
+        }
+
         public PresentHub(IPresentFactory f = null) => _factory = f ?? new DefaultPresentFactory();
 
         public void SetWorld(CombatWorld w)
@@ -188,6 +197,12 @@ namespace Combat.Presentation
         {
             c = null;
             return TryGet(_local, out var p) && p.TryGet(out c);
+        }
+
+        public bool TryGetLocalFeedback(out PlayerFeedbackPresent feedback)
+        {
+            feedback = null;
+            return TryGet(_local, out var actor) && actor.TryGet(out feedback);
         }
 
         public void ReleaseAll()

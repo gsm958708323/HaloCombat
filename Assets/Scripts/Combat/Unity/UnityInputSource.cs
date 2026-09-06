@@ -35,7 +35,7 @@ namespace Combat.Unity.Game
 
         public GameplayInputFrame Sample()
         {
-            var v = _move == null ? Vector2.zero : _move.ReadValue<Vector2>();
+            var v = _move == null ? ReadKeyboardMove() : _move.ReadValue<Vector2>();
             float x = v.x,
                 z = v.y;
             if (x * x + z * z < .0625f)
@@ -63,12 +63,30 @@ namespace Combat.Unity.Game
             {
                 MoveX = x,
                 MoveZ = z,
-                AttackPressed = _attack != null && _attack.WasPressedThisFrame(),
-                JumpPressed = _jump != null && _jump.WasPressedThisFrame(),
-                DodgePressed = _dodge != null && _dodge.WasPressedThisFrame(),
-                PausePressed = _pause != null && _pause.WasPressedThisFrame(),
-                DebugToggleHitbox = _gizmo != null && _gizmo.WasPressedThisFrame(),
+                AttackPressed = Pressed(_attack, Key.J),
+                JumpPressed = Pressed(_jump, Key.Space),
+                DodgePressed = Pressed(_dodge, Key.LeftShift),
+                PausePressed = Pressed(_pause, Key.Escape),
+                DebugToggleHitbox = Pressed(_gizmo, Key.F3),
             };
+        }
+
+        static Vector2 ReadKeyboardMove()
+        {
+            var keyboard = Keyboard.current;
+            if (keyboard == null)
+                return Vector2.zero;
+            var x = (keyboard.dKey.isPressed ? 1f : 0f) - (keyboard.aKey.isPressed ? 1f : 0f);
+            var y = (keyboard.wKey.isPressed ? 1f : 0f) - (keyboard.sKey.isPressed ? 1f : 0f);
+            return new Vector2(x, y).normalized * Mathf.Clamp01(new Vector2(x, y).magnitude);
+        }
+
+        static bool Pressed(InputAction action, Key fallback)
+        {
+            if (action != null)
+                return action.WasPressedThisFrame();
+            var keyboard = Keyboard.current;
+            return keyboard != null && keyboard[fallback].wasPressedThisFrame;
         }
     }
 }

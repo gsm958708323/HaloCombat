@@ -9,11 +9,14 @@ namespace Combat.Unity.Presentation
     {
         readonly Transform _root;
         readonly Dictionary<string, GameObject> _prefabs;
+        readonly Dictionary<string, Stack<GameObject>> _free =
+            new Dictionary<string, Stack<GameObject>>();
         readonly List<Live> _live = new List<Live>();
 
         struct Live
         {
             public GameObject Go;
+            public string Key;
             public float End;
         }
 
@@ -28,10 +31,24 @@ namespace Combat.Unity.Presentation
             var key = string.IsNullOrEmpty(d.PrefabKey) ? "cue_" + d.CueId : d.PrefabKey;
             if (!_prefabs.TryGetValue(key, out var prefab) || prefab == null)
                 return true;
-            var go = Object.Instantiate(prefab, _root);
+            GameObject go;
+            if (_free.TryGetValue(key, out var free) && free.Count > 0)
+            {
+                go = free.Pop();
+                go.SetActive(true);
+            }
+            else
+            {
+                go = Object.Instantiate(prefab, _root);
+            }
             go.transform.position = new Vector3(pos.X, pos.Y, pos.Z);
             _live.Add(
-                new Live { Go = go, End = Time.unscaledTime + (d.LifeTime > 0 ? d.LifeTime : .5f) }
+                new Live
+                {
+                    Go = go,
+                    Key = key,
+                    End = Time.unscaledTime + (d.LifeTime > 0 ? d.LifeTime : .5f),
+                }
             );
             return true;
         }
@@ -42,8 +59,17 @@ namespace Combat.Unity.Presentation
             for (int i = _live.Count - 1; i >= 0; i--)
                 if (now >= _live[i].End)
                 {
-                    if (_live[i].Go != null)
-                        Object.Destroy(_live[i].Go);
+                    var live = _live[i];
+                    if (live.Go != null)
+                    {
+                        live.Go.SetActive(false);
+                        if (!_free.TryGetValue(live.Key, out var free))
+                        {
+                            free = new Stack<GameObject>();
+                            _free[live.Key] = free;
+                        }
+                        free.Push(live.Go);
+                    }
                     _live.RemoveAt(i);
                 }
         }
@@ -51,8 +77,19 @@ namespace Combat.Unity.Presentation
         public void ReturnAll()
         {
             for (int i = 0; i < _live.Count; i++)
-                if (_live[i].Go != null)
-                    Object.Destroy(_live[i].Go);
+            {
+                var live = _live[i];
+                if (live.Go != null)
+                {
+                    live.Go.SetActive(false);
+                    if (!_free.TryGetValue(live.Key, out var free))
+                    {
+                        free = new Stack<GameObject>();
+                        _free[live.Key] = free;
+                    }
+                    free.Push(live.Go);
+                }
+            }
             _live.Clear();
         }
     }

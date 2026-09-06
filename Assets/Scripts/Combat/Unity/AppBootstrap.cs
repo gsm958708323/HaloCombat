@@ -10,17 +10,40 @@ namespace Combat.Unity.Game
         public TitleView Title;
         public ResultView Result;
         public ArenaBootstrap Arena;
+        public bool AutoStartIfNoTitle = true;
         GameFlow _flow;
+
+        public GameFlow Flow => _flow;
+
+        void Awake()
+        {
+            if (Arena != null)
+                Arena.AutoStart = false;
+        }
 
         void Start()
         {
-            _flow = new GameFlow(new UnityInputSource(null, null));
+            if (Arena == null)
+            {
+                Debug.LogError("AppBootstrap missing ArenaBootstrap");
+                enabled = false;
+                return;
+            }
+            _flow = Arena.CreateFlow(new PlayerPrefsSettingsStore());
+            if (_flow == null)
+            {
+                enabled = false;
+                return;
+            }
+            Arena.SetExternalDriver(true);
             Title?.Bind(_flow);
             Result?.Bind(_flow);
             if (TitleRoot != null)
                 TitleRoot.SetActive(true);
             if (ResultRoot != null)
                 ResultRoot.SetActive(false);
+            if (AutoStartIfNoTitle && Title == null && TitleRoot == null)
+                _flow.StartRun();
         }
 
         void Update()
@@ -30,6 +53,12 @@ namespace Combat.Unity.Game
             _flow.TickUpdate(Time.deltaTime);
             if (_flow.State == FlowState.Arena && TitleRoot != null)
                 TitleRoot.SetActive(false);
+            if (_flow.State == FlowState.Arena && ResultRoot != null)
+                ResultRoot.SetActive(false);
+            if (_flow.State == FlowState.Title && TitleRoot != null)
+                TitleRoot.SetActive(true);
+            if (_flow.State == FlowState.Title && ResultRoot != null)
+                ResultRoot.SetActive(false);
             if (_flow.ResultReady && ResultRoot != null)
             {
                 ResultRoot.SetActive(true);
@@ -39,7 +68,7 @@ namespace Combat.Unity.Game
 
         void LateUpdate()
         {
-            _flow?.TickLate(Time.deltaTime);
+            Arena?.TickExternalLate(Time.deltaTime);
         }
     }
 }

@@ -1,0 +1,74 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &20000001
+GameObject:
+  m_ObjectHideFlags: 0
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 20000005}
+  - component: {fileID: 20000002}
+  - component: {fileID: 20000003}
+  - component: {fileID: 20000004}
+  m_Layer: 0
+  m_Name: HaloCombatBoot
+  m_TagString: Untagged
+  m_IsActive: 1
+--- !u!114 &20000002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_GameObject: {fileID: 20000001}
+  m_Enabled: 1
+  m_Script: {fileID: 11500000, guid: 7e24d56f70819235608192a3b4c5d6e7, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  TitleRoot: {fileID: 0}
+  ResultRoot: {fileID: 0}
+  Title: {fileID: 0}
+  Result: {fileID: 0}
+  Arena: {fileID: 20000003}
+  AutoStartIfNoTitle: 0
+--- !u!114 &20000003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_GameObject: {fileID: 20000001}
+  m_Enabled: 1
+  m_Script: {fileID: 11500000, guid: 07bd6e8f901a25de8f901a2b3c4d5e6f, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  Database: {fileID: 0}
+  Spawns: {fileID: 0}
+  Views: {fileID: 0}
+  Actions: {fileID: 0}
+  Hud: {fileID: 0}
+  Rig: {fileID: 0}
+  VfxRoot: {fileID: 0}
+  PausePanel: {fileID: 0}
+  PauseMenu: {fileID: 0}
+  AutoStart: 0
+  DriveLifecycle: 1
+  PresentRoot: {fileID: 0}
+  CuePrefabs: {fileID: 0}
+  FloaterRoot: {fileID: 0}
+--- !u!114 &20000004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_GameObject: {fileID: 20000001}
+  m_Enabled: 1
+  m_Script: {fileID: 11500000, guid: b8d02f4a6c8e1b3d5f7a9c0e2d4f6b8b, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  App: {fileID: 20000002}
+--- !u!4 &20000005
+Transform:
+  m_ObjectHideFlags: 0
+  m_GameObject: {fileID: 20000001}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+--- !u!1660057539 &9223372036854775807
+SceneRoots:
+  m_Roots:
+  - {fileID: 20000005}

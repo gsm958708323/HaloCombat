@@ -5,6 +5,12 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
+  - enabled: 1
+    path: Assets/Scenes/Boot.unity
+    guid: c9e13a5b7d9f2c4e6a8b0d1f3e5c7a9b
+  - enabled: 1
+    path: Assets/Scenes/Arena.unity
+    guid: b8d02f4a6c8e1b3d5f7a9c0e2d4f6b8a
   - enabled: 0
     path: Assets/Scenes/HaloCombat/01TagInputDemo.unity
     guid: deb6fa804e5794546ba52f6fc3ee4431
