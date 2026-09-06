@@ -16,20 +16,34 @@ namespace Combat.Config
             for (int i = 0; i < source.Length; i++)
             {
                 var entry = source[i] ?? new ComboEntryAsset();
+                var preAssets = entry.PreSkillAssets;
                 var preValues = entry.PreSkills ?? Array.Empty<int>();
-                var pre = new SkillNodeId[preValues.Length];
-                for (int j = 0; j < preValues.Length; j++) pre[j] = new SkillNodeId(preValues[j]);
+                var pre = preAssets != null && preAssets.Length > 0
+                    ? new SkillNodeId[preAssets.Length]
+                    : new SkillNodeId[preValues.Length];
+                for (int j = 0; j < pre.Length; j++)
+                    pre[j] = preAssets != null && preAssets.Length > 0
+                        ? RequireSkill(preAssets[j]).Id
+                        : new SkillNodeId(preValues[j]);
+                var toSkill = entry.Skill != null ? RequireSkill(entry.Skill) : null;
                 result[i] = new ComboEntry
                 {
                     PreSkills = pre,
                     Input = new InputToken(entry.InputAction),
                     RequiredTags = entry.RequiredTags ?? Array.Empty<int>(),
                     Priority = entry.Priority,
-                    ToSkill = new SkillNodeId(entry.ToSkill),
-                    Timeline = new TimelineId(entry.Timeline)
+                    ToSkill = toSkill != null ? toSkill.Id : new SkillNodeId(entry.ToSkill),
+                    Timeline = toSkill != null ? toSkill.Timeline : new TimelineId(entry.Timeline)
                 };
             }
             return new ComboTableSO { Entries = result };
+        }
+
+        static SkillDefinition RequireSkill(SkillDefinitionAsset asset)
+        {
+            if (asset == null)
+                throw new InvalidOperationException("Combo entry has an empty skill reference.");
+            return asset.Bake();
         }
     }
 }

@@ -13,3 +13,4 @@ MonoBehaviour:
   m_Name: Spawn_FireGround
   m_EditorClassIdentifier: 
   SpecId: 801
+  UseTargetPoint: 1

@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c6521dbe98486f49ab84539b596f279, type: 3}
   m_Name: Apply_Burn
   m_EditorClassIdentifier: 
-  Spec: {fileID: 11400000, guid: 769a73c5af2788a4e814291c2518189d, type: 2}
+  Spec: {fileID: 11400000, guid: f8ba5c8e202107e4299ca51922030e78, type: 2}
   Stacks: 1

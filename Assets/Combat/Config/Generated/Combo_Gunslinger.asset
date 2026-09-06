@@ -1,0 +1,74 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ed0a836a1fc0c84bb41f021f1bd5ae2, type: 3}
+  m_Name: Combo_Gunslinger
+  m_EditorClassIdentifier: 
+  Entries:
+  - PreSkills: 
+    PreSkillAssets: []
+    InputAction: Attack
+    RequiredTags: 
+    Priority: 0
+    ToSkill: 0
+    Timeline: 0
+    Skill: {fileID: 11400000, guid: d95a0e6412ce3244eb0b113b5f9d61e4, type: 2}
+  - PreSkills: 
+    PreSkillAssets:
+    - {fileID: 11400000, guid: d95a0e6412ce3244eb0b113b5f9d61e4, type: 2}
+    InputAction: Attack
+    RequiredTags: e9030000
+    Priority: 10
+    ToSkill: 0
+    Timeline: 0
+    Skill: {fileID: 11400000, guid: e71ce4552bd00b54997868fe7b9b00aa, type: 2}
+  - PreSkills: 
+    PreSkillAssets:
+    - {fileID: 11400000, guid: e71ce4552bd00b54997868fe7b9b00aa, type: 2}
+    InputAction: Attack
+    RequiredTags: e9030000
+    Priority: 10
+    ToSkill: 0
+    Timeline: 0
+    Skill: {fileID: 11400000, guid: 60ef7459eb5629f439075b88cf887c59, type: 2}
+  - PreSkills: 
+    PreSkillAssets: []
+    InputAction: Skill1
+    RequiredTags: 
+    Priority: 20
+    ToSkill: 0
+    Timeline: 0
+    Skill: {fileID: 11400000, guid: 244fd001441641447a4d10d57ef4b6d8, type: 2}
+  - PreSkills: 
+    PreSkillAssets:
+    - {fileID: 11400000, guid: 244fd001441641447a4d10d57ef4b6d8, type: 2}
+    InputAction: Skill1
+    RequiredTags: e9030000
+    Priority: 30
+    ToSkill: 0
+    Timeline: 0
+    Skill: {fileID: 11400000, guid: d4d2248b42945964c82a0e98a967cbd6, type: 2}
+  - PreSkills: 
+    PreSkillAssets: []
+    InputAction: Attack
+    RequiredTags: eb030000
+    Priority: 100
+    ToSkill: 0
+    Timeline: 0
+    Skill: {fileID: 11400000, guid: 75970fb7f5fc911468757be5317457cb, type: 2}
+  - PreSkills: 
+    PreSkillAssets: []
+    InputAction: Skill2
+    RequiredTags: 
+    Priority: 20
+    ToSkill: 0
+    Timeline: 0
+    Skill: {fileID: 11400000, guid: 8ee1521f1247a5349ab6bcdf2e9887f5, type: 2}

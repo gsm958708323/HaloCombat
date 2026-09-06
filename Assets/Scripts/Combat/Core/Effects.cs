@@ -135,7 +135,12 @@ namespace Combat.Core
     public sealed class SpawnAoeEffect : IEffect
     {
         readonly int _specId;
-        public SpawnAoeEffect(int specId) => _specId = specId;
+        readonly bool _useTargetPoint;
+        public SpawnAoeEffect(int specId, bool useTargetPoint = false)
+        {
+            _specId = specId;
+            _useTargetPoint = useTargetPoint;
+        }
 
         public void Apply(ref EffectContext ctx)
         {
@@ -144,7 +149,9 @@ namespace Combat.Core
                 throw new InvalidOperationException("Unknown AoE " + _specId);
 
             SimVec3 origin;
-            if (ctx.HasPoint) origin = ctx.Point;
+            if (_useTargetPoint && ctx.Target != null && ctx.Target.TryGetComp<TransformComp>(out var targetTf))
+                origin = targetTf.Position;
+            else if (ctx.HasPoint) origin = ctx.Point;
             else if (ctx.Source != null && ctx.Source.TryGetComp<TransformComp>(out var stf))
                 origin = stf.Position;
             else origin = SimVec3.Zero;
@@ -360,6 +367,21 @@ namespace Combat.Core
             }
 
             loco.RequestHitDelta(dir.X * Distance, 0f, dir.Z * Distance);
+        }
+    }
+
+    public sealed class LaunchEffect : IEffect
+    {
+        public float VerticalSpeed = 5f;
+
+        public void Apply(ref EffectContext ctx)
+        {
+            if (ctx.Target == null || VerticalSpeed <= 0f) return;
+            if (ctx.Target.TryGetComp<TagComp>(out var tags) &&
+                (tags.Has(CommonTags.Dead) || tags.Has(CommonTags.SuperArmor)))
+                return;
+            if (ctx.Target.TryGetComp<LocomotionComp>(out var loco))
+                loco.ImpulseLaunch(VerticalSpeed);
         }
     }
 

@@ -25,9 +25,14 @@ namespace Combat.Core
                 r.Errors.AppendLine("no timelines");
             else
             {
-                CheckTl(data, TimelineId.TL_G1, r);
-                CheckTl(data, TimelineId.TL_G2, r);
+                if (data.Timelines.TryGet(TimelineId.TL_G1, out _)) CheckTl(data, TimelineId.TL_G1, r);
+                if (data.Timelines.TryGet(TimelineId.TL_G2, out _)) CheckTl(data, TimelineId.TL_G2, r);
             }
+
+            if (data.Skills != null && data.Skills.Count == 0)
+                r.Errors.AppendLine("no skills");
+            if (data.Characters != null && data.Characters.Count == 0)
+                r.Errors.AppendLine("no characters");
 
             if (data.Motor.JumpSpeed <= 0f)
                 r.Errors.AppendLine("JumpSpeed");

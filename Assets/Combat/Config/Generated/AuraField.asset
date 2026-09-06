@@ -22,7 +22,7 @@ MonoBehaviour:
   CueId: 0
   OnPulse: []
   OnEnter:
-  - {fileID: 11400000, guid: 37cda928f3b12f94785eb9dfd5708e67, type: 2}
+  - {fileID: 11400000, guid: b2d84c4ee0c14a14aa92b73d3e8f2976, type: 2}
   OnExit:
-  - {fileID: 11400000, guid: f1562d6bae10f47419a0cef2a27586e1, type: 2}
+  - {fileID: 11400000, guid: 1aca28cd9b6fce64686518ccc528ee0c, type: 2}
   OnStay: []

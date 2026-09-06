@@ -10,6 +10,7 @@ namespace Combat.Config
         public DamageEffectAsset Damage;
         public HitStunAsset Stun;
         public KnockbackAsset Knockback;
+        public LaunchAsset Launch;
         public IFrameAsset IFrame;
         IEffect[] _baked;
 
@@ -20,6 +21,7 @@ namespace Combat.Config
             if (Damage) list.Add(Damage.Bake());
             if (Stun) list.Add(Stun.Bake());
             if (Knockback) list.Add(Knockback.Bake());
+            if (Launch) list.Add(Launch.Bake());
             if (IFrame) list.Add(IFrame.Bake());
             _baked = list.ToArray();
             return _baked;
@@ -31,6 +33,7 @@ namespace Combat.Config
             if (Damage) Damage.ClearCache();
             if (Stun) Stun.ClearCache();
             if (Knockback) Knockback.ClearCache();
+            if (Launch) Launch.ClearCache();
             if (IFrame) IFrame.ClearCache();
         }
 

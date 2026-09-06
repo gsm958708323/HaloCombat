@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b52a2565ebbd84448a91bd34a3b4cfc0, type: 3}
+  m_Name: PistolShot1
+  m_EditorClassIdentifier: 
+  SkillId: 4001
+  DisplayName: "\u67AA\xB7\u5355\u53D1"
+  Timeline: {fileID: 11400000, guid: 345a86da2a9c2f74a83c64b84918af01, type: 2}
+  AnimationMode: 4
+  InputAction: 
+  Cooldown: 0
+  CanUseInAir: 0
+  RequiresTarget: 1

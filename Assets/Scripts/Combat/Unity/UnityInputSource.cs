@@ -8,6 +8,9 @@ namespace Combat.Unity.Game
     {
         readonly InputAction _move,
             _attack,
+            _skill1,
+            _skill2,
+            _skill3,
             _jump,
             _dodge,
             _pause,
@@ -16,26 +19,29 @@ namespace Combat.Unity.Game
 
         public UnityInputSource(InputActionAsset asset, Transform cameraYaw)
         {
-            var gp =
-                asset == null
-                    ? null
-                    : asset.FindActionMap("Gameplay", false)
-                        ?? asset.FindActionMap("Player", false);
-            _move = gp?.FindAction("Move", false);
-            _attack = gp?.FindAction("Attack", false);
-            _jump = gp?.FindAction("Jump", false);
-            _dodge = gp?.FindAction("Dodge", false);
-            _pause = gp?.FindAction("Pause", false);
-            var dbg = asset?.FindActionMap("Debug", false);
-            _gizmo = dbg?.FindAction("Hitbox", false);
+            if (asset == null)
+                throw new System.InvalidOperationException("Gameplay InputActionAsset is required.");
+            var gp = asset.FindActionMap("Gameplay", false);
+            if (gp == null)
+                throw new System.InvalidOperationException("InputActionAsset is missing the Gameplay action map.");
+            var dbg = asset.FindActionMap("Debug", false);
+            _move = Require(gp, "Move");
+            _attack = Require(gp, "Attack");
+            _skill1 = Require(gp, "Skill1");
+            _skill2 = Require(gp, "Skill2");
+            _skill3 = Require(gp, "Skill3");
+            _jump = Require(gp, "Jump");
+            _dodge = Require(gp, "Dodge");
+            _pause = Require(gp, "Pause");
+            _gizmo = dbg != null ? Require(dbg, "Hitbox") : null;
             _cam = cameraYaw;
-            gp?.Enable();
+            gp.Enable();
             dbg?.Enable();
         }
 
         public GameplayInputFrame Sample()
         {
-            var v = _move == null ? ReadKeyboardMove() : _move.ReadValue<Vector2>();
+            var v = _move.ReadValue<Vector2>();
             float x = v.x,
                 z = v.y;
             if (x * x + z * z < .0625f)
@@ -63,30 +69,23 @@ namespace Combat.Unity.Game
             {
                 MoveX = x,
                 MoveZ = z,
-                AttackPressed = Pressed(_attack, Key.J),
-                JumpPressed = Pressed(_jump, Key.Space),
-                DodgePressed = Pressed(_dodge, Key.LeftShift),
-                PausePressed = Pressed(_pause, Key.Escape),
-                DebugToggleHitbox = Pressed(_gizmo, Key.F3),
+                AttackPressed = _attack.WasPressedThisFrame(),
+                Skill1Pressed = _skill1.WasPressedThisFrame(),
+                Skill2Pressed = _skill2.WasPressedThisFrame(),
+                Skill3Pressed = _skill3.WasPressedThisFrame(),
+                JumpPressed = _jump.WasPressedThisFrame(),
+                DodgePressed = _dodge.WasPressedThisFrame(),
+                PausePressed = _pause.WasPressedThisFrame(),
+                DebugToggleHitbox = _gizmo != null && _gizmo.WasPressedThisFrame(),
             };
         }
 
-        static Vector2 ReadKeyboardMove()
+        static InputAction Require(InputActionMap map, string name)
         {
-            var keyboard = Keyboard.current;
-            if (keyboard == null)
-                return Vector2.zero;
-            var x = (keyboard.dKey.isPressed ? 1f : 0f) - (keyboard.aKey.isPressed ? 1f : 0f);
-            var y = (keyboard.wKey.isPressed ? 1f : 0f) - (keyboard.sKey.isPressed ? 1f : 0f);
-            return new Vector2(x, y).normalized * Mathf.Clamp01(new Vector2(x, y).magnitude);
-        }
-
-        static bool Pressed(InputAction action, Key fallback)
-        {
-            if (action != null)
-                return action.WasPressedThisFrame();
-            var keyboard = Keyboard.current;
-            return keyboard != null && keyboard[fallback].wasPressedThisFrame;
+            var action = map.FindAction(name, false);
+            if (action == null)
+                throw new System.InvalidOperationException("InputActionAsset is missing action '" + name + "'.");
+            return action;
         }
     }
 }

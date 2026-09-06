@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d3a892bfce4b7f54a8cf477063567278, type: 3}
+  m_Name: Character_Swordsman
+  m_EditorClassIdentifier: 
+  BlueprintId: swordsman
+  DisplayName: "\u5251\u58EB"
+  IsPlayer: 1
+  PlayerSelectable: 1
+  ViewBlueprintId: swordsman
+  Skills:
+  - {fileID: 11400000, guid: 51ec329092a604349815c0f236f32960, type: 2}
+  - {fileID: 11400000, guid: 0e719315ca395fe4db4d6f5a08cc040a, type: 2}
+  - {fileID: 11400000, guid: eb6b452d69e25c64d8b0b75cac550a8a, type: 2}
+  - {fileID: 11400000, guid: db4bb1f0c89e30342960c5a50d1f479d, type: 2}
+  - {fileID: 11400000, guid: 9a59f361327385a4c884f1a8604ce9c4, type: 2}
+  - {fileID: 11400000, guid: dfca746439ddafe4999654b0c7b81ca9, type: 2}
+  - {fileID: 11400000, guid: 91b9c3f8f8feb1e489ee659f7a462c23, type: 2}
+  - {fileID: 11400000, guid: 041ed019715b09e49a880311c52a0d83, type: 2}
+  ComboTable: {fileID: 11400000, guid: bd5feda54c62e9545ac100b3268c03f9, type: 2}
+  BehaviorTree: {fileID: 0}
+  DodgeSkill: {fileID: 11400000, guid: 91b9c3f8f8feb1e489ee659f7a462c23, type: 2}
+  DodgeInputAction: Dodge
+  JumpInputAction: Jump
+  AcquireRadius: 8
+  AttackRange: 1.35
+  FollowRange: 1.5
+  LeashRange: 20
+  PatrolRadius: 0

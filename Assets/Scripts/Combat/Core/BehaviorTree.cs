@@ -141,6 +141,28 @@ namespace Combat.Core
         public override BtNode Clone() => new CondHasTarget();
     }
 
+    public sealed class CondTargetHasTag : BtNode
+    {
+        readonly TagId _tag;
+        readonly bool _invert;
+
+        public CondTargetHasTag(TagId tag, bool invert = false)
+        {
+            _tag = tag;
+            _invert = invert;
+        }
+
+        public override BtStatus Tick(in BtTick ctx)
+        {
+            bool has = false;
+            if (ctx.World != null && ctx.Board.Target.IsValid && ctx.World.TryGetActor(ctx.Board.Target, out var target) && target != null)
+                has = target.TryGetComp<TagComp>(out var tags) && tags.Has(_tag);
+            return (_invert ? !has : has) ? BtStatus.Success : BtStatus.Failure;
+        }
+
+        public override BtNode Clone() => new CondTargetHasTag(_tag, _invert);
+    }
+
     public sealed class CondInRange : BtNode
     {
         public override BtStatus Tick(in BtTick ctx)
@@ -233,7 +255,14 @@ namespace Combat.Core
     public sealed class ActPlaySkill : BtNode
     {
         readonly SkillNodeId _skill; readonly TimelineId _timeline; bool _playing;
+        readonly bool _resolveFromCatalog;
         public ActPlaySkill(SkillNodeId skill, TimelineId timeline) { _skill = skill; _timeline = timeline; }
+        public ActPlaySkill(SkillNodeId skill)
+        {
+            _skill = skill;
+            _timeline = TimelineId.None;
+            _resolveFromCatalog = true;
+        }
         public override BtStatus Tick(in BtTick ctx)
         {
             if (!ctx.Self.TryGetComp<SkillDirectorComp>(out var dir)) return BtStatus.Failure;
@@ -247,11 +276,34 @@ namespace Combat.Core
             if (ctx.Self.TryGetComp<TagComp>(out var tags) &&
                 (tags.Has(CommonTags.Dead) || tags.Has(CommonTags.Stunned) || tags.Has(CommonTags.Downed) || tags.Has(CommonTags.Silence)))
                 return BtStatus.Failure;
-            if (!dir.Play(_skill, _timeline)) return BtStatus.Failure;
+            bool played = _resolveFromCatalog ? dir.Play(_skill) : dir.Play(_skill, _timeline);
+            if (!played) return BtStatus.Failure;
             _playing = true; return BtStatus.Running;
         }
         public override void Abort(in BtTick ctx) { _playing = false; }
-        public override BtNode Clone() => new ActPlaySkill(_skill, _timeline);
+        public override BtNode Clone() => _resolveFromCatalog
+            ? new ActPlaySkill(_skill)
+            : new ActPlaySkill(_skill, _timeline);
+    }
+
+    public sealed class ActWait : BtNode
+    {
+        readonly float _duration;
+        float _remaining;
+
+        public ActWait(float duration) => _duration = duration > 0f ? duration : 0.01f;
+
+        public override BtStatus Tick(in BtTick ctx)
+        {
+            if (_remaining <= 0f) _remaining = _duration;
+            _remaining -= ctx.Dt;
+            if (_remaining > 0f) return BtStatus.Running;
+            _remaining = 0f;
+            return BtStatus.Success;
+        }
+
+        public override void Abort(in BtTick ctx) => _remaining = 0f;
+        public override BtNode Clone() => new ActWait(_duration);
     }
 
     public sealed class CondBeyondLeash : BtNode

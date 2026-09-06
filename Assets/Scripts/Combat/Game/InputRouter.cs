@@ -28,6 +28,12 @@ namespace Combat.Game
                 return;
             if (f.AttackPressed)
                 b.Push(InputToken.Attack);
+            if (f.Skill1Pressed)
+                b.Push(InputToken.Skill1);
+            if (f.Skill2Pressed)
+                b.Push(InputToken.Skill2);
+            if (f.Skill3Pressed)
+                b.Push(InputToken.Skill3);
             if (f.JumpPressed)
                 b.Push(InputToken.Jump);
             if (f.DodgePressed)

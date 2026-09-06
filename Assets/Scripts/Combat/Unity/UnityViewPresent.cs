@@ -22,17 +22,20 @@ namespace Combat.Unity.Presentation
             actor.Add(new PoseFollowPresent());
             var character =
                 blueprintId == "fighter"
+                || blueprintId == "swordsman"
+                || blueprintId == "gunslinger"
                 || blueprintId == "melee_guard"
                 || blueprintId == "summon"
                 || blueprintId == "melee_ai"
-                || blueprintId == "melee_ai_narrow";
+                || blueprintId == "melee_ai_narrow"
+                || blueprintId == "ranged_ai";
             if (character)
             {
                 actor.Add(new AnimationPresent());
                 var buff = new BuffFxPresent { Port = new UnityLoopVfxPort(_vfxRoot) };
                 actor.Add(buff);
             }
-            if (blueprintId == "fighter")
+            if (blueprintId == "fighter" || blueprintId == "swordsman" || blueprintId == "gunslinger")
             {
                 actor.Add(new PlayerCameraPresent());
                 actor.Add(new PlayerFeedbackPresent { GhostPort = new UnityLoopVfxPort(_vfxRoot) });
@@ -41,7 +44,7 @@ namespace Combat.Unity.Presentation
             var gizmo = new HitboxGizmoPresent { Port = new UnityGizmoDrawPort(Color.red) };
             actor.Add(gizmo);
             var prefab = _views != null ? _views.Find(blueprintId) : null;
-            actor.Add(new UnityViewPresent(prefab, _root, ColorFor(blueprintId)));
+            actor.Add(new UnityViewPresent(prefab, _root));
             return actor;
         }
 
@@ -50,38 +53,32 @@ namespace Combat.Unity.Presentation
             actor?.Release();
         }
 
-        static Color ColorFor(string blueprintId)
-        {
-            if (blueprintId == "fighter")
-                return new Color(.2f, .65f, 1f);
-            if (blueprintId == "melee_guard")
-                return new Color(1f, .25f, .2f);
-            if (blueprintId == "summon")
-                return new Color(.7f, .3f, 1f);
-            return new Color(.7f, .7f, .7f);
-        }
     }
 
     public sealed class UnityViewPresent : PresentComp
     {
         readonly GameObject _prefab;
         readonly Transform _root;
-        readonly Color _fallbackColor;
         GameObject _view;
         Animator _animator;
 
-        public UnityViewPresent(GameObject prefab, Transform root, Color fallbackColor)
+        public UnityViewPresent(GameObject prefab, Transform root)
         {
             _prefab = prefab;
             _root = root;
-            _fallbackColor = fallbackColor;
         }
 
         public GameObject View => _view;
 
         protected override void OnAttach()
         {
-            _view = _prefab != null ? Object.Instantiate(_prefab, _root) : CreateFallback();
+            if (_prefab == null)
+            {
+                _view = null;
+                return;
+            }
+
+            _view = Object.Instantiate(_prefab, _root);
             _animator = _view != null ? _view.GetComponentInChildren<Animator>() : null;
         }
 
@@ -109,9 +106,11 @@ namespace Combat.Unity.Presentation
                 );
                 _view.transform.rotation = Quaternion.Euler(0f, pose.DisplayYaw, 0f);
             }
-            if (!Self.TryGet<AnimationPresent>(out var animation) || _animator == null)
+            if (!Self.TryGet<AnimationPresent>(out var animation))
                 return;
             var flags = animation.Applied;
+            if (_animator == null)
+                return;
             SetBool("Grounded", flags.Grounded);
             SetBool("InAir", flags.InAir);
             SetBool("Attack", flags.Attack);
@@ -122,6 +121,7 @@ namespace Combat.Unity.Presentation
             SetBool("Hitstop", flags.Hitstop);
             SetFloat("Speed", flags.Speed);
             SetInteger("SkillId", flags.SkillId);
+            SetInteger("SkillMode", (int)flags.AnimationMode);
             _animator.speed = flags.Hitstop ? 0f : 1f;
         }
 
@@ -151,22 +151,6 @@ namespace Combat.Unity.Presentation
                 _animator.SetInteger(name, value);
         }
 
-        GameObject CreateFallback()
-        {
-            var primitive =
-                Self.BlueprintId == "stake" ? PrimitiveType.Cube : PrimitiveType.Capsule;
-            var go = GameObject.CreatePrimitive(primitive);
-            go.name = "Present_" + Self.BlueprintId;
-            go.transform.SetParent(_root, false);
-            go.transform.localScale =
-                Self.BlueprintId == "stake"
-                    ? new Vector3(.45f, .7f, .45f)
-                    : new Vector3(.65f, 1.1f, .65f);
-            var renderer = go.GetComponent<Renderer>();
-            if (renderer != null)
-                renderer.material.color = _fallbackColor;
-            return go;
-        }
     }
 
     static class AnimatorExtensions

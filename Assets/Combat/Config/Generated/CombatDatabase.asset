@@ -12,22 +12,77 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6a09e9787d61b354495412c62a3af961, type: 3}
   m_Name: CombatDatabase
   m_EditorClassIdentifier: 
-  Combo: {fileID: 11400000, guid: 76b8c9f82538de045b53f128a030b321, type: 2}
+  Combo: {fileID: 0}
+  Skills:
+  - {fileID: 11400000, guid: 51ec329092a604349815c0f236f32960, type: 2}
+  - {fileID: 11400000, guid: 0e719315ca395fe4db4d6f5a08cc040a, type: 2}
+  - {fileID: 11400000, guid: eb6b452d69e25c64d8b0b75cac550a8a, type: 2}
+  - {fileID: 11400000, guid: db4bb1f0c89e30342960c5a50d1f479d, type: 2}
+  - {fileID: 11400000, guid: 9a59f361327385a4c884f1a8604ce9c4, type: 2}
+  - {fileID: 11400000, guid: dfca746439ddafe4999654b0c7b81ca9, type: 2}
+  - {fileID: 11400000, guid: 91b9c3f8f8feb1e489ee659f7a462c23, type: 2}
+  - {fileID: 11400000, guid: 041ed019715b09e49a880311c52a0d83, type: 2}
+  - {fileID: 11400000, guid: b61cc505242540845bb547d3f92b7e0c, type: 2}
+  - {fileID: 11400000, guid: 073c5ac2dddf1ab4f9a914e40516c93f, type: 2}
+  - {fileID: 11400000, guid: cc4ec6a8b49e46a4588642996712daa7, type: 2}
+  - {fileID: 11400000, guid: 3bcef0b33e48eaf47a22d7daa8a6fc32, type: 2}
+  - {fileID: 11400000, guid: d3ca27c384c56c54aa1a5c8020e402d4, type: 2}
+  - {fileID: 11400000, guid: a9c1c77c47f09d84daf8c41aac75d151, type: 2}
+  - {fileID: 11400000, guid: 8cd16d464eb8fb34db195d28151a3621, type: 2}
+  - {fileID: 11400000, guid: 8573e9140516926469d55f5df6056885, type: 2}
+  - {fileID: 11400000, guid: d95a0e6412ce3244eb0b113b5f9d61e4, type: 2}
+  - {fileID: 11400000, guid: e71ce4552bd00b54997868fe7b9b00aa, type: 2}
+  - {fileID: 11400000, guid: 60ef7459eb5629f439075b88cf887c59, type: 2}
+  - {fileID: 11400000, guid: 244fd001441641447a4d10d57ef4b6d8, type: 2}
+  - {fileID: 11400000, guid: d4d2248b42945964c82a0e98a967cbd6, type: 2}
+  - {fileID: 11400000, guid: 75970fb7f5fc911468757be5317457cb, type: 2}
+  - {fileID: 11400000, guid: 750264a3a12688d459f27db484511dab, type: 2}
+  - {fileID: 11400000, guid: ef24a6781890b6d4f8ea21ba6735bca9, type: 2}
+  - {fileID: 11400000, guid: 8ee1521f1247a5349ab6bcdf2e9887f5, type: 2}
+  Characters:
+  - {fileID: 11400000, guid: 98362912b36b2f34f85f6eb764b9c513, type: 2}
+  - {fileID: 11400000, guid: 02ddaeb7a37617b489331c8484582f49, type: 2}
+  - {fileID: 11400000, guid: e50cb4e7bb46b44448dd449a2ca29b74, type: 2}
+  - {fileID: 11400000, guid: 46977cd168555044687ece5d3369ae68, type: 2}
+  - {fileID: 11400000, guid: b0f3b8703c25fcb42b48f3a2e0168598, type: 2}
+  - {fileID: 11400000, guid: f0d30f35272f4a640999bd37705426cb, type: 2}
   Timelines:
-  - {fileID: 11400000, guid: 7ec16dfc6c28c434096c5aca73df1549, type: 2}
-  - {fileID: 11400000, guid: bb514288ef8417a4d882633fd608219b, type: 2}
-  - {fileID: 11400000, guid: d65e4c1b4b337824e848b47018830e5d, type: 2}
-  - {fileID: 11400000, guid: 65e20eba9b5a6ec4f8c6597de0b7161a, type: 2}
+  - {fileID: 11400000, guid: 0eecd3791973b1742b026f494c16c1fb, type: 2}
+  - {fileID: 11400000, guid: 0177b91c35d60e1468a48ef1a96cc24f, type: 2}
+  - {fileID: 11400000, guid: 626b9da568d2b8a48b59fce22be93e59, type: 2}
+  - {fileID: 11400000, guid: 94ae98a77b9ef4f4e81a8a5946b077ad, type: 2}
+  - {fileID: 11400000, guid: 99a49291682ef61499cdeca3fe116620, type: 2}
+  - {fileID: 11400000, guid: f7062915685a2874aa749e6d84cd59b4, type: 2}
+  - {fileID: 11400000, guid: 00927c65f38171f46bd7bf26eb2ee131, type: 2}
+  - {fileID: 11400000, guid: 9b0a36906ae85b24985eaccd63258a76, type: 2}
+  - {fileID: 11400000, guid: c021230aa453a664381d70a241df8b76, type: 2}
+  - {fileID: 11400000, guid: c4a26c7748cc0b24fbf0058d07dd9377, type: 2}
+  - {fileID: 11400000, guid: d0cabe87e1b5b7e46ad31cd5607bd5e4, type: 2}
+  - {fileID: 11400000, guid: 17bb37e0a4a5c07428d671a1ecc7a7cf, type: 2}
+  - {fileID: 11400000, guid: eb1355edb65f30a40bd0da9e4cbb0012, type: 2}
+  - {fileID: 11400000, guid: 58a0c8d6904e6b9428eedcebe78df10f, type: 2}
+  - {fileID: 11400000, guid: 7b2555f8bbb5e074fb8e0a0491214698, type: 2}
+  - {fileID: 11400000, guid: 1f1409f3a4f0df44fa8bc56ba2191810, type: 2}
+  - {fileID: 11400000, guid: 345a86da2a9c2f74a83c64b84918af01, type: 2}
+  - {fileID: 11400000, guid: 7d104bff6331c074295593a9a5a7e24f, type: 2}
+  - {fileID: 11400000, guid: 4cff9c6cdb0fab9428459c1f818702d3, type: 2}
+  - {fileID: 11400000, guid: dce05b7de0c41c54b9b215c4b5999d8d, type: 2}
+  - {fileID: 11400000, guid: 31a0aaf799936f04b87b910b25805a4b, type: 2}
+  - {fileID: 11400000, guid: 0684e09aedc691840b36556e016abd62, type: 2}
+  - {fileID: 11400000, guid: 457f495b856528d4ab99f53a401d59bd, type: 2}
+  - {fileID: 11400000, guid: 9cc42d84866df6c40bc32cd7f1826ac5, type: 2}
+  - {fileID: 11400000, guid: 6f35fe0d877c5104d8712bdaf9583134, type: 2}
   Projectiles:
-  - {fileID: 11400000, guid: 41be84cd4298d814492e7128a654004d, type: 2}
-  - {fileID: 11400000, guid: 240c1e9bf5e3a0743bb2c239a5a237fb, type: 2}
+  - {fileID: 11400000, guid: b1e87f6cacc5cea4a88148b1bd4a475a, type: 2}
+  - {fileID: 11400000, guid: 76a8733604193744ea793966fa29659c, type: 2}
+  - {fileID: 11400000, guid: 934435d4d166cb141ab603b42ea850a5, type: 2}
   Aoes:
-  - {fileID: 11400000, guid: 7105e0680aef0fc47bfe822db4b55fd2, type: 2}
-  - {fileID: 11400000, guid: 36a3cecc0e546ca4294719a3e3217b48, type: 2}
+  - {fileID: 11400000, guid: aac040868d62d83499a21ce41405801d, type: 2}
+  - {fileID: 11400000, guid: 4b066e1671e8f8f45a537518ad1f6cc1, type: 2}
   Buffs:
-  - {fileID: 11400000, guid: 769a73c5af2788a4e814291c2518189d, type: 2}
-  - {fileID: 11400000, guid: 173973dd80b50fb458e51aa9df18e0ab, type: 2}
+  - {fileID: 11400000, guid: f8ba5c8e202107e4299ca51922030e78, type: 2}
+  - {fileID: 11400000, guid: 4517e76cccc142f45b2ffe5a1b0eb843, type: 2}
   Summons:
-  - {fileID: 11400000, guid: 658580554681c934db90573595825285, type: 2}
-  Cues: {fileID: 11400000, guid: cf6af9b8eb0011445a4d012443d6c328, type: 2}
-  Motor: {fileID: 11400000, guid: ab60a048df46c64469594f38f5920cbd, type: 2}
+  - {fileID: 11400000, guid: 82a146f2f33d73f48bdc8f73560a5f41, type: 2}
+  Cues: {fileID: 11400000, guid: 989b4222c1bd2564ebe2f903e433c8c9, type: 2}
+  Motor: {fileID: 11400000, guid: b433d548b7927374e9ba46ead6803d93, type: 2}

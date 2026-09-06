@@ -14,6 +14,7 @@ namespace Combat.Presentation
             IFrame;
         public int SkillId;
         public bool Hitstop;
+        public SkillAnimationMode AnimationMode;
 
         public static AnimFlags Capture(Actor a, bool hitstop)
         {
@@ -37,7 +38,10 @@ namespace Combat.Presentation
                 f.Downed |= sm.Current == ActivityId.Knockdown;
             }
             if (a.TryGetComp<SkillDirectorComp>(out var dir) && dir.IsPlaying)
+            {
                 f.SkillId = dir.CurrentSkill.Value;
+                f.AnimationMode = dir.CurrentAnimationMode;
+            }
             if (a.TryGetComp<LocomotionComp>(out var loco))
             {
                 float m = LocomotionComp.StickMag(loco.MoveIntent);

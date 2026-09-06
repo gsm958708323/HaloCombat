@@ -18,6 +18,8 @@ namespace Combat.Presentation
             p.Add(new PoseFollowPresent());
             bool character =
                 bp == "fighter"
+                || bp == "swordsman"
+                || bp == "gunslinger"
                 || bp == "melee_guard"
                 || bp == "summon"
                 || bp == "melee_ai"
@@ -27,7 +29,7 @@ namespace Combat.Presentation
                 p.Add(new AnimationPresent());
                 p.Add(new BuffFxPresent());
             }
-            if (bp == "fighter")
+            if (bp == "fighter" || bp == "swordsman" || bp == "gunslinger")
             {
                 p.Add(new PlayerCameraPresent());
                 p.Add(new PlayerFeedbackPresent());

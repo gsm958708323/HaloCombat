@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b736701361a88546a2fa7ee6587d207, type: 3}
+  m_Name: TL_HomingFireball
+  m_EditorClassIdentifier: 
+  TimelineIdValue: 5209
+  Duration: 0.5
+  Clips:
+  - Start: 0
+    End: 0.25
+    Kind: 1
+    MoveX: 0
+    MoveY: 0
+    MoveZ: 0
+    Steer: 0
+    HitRadius: 0
+    HitOffsetX: 0
+    HitOffsetY: 0
+    HitOffsetZ: 0
+    HitProfile: {fileID: 0}
+  Payloads:
+  - Time: 0.08
+    Effects:
+    - {fileID: 11400000, guid: 0f8ffeaa6ae98324ca1ef38eb3937040, type: 2}

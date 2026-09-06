@@ -66,13 +66,25 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\Combat\Config\AoeDefAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\ActStopMoveAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\ActWaitAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\ActHoldIfPlayingAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\ProjectileDefAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\CondHasTargetAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\CondHasTagAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\LaunchAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\CharacterMotorAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\SpawnAoeAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\ArenaSpawnTableSO.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\ActStartReturnAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\ActMoveTowardHomeAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\CharacterDefinitionAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\ActPatrolAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\HitProfileAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\CondTargetHasTagAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\SpawnSummonAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\SummonDefAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\ActAcquireHostileAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\KnockdownAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\ActPlaySkillAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\CombatDatabaseAsset.cs" />
@@ -80,19 +92,26 @@
     <Compile Include="Assets\Scripts\Combat\Config\BtSelectorAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\KnockbackAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\DefinitionAssets.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\ActMoveTowardAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\DurationSpecAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\BtSequenceAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\SpawnProjectileAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\EffectAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\IFrameAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\SkillDefinitionAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\ApplyDurationAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\DispelAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\ActRequestDespawnAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\BtNodeAsset.cs" />
-    <Compile Include="Assets\Scripts\Combat\Config\BehaviorTreeAssets.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\CondInRangeAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\ActFaceTargetAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\SkillTimelineAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\CueLibraryAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\ComboTableAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\ActFollowOwnerAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\HitStunAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\CondBeyondLeashAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\CondOwnerDeadAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\PlayCueAsset.cs" />
   </ItemGroup>
   <ItemGroup>

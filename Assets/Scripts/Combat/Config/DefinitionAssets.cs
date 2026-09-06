@@ -32,11 +32,13 @@ namespace Combat.Config
     public sealed class ComboEntryAsset
     {
         public int[] PreSkills;
+        public SkillDefinitionAsset[] PreSkillAssets;
         public string InputAction = "Attack";
         public int[] RequiredTags;
         public int Priority;
         public int ToSkill;
         public int Timeline;
+        public SkillDefinitionAsset Skill;
     }
 
     public sealed class SoCombatContent : ICombatContent
@@ -44,7 +46,12 @@ namespace Combat.Config
         readonly CombatDatabaseAsset _database;
 
         public SoCombatContent(CombatDatabaseAsset database) => _database = database;
-        public BakedCombatData Bake() => _database != null ? _database.BakeAll() : new CodeCombatContent().Bake();
+        public BakedCombatData Bake()
+        {
+            if (_database == null)
+                throw new InvalidOperationException("SoCombatContent requires a CombatDatabaseAsset.");
+            return _database.BakeAll();
+        }
     }
 
     public enum TreeRecipeKind { None, Puncher, Guard, SummonMelee }

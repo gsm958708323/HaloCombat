@@ -29,8 +29,7 @@ namespace Combat.Unity.Presentation
         public bool TryPlay(in CueDef d, SimVec3 pos, EntityId source)
         {
             var key = string.IsNullOrEmpty(d.PrefabKey) ? "cue_" + d.CueId : d.PrefabKey;
-            if (!_prefabs.TryGetValue(key, out var prefab) || prefab == null)
-                return true;
+            _prefabs.TryGetValue(key, out var prefab);
             GameObject go;
             if (_free.TryGetValue(key, out var free) && free.Count > 0)
             {
@@ -39,7 +38,7 @@ namespace Combat.Unity.Presentation
             }
             else
             {
-                go = Object.Instantiate(prefab, _root);
+                go = prefab != null ? Object.Instantiate(prefab, _root) : ProceduralVfxFactory.Create(_root, key, Vector3.zero);
             }
             go.transform.position = new Vector3(pos.X, pos.Y, pos.Z);
             _live.Add(

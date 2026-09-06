@@ -13,6 +13,7 @@ namespace Combat.Unity.Game
             DevRoot;
         public float BarLerp = .12f;
         float _fill;
+        HudSnapshot _snapshot;
 
         public void Refresh(PresentHub hub, float dt)
         {
@@ -22,6 +23,7 @@ namespace Combat.Unity.Game
                     HpSlider.gameObject.SetActive(false);
                 return;
             }
+            _snapshot = s;
             if (HpSlider != null)
             {
                 HpSlider.gameObject.SetActive(true);
@@ -37,6 +39,20 @@ namespace Combat.Unity.Game
                 CancelLamp.SetActive(s.Cancel);
             if (DevRoot != null)
                 DevRoot.SetActive(true);
+        }
+
+        void OnGUI()
+        {
+            if (_snapshot.Valid && HpSlider == null)
+            {
+                var width = Mathf.Min(360f, Screen.width * .34f);
+                GUI.Box(new Rect(22, 20, width + 24, 74), "");
+                GUI.Label(new Rect(35, 28, width, 22), "PLAYER  " + Mathf.CeilToInt(_snapshot.Hp) + " / " + Mathf.CeilToInt(_snapshot.MaxHp));
+                GUI.color = new Color(.12f, .8f, .35f); GUI.DrawTexture(new Rect(35, 54, width * _snapshot.Hp01, 16), Texture2D.whiteTexture); GUI.color = Color.white;
+                GUI.Label(new Rect(35, 76, width, 22), _snapshot.IFrame ? "DODGE / I-FRAME" : (_snapshot.Casting ? "CASTING" : (_snapshot.Cancel ? "CANCEL READY" : "J ATTACK")));
+                if (_snapshot.BurnStacks > 0) GUI.Label(new Rect(35, 98, width, 22), "BURN x" + _snapshot.BurnStacks);
+                if (_snapshot.Hitstop) GUI.Label(new Rect(Screen.width - 150, 25, 120, 25), "HITSTOP");
+            }
         }
     }
 }

@@ -5,6 +5,9 @@ namespace Combat.Game
         public float MoveX,
             MoveZ;
         public bool AttackPressed,
+            Skill1Pressed,
+            Skill2Pressed,
+            Skill3Pressed,
             JumpPressed,
             DodgePressed,
             PausePressed,

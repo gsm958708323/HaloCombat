@@ -106,6 +106,15 @@ namespace Combat.Core
             WriteGroundTags(false);
         }
 
+        public void ImpulseLaunch(float verticalSpeed)
+        {
+            if (verticalSpeed <= 0f) return;
+            if (verticalSpeed > _verticalVel)
+                _verticalVel = verticalSpeed;
+            _grounded = false;
+            WriteGroundTags(false);
+        }
+
         public void SetClipSteer(float steer) => _clipSteer = steer < 0f ? 0f : steer;
         public void ClearClipSteer() => _clipSteer = 0f;
         public void ClearPendingSkill() => _skillDelta = SimVec3.Zero;

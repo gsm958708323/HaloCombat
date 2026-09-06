@@ -40,10 +40,9 @@ namespace Combat.Demos
                     if (actor.TryGetComp<BehaviorTreeComp>(out _))
                         guard = actor;
                     else if (
-                        actor.TryGetComp<TeamComp>(out var team)
-                        && team.TeamId == 1
-                        && actor.TryGetComp<TransformComp>(out var transform)
+                        actor.TryGetComp<TransformComp>(out var transform)
                         && Math.Abs(transform.Position.X - .55f) < .05f
+                        && Math.Abs(transform.Position.Z) < .05f
                     )
                         stake = actor;
                 }

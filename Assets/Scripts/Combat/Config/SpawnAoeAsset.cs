@@ -7,6 +7,7 @@ namespace Combat.Config
     public sealed class SpawnAoeAsset : EffectAsset
     {
         public int SpecId;
-        protected override IEffect BakeNew() => new SpawnAoeEffect(SpecId);
+        public bool UseTargetPoint;
+        protected override IEffect BakeNew() => new SpawnAoeEffect(SpecId, UseTargetPoint);
     }
 }

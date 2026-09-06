@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Combat.Presentation;
 
 namespace Combat.Game
@@ -19,23 +20,64 @@ namespace Combat.Game
         public InputRouter Router { get; private set; }
         public GameSettings Settings { get; private set; }
         readonly IGameplayInputSource _input;
-        readonly Func<ArenaSession> _create;
+        readonly Func<string, ArenaSession> _create;
         readonly ISettingsStore _store;
+        readonly string[] _playerClasses;
+        public string SelectedPlayerClassId { get; private set; }
         float _delay;
         const float Hold = .6f;
 
         public GameFlow(
             IGameplayInputSource i,
             Func<ArenaSession> c = null,
-            ISettingsStore s = null
+            ISettingsStore s = null,
+            string[] playerClasses = null,
+            string defaultPlayerClassId = "swordsman"
         )
         {
             _input = i ?? new NullInputSource();
-            _create = c ?? ArenaSession.StartHeadless;
+            if (c != null)
+                _create = _ => c();
+            else
+                _create = id => ArenaSession.StartHeadless();
             _store = s ?? new MemorySettingsStore();
+            _playerClasses = playerClasses ?? new[] { "swordsman" };
+            SelectedPlayerClassId = ContainsPlayerClass(defaultPlayerClassId)
+                ? defaultPlayerClassId
+                : _playerClasses[0];
             Settings = _store.Load() ?? new GameSettings();
             Settings.Apply();
             Router = new InputRouter(_input);
+        }
+
+        public GameFlow(
+            IGameplayInputSource input,
+            Func<string, ArenaSession> create,
+            ISettingsStore store,
+            string[] playerClasses,
+            string defaultPlayerClassId)
+        {
+            _input = input ?? new NullInputSource();
+            _create = create ?? throw new ArgumentNullException(nameof(create));
+            _store = store ?? new MemorySettingsStore();
+            _playerClasses = playerClasses ?? Array.Empty<string>();
+            if (_playerClasses.Length == 0)
+                throw new ArgumentException("At least one player class is required.", nameof(playerClasses));
+            SelectedPlayerClassId = ContainsPlayerClass(defaultPlayerClassId)
+                ? defaultPlayerClassId
+                : _playerClasses[0];
+            Settings = _store.Load() ?? new GameSettings();
+            Settings.Apply();
+            Router = new InputRouter(_input);
+        }
+
+        public IReadOnlyList<string> PlayerClasses => _playerClasses;
+
+        public void SelectPlayerClass(string classId)
+        {
+            if (!ContainsPlayerClass(classId))
+                throw new ArgumentException("Unknown player class " + classId, nameof(classId));
+            SelectedPlayerClassId = classId;
         }
 
         public void SaveSettings()
@@ -56,7 +98,7 @@ namespace Combat.Game
             Settings.Apply();
             DisposeSession();
             State = FlowState.Loading;
-            Session = _create();
+            Session = _create(SelectedPlayerClassId);
             Router = new InputRouter(_input);
             State = FlowState.Arena;
         }
@@ -97,6 +139,14 @@ namespace Combat.Game
         {
             Session?.Dispose();
             Session = null;
+        }
+
+        bool ContainsPlayerClass(string classId)
+        {
+            if (string.IsNullOrEmpty(classId)) return false;
+            for (int i = 0; i < _playerClasses.Length; i++)
+                if (string.Equals(_playerClasses[i], classId, StringComparison.Ordinal)) return true;
+            return false;
         }
     }
 }

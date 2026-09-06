@@ -8,7 +8,7 @@ namespace Combat.Unity.Presentation
         public Transform Pivot;
         public Camera Cam;
         public float Distance = 6f,
-            Height = .5f,
+            Height = 5.5f,
             BaseFov = 50f;
         public bool ScreenShakeEnabled = true;
 
@@ -25,9 +25,13 @@ namespace Combat.Unity.Presentation
             var s = new Vector3(p.X, p.Y, p.Z);
             if (Cam != null)
             {
-                Cam.transform.position = s - Vector3.forward * Distance;
+                var offset = new Vector3(0f, 0f, -Distance);
+                var shake = ScreenShakeEnabled && c.Focus.Impulse > 0f
+                    ? new Vector3(Mathf.Sin(Time.unscaledTime * 70f), Mathf.Cos(Time.unscaledTime * 61f), 0f) * c.Focus.Impulse * .045f
+                    : Vector3.zero;
+                Cam.transform.position = s + offset + Vector3.up * Height + shake;
                 Cam.transform.LookAt(s);
-                Cam.fieldOfView = BaseFov + (ScreenShakeEnabled ? c.Focus.Impulse * 3f : 0f);
+                Cam.fieldOfView = BaseFov + (ScreenShakeEnabled ? c.Focus.Impulse * 2.5f : 0f);
             }
             else if (Pivot != null)
                 Pivot.position = s;

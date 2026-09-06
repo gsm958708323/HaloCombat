@@ -20,16 +20,18 @@ namespace Combat.Game
         readonly LogicTicker _ticker = new LogicTicker();
         readonly WinWatcher _win = new WinWatcher();
         readonly SpawnTable _spawns;
+        readonly string _selectedPlayerBlueprint;
         Action<EvEntityDead> _dead;
         Action<EvEntityCleanup> _cleanup;
         Action<EvHitstop> _hitstop;
         bool _disposed;
 
-        public ArenaSession(CombatWorld world, PresentHub hub, SpawnTable spawns)
+        public ArenaSession(CombatWorld world, PresentHub hub, SpawnTable spawns, string selectedPlayerBlueprint = null)
         {
             World = world ?? throw new ArgumentNullException(nameof(world));
             Hub = hub ?? throw new ArgumentNullException(nameof(hub));
             _spawns = spawns ?? new SpawnTable();
+            _selectedPlayerBlueprint = selectedPlayerBlueprint;
         }
 
         public static ArenaSession StartHeadless()
@@ -45,7 +47,7 @@ namespace Combat.Game
                 baked.Motor
             );
             baked.Install(world);
-            var s = new ArenaSession(world, new PresentHub(), DefaultArenaSpawns());
+            var s = new ArenaSession(world, new PresentHub(), DefaultArenaSpawns(), "fighter");
             s.Start();
             return s;
         }
@@ -86,8 +88,11 @@ namespace Combat.Game
 
         void SpawnOne(SpawnEntry e)
         {
+            string blueprint = e.IsLocalPlayer && !string.IsNullOrEmpty(_selectedPlayerBlueprint)
+                ? _selectedPlayerBlueprint
+                : (string.IsNullOrEmpty(e.BlueprintId) ? "stake" : e.BlueprintId);
             var id = World.SpawnActor(
-                new ActorSpawnSpec(string.IsNullOrEmpty(e.BlueprintId) ? "stake" : e.BlueprintId)
+                new ActorSpawnSpec(blueprint)
             );
             if (!World.TryGetActor(id, out var a) || a == null)
                 return;
@@ -104,7 +109,7 @@ namespace Combat.Game
                 if (e.PatrolOverride > 0)
                     bt.Board.PatrolRadius = e.PatrolOverride;
             }
-            Hub.BindSpawn(id, e.BlueprintId);
+            Hub.BindSpawn(id, blueprint);
             if (e.IsLocalPlayer)
             {
                 LocalPlayerId = id;

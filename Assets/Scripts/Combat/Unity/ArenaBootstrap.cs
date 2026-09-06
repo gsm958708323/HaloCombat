@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Combat.Config;
 using Combat.Core;
@@ -25,6 +26,7 @@ namespace Combat.Unity.Game
         public Transform PresentRoot;
         public CuePrefabTable CuePrefabs;
         public Transform FloaterRoot;
+        public ProceduralArenaVisuals ArenaVisuals;
         GameFlow _flow;
         BakedCombatData _baked;
         SpawnTable _table;
@@ -42,13 +44,18 @@ namespace Combat.Unity.Game
         {
             if (_flow != null)
                 return _flow;
-            if (Database == null || Spawns == null)
-            {
-                Debug.LogWarning("ArenaBootstrap missing Database/Spawns; using headless defaults");
-            }
-            _baked = Database != null ? Database.BakeAll() : new CodeCombatContent().Bake();
-            _table = Spawns != null ? Spawns.Bake() : ArenaSession.DefaultArenaSpawns();
-            ArenaSession Create()
+            ValidateReferences();
+            _baked = Database.BakeAll();
+            _table = Spawns.Bake();
+            if (_table.Entries == null || _table.Entries.Length == 0)
+                throw new InvalidOperationException("ArenaBootstrap requires a non-empty ArenaSpawnTableSO.");
+            var playerOptions = _baked.Characters.PlayerOptions();
+            if (playerOptions.Count == 0)
+                throw new InvalidOperationException("CombatDatabase has no selectable player characters.");
+            var playerIds = new string[playerOptions.Count];
+            for (int i = 0; i < playerOptions.Count; i++) playerIds[i] = playerOptions[i].BlueprintId;
+
+            ArenaSession Create(string playerBlueprintId)
             {
                 var w = new CombatWorld(
                     new FighterActorFactory(_baked),
@@ -67,10 +74,11 @@ namespace Combat.Unity.Game
                 h.Floaters.SetPool(
                     new UnityFloaterPool(FloaterRoot != null ? FloaterRoot : root, Camera.main)
                 );
-                var s = new ArenaSession(w, h, _table);
+                var s = new ArenaSession(w, h, _table, playerBlueprintId);
                 s.Start();
                 return s;
             }
+            EnsurePresentationRoots();
             var cam =
                 Rig != null
                     ? Rig.transform
@@ -84,7 +92,7 @@ namespace Combat.Unity.Game
                 Rig.Cam = camera;
                 cam = cameraObject.transform;
             }
-            if (Object.FindFirstObjectByType<Light>() == null)
+            if (UnityEngine.Object.FindFirstObjectByType<Light>() == null)
             {
                 var lightObject = new GameObject("ArenaKeyLight");
                 var light = lightObject.AddComponent<Light>();
@@ -92,9 +100,27 @@ namespace Combat.Unity.Game
                 light.intensity = 1.2f;
                 light.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
             }
-            _flow = new GameFlow(new UnityInputSource(Actions, cam), Create, store);
+            _flow = new GameFlow(
+                new UnityInputSource(Actions, cam),
+                Create,
+                store,
+                playerIds,
+                "swordsman");
             PauseMenu?.Bind(_flow);
             return _flow;
+        }
+
+        void ValidateReferences()
+        {
+            var missing = new List<string>();
+            if (Database == null) missing.Add(nameof(Database));
+            if (Spawns == null) missing.Add(nameof(Spawns));
+            if (Actions == null) missing.Add(nameof(Actions));
+            if (Views == null) missing.Add(nameof(Views));
+            if (missing.Count == 0) return;
+            var message = "ArenaBootstrap missing required configuration: " + string.Join(", ", missing);
+            Debug.LogError(message, this);
+            throw new InvalidOperationException(message);
         }
 
         void Update()
@@ -160,6 +186,38 @@ namespace Combat.Unity.Game
                     d[e.Key] = e.Prefab;
             }
             return d;
+        }
+
+        void EnsurePresentationRoots()
+        {
+            if (PresentRoot == null)
+            {
+                var go = new GameObject("PresentRoot"); go.transform.SetParent(transform, false); PresentRoot = go.transform;
+            }
+            if (VfxRoot == null)
+            {
+                var go = new GameObject("VfxRoot"); go.transform.SetParent(transform, false); VfxRoot = go.transform;
+            }
+            if (FloaterRoot == null)
+            {
+                var go = new GameObject("FloaterRoot"); go.transform.SetParent(transform, false); FloaterRoot = go.transform;
+            }
+            if (Hud == null)
+            {
+                var go = new GameObject("CombatHud"); go.transform.SetParent(transform, false); Hud = go.AddComponent<HudView>();
+            }
+            if (ArenaVisuals == null)
+            {
+                ArenaVisuals = GetComponent<ProceduralArenaVisuals>();
+                if (ArenaVisuals == null) ArenaVisuals = gameObject.AddComponent<ProceduralArenaVisuals>();
+            }
+            ArenaVisuals.Build();
+            if (Rig == null && Camera.main == null)
+            {
+                var cameraObject = new GameObject("ArenaCamera");
+                var camera = cameraObject.AddComponent<Camera>(); camera.tag = "MainCamera";
+                Rig = cameraObject.AddComponent<CameraRig>(); Rig.Cam = camera; Rig.Distance = 8f; Rig.Height = 6f; Rig.BaseFov = 52f;
+            }
         }
     }
 }

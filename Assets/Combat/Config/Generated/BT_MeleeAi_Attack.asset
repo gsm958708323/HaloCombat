@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c912f060273b6f54b9948ba2de7b12f0, type: 3}
+  m_Name: BT_MeleeAi_Attack
+  m_EditorClassIdentifier: 
+  Children:
+  - {fileID: 11400000, guid: 953c8fc60bb3946449c73bd4b761e50e, type: 2}
+  - {fileID: 11400000, guid: b7203298709dcd24595259e73d8b3711, type: 2}
+  - {fileID: 11400000, guid: ebf7853bf9dd139459eb7feb77ab2b86, type: 2}
+  - {fileID: 11400000, guid: 52a2d571d30f42c47abf0bdd9d1a8cc7, type: 2}
+  - {fileID: 11400000, guid: 0a142adf3d08cf44aa02134a02c388a4, type: 2}
+  - {fileID: 11400000, guid: 83c990f560909bd4c94297d4c7f1062e, type: 2}
+  - {fileID: 11400000, guid: 7adfaa318b0a8594bb7efcd36723344d, type: 2}

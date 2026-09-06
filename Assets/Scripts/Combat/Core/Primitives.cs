@@ -99,6 +99,15 @@ namespace Combat.Core
         public override string ToString() => "Skill(" + Value + ")";
     }
 
+    public enum SkillAnimationMode : byte
+    {
+        Attack = 0,
+        AirAttack = 1,
+        Dash = 2,
+        Slide = 3,
+        Shot = 4
+    }
+
     public readonly struct TimelineId : IEquatable<TimelineId>
     {
         public static readonly TimelineId None = new TimelineId(0);
@@ -119,6 +128,9 @@ namespace Combat.Core
     public readonly struct InputToken : IEquatable<InputToken>
     {
         public static readonly InputToken Attack = new InputToken("Attack");
+        public static readonly InputToken Skill1 = new InputToken("Skill1");
+        public static readonly InputToken Skill2 = new InputToken("Skill2");
+        public static readonly InputToken Skill3 = new InputToken("Skill3");
         public static readonly InputToken Jump = new InputToken("Jump");
         public static readonly InputToken UpAttack = new InputToken("UpAttack");
         public readonly string Action;

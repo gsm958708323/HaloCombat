@@ -35,6 +35,9 @@ namespace Combat.Core
                 return actor;
             }
 
+            if (_data.Characters != null && _data.Characters.TryGet(bp, out var configured))
+                return CreateConfiguredCombatant(actor, configured);
+
             bool stake = bp == "stake";
             bool enemy = bp == "melee_ai" || bp == "melee_ai_narrow" || bp == "melee_guard" || bp == "ranged_ai";
             bool summon = bp == "summon";
@@ -49,6 +52,72 @@ namespace Combat.Core
 
             // Unknown blueprints retain the original stake-like target dummy shape.
             return CreateCombatant(actor, bp, false, false, true);
+        }
+
+        Actor CreateConfiguredCombatant(Actor actor, CharacterDefinition definition)
+        {
+            if (definition == null)
+                throw new InvalidOperationException("Null character definition");
+            var attr = new AttributeSet();
+            actor.AddComp(new TransformComp());
+            actor.AddComp(new TagComp());
+            actor.AddComp(attr);
+            actor.AddComp(new BuffComp());
+            actor.AddComp(new TeamComp(definition.IsPlayer ? 1 : 2));
+            actor.AddComp(new HealthComp());
+            actor.AddComp(new StateMachineComp());
+            actor.AddComp(new LocomotionComp());
+
+            if (definition.IsPlayer)
+            {
+                actor.AddComp(new InputBufferComp());
+                actor.AddComp(new HitboxComp());
+                actor.AddComp(new ComboComp(definition.Combo ?? throw new InvalidOperationException(
+                    "Player character " + definition.BlueprintId + " requires a ComboTable.")));
+                actor.AddComp(new PlayerCombatDriverComp(definition.PlayerCombat));
+                actor.AddComp(new SkillDirectorComp(_data.Timelines, _data.Skills));
+                var loadout = new LoadoutComp();
+                actor.AddComp(loadout);
+                EquipConfiguredLoadout(loadout, definition.Skills);
+            }
+            else
+            {
+                actor.AddComp(new HitboxComp());
+                if (definition.EnableAI && definition.BehaviorTree == null)
+                    throw new InvalidOperationException("Enemy character " + definition.BlueprintId + " requires a BehaviorTree.");
+                if (definition.BehaviorTree != null)
+                {
+                    var perception = new PerceptionComp(definition.AcquireRadius)
+                    {
+                        Enabled = definition.EnableAI
+                    };
+                    actor.AddComp(perception);
+                    var behavior = new BehaviorTreeComp(definition.BehaviorTree, board =>
+                    {
+                        board.AcquireRadius = definition.AcquireRadius;
+                        board.AttackRange = definition.AttackRange;
+                        board.FollowRange = definition.FollowRange;
+                        board.LeashRange = definition.LeashRange;
+                        board.PatrolRadius = definition.PatrolRadius;
+                    })
+                    {
+                        Enabled = definition.EnableAI
+                    };
+                    actor.AddComp(behavior);
+                }
+                actor.AddComp(new SkillDirectorComp(_data.Timelines, _data.Skills));
+            }
+
+            attr.InitFighterDefaults();
+            return actor;
+        }
+
+        static void EquipConfiguredLoadout(LoadoutComp loadout, SkillDefinition[] skills)
+        {
+            if (loadout == null || skills == null) return;
+            int count = Math.Min(skills.Length, 3);
+            for (int i = 0; i < count; i++)
+                loadout.EquipSkill((SkillSlot)i, skills[i].Id, skills[i].Timeline);
         }
 
         Actor CreateCombatant(Actor actor, string bp, bool player, bool isSummon, bool stake = false)

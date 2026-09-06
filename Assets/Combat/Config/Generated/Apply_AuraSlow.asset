@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c6521dbe98486f49ab84539b596f279, type: 3}
   m_Name: Apply_AuraSlow
   m_EditorClassIdentifier: 
-  Spec: {fileID: 11400000, guid: 173973dd80b50fb458e51aa9df18e0ab, type: 2}
+  Spec: {fileID: 11400000, guid: 4517e76cccc142f45b2ffe5a1b0eb843, type: 2}
   Stacks: 1

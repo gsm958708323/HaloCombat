@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b52a2565ebbd84448a91bd34a3b4cfc0, type: 3}
+  m_Name: SwordDash
+  m_EditorClassIdentifier: 
+  SkillId: 2007
+  DisplayName: "\u5251\xB7\u8E0F\u6B65\u95EA"
+  Timeline: {fileID: 11400000, guid: 00927c65f38171f46bd7bf26eb2ee131, type: 2}
+  AnimationMode: 2
+  InputAction: 
+  Cooldown: 0
+  CanUseInAir: 0
+  RequiresTarget: 0

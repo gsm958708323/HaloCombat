@@ -10,12 +10,14 @@ namespace Combat.Unity.Presentation
         readonly Transform _root;
         readonly Dictionary<int, GameObject> _prefabs;
         readonly Dictionary<int, Live> _live = new Dictionary<int, Live>();
+        readonly Dictionary<int, Stack<GameObject>> _free = new Dictionary<int, Stack<GameObject>>();
         int _nextHandle = 1;
 
         struct Live
         {
             public GameObject View;
             public EntityId Follow;
+            public int VisualId;
         }
 
         public UnityLoopVfxPort(Transform root, Dictionary<int, GameObject> prefabs = null)
@@ -27,10 +29,16 @@ namespace Combat.Unity.Presentation
         public int PlayLoop(int visualId, EntityId follow)
         {
             GameObject view = null;
-            if (_prefabs.TryGetValue(visualId, out var prefab) && prefab != null)
+            if (_free.TryGetValue(visualId, out var cached) && cached.Count > 0)
+            {
+                view = cached.Pop(); view.SetActive(true);
+            }
+            else if (_prefabs.TryGetValue(visualId, out var prefab) && prefab != null)
                 view = Object.Instantiate(prefab, _root);
+            else
+                view = ProceduralVfxFactory.CreateLoop(_root, visualId);
             var handle = _nextHandle++;
-            _live[handle] = new Live { View = view, Follow = follow };
+            _live[handle] = new Live { View = view, Follow = follow, VisualId = visualId };
             return handle;
         }
 
@@ -51,7 +59,11 @@ namespace Combat.Unity.Presentation
             if (!_live.TryGetValue(handle, out var live))
                 return;
             if (live.View != null)
-                Object.Destroy(live.View);
+            {
+                live.View.SetActive(false);
+                if (!_free.TryGetValue(live.VisualId, out var cached)) { cached = new Stack<GameObject>(); _free[live.VisualId] = cached; }
+                cached.Push(live.View);
+            }
             _live.Remove(handle);
         }
     }

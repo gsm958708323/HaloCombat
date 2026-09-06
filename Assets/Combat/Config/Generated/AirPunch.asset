@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b52a2565ebbd84448a91bd34a3b4cfc0, type: 3}
+  m_Name: AirPunch
+  m_EditorClassIdentifier: 
+  SkillId: 3005
+  DisplayName: "\u62F3\xB7\u7A7A\u88AD"
+  Timeline: {fileID: 11400000, guid: eb1355edb65f30a40bd0da9e4cbb0012, type: 2}
+  AnimationMode: 1
+  InputAction: 
+  Cooldown: 0
+  CanUseInAir: 1
+  RequiresTarget: 1

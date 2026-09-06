@@ -249,19 +249,24 @@ namespace Combat.Core
     public sealed class SkillDirectorComp : Comp
     {
         readonly TimelineLibrary _library;
+        readonly SkillCatalog _skills;
         readonly TimelinePlayer _player = new TimelinePlayer();
         StateMachineComp _fsm;
         TagComp _tags;
         LocomotionComp _loco;
         SkillNodeId _currentSkill = SkillNodeId.None;
+        SkillAnimationMode _currentAnimationMode = SkillAnimationMode.Attack;
 
         public SkillNodeId CurrentSkill => _currentSkill;
+        public SkillAnimationMode CurrentAnimationMode => _currentAnimationMode;
+        public bool UsesSkillCatalog => _skills != null;
         public bool IsPlaying => _player.IsPlaying;
         public override bool WantsTick => true;
 
-        public SkillDirectorComp(TimelineLibrary library)
+        public SkillDirectorComp(TimelineLibrary library, SkillCatalog skills = null)
         {
             _library = library ?? throw new ArgumentNullException(nameof(library));
+            _skills = skills;
         }
 
         protected override void OnAttach()
@@ -280,6 +285,9 @@ namespace Combat.Core
         }
 
         public bool Play(SkillNodeId skill, TimelineId timelineId)
+            => PlayInternal(skill, timelineId, SkillAnimationMode.Attack);
+
+        bool PlayInternal(SkillNodeId skill, TimelineId timelineId, SkillAnimationMode animationMode)
         {
             if (_tags != null &&
                 (_tags.Has(CommonTags.Dead) || _tags.Has(CommonTags.Stunned) ||
@@ -293,6 +301,7 @@ namespace Combat.Core
                 _player.Stop();
 
             _currentSkill = skill;
+            _currentAnimationMode = animationMode;
             _player.Play(so);
             _fsm.TryEnter(ActivityId.Attack, new ActivityEnterArgs { Reason = "PlaySkill" });
             if (Self.TryGetComp<BuffComp>(out var buffs))
@@ -300,10 +309,19 @@ namespace Combat.Core
             return true;
         }
 
+        public bool Play(SkillNodeId skill)
+        {
+            if (_skills == null)
+                throw new InvalidOperationException("Skill catalog is not installed");
+            var definition = _skills.Require(skill);
+            return PlayInternal(skill, definition.Timeline, definition.AnimationMode);
+        }
+
         public void Stop(DirectorStopReason reason)
         {
             _player.Stop();
             _currentSkill = SkillNodeId.None;
+            _currentAnimationMode = SkillAnimationMode.Attack;
         }
 
         public override void Tick(float dt)
@@ -320,6 +338,7 @@ namespace Combat.Core
 
     public sealed class PlayerCombatDriverComp : Comp
     {
+        readonly PlayerCombatConfig _config;
         StateMachineComp _fsm;
         ComboComp _combo;
         SkillDirectorComp _director;
@@ -328,6 +347,11 @@ namespace Combat.Core
         TagComp _tags;
 
         public override bool WantsTick => true;
+
+        public PlayerCombatDriverComp(PlayerCombatConfig config = null)
+        {
+            _config = config;
+        }
 
         protected override void OnAttach()
         {
@@ -354,7 +378,8 @@ namespace Combat.Core
             if (_tags.Has(CommonTags.Dead) || _tags.Has(CommonTags.Stunned) || _tags.Has(CommonTags.Downed))
                 return;
 
-            if (_input.TryPeek(out var token) && token.Equals(InputToken.Jump))
+            var jumpInput = _config != null ? _config.JumpInput : InputToken.Jump;
+            if (_input.TryPeek(out var token) && token.Equals(jumpInput))
             {
                 if (_tags.Has(CommonTags.Grounded))
                 {
@@ -364,19 +389,27 @@ namespace Combat.Core
                 }
             }
 
-            if (_input.TryPeek(out token) && token.Equals(Season2Tokens.Dodge))
+            var dodgeInput = _config != null ? _config.DodgeInput : Season2Tokens.Dodge;
+            var dodgeSkill = _config != null ? _config.DodgeSkill : SkillNodeId.Dodge;
+            if (_input.TryPeek(out token) && token.Equals(dodgeInput))
             {
                 if (_tags.Has(CommonTags.Silence))
                     return;
 
-                if (_director.Play(SkillNodeId.Dodge, TimelineId.TL_Dodge))
+                var played = _config != null && !_config.HasDodge
+                    ? false
+                    : (_config != null ? _director.Play(dodgeSkill) : _director.Play(dodgeSkill, TimelineId.TL_Dodge));
+                if (played)
                     _input.Consume();
                 return;
             }
 
             if (!_combo.TryResolve(out var resolved))
                 return;
-            _director.Play(resolved.ToSkill, resolved.Timeline);
+            if (_director.UsesSkillCatalog)
+                _director.Play(resolved.ToSkill);
+            else
+                _director.Play(resolved.ToSkill, resolved.Timeline);
         }
     }
 }

@@ -21,7 +21,7 @@ MonoBehaviour:
   HostileMask: 0
   CueId: 202
   OnPulse:
-  - {fileID: 11400000, guid: 61b94cc09aef46f4ab6d554a4930d488, type: 2}
+  - {fileID: 11400000, guid: 137b63350c9e86443bdd5c64573a0f2a, type: 2}
   OnEnter: []
   OnExit: []
   OnStay: []

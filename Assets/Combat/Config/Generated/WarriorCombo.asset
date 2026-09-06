@@ -14,20 +14,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Entries:
   - PreSkills: 
+    PreSkillAssets: []
     InputAction: Attack
     RequiredTags: 
     Priority: 0
     ToSkill: 101
     Timeline: 1001
+    Skill: {fileID: 0}
   - PreSkills: 65000000
+    PreSkillAssets: []
     InputAction: Attack
     RequiredTags: e9030000
     Priority: 10
     ToSkill: 102
     Timeline: 1002
+    Skill: {fileID: 0}
   - PreSkills: 2d010000
+    PreSkillAssets: []
     InputAction: Attack
     RequiredTags: e9030000
     Priority: 5
     ToSkill: 101
     Timeline: 1001
+    Skill: {fileID: 0}
