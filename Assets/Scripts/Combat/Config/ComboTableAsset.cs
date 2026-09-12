@@ -16,24 +16,19 @@ namespace Combat.Config
             for (int i = 0; i < source.Length; i++)
             {
                 var entry = source[i] ?? new ComboEntryAsset();
-                var preAssets = entry.PreSkillAssets;
-                var preValues = entry.PreSkills ?? Array.Empty<int>();
-                var pre = preAssets != null && preAssets.Length > 0
-                    ? new SkillNodeId[preAssets.Length]
-                    : new SkillNodeId[preValues.Length];
+                var preAssets = entry.PreSkillAssets ?? Array.Empty<SkillDefinitionAsset>();
+                var pre = new SkillNodeId[preAssets.Length];
                 for (int j = 0; j < pre.Length; j++)
-                    pre[j] = preAssets != null && preAssets.Length > 0
-                        ? RequireSkill(preAssets[j]).Id
-                        : new SkillNodeId(preValues[j]);
-                var toSkill = entry.Skill != null ? RequireSkill(entry.Skill) : null;
+                    pre[j] = RequireSkill(preAssets[j]).Id;
+                var toSkill = RequireSkill(entry.Skill);
                 result[i] = new ComboEntry
                 {
                     PreSkills = pre,
                     Input = new InputToken(entry.InputAction),
                     RequiredTags = entry.RequiredTags ?? Array.Empty<int>(),
                     Priority = entry.Priority,
-                    ToSkill = toSkill != null ? toSkill.Id : new SkillNodeId(entry.ToSkill),
-                    Timeline = toSkill != null ? toSkill.Timeline : new TimelineId(entry.Timeline)
+                    ToSkill = toSkill.Id,
+                    Timeline = toSkill.Timeline
                 };
             }
             return new ComboTableSO { Entries = result };

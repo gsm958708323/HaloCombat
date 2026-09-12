@@ -31,13 +31,10 @@ namespace Combat.Config
     [Serializable]
     public sealed class ComboEntryAsset
     {
-        public int[] PreSkills;
         public SkillDefinitionAsset[] PreSkillAssets;
         public string InputAction = "Attack";
         public int[] RequiredTags;
         public int Priority;
-        public int ToSkill;
-        public int Timeline;
         public SkillDefinitionAsset Skill;
     }
 

@@ -29,9 +29,7 @@ MonoBehaviour:
   PausePanel: {fileID: 0}
   PauseMenu: {fileID: 0}
   AutoStart: 1
-  DriveLifecycle: 1
   PresentRoot: {fileID: 0}
-  CuePrefabs: {fileID: 0}
   FloaterRoot: {fileID: 0}
 --- !u!4 &10000003
 Transform:

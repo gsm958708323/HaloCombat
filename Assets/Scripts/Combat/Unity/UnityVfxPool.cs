@@ -38,7 +38,9 @@ namespace Combat.Unity.Presentation
             }
             else
             {
-                go = prefab != null ? Object.Instantiate(prefab, _root) : ProceduralVfxFactory.Create(_root, key, Vector3.zero);
+                if (prefab == null)
+                    return false;
+                go = Object.Instantiate(prefab, _root);
             }
             go.transform.position = new Vector3(pos.X, pos.Y, pos.Z);
             _live.Add(

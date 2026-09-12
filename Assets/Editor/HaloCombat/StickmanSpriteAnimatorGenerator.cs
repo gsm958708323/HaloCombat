@@ -102,7 +102,12 @@ namespace HaloCombat.Editor
                     entries.Add(new ViewPrefabEntry
                     {
                         BlueprintId = spec.Id,
-                        Prefab = prefab
+                        Prefab = prefab,
+                        Kind = ViewKind.Character,
+                        Features = IsPlayerView(spec.Id)
+                            ? ViewFeatures.Pose | ViewFeatures.Animation | ViewFeatures.BuffFx |
+                              ViewFeatures.Camera | ViewFeatures.Feedback | ViewFeatures.Hud | ViewFeatures.HitboxGizmo
+                            : ViewFeatures.Pose | ViewFeatures.Animation | ViewFeatures.BuffFx | ViewFeatures.HitboxGizmo
                     });
                 }
             }
@@ -392,6 +397,11 @@ namespace HaloCombat.Editor
 
         static void WriteViewTable(List<ViewPrefabEntry> entries)
         {
+            AddExplicitRuntimeView(entries, "melee_ai_narrow", ViewKind.None, ViewFeatures.None);
+            AddExplicitRuntimeView(entries, "summon", ViewKind.None, ViewFeatures.None);
+            AddExplicitRuntimeView(entries, "projectile", ViewKind.RuntimeBody, ViewFeatures.HitboxGizmo);
+            AddExplicitRuntimeView(entries, "aoe", ViewKind.RuntimeBody, ViewFeatures.HitboxGizmo);
+            AddExplicitRuntimeView(entries, "stake", ViewKind.RuntimeBody, ViewFeatures.HitboxGizmo);
             var table = AssetDatabase.LoadAssetAtPath<ViewPrefabTable>(ViewTablePath);
             if (table == null)
             {
@@ -401,6 +411,19 @@ namespace HaloCombat.Editor
 
             table.Entries = entries.ToArray();
             EditorUtility.SetDirty(table);
+        }
+
+        static void AddExplicitRuntimeView(List<ViewPrefabEntry> entries, string id, ViewKind kind, ViewFeatures features)
+        {
+            for (int i = 0; i < entries.Count; i++)
+                if (entries[i].BlueprintId == id)
+                    return;
+            entries.Add(new ViewPrefabEntry { BlueprintId = id, Kind = kind, Features = features });
+        }
+
+        static bool IsPlayerView(string id)
+        {
+            return id == "fighter" || id == "swordsman" || id == "gunslinger";
         }
 
         static void ConfigureSpriteImporter(string path)

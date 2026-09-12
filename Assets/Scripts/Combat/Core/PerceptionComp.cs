@@ -4,7 +4,7 @@ namespace Combat.Core
 {
     public sealed class PerceptionComp : Comp
     {
-        readonly Actor[] _scan = new Actor[32];
+        readonly System.Collections.Generic.List<Actor> _scan = new System.Collections.Generic.List<Actor>(64);
         readonly float _alertRadius;
         BtBlackboard _board;
         EntityId _forced;

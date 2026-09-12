@@ -1,7 +1,7 @@
 {
   "name": "Combat.Demos",
   "rootNamespace": "Combat.Demos",
-  "references": ["Combat.Core", "Combat.Presentation", "Combat.Game"],
+  "references": ["Combat.Core"],
   "includePlatforms": ["Editor"],
   "excludePlatforms": [],
   "allowUnsafeCode": false,

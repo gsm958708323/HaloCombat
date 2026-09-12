@@ -58,6 +58,10 @@ namespace Combat.Core
         public TimelineId Timeline;
         public string DisplayName;
         public SkillAnimationMode AnimationMode;
+        public InputToken Input;
+        public float Cooldown;
+        public bool CanUseInAir;
+        public bool RequiresTarget;
     }
 
     public sealed class SkillCatalog
@@ -66,6 +70,7 @@ namespace Combat.Core
             new System.Collections.Generic.Dictionary<int, SkillDefinition>(32);
 
         public int Count => _map.Count;
+        public System.Collections.Generic.IEnumerable<SkillDefinition> All => _map.Values;
 
         public void Register(SkillDefinition definition)
         {
@@ -99,6 +104,7 @@ namespace Combat.Core
     public sealed class CharacterDefinition
     {
         public string BlueprintId;
+        public string ViewBlueprintId;
         public string DisplayName;
         public bool IsPlayer;
         public bool PlayerSelectable;
@@ -119,6 +125,7 @@ namespace Combat.Core
             new System.Collections.Generic.Dictionary<string, CharacterDefinition>(StringComparer.Ordinal);
 
         public int Count => _map.Count;
+        public System.Collections.Generic.IEnumerable<CharacterDefinition> All => _map.Values;
 
         public void Register(CharacterDefinition definition)
         {

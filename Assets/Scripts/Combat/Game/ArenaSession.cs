@@ -92,7 +92,6 @@ namespace Combat.Game
                 if (e.PatrolOverride > 0)
                     bt.Board.PatrolRadius = e.PatrolOverride;
             }
-            Hub.BindSpawn(id, blueprint);
             if (e.IsLocalPlayer)
             {
                 LocalPlayerId = id;

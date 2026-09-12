@@ -24,21 +24,23 @@ namespace Combat.Core
 
     public interface ITargetQuery
     {
-        int OverlapCircle(SimVec3 center, float radius, Actor source, int hostileMask, Actor[] buffer);
-        int OverlapFan(SimVec3 origin, float yawDegrees, float radius, float halfAngleDegrees, Actor source, int hostileMask, Actor[] buffer);
+        int OverlapCircle(SimVec3 center, float radius, Actor source, int hostileMask, List<Actor> results);
+        int OverlapFan(SimVec3 origin, float yawDegrees, float radius, float halfAngleDegrees, Actor source, int hostileMask, List<Actor> results);
     }
 
     public sealed class SimpleTargetQuery : ITargetQuery
     {
         CombatWorld _world;
+        readonly List<Actor> _actors = new List<Actor>(64);
         public void Bind(CombatWorld world) => _world = world;
 
-        public int OverlapCircle(SimVec3 center, float radius, Actor source, int hostileMask, Actor[] buffer)
+        public int OverlapCircle(SimVec3 center, float radius, Actor source, int hostileMask, List<Actor> results)
         {
-            if (_world == null || buffer == null || buffer.Length == 0) return 0;
+            if (_world == null || results == null) return 0;
+            results.Clear();
             float r2 = radius * radius;
-            int n = 0;
-            var actors = _world.RegistryActive();
+            _world.RegistryActive(_actors);
+            var actors = _actors;
             for (int i = 0; i < actors.Count; i++)
             {
                 var a = actors[i];
@@ -48,30 +50,31 @@ namespace Combat.Core
                 float dx = tf.Position.X - center.X;
                 float dz = tf.Position.Z - center.Z;
                 if (dx * dx + dz * dz > r2) continue;
-                buffer[n++] = a;
-                if (n >= buffer.Length) break;
+                results.Add(a);
             }
 
-            return n;
+            return results.Count;
         }
 
-        public int OverlapFan(SimVec3 origin, float yawDegrees, float radius, float halfAngleDegrees, Actor source, int hostileMask, Actor[] buffer)
+        public int OverlapFan(SimVec3 origin, float yawDegrees, float radius, float halfAngleDegrees, Actor source, int hostileMask, List<Actor> results)
         {
-            int n = OverlapCircle(origin, radius, source, hostileMask, buffer);
+            int n = OverlapCircle(origin, radius, source, hostileMask, results);
             if (n <= 0) return 0;
             float half = halfAngleDegrees < 0f ? 0f : halfAngleDegrees;
             int w = 0;
             for (int i = 0; i < n; i++)
             {
-                var tf = buffer[i].GetComp<TransformComp>();
+                var tf = results[i].GetComp<TransformComp>();
                 float dx = tf.Position.X - origin.X;
                 float dz = tf.Position.Z - origin.Z;
                 float yaw = (float)(Math.Atan2(dz, dx) * (180.0 / Math.PI));
                 float delta = NormalizeAngle(yaw - yawDegrees);
                 if (Math.Abs(delta) <= half)
-                    buffer[w++] = buffer[i];
+                    results[w++] = results[i];
             }
 
+            if (w < results.Count)
+                results.RemoveRange(w, results.Count - w);
             return w;
         }
 
@@ -104,7 +107,8 @@ namespace Combat.Core
     public sealed class HitDetectService
     {
         readonly CombatWorld _world;
-        readonly Actor[] _buffer = new Actor[32];
+        readonly List<Actor> _actors = new List<Actor>(64);
+        readonly List<Actor> _buffer = new List<Actor>(64);
 
         public HitDetectService(CombatWorld world)
         {
@@ -113,7 +117,8 @@ namespace Combat.Core
 
         public void Tick()
         {
-            var actors = _world.RegistryActive();
+            _world.RegistryActive(_actors);
+            var actors = _actors;
             for (int i = 0; i < actors.Count; i++)
             {
                 var attacker = actors[i];

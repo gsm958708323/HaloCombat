@@ -7,7 +7,6 @@ namespace Combat.Config
     [CreateAssetMenu(menuName = "Combat/Database")]
     public sealed class CombatDatabaseAsset : ScriptableObject
     {
-        public ComboTableAsset Combo;
         public SkillDefinitionAsset[] Skills;
         public CharacterDefinitionAsset[] Characters;
         public SkillTimelineAsset[] Timelines;
@@ -36,25 +35,37 @@ namespace Combat.Config
                 throw new InvalidOperationException("CombatDatabase requires Skills.");
             if (Characters == null || Characters.Length == 0)
                 throw new InvalidOperationException("CombatDatabase requires Characters.");
+            if (Timelines == null || Timelines.Length == 0)
+                throw new InvalidOperationException("CombatDatabase requires Timelines.");
+            if (Cues == null)
+                throw new InvalidOperationException("CombatDatabase requires Cues.");
+            if (Motor == null)
+                throw new InvalidOperationException("CombatDatabase requires Motor.");
             var data = new BakedCombatData
             {
-                Combo = Combo != null ? Combo.Bake() : null,
                 Timelines = new TimelineLibrary(),
                 Skills = new SkillCatalog(),
                 Characters = new CharacterCatalog(),
                 Projectiles = new ProjectileCatalog(),
                 Aoes = new AoeCatalog(),
                 Summons = new SummonCatalog(),
-                Cues = Cues != null ? Cues.Bake() : CueLibrary.DefaultCombat(),
-                Motor = Motor != null ? Motor.Bake() : MotorConfig.SeasonOneDefaults()
+                Cues = Cues.Bake(),
+                Motor = Motor.Bake()
             };
+            for (int i = 0; i < Timelines.Length; i++)
+            {
+                if (Timelines[i] == null)
+                    throw new InvalidOperationException("CombatDatabase contains an empty timeline reference at " + i + ".");
+                data.Timelines.Register(Timelines[i].Bake());
+            }
             for (int i = 0; i < Skills.Length; i++)
             {
                 if (Skills[i] == null)
                     throw new InvalidOperationException("CombatDatabase contains an empty skill reference at " + i + ".");
                 var skill = Skills[i].Bake();
                 data.Skills.Register(skill);
-                data.Timelines.Register(Skills[i].Timeline.Bake());
+                if (!data.Timelines.TryGet(skill.Timeline, out _))
+                    throw new InvalidOperationException("Skill " + skill.Id.Value + " references a timeline not present in CombatDatabase.");
             }
             for (int i = 0; i < Characters.Length; i++)
             {
@@ -62,8 +73,6 @@ namespace Combat.Config
                     throw new InvalidOperationException("CombatDatabase contains an empty character reference at " + i + ".");
                 data.Characters.Register(Characters[i].Bake(data.Skills));
             }
-            if (Timelines != null)
-                for (int i = 0; i < Timelines.Length; i++) if (Timelines[i]) data.Timelines.Register(Timelines[i].Bake());
             if (Projectiles != null)
                 for (int i = 0; i < Projectiles.Length; i++) if (Projectiles[i]) data.Projectiles.Register(Projectiles[i].Bake());
             if (Aoes != null)

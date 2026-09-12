@@ -120,7 +120,14 @@ namespace Combat.Core
         {
             if (frames > _hitstopPending) _hitstopPending = frames;
         }
-        public List<Actor> RegistryActive() => _registry.CopyActiveActors();
+        public List<Actor> RegistryActive()
+        {
+            var result = new List<Actor>(64);
+            _registry.CopyActiveActors(result);
+            return result;
+        }
+
+        public void RegistryActive(List<Actor> destination) => _registry.CopyActiveActors(destination);
 
         public void AddServicePhase(Action phase)
         {
@@ -202,10 +209,11 @@ namespace Combat.Core
 
         public void Tick(float dt)
         {
-            _time.Advance(dt);
+            _time.AdvanceWall(dt);
 
             if (_hitstopLeft > 0)
             {
+                _time.PauseLogic();
                 _hitstopLeft--;
                 _registry.FlushDespawn();
                 return;
@@ -213,12 +221,15 @@ namespace Combat.Core
 
             if (_hitstopPending > 0)
             {
+                _time.PauseLogic();
                 _hitstopLeft = _hitstopPending;
                 _hitstopPending = 0;
                 _hitstopLeft--;
                 _registry.FlushDespawn();
                 return;
             }
+
+            _time.AdvanceLogic(dt);
 
             var actors = _registry.CopyActiveActors();
             for (int i = 0; i < actors.Count; i++)
@@ -247,6 +258,13 @@ namespace Combat.Core
                 SimVec3? pt = intent.HasPoint ? intent.Point : (SimVec3?)null;
                 Deliver(intent.Effects, src, dst, intent.SnapshotAtk, pt, null, intent.BuffStacks);
             });
+
+            actors = _registry.CopyActiveActors();
+            for (int i = 0; i < actors.Count; i++)
+            {
+                if (actors[i].TryGetComp<SkillDirectorComp>(out var director))
+                    director.FlushTimeline();
+            }
 
             _aoe.Tick(_time.Delta);
 

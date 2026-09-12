@@ -194,7 +194,7 @@ namespace Combat.Core
 
     public sealed class ActAcquireHostile : BtNode
     {
-        readonly Actor[] _buffer = new Actor[32];
+        readonly System.Collections.Generic.List<Actor> _buffer = new System.Collections.Generic.List<Actor>(64);
         public override BtStatus Tick(in BtTick ctx)
         {
             if (CondHasTarget.IsTargetValid(ctx)) return BtStatus.Success;

@@ -112,7 +112,7 @@ namespace Combat.Core
         public override void Tick(float dt)
         {
             if (Self.World == null) return;
-            int frame = Self.World.Time.Frame;
+            int frame = Self.World.Time.LogicFrame;
             float now = Self.World.Time.Time;
 
             for (int i = _list.Count - 1; i >= 0; i--)
@@ -185,7 +185,7 @@ namespace Combat.Core
         public void DispatchOnHurted(Actor attacker)
         {
             if (Self.World == null) return;
-            int frame = Self.World.Time.Frame;
+            int frame = Self.World.Time.LogicFrame;
             _snapshot.Clear();
             for (int i = 0; i < _list.Count; i++)
             {
@@ -276,7 +276,7 @@ namespace Combat.Core
                 MutexGroup = spec.MutexGroup,
                 Stacks = stacks,
                 AppliedByPacked = Pack(source),
-                BornFrame = Self.World != null ? Self.World.Time.Frame : 0,
+                BornFrame = Self.World != null ? Self.World.Time.LogicFrame : 0,
                 ExpireTime = NextExpire(spec),
                 PeriodAcc = 0f,
                 Spec = spec,

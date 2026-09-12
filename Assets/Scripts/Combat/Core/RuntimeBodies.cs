@@ -41,9 +41,12 @@ namespace Combat.Core
     public sealed class ProjectileCatalog
     {
         readonly Dictionary<int, ProjectileDefinition> _map = new Dictionary<int, ProjectileDefinition>(8);
+        public int Count => _map.Count;
+        public IEnumerable<ProjectileDefinition> All => _map.Values;
         public void Register(ProjectileDefinition def)
         {
             if (def == null || def.SpecId == 0) throw new ArgumentException("ProjectileDefinition");
+            if (_map.ContainsKey(def.SpecId)) throw new InvalidOperationException("Duplicate projectile " + def.SpecId);
             _map[def.SpecId] = def;
         }
 
@@ -53,9 +56,12 @@ namespace Combat.Core
     public sealed class AoeCatalog
     {
         readonly Dictionary<int, AoeDefinition> _map = new Dictionary<int, AoeDefinition>(8);
+        public int Count => _map.Count;
+        public IEnumerable<AoeDefinition> All => _map.Values;
         public void Register(AoeDefinition def)
         {
             if (def == null || def.SpecId == 0) throw new ArgumentException("AoeDefinition");
+            if (_map.ContainsKey(def.SpecId)) throw new InvalidOperationException("Duplicate aoe " + def.SpecId);
             _map[def.SpecId] = def;
         }
 
@@ -130,8 +136,6 @@ namespace Combat.Core
 
     public static class AoePulse
     {
-        static readonly Actor[] Buffer = new Actor[32];
-
         public static void PulseNow(CombatWorld world, Actor aoe, AoeComp body)
         {
             if (world == null || aoe == null || body?.Def == null || !aoe.IsActive) return;
@@ -139,10 +143,11 @@ namespace Combat.Core
             if (def.OnPulse == null || def.OnPulse.Length == 0) return;
             var tf = aoe.GetComp<TransformComp>();
             world.TryGetActor(body.OwnerId, out var owner);
-            int n = world.Query.OverlapCircle(tf.Position, def.Radius, owner, def.HostileMask, Buffer);
+            var buffer = new List<Actor>(64);
+            int n = world.Query.OverlapCircle(tf.Position, def.Radius, owner, def.HostileMask, buffer);
             for (int i = 0; i < n; i++)
             {
-                var target = Buffer[i];
+                var target = buffer[i];
                 if (target == null || !target.IsActive) continue;
                 DeliverBag(world, def.OnPulse, owner, target, body.SnapshotAtk, tf.Position);
             }
@@ -158,7 +163,8 @@ namespace Combat.Core
     public sealed class ProjectileService
     {
         readonly CombatWorld _world;
-        readonly Actor[] _buffer = new Actor[32];
+        readonly List<Actor> _actors = new List<Actor>(64);
+        readonly List<Actor> _buffer = new List<Actor>(64);
 
         public ProjectileService(CombatWorld world)
         {
@@ -197,7 +203,8 @@ namespace Combat.Core
 
         void MoveAndHit(float dt)
         {
-            var actors = _world.RegistryActive();
+            _world.RegistryActive(_actors);
+            var actors = _actors;
             for (int i = 0; i < actors.Count; i++)
             {
                 var a = actors[i];
@@ -312,7 +319,8 @@ namespace Combat.Core
     public sealed class AoeService
     {
         readonly CombatWorld _world;
-        readonly Actor[] _buffer = new Actor[32];
+        readonly List<Actor> _actors = new List<Actor>(64);
+        readonly List<Actor> _buffer = new List<Actor>(64);
         readonly List<long> _scratch = new List<long>(16);
 
         public AoeService(CombatWorld world)
@@ -322,8 +330,9 @@ namespace Combat.Core
 
         public void Tick(float dt)
         {
-            var actors = _world.RegistryActive();
-            int frame = _world.Time.Frame;
+            _world.RegistryActive(_actors);
+            var actors = _actors;
+            int frame = _world.Time.LogicFrame;
             for (int i = 0; i < actors.Count; i++)
             {
                 var a = actors[i];

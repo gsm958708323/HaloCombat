@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <RootNamespace>Combat</RootNamespace>
     <LangVersion>latest</LangVersion>
     <Nullable>disable</Nullable>
@@ -12,23 +12,6 @@
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Assets/Scripts/Combat/Core/**/*.cs" />
-    <Compile Include="Assets/Scripts/Combat/Presentation/**/*.cs" />
-    <Compile Include="Assets/Scripts/Combat/Game/**/*.cs" />
-    <Compile Include="Assets/Scripts/Combat/Demos/HaloCombatDemoCases.cs" />
-    <Compile Include="Assets/Scripts/Combat/Demos/DemoTrace.cs" />
-    <Compile Include="Assets/Scripts/Combat/Demos/SeasonTwoDemoSupport.cs" />
-    <Compile Include="Assets/Scripts/Combat/Demos/KnockdownDemo.cs" />
-    <Compile Include="Assets/Scripts/Combat/Demos/DodgeHitstopDemo.cs" />
-    <Compile Include="Assets/Scripts/Combat/Demos/AuraHomingDemo.cs" />
-    <Compile Include="Assets/Scripts/Combat/Demos/BehaviorTreeDemo.cs" />
-    <Compile Include="Assets/Scripts/Combat/Demos/PerceptionDemo.cs" />
-    <Compile Include="Assets/Scripts/Combat/Demos/EnemyAiDemo.cs" />
-    <Compile Include="Assets/Scripts/Combat/Demos/SummonDemo.cs" />
-    <Compile Include="Assets/Scripts/Combat/Demos/SeasonTwoDemo.cs" />
-    <Compile Include="Assets/Scripts/Combat/Demos/SeasonThreeLessonDemo.cs" />
-    <Compile Include="Assets/Scripts/Combat/Unity/TrainingCampVerificationDemo.cs" />
-    <Compile Include="Assets/Scripts/Combat/Demos/DemoWorld.cs" />
-    <Compile Include="Assets/Scripts/Combat/Demos/PresentationDemos.cs" />
-    <Compile Include="Assets/Scripts/Combat/Demos/PresentSeasonDemo.cs" />
+    <Compile Include="Assets/Scripts/Combat/Demos/**/*.cs" />
   </ItemGroup>
 </Project>

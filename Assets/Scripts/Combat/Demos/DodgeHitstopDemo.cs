@@ -141,7 +141,7 @@ namespace Combat.Demos
             world.RequestHitstop(2);
             world.RequestHitstop(4);
             trace.AdvanceFor("推进并冻结 Projectile", 0.02f, 1,
-                () => $"frame={world.Time.Frame} left={world.HitstopLeft} projectileX={projectileTf.Position.X.ToString("F3")}");
+                () => $"wallFrame={world.Time.WallFrame} logicFrame={world.Time.Frame} left={world.HitstopLeft} projectileX={projectileTf.Position.X.ToString("F3")}");
             trace.Check("顿帧期间 Projectile 位置不变", world.Time.Frame == frameBefore + 1 && world.InHitstop &&
                 world.HitstopLeft == 3 && projectileTf.Position.X == projectileX,
                 "帧+1、InHitstop=true、剩余3帧、位置不变",

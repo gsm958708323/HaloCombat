@@ -33,6 +33,11 @@ namespace Combat.Core
         void Write(LogRecord record);
     }
 
+    public sealed class ConsoleLogSink : ILogSink
+    {
+        public void Write(LogRecord record) => Console.WriteLine(CombatLog.Format(record));
+    }
+
     public static class CombatCategories
     {
         public const string TagInput = "TagInput";

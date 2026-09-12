@@ -1142,7 +1142,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="Combat.Core.csproj" />
-    <ProjectReference Include="Combat.Presentation.csproj" />
     <ProjectReference Include="Combat.Config.csproj" />
     <ProjectReference Include="Combat.Unity.csproj" />
     <ProjectReference Include="Combat.Demos.csproj" />

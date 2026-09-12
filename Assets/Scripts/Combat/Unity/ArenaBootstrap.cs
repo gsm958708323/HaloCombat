@@ -22,9 +22,7 @@ namespace Combat.Unity.Game
         public GameObject PausePanel;
         public PauseMenuView PauseMenu;
         public bool AutoStart = true;
-        public bool DriveLifecycle = true;
         public Transform PresentRoot;
-        public CuePrefabTable CuePrefabs;
         public Transform FloaterRoot;
         public ProceduralArenaVisuals ArenaVisuals;
         GameFlow _flow;
@@ -35,9 +33,9 @@ namespace Combat.Unity.Game
 
         void Start()
         {
-            if (!AutoStart)
-                return;
-            CreateFlow().StartRun();
+            CreateFlow();
+            if (AutoStart)
+                _flow.StartRun();
         }
 
         public GameFlow CreateFlow(ISettingsStore store = null)
@@ -68,7 +66,7 @@ namespace Combat.Unity.Game
                 );
                 _baked.Install(w);
                 var root = PresentRoot != null ? PresentRoot : transform;
-                var h = new PresentHub(new UnityPresentFactory(Views, root, VfxRoot));
+                var h = new PresentHub(new UnityPresentFactory(Views, _baked, root, VfxRoot));
                 h.SetWorld(w);
                 h.Cues.SetPool(new UnityVfxPool(VfxRoot != null ? VfxRoot : root, BuildCueMap()));
                 h.Floaters.SetPool(
@@ -125,8 +123,6 @@ namespace Combat.Unity.Game
 
         void Update()
         {
-            if (!DriveLifecycle)
-                return;
             if (_flow == null)
                 return;
             _flow.TickUpdate(Time.deltaTime);
@@ -136,21 +132,7 @@ namespace Combat.Unity.Game
 
         void LateUpdate()
         {
-            if (!DriveLifecycle)
-                return;
             TickPresentation(Time.deltaTime);
-        }
-
-        public void SetExternalDriver(bool external)
-        {
-            DriveLifecycle = !external;
-        }
-
-        public void TickExternalLate(float dt)
-        {
-            if (DriveLifecycle || _flow == null)
-                return;
-            TickPresentation(dt);
         }
 
         void TickPresentation(float dt)
@@ -177,13 +159,13 @@ namespace Combat.Unity.Game
         Dictionary<string, GameObject> BuildCueMap()
         {
             var d = new Dictionary<string, GameObject>();
-            if (CuePrefabs?.Entries == null)
+            if (Database == null || Database.Cues == null || Database.Cues.Entries == null)
                 return d;
-            for (int i = 0; i < CuePrefabs.Entries.Length; i++)
+            for (int i = 0; i < Database.Cues.Entries.Length; i++)
             {
-                var e = CuePrefabs.Entries[i];
-                if (!string.IsNullOrEmpty(e.Key) && e.Prefab != null)
-                    d[e.Key] = e.Prefab;
+                var e = Database.Cues.Entries[i];
+                if (e.VisualEnabled && !string.IsNullOrEmpty(e.PrefabKey) && e.Prefab != null)
+                    d[e.PrefabKey] = e.Prefab;
             }
             return d;
         }

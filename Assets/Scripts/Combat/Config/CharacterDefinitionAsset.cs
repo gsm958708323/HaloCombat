@@ -28,6 +28,8 @@ namespace Combat.Config
         {
             if (string.IsNullOrEmpty(BlueprintId))
                 throw new InvalidOperationException("CharacterDefinitionAsset has no BlueprintId: " + name);
+            if (string.IsNullOrEmpty(ViewBlueprintId))
+                throw new InvalidOperationException("CharacterDefinitionAsset has no ViewBlueprintId: " + name);
             if (skills == null)
                 throw new ArgumentNullException(nameof(skills));
 
@@ -44,6 +46,7 @@ namespace Combat.Config
             return new CharacterDefinition
             {
                 BlueprintId = BlueprintId,
+                ViewBlueprintId = ViewBlueprintId,
                 DisplayName = string.IsNullOrEmpty(DisplayName) ? BlueprintId : DisplayName,
                 IsPlayer = IsPlayer,
                 PlayerSelectable = PlayerSelectable,

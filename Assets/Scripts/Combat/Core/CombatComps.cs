@@ -251,6 +251,7 @@ namespace Combat.Core
         readonly TimelineLibrary _library;
         readonly SkillCatalog _skills;
         readonly TimelinePlayer _player = new TimelinePlayer();
+        readonly Dictionary<int, float> _cooldownUntil = new Dictionary<int, float>(8);
         StateMachineComp _fsm;
         TagComp _tags;
         LocomotionComp _loco;
@@ -284,6 +285,7 @@ namespace Combat.Core
             _fsm = null;
             _tags = null;
             _loco = null;
+            _cooldownUntil.Clear();
         }
 
         public bool Play(SkillNodeId skill, TimelineId timelineId)
@@ -316,7 +318,28 @@ namespace Combat.Core
             if (_skills == null)
                 throw new InvalidOperationException("Skill catalog is not installed");
             var definition = _skills.Require(skill);
-            return PlayInternal(skill, definition.Timeline, definition.AnimationMode);
+            if (!CanPlay(definition))
+                return false;
+            if (!PlayInternal(skill, definition.Timeline, definition.AnimationMode))
+                return false;
+            if (definition.Cooldown > 0f && Self.World != null)
+                _cooldownUntil[skill.Value] = Self.World.Time.Time + definition.Cooldown;
+            return true;
+        }
+
+        bool CanPlay(SkillDefinition definition)
+        {
+            if (definition == null)
+                return false;
+            if (Self.World != null && _cooldownUntil.TryGetValue(definition.Id.Value, out var readyAt) &&
+                Self.World.Time.Time < readyAt)
+                return false;
+            if (!definition.CanUseInAir && _tags != null && _tags.Has(CommonTags.Airborne))
+                return false;
+            if (definition.RequiresTarget && Self.TryGetComp<BehaviorTreeComp>(out var bt) &&
+                !CondHasTarget.IsTargetValid(new BtTick(Self, Self.World, bt.Board, Self.World != null ? Self.World.Time.Delta : 0f)))
+                return false;
+            return true;
         }
 
         public void Stop(DirectorStopReason reason)
@@ -330,11 +353,15 @@ namespace Combat.Core
         {
             if (!_player.IsPlaying) return;
             _player.Tick(dt, Self);
-            if (!_player.IsPlaying)
-            {
-                _currentSkill = SkillNodeId.None;
-                _fsm.NotifyActivityFinished(ActivityId.Attack, "TimelineFinished");
-            }
+        }
+
+        public void FlushTimeline()
+        {
+            if (!_player.FlushPendingCloses())
+                return;
+            _currentSkill = SkillNodeId.None;
+            _currentAnimationMode = SkillAnimationMode.Attack;
+            _fsm.NotifyActivityFinished(ActivityId.Attack, "TimelineFinished");
         }
     }
 

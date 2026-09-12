@@ -13,62 +13,41 @@ MonoBehaviour:
   m_Name: Combo_Swordsman
   m_EditorClassIdentifier: 
   Entries:
-  - PreSkills: 
     PreSkillAssets: []
     InputAction: Attack
     RequiredTags: 
     Priority: 0
-    ToSkill: 0
-    Timeline: 0
     Skill: {fileID: 11400000, guid: 51ec329092a604349815c0f236f32960, type: 2}
-  - PreSkills: 
     PreSkillAssets:
     - {fileID: 11400000, guid: 51ec329092a604349815c0f236f32960, type: 2}
     InputAction: Attack
     RequiredTags: e9030000
     Priority: 10
-    ToSkill: 0
-    Timeline: 0
     Skill: {fileID: 11400000, guid: 0e719315ca395fe4db4d6f5a08cc040a, type: 2}
-  - PreSkills: 
     PreSkillAssets:
     - {fileID: 11400000, guid: 0e719315ca395fe4db4d6f5a08cc040a, type: 2}
     InputAction: Attack
     RequiredTags: e9030000
     Priority: 10
-    ToSkill: 0
-    Timeline: 0
     Skill: {fileID: 11400000, guid: eb6b452d69e25c64d8b0b75cac550a8a, type: 2}
-  - PreSkills: 
     PreSkillAssets: []
     InputAction: Skill1
     RequiredTags: 
     Priority: 20
-    ToSkill: 0
-    Timeline: 0
     Skill: {fileID: 11400000, guid: db4bb1f0c89e30342960c5a50d1f479d, type: 2}
-  - PreSkills: 
     PreSkillAssets:
     - {fileID: 11400000, guid: db4bb1f0c89e30342960c5a50d1f479d, type: 2}
     InputAction: Skill1
     RequiredTags: e9030000
     Priority: 30
-    ToSkill: 0
-    Timeline: 0
     Skill: {fileID: 11400000, guid: 9a59f361327385a4c884f1a8604ce9c4, type: 2}
-  - PreSkills: 
     PreSkillAssets: []
     InputAction: Attack
     RequiredTags: eb030000
     Priority: 100
-    ToSkill: 0
-    Timeline: 0
     Skill: {fileID: 11400000, guid: dfca746439ddafe4999654b0c7b81ca9, type: 2}
-  - PreSkills: 
     PreSkillAssets: []
     InputAction: Skill2
     RequiredTags: 
     Priority: 20
-    ToSkill: 0
-    Timeline: 0
     Skill: {fileID: 11400000, guid: 041ed019715b09e49a880311c52a0d83, type: 2}

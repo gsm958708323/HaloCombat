@@ -15,9 +15,26 @@ namespace Combat.Config
             public string SfxKey;
             public float LifeTime;
             public GameObject Prefab;
+            public bool VisualEnabled;
         }
 
         public Entry[] Entries;
+
+        void OnValidate()
+        {
+            if (Entries == null) return;
+            var ids = new System.Collections.Generic.HashSet<int>();
+            for (int i = 0; i < Entries.Length; i++)
+            {
+                var entry = Entries[i];
+                if (entry.CueId == 0)
+                    Debug.LogError("CueLibrary contains CueId 0.", this);
+                if (!ids.Add(entry.CueId))
+                    Debug.LogError("Duplicate CueId: " + entry.CueId, this);
+                if (entry.VisualEnabled && entry.Prefab == null)
+                    Debug.LogError("Visual Cue requires a Prefab: " + entry.CueId, this);
+            }
+        }
 
         public CueLibrary Bake()
         {

@@ -1,7 +1,7 @@
 {
   "name": "Combat.Editor",
   "rootNamespace": "Combat.EditorTools",
-  "references": ["Combat.Core", "Combat.Presentation", "Combat.Config", "Combat.Unity", "Combat.Demos"],
+  "references": ["Combat.Core", "Combat.Config", "Combat.Unity", "Combat.Demos"],
   "includePlatforms": ["Editor"],
   "excludePlatforms": [],
   "allowUnsafeCode": false,

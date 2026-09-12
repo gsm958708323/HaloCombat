@@ -1,6 +1,6 @@
 using System;
 
-namespace Combat.Presentation
+namespace Combat.Demos
 {
     public sealed class SimulationClock
     {

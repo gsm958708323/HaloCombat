@@ -169,7 +169,7 @@ namespace Combat.Core
             CopyTeam(ctx.Source, aoe);
 
             var body = aoe.GetComp<AoeComp>();
-            body.Setup(def, ctx.Source != null ? ctx.Source.Id : EntityId.Invalid, snap, ctx.World.Time.Frame);
+            body.Setup(def, ctx.Source != null ? ctx.Source.Id : EntityId.Invalid, snap, ctx.World.Time.LogicFrame);
 
             if (def.CueId != 0)
                 ctx.World.Events.Publish(new EvCue(def.CueId, body.OwnerId, "AoeSpawn"));

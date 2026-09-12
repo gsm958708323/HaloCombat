@@ -19,6 +19,7 @@ namespace Combat.Presentation
         readonly FloaterLayer _floaters = new FloaterLayer();
         EntityId _local;
         EventBus _bus;
+        Action<EvEntitySpawn> _spawn;
         Action<EvCue> _cue;
         Action<EvDamage> _damage;
         Action<EvImmune> _immune;
@@ -61,10 +62,12 @@ namespace Combat.Presentation
             _bus = b;
             if (b == null)
                 return;
+            _spawn = OnSpawn;
             _cue = _cues.OnCue;
             _damage = OnDamage;
             _immune = OnImmune;
             _heal = OnHeal;
+            b.Subscribe(_spawn);
             b.Subscribe(_cue);
             b.Subscribe(_damage);
             b.Subscribe(_immune);
@@ -75,6 +78,8 @@ namespace Combat.Presentation
         {
             if (_bus == null)
                 return;
+            if (_spawn != null)
+                _bus.Unsubscribe(_spawn);
             if (_cue != null)
                 _bus.Unsubscribe(_cue);
             if (_damage != null)
@@ -84,13 +89,14 @@ namespace Combat.Presentation
             if (_heal != null)
                 _bus.Unsubscribe(_heal);
             _bus = null;
+            _spawn = null;
             _cue = null;
             _damage = null;
             _immune = null;
             _heal = null;
         }
 
-        public PresentActor BindSpawn(EntityId id, string bp)
+        PresentActor BindSpawn(EntityId id, string bp)
         {
             if (!id.IsValid)
                 throw new ArgumentException("id");
@@ -102,6 +108,8 @@ namespace Combat.Presentation
             _map[k] = p;
             return p;
         }
+
+        void OnSpawn(EvEntitySpawn e) => BindSpawn(e.Id, e.BlueprintId);
 
         public bool TryGet(EntityId id, out PresentActor p) =>
             _map.TryGetValue(HitboxComp.Pack(id), out p);

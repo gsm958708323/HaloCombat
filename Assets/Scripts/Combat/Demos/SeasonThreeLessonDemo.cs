@@ -1,6 +1,5 @@
 using System;
 using Combat.Core;
-using Combat.Presentation;
 
 namespace Combat.Demos
 {

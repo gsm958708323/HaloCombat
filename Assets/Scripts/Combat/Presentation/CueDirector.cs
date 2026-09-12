@@ -40,15 +40,7 @@ namespace Combat.Presentation
                 || !a.TryGetComp<TransformComp>(out var tf)
             )
                 return;
-            // Presentation resources are optional and must never interrupt simulation.
-            try
-            {
-                _pool.TryPlay(d, tf.Position, e.Source);
-            }
-            catch
-            {
-                // A missing or faulty cue is a safe visual no-op.
-            }
+            _pool.TryPlay(d, tf.Position, e.Source);
         }
 
         public void Pump(float dt) => _pool.TickUnscaled(dt);

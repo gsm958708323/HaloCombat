@@ -69,11 +69,13 @@
     <Compile Include="Assets\Scripts\Combat\Demos\PresentationDemos.cs" />
     <Compile Include="Assets\Scripts\Combat\Demos\PerceptionDemo.cs" />
     <Compile Include="Assets\Scripts\Combat\Demos\AuraHomingDemo.cs" />
+    <Compile Include="Assets\Scripts\Combat\Demos\SimulationClock.cs" />
     <Compile Include="Assets\Scripts\Combat\Demos\DemoTrace.cs" />
     <Compile Include="Assets\Scripts\Combat\Demos\SeasonTwoDemo.cs" />
     <Compile Include="Assets\Scripts\Combat\Demos\SeasonTwoDemoSupport.cs" />
     <Compile Include="Assets\Scripts\Combat\Demos\DodgeHitstopDemo.cs" />
     <Compile Include="Assets\Scripts\Combat\Demos\KnockdownDemo.cs" />
+    <Compile Include="Assets\Scripts\Combat\Demos\CombatLesson.cs" />
     <Compile Include="Assets\Scripts\Combat\Demos\SeasonThreeLessonDemo.cs" />
     <Compile Include="Assets\Scripts\Combat\Demos\SummonDemo.cs" />
     <Compile Include="Assets\Scripts\Combat\Demos\BehaviorTreeDemo.cs" />
@@ -659,8 +661,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="Combat.Core.csproj" />
-    <ProjectReference Include="Combat.Presentation.csproj" />
-    <ProjectReference Include="Combat.Game.csproj" />
   </ItemGroup>
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
   <ItemGroup>

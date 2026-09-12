@@ -4,7 +4,7 @@ namespace Combat.Game
 {
     public sealed class LogicTicker
     {
-        public const float Step = 1f / 30f;
+        public const float Step = 1f / 50f;
         float _acc;
         public float Remainder => _acc;
 

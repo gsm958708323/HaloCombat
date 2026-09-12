@@ -141,11 +141,15 @@ namespace Combat.Core
     public sealed class TimelineLibrary
     {
         readonly Dictionary<int, TimelineSO> _map = new Dictionary<int, TimelineSO>(32);
+        public int Count => _map.Count;
+        public IEnumerable<TimelineSO> All => _map.Values;
 
         public void Register(TimelineSO so)
         {
             if (so == null || !so.Id.IsValid)
                 throw new ArgumentException("Invalid TimelineSO");
+            if (_map.ContainsKey(so.Id.Value))
+                throw new InvalidOperationException("Duplicate timeline " + so.Id.Value);
             _map[so.Id.Value] = so;
         }
 
@@ -159,6 +163,11 @@ namespace Combat.Core
         public TimelineClip Clip;
         public float Start;
         public float End;
+        public float StepStart;
+        public float StepEnd;
+        public float ActiveStart;
+        public float ActiveEnd;
+        public float ActiveDelta => ActiveEnd > ActiveStart ? ActiveEnd - ActiveStart : 0f;
     }
 
     public interface IClipHandler
@@ -261,6 +270,7 @@ namespace Combat.Core
     {
         public IClipHandler Handler;
         public ClipRuntime Rt;
+        public bool ClosePending;
     }
 
     public sealed class TimelinePlayer
@@ -268,6 +278,7 @@ namespace Combat.Core
         readonly List<LiveClip> _live = new List<LiveClip>(8);
         bool[] _clipOpened = new bool[8];
         bool[] _payloadFired = new bool[8];
+        bool _finishPending;
         TimelineSO _so;
         float _time;
         bool _playing;
@@ -292,52 +303,95 @@ namespace Combat.Core
         public void Tick(float dt, Actor self)
         {
             if (!_playing || _so == null) return;
+            if (dt < 0f) dt = 0f;
             float prev = _time;
-            _time += dt;
-            OpenDue(self);
-            TickLive(dt);
-            CloseDue();
+            float next = _time + dt;
+            if (next > _so.Duration) next = _so.Duration;
+            if (next < prev) next = prev;
+            OpenIntersecting(self, prev, next);
+            TickLive(prev, next);
+            MarkDueClose(next);
+            _time = next;
             FirePayloads(self, prev);
             if (_time >= _so.Duration)
-                StopInternal(false);
+                _finishPending = true;
         }
 
-        void OpenDue(Actor self)
+        void OpenIntersecting(Actor self, float stepStart, float stepEnd)
         {
             var clips = _so.Clips;
             if (clips == null) return;
             for (int i = 0; i < clips.Length; i++)
             {
-                if (_clipOpened[i] || clips[i].Start > _time) continue;
+                if (_clipOpened[i] || clips[i].End <= stepStart || clips[i].Start >= stepEnd)
+                    continue;
                 _clipOpened[i] = true;
                 var rt = new ClipRuntime
                 {
                     Self = self,
                     Clip = clips[i],
                     Start = clips[i].Start,
-                    End = clips[i].End
+                    End = clips[i].End,
+                    StepStart = stepStart,
+                    StepEnd = stepEnd,
+                    ActiveStart = Math.Max(stepStart, clips[i].Start),
+                    ActiveEnd = Math.Min(stepEnd, clips[i].End)
                 };
                 var handler = ClipHandlerFactory.Create(clips[i].Kind);
                 handler.Open(rt);
-                _live.Add(new LiveClip { Handler = handler, Rt = rt });
+                _live.Add(new LiveClip { Handler = handler, Rt = rt, ClosePending = false });
             }
         }
 
-        void TickLive(float dt)
+        void TickLive(float stepStart, float stepEnd)
         {
             for (int i = 0; i < _live.Count; i++)
-                _live[i].Handler.Tick(_live[i].Rt, dt);
+            {
+                var live = _live[i];
+                live.Rt.StepStart = stepStart;
+                live.Rt.StepEnd = stepEnd;
+                live.Rt.ActiveStart = Math.Max(stepStart, live.Rt.Start);
+                live.Rt.ActiveEnd = Math.Min(stepEnd, live.Rt.End);
+                _live[i] = live;
+                if (live.Rt.ActiveDelta > 0f)
+                    live.Handler.Tick(live.Rt, live.Rt.ActiveDelta);
+            }
         }
 
-        void CloseDue()
+        void MarkDueClose(float currentTime)
         {
+            for (int i = 0; i < _live.Count; i++)
+            {
+                var live = _live[i];
+                if (currentTime >= live.Rt.End)
+                {
+                    live.ClosePending = true;
+                    _live[i] = live;
+                }
+            }
+        }
+
+        public bool FlushPendingCloses()
+        {
+            if (!_playing || _so == null)
+                return false;
+
             for (int i = _live.Count - 1; i >= 0; i--)
             {
                 var live = _live[i];
-                if (_time < live.Rt.End) continue;
+                if (!live.ClosePending) continue;
                 live.Handler.Close(live.Rt, false);
                 _live.RemoveAt(i);
             }
+
+            if (!_finishPending || _live.Count != 0)
+                return false;
+
+            _finishPending = false;
+            _playing = false;
+            _so = null;
+            _time = 0f;
+            return true;
         }
 
         void FirePayloads(Actor self, float prev)
@@ -366,6 +420,7 @@ namespace Combat.Core
             for (int i = 0; i < _live.Count; i++)
                 _live[i].Handler.Close(_live[i].Rt, interrupted);
             _live.Clear();
+            _finishPending = false;
             _playing = false;
             _so = null;
             _time = 0f;

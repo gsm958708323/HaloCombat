@@ -46,7 +46,6 @@ namespace Combat.EditorTools
         {
             Directory.CreateDirectory(ProjectFilePath(Root));
             MigrateLegacyAssets();
-            var baked = new CodeCombatContent().Bake();
 
             var damage = Make<DamageEffectAsset>("Damage_G1");
             damage.Coeff = 1f; damage.CanCrit = true; damage.UseSnapshotAtk = true; damage.HitstopFrames = 3;
@@ -130,14 +129,6 @@ namespace Combat.EditorTools
 
             var summon = Make<SummonDefAsset>("MeleeSummon"); summon.SpecId = CombatIds.MeleeSummon; summon.FollowRange = 2f; summon.AcquireRadius = 8f; summon.Recipe = TreeRecipeKind.SummonMelee;
 
-            var combo = Make<ComboTableAsset>("WarriorCombo");
-            combo.Entries = new[]
-            {
-                new ComboEntryAsset { PreSkills = Array.Empty<int>(), InputAction = "Attack", ToSkill = SkillNodeId.G1.Value, Timeline = TimelineId.TL_G1.Value },
-                new ComboEntryAsset { PreSkills = new[] { SkillNodeId.G1.Value }, InputAction = "Attack", RequiredTags = new[] { CommonTags.Cancel.Value }, Priority = 10, ToSkill = SkillNodeId.G2.Value, Timeline = TimelineId.TL_G2.Value },
-                new ComboEntryAsset { PreSkills = new[] { SkillNodeId.Dodge.Value }, InputAction = "Attack", RequiredTags = new[] { CommonTags.Cancel.Value }, Priority = 5, ToSkill = SkillNodeId.G1.Value, Timeline = TimelineId.TL_G1.Value }
-            };
-
             var motor = Make<CharacterMotorAsset>("HeroMotor");
             var cues = Make<CueLibraryAsset>("CombatCues");
             cues.Entries = new[]
@@ -149,7 +140,6 @@ namespace Combat.EditorTools
             };
 
             var database = Make<CombatDatabaseAsset>("CombatDatabase");
-            database.Combo = combo;
             database.Timelines = new[] { tlG1, tlG2, tlDodge, tlHoming };
             database.Projectiles = new[] { fireball, homing };
             database.Aoes = new[] { ground, aura };
@@ -165,7 +155,6 @@ namespace Combat.EditorTools
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             BindRuntimeScenes(database);
-            _ = baked;
         }
 
         static void BuildRoleConfiguration(
@@ -206,7 +195,6 @@ namespace Combat.EditorTools
             database.Skills = skills.ToArray();
             database.Characters = new[] { playerSword, playerFighter, playerGun, meleeAi, guard, ranged };
             database.Timelines = timelines.ToArray();
-            database.Combo = null;
             var fireball = AssetDatabase.LoadAssetAtPath<ProjectileDefAsset>(GeneratedPath<ProjectileDefAsset>("Fireball"));
             var homing = AssetDatabase.LoadAssetAtPath<ProjectileDefAsset>(GeneratedPath<ProjectileDefAsset>("HomingBolt"));
             var pistolBullet = AssetDatabase.LoadAssetAtPath<ProjectileDefAsset>(GeneratedPath<ProjectileDefAsset>("PistolBullet"));
@@ -781,83 +769,22 @@ namespace Combat.EditorTools
                 throw new InvalidOperationException("No generated skills.");
             if (data.Characters == null || data.Characters.Count == 0)
                 throw new InvalidOperationException("No generated characters.");
+            var views = AssetDatabase.LoadAssetAtPath<ViewPrefabTable>("Assets/Resources/Stickman/StickmanViews.asset");
+            if (views == null)
+                throw new InvalidOperationException("View prefab table is missing.");
+            foreach (var character in data.Characters.All)
+            {
+                var key = string.IsNullOrEmpty(character.ViewBlueprintId)
+                    ? character.BlueprintId
+                    : character.ViewBlueprintId;
+                if (!views.TryGet(key, out var entry))
+                    throw new InvalidOperationException("Missing view entry: " + key);
+                if (character.IsPlayer && entry.Kind != ViewKind.Character)
+                    throw new InvalidOperationException("Player view must be Character: " + key);
+            }
             if (!Application.isBatchMode) EditorUtility.DisplayDialog("Validate", "OK", "OK");
             Debug.Log("[HaloCombat] Database validation passed.");
         }
 
-        static void ValidateCodeSoParity(CombatDatabaseAsset database)
-        {
-            var code = new CodeCombatContent().Bake();
-            var so = database.BakeAll();
-            if (code.Combo == null || so.Combo == null || code.Combo.Entries.Length != so.Combo.Entries.Length)
-                throw new InvalidOperationException("Code/SO combo entry count mismatch");
-
-            for (int i = 0; i < code.Combo.Entries.Length; i++)
-            {
-                var a = code.Combo.Entries[i];
-                var b = so.Combo.Entries[i];
-                if (a.Priority != b.Priority || a.ToSkill != b.ToSkill || a.Timeline != b.Timeline ||
-                    !a.Input.Equals(b.Input) || !Same(a.PreSkills, b.PreSkills) || !Same(a.RequiredTags, b.RequiredTags))
-                    throw new InvalidOperationException("Code/SO combo entry mismatch at index " + i);
-            }
-
-            RequireTimeline(code, so, TimelineId.TL_G1);
-            RequireTimeline(code, so, TimelineId.TL_G2);
-            RequireTimeline(code, so, TimelineId.TL_Dodge);
-            RequireTimeline(code, so, TimelineId.TL_Homing);
-            RequireProjectile(code, so, CombatIds.Fireball);
-            RequireProjectile(code, so, CombatIds.HomingBolt);
-            RequireAoe(code, so, CombatIds.FireGround);
-            RequireAoe(code, so, CombatIds.AuraField);
-            RequireSummon(code, so, CombatIds.MeleeSummon);
-            if (Math.Abs(code.Motor.Gravity - so.Motor.Gravity) > 1e-4f ||
-                Math.Abs(code.Motor.JumpSpeed - so.Motor.JumpSpeed) > 1e-4f ||
-                Math.Abs(code.Motor.AirSteer - so.Motor.AirSteer) > 1e-4f ||
-                Math.Abs(code.Motor.GroundY - so.Motor.GroundY) > 1e-4f ||
-                Math.Abs(code.Motor.StickDeadzone - so.Motor.StickDeadzone) > 1e-4f)
-                throw new InvalidOperationException("Code/SO motor configuration mismatch");
-        }
-
-        static bool Same(int[] a, int[] b)
-        {
-            if (a == null) a = Array.Empty<int>();
-            if (b == null) b = Array.Empty<int>();
-            if (a.Length != b.Length) return false;
-            for (int i = 0; i < a.Length; i++) if (a[i] != b[i]) return false;
-            return true;
-        }
-
-        static bool Same(SkillNodeId[] a, SkillNodeId[] b)
-        {
-            if (a == null) a = Array.Empty<SkillNodeId>();
-            if (b == null) b = Array.Empty<SkillNodeId>();
-            if (a.Length != b.Length) return false;
-            for (int i = 0; i < a.Length; i++) if (a[i] != b[i]) return false;
-            return true;
-        }
-
-        static void RequireTimeline(BakedCombatData code, BakedCombatData so, TimelineId id)
-        {
-            if (!code.Timelines.TryGet(id, out _) || !so.Timelines.TryGet(id, out _))
-                throw new InvalidOperationException("Code/SO timeline missing: " + id.Value);
-        }
-
-        static void RequireProjectile(BakedCombatData code, BakedCombatData so, int id)
-        {
-            if (!code.Projectiles.TryGet(id, out _) || !so.Projectiles.TryGet(id, out _))
-                throw new InvalidOperationException("Code/SO projectile missing: " + id);
-        }
-
-        static void RequireAoe(BakedCombatData code, BakedCombatData so, int id)
-        {
-            if (!code.Aoes.TryGet(id, out _) || !so.Aoes.TryGet(id, out _))
-                throw new InvalidOperationException("Code/SO AOE missing: " + id);
-        }
-
-        static void RequireSummon(BakedCombatData code, BakedCombatData so, int id)
-        {
-            if (!code.Summons.TryGet(id, out _) || !so.Summons.TryGet(id, out _))
-                throw new InvalidOperationException("Code/SO summon missing: " + id);
-        }
     }
 }

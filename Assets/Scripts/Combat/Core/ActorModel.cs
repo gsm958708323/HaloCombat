@@ -140,7 +140,6 @@ namespace Combat.Core
         readonly Queue<int> _free = new Queue<int>(32);
         readonly HashSet<EntityId> _pending = new HashSet<EntityId>();
         readonly List<EntityId> _despawnScratch = new List<EntityId>(16);
-        readonly List<Actor> _activeScratch = new List<Actor>(64);
 
         public int ActiveCount { get; private set; }
 
@@ -226,17 +225,23 @@ namespace Combat.Core
             }
         }
 
-        public List<Actor> CopyActiveActors()
+        public void CopyActiveActors(List<Actor> destination)
         {
-            _activeScratch.Clear();
+            if (destination == null) throw new ArgumentNullException(nameof(destination));
+            destination.Clear();
             for (int i = 1; i < _slots.Count; i++)
             {
                 var slot = _slots[i];
                 if (slot.Occupied && slot.Actor != null && slot.Actor.IsActive)
-                    _activeScratch.Add(slot.Actor);
+                    destination.Add(slot.Actor);
             }
+        }
 
-            return _activeScratch;
+        public List<Actor> CopyActiveActors()
+        {
+            var result = new List<Actor>(64);
+            CopyActiveActors(result);
+            return result;
         }
 
         public void ClearAll()
@@ -255,7 +260,6 @@ namespace Combat.Core
             _slots.Add(new Slot());
             _free.Clear();
             _pending.Clear();
-            _activeScratch.Clear();
             ActiveCount = 0;
         }
     }

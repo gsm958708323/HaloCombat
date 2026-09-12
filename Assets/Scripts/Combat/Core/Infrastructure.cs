@@ -8,13 +8,31 @@ namespace Combat.Core
         public float Delta { get; private set; }
         public float Time { get; private set; }
         public int Frame { get; private set; }
+        public int LogicFrame { get; private set; }
+        public float WallDelta { get; private set; }
+        public float WallTime { get; private set; }
+        public int WallFrame { get; private set; }
 
-        public void Advance(float delta)
+        public void AdvanceWall(float delta)
+        {
+            if (delta < 0f) delta = 0f;
+            WallDelta = delta;
+            WallTime += delta;
+            WallFrame++;
+            Frame++;
+        }
+
+        public void AdvanceLogic(float delta)
         {
             if (delta < 0f) delta = 0f;
             Delta = delta;
             Time += delta;
-            Frame++;
+            LogicFrame++;
+        }
+
+        public void PauseLogic()
+        {
+            Delta = 0f;
         }
 
         public void Reset()
@@ -22,12 +40,17 @@ namespace Combat.Core
             Delta = 0f;
             Time = 0f;
             Frame = 0;
+            LogicFrame = 0;
+            WallDelta = 0f;
+            WallTime = 0f;
+            WallFrame = 0;
         }
     }
 
     public sealed class IntentQueue
     {
         readonly Dictionary<Type, object> _queues = new Dictionary<Type, object>(32);
+        readonly List<Action> _clearers = new List<Action>(32);
 
         Queue<T> Q<T>() where T : struct
         {
@@ -36,6 +59,7 @@ namespace Combat.Core
             {
                 var created = new Queue<T>(16);
                 _queues[type] = created;
+                _clearers.Add(created.Clear);
                 return created;
             }
 
@@ -71,18 +95,14 @@ namespace Combat.Core
 
         public void ClearAll()
         {
-            foreach (var kv in _queues)
-            {
-                if (kv.Value is System.Collections.ICollection)
-                    kv.Value.GetType().GetMethod("Clear")?.Invoke(kv.Value, null);
-            }
+            for (int i = 0; i < _clearers.Count; i++)
+                _clearers[i]();
         }
     }
 
     public sealed class EventBus
     {
         readonly Dictionary<Type, List<Delegate>> _handlers = new Dictionary<Type, List<Delegate>>(32);
-        readonly List<Delegate> _snapshot = new List<Delegate>(16);
 
         public void Subscribe<T>(Action<T> handler)
         {
@@ -109,11 +129,10 @@ namespace Combat.Core
         {
             if (!_handlers.TryGetValue(typeof(T), out var list) || list.Count == 0)
                 return;
-            _snapshot.Clear();
-            _snapshot.AddRange(list);
-            for (int i = 0; i < _snapshot.Count; i++)
+            var snapshot = new List<Delegate>(list);
+            for (int i = 0; i < snapshot.Count; i++)
             {
-                if (_snapshot[i] is Action<T> action)
+                if (snapshot[i] is Action<T> action)
                     action(evt);
             }
         }
@@ -121,7 +140,6 @@ namespace Combat.Core
         public void Clear()
         {
             _handlers.Clear();
-            _snapshot.Clear();
         }
     }
 

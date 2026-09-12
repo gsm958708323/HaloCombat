@@ -1250,12 +1250,10 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="Combat.Core.csproj" />
-    <ProjectReference Include="Combat.Presentation.csproj" />
+    <ProjectReference Include="Combat.Unity.csproj" />
     <ProjectReference Include="cn.lys.aibridge.Runtime.csproj" />
     <ProjectReference Include="cn.lys.aibridge.Editor.csproj" />
-    <ProjectReference Include="Combat.Unity.csproj" />
     <ProjectReference Include="Combat.Config.csproj" />
-    <ProjectReference Include="Combat.Game.csproj" />
   </ItemGroup>
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
   <ItemGroup>

@@ -12,7 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6a09e9787d61b354495412c62a3af961, type: 3}
   m_Name: CombatDatabase
   m_EditorClassIdentifier: 
-  Combo: {fileID: 0}
   Skills:
   - {fileID: 11400000, guid: 51ec329092a604349815c0f236f32960, type: 2}
   - {fileID: 11400000, guid: 0e719315ca395fe4db4d6f5a08cc040a, type: 2}

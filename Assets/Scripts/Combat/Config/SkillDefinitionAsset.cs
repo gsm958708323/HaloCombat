@@ -28,7 +28,11 @@ namespace Combat.Config
                 Id = new SkillNodeId(SkillId),
                 Timeline = timeline.Id,
                 DisplayName = string.IsNullOrEmpty(DisplayName) ? name : DisplayName,
-                AnimationMode = AnimationMode
+                AnimationMode = AnimationMode,
+                Input = new InputToken(InputAction),
+                Cooldown = Cooldown < 0f ? 0f : Cooldown,
+                CanUseInAir = CanUseInAir,
+                RequiresTarget = RequiresTarget
             };
         }
 

@@ -229,7 +229,6 @@ namespace Combat.Demos
             // 监听 Cue 事件，确认 Timeline 的表现层 Payload 确实被触发。
             var events = new EventBus();
             var world = DemoWorld.Create(out _, out _, new FixedRandom(0f), events);
-            CombatCatalog.RegisterDefaults(world.Projectiles, world.Aoes, CombatCatalog.Burn(), world.Summons);
             int cues = 0;
             events.Subscribe<EvCue>(_ => cues++);
             var id = world.SpawnActor(new ActorSpawnSpec("fighter"));
@@ -341,7 +340,6 @@ namespace Combat.Demos
         {
             var events = new EventBus();
             var world = DemoWorld.Create(out _, out var time, new FixedRandom(0f), events);
-            CombatCatalog.RegisterDefaults(world.Projectiles, world.Aoes, CombatCatalog.Burn(), world.Summons);
             world.TryGetActor(world.SpawnActor(new ActorSpawnSpec("fighter")), out var player);
             world.TryGetActor(world.SpawnActor(new ActorSpawnSpec("stake")), out var stake);
             EntityId playerId = player.Id;
@@ -459,7 +457,6 @@ namespace Combat.Demos
             var events = new EventBus();
             var world = DemoWorld.Create(out _, out _, new FixedRandom(0f), events);
             var burn = CombatCatalog.Burn();
-            CombatCatalog.RegisterDefaults(world.Projectiles, world.Aoes, burn, world.Summons);
             world.TryGetActor(world.SpawnActor(new ActorSpawnSpec("fighter")), out var player);
             world.TryGetActor(world.SpawnActor(new ActorSpawnSpec("stake")), out var stake);
             player.GetComp<TransformComp>().Position = new SimVec3(0, 0, 0);

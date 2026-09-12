@@ -1,7 +1,7 @@
 using System;
 using Combat.Core;
 
-namespace Combat.Presentation
+namespace Combat.Demos
 {
     public enum CombatLessonKind { Motor, Melee, ProjectileAoe, AiSummon }
 
