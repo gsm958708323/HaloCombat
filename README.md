@@ -1,4 +1,4 @@
-# HaloCombat
+﻿# HaloCombat
 
 纯 C# 动作战斗核，Unity 只负责表现与关卡。逻辑可脱离引擎，用 `dotnet run` 做回归；正式对局入口是 `Assets/Scenes/Arena.unity`。
 
@@ -19,7 +19,7 @@
 - 位姿：`Request*` → `Locomotion.Integrate`
 - 血量：只通过 `AttributeSet.SetBase(Hp)` 修改
 
-## 分层
+## 分层（表现层直接写unity相关逻辑）
 
 | 模块 | 职责 |
 | --- | --- |

@@ -10,7 +10,7 @@ using UnityEngine.InputSystem;
 
 namespace Combat.Unity.Game
 {
-    public sealed class ArenaBootstrap : MonoBehaviour
+    public class ArenaBootstrap : MonoBehaviour
     {
         public CombatDatabaseAsset Database;
         public ArenaSpawnTableSO Spawns;
