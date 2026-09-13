@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a166572b6688ae4798cd47a55b7f8b7, type: 3}
+  m_Name: AD_4102
+  m_EditorClassIdentifier: 
+  SpecId: 4102
+  Radius: 0.25
+  Duration: 100
+  PulseInterval: 0.45
+  PulseOnSpawn: 1
+  TrackOccupancy: 1
+  HostileMask: 0
+  CueId: 0
+  Motion: 1
+  MoveSpeed: 0.1
+  RemoveOnObstacle: 1
+  Flying: 1
+  TrackProjectiles: 1
+  ProjectileAbsorbForce: 0.05
+  ProjectileRadiusScale: 0.05
+  ViewBlueprintId: buff_aoe_monkey_view
+  OnPulse: []
+  OnEnter:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  OnExit: []
+  OnStay: []
+  OnExpire: []

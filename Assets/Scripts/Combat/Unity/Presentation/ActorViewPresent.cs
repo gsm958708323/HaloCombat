@@ -8,14 +8,17 @@ namespace Combat.Presentation
         readonly GameObject _prefab;
         readonly Transform _root;
         readonly bool _keepAliveOnDead;
+        readonly float _modelYawOffset;
         GameObject _view;
         Animator _animator;
 
-        public ActorViewPresent(GameObject prefab, Transform root, bool keepAliveOnDead = false)
+        public ActorViewPresent(GameObject prefab, Transform root, bool keepAliveOnDead = false,
+            float modelYawOffsetDeg = 0f)
         {
             _prefab = prefab;
             _root = root;
             _keepAliveOnDead = keepAliveOnDead;
+            _modelYawOffset = modelYawOffsetDeg;
         }
 
         public GameObject View => _view;
@@ -46,8 +49,9 @@ namespace Combat.Presentation
         {
             if (_view == null || !Self.TryLogic(world, out var actor))
                 return;
-            if (actor.TryGetComp<TagComp>(out var tags))
-                _view.SetActive(_keepAliveOnDead || !tags.Has(CommonTags.Dead));
+            // Corpses stay on screen until the session despawns them; the source game
+            // hides nothing on death, it removes the body after a delay instead.
+            _view.SetActive(true);
         }
 
         public override void LateTick(float dt)
@@ -59,7 +63,7 @@ namespace Combat.Presentation
                 pose.DisplayPos.Y,
                 pose.DisplayPos.Z
             );
-            _view.transform.rotation = Quaternion.Euler(0f, pose.DisplayYaw, 0f);
+            _view.transform.rotation = Quaternion.Euler(0f, pose.DisplayYaw + _modelYawOffset, 0f);
         }
 
         protected override void OnDetach()

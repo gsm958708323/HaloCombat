@@ -68,7 +68,7 @@ namespace Combat.Core
                 var tf = results[i].GetComp<TransformComp>();
                 float dx = tf.Position.X - origin.X;
                 float dz = tf.Position.Z - origin.Z;
-                float yaw = (float)(Math.Atan2(dz, dx) * (180.0 / Math.PI));
+                float yaw = LocomotionComp.YawFromStick(new SimVec3(dx, 0f, dz));
                 float delta = NormalizeAngle(yaw - yawDegrees);
                 if (Math.Abs(delta) <= half)
                     results[w++] = results[i];

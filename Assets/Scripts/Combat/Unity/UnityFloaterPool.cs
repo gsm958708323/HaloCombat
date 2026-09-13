@@ -41,7 +41,13 @@ namespace Combat.Unity.Presentation
                 request.Immune ? "IMMUNE"
                 : request.Heal ? "+" + request.Amount.ToString("0")
                 : request.Amount.ToString("0");
-            text.fontSize = request.Crit ? 64 : 48;
+            // TextMesh fontSize is in font units scaled by characterSize, which defaults
+            // to world units. 64/48 produced ~10m tall glyphs and filled the screen, so
+            // the size lives in a small world-space scale instead.
+            text.fontSize = 48;
+            text.characterSize = request.Crit ? .11f : .085f;
+            text.anchor = TextAnchor.MiddleCenter;
+            text.alignment = TextAlignment.Center;
             text.color =
                 request.Immune ? Color.gray
                 : request.Heal ? Color.green

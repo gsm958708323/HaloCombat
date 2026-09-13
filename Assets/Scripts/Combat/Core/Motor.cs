@@ -5,12 +5,26 @@ namespace Combat.Core
     public sealed class TransformComp : Comp
     {
         public SimVec3 Position;
-        public float YawDegrees;
+
+        // Yaw convention (frozen): 0 faces +Z (Unity's forward) and a positive angle
+        // turns towards +X, so ForwardFromYaw(yaw) == Quaternion.Euler(0, yaw, 0) *
+        // Vector3.forward. The old 2D polar convention (0 = +X, counter-clockwise) is
+        // retired; converting an old angle is 90 - yaw.
+        // Actors still spawn facing +X (the old default yaw 0), which is why the spawn
+        // value is 90 instead of 0.
+        public float YawDegrees = SpawnFacingYaw;
+
+        public const float SpawnFacingYaw = 90f;
     }
 
     public sealed class LocomotionComp : Comp
     {
         public override bool WantsTick => false;
+
+        // The source UnitRotate leaves rotateSpeed at 0, so an ordered rotation
+        // resolves instantly. 3600 deg/s keeps mouse aiming visually instant while
+        // still covering the 0.1s payload delay used by the source skill timelines.
+        public const float AimTurnRateDegPerSec = 3600f;
 
         TransformComp _tf;
         StateMachineComp _fsm;
@@ -93,6 +107,16 @@ namespace Combat.Core
 
         public void RequestSnapYaw()
         {
+            // A live mouse-aim request outranks the move stick: the source game
+            // orders the rotation from the cursor before it starts the skill
+            // timeline, so a cast must never snap the body back to the last
+            // movement direction.
+            if (_hasAimYaw)
+            {
+                _pendingYaw = _aimYaw;
+                _hasSnapYaw = true;
+                return;
+            }
             if (StickMag(_moveIntent) >= _stickDeadzone)
             {
                 _pendingYaw = YawFromStick(_moveIntent);
@@ -271,10 +295,14 @@ namespace Combat.Core
         {
             bool stick = StickMag(_moveIntent) >= _stickDeadzone;
             float want = stick ? YawFromStick(_moveIntent) : _tf.YawDegrees;
-            if (_hasAimYaw && _grounded && facing.Mode != FacingMode.Lock &&
-                (_fsm == null || _fsm.Current != ActivityId.Attack || _director == null || _director.AllowsRotate))
+            // Mouse aim owns the facing whenever it is requested and the activity
+            // does not hard-lock rotation. The source PlayerController keeps
+            // calling OrderRotateTo every FixedUpdate while a skill timeline runs
+            // (SetCasterControlState(canRotate: true)), so an Attack must not gate
+            // aiming behind a Move clip's steer value.
+            if (_hasAimYaw && _grounded && facing.Mode != FacingMode.Lock)
             {
-                float turn = facing.TurnRate > 0f ? facing.TurnRate * dt : 1800f * dt;
+                float turn = facing.TurnRate > 0f ? facing.TurnRate * dt : AimTurnRateDegPerSec * dt;
                 _tf.YawDegrees = MoveTowardsAngle(_tf.YawDegrees, _aimYaw, turn);
                 return;
             }
@@ -347,12 +375,12 @@ namespace Combat.Core
             => (float)Math.Sqrt(v.X * v.X + v.Z * v.Z);
 
         public static float YawFromStick(in SimVec3 v)
-            => (float)(Math.Atan2(v.Z, v.X) * (180.0 / Math.PI));
+            => (float)(Math.Atan2(v.X, v.Z) * (180.0 / Math.PI));
 
         public static SimVec3 ForwardFromYaw(float yawDeg)
         {
             double r = yawDeg * Math.PI / 180.0;
-            return new SimVec3((float)Math.Cos(r), 0f, (float)Math.Sin(r));
+            return new SimVec3((float)Math.Sin(r), 0f, (float)Math.Cos(r));
         }
     }
 }

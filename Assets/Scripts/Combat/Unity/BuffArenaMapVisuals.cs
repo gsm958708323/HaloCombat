@@ -19,11 +19,15 @@ namespace Combat.Unity.Game
             Width = UnityEngine.Random.Range(10, 15);
             Height = UnityEngine.Random.Range(10, 15);
             var walkable = new bool[Width, Height];
+            var flyingWalkable = new bool[Width, Height];
             var random = new System.Random(Seed == 0 ? 1 : Seed);
             for (int x = 0; x < Width; x++)
                 for (int z = 0; z < Height; z++)
+                {
                     walkable[x, z] = Mathf.PerlinNoise((float)x / Width, (float)z / Height) *
                         Mathf.Lerp(10f, 20f, (float)random.NextDouble()) > 6f;
+                    flyingWalkable[x, z] = true;
+                }
             EnsureOpenCell(walkable);
             Transform root = MapRoot != null ? MapRoot : transform;
             for (int x = 0; x < Width; x++)
@@ -41,7 +45,7 @@ namespace Combat.Unity.Game
                 }
             }
 
-            Navigation = new GridMovementConstraint(walkable, 1f);
+            Navigation = new GridMovementConstraint(walkable, flyingWalkable, 1f);
             return Navigation;
         }
 

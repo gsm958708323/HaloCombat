@@ -19,75 +19,101 @@ MonoBehaviour:
     Features: 255
     Animation: 1
     KeepAliveOnDead: 1
+    ModelYawOffsetDeg: 0
+    SpinDegPerSec: 0
   - BlueprintId: buff_enemy_view
     Prefab: {fileID: 2106585151094639786, guid: 31bdf8eb5c2f2a545956e0763ca4c455, type: 3}
     Kind: 1
     Features: 131
     Animation: 1
-    KeepAliveOnDead: 0
+    KeepAliveOnDead: 1
+    ModelYawOffsetDeg: 0
+    SpinDegPerSec: 0
   - BlueprintId: buff_barrel_view
     Prefab: {fileID: 1964431040936758, guid: ae95d385019def448981b67e58f4dcc2, type: 3}
     Kind: 1
     Features: 129
     Animation: 0
     KeepAliveOnDead: 0
+    ModelYawOffsetDeg: 0
+    SpinDegPerSec: 0
   - BlueprintId: buff_projectile_normal_view
     Prefab: {fileID: 8773645020689649900, guid: 7388435388d446c4585473beb9b470de, type: 3}
     Kind: 2
     Features: 1
     Animation: 0
     KeepAliveOnDead: 0
+    ModelYawOffsetDeg: 0
+    SpinDegPerSec: 0
   - BlueprintId: buff_projectile_enemy_view
     Prefab: {fileID: 2298546271075422823, guid: b5bf9594a385f90409ff9e29a4800858, type: 3}
     Kind: 2
     Features: 1
     Animation: 0
     KeepAliveOnDead: 0
+    ModelYawOffsetDeg: 0
+    SpinDegPerSec: 0
   - BlueprintId: buff_projectile_boomerang_view
     Prefab: {fileID: 1091927290051320, guid: e9397a618e38c7048b554bdd3e0f11cd, type: 3}
     Kind: 2
     Features: 1
     Animation: 0
     KeepAliveOnDead: 0
+    ModelYawOffsetDeg: 0
+    SpinDegPerSec: 720
   - BlueprintId: buff_projectile_teleport_view
     Prefab: {fileID: 3218120393504617284, guid: 7653226b32dd4d44bad602e6be357100, type: 3}
     Kind: 2
     Features: 1
     Animation: 0
     KeepAliveOnDead: 0
+    ModelYawOffsetDeg: 0
+    SpinDegPerSec: 240
   - BlueprintId: buff_projectile_bomb_view
     Prefab: {fileID: 1962039199452369933, guid: 41cbbe6f58483474ebfb06f9eb647bb6, type: 3}
     Kind: 2
     Features: 1
     Animation: 0
     KeepAliveOnDead: 0
+    ModelYawOffsetDeg: 0
+    SpinDegPerSec: 200
   - BlueprintId: buff_aoe_monkey_view
     Prefab: {fileID: 502299061975525525, guid: 1bcd66738aff8b34c89daf22f065de98, type: 3}
     Kind: 2
     Features: 1
     Animation: 0
     KeepAliveOnDead: 0
+    ModelYawOffsetDeg: 0
+    SpinDegPerSec: 360
   - BlueprintId: buff_aoe_stayingbomb_view
     Prefab: {fileID: 1962039199452369933, guid: 41cbbe6f58483474ebfb06f9eb647bb6, type: 3}
     Kind: 2
     Features: 1
     Animation: 0
     KeepAliveOnDead: 0
+    ModelYawOffsetDeg: 0
+    SpinDegPerSec: 0
   - BlueprintId: buff_aoe_blackhole_view
     Prefab: {fileID: 1714681308540598, guid: 5cbc537826220e04592d5a41a0dd985f, type: 3}
     Kind: 2
     Features: 1
     Animation: 0
     KeepAliveOnDead: 0
+    ModelYawOffsetDeg: 0
+    SpinDegPerSec: 0
   - BlueprintId: buff_aoe_shield_view
     Prefab: {fileID: 1714681308540598, guid: 5cbc537826220e04592d5a41a0dd985f, type: 3}
     Kind: 2
     Features: 1
     Animation: 0
     KeepAliveOnDead: 0
+    ModelYawOffsetDeg: 0
+    SpinDegPerSec: 0
   - BlueprintId: buff_aoe_explosion_view
     Prefab: {fileID: 0}
     Kind: 0
     Features: 0
     Animation: 0
     KeepAliveOnDead: 0
+    ModelYawOffsetDeg: 0
+    SpinDegPerSec: 0

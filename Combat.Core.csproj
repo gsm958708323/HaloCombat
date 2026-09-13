@@ -73,6 +73,7 @@
     <Compile Include="Assets\Scripts\Combat\Core\CombatValidator.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Summons.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\ArenaNavigation.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\BuffArenaContentTables.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\BehaviorTree.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Attributes.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\BehaviorTreeComp.cs" />
@@ -90,6 +91,7 @@
     <Compile Include="Assets\Scripts\Combat\Core\ActorModel.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Logging.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\QueryRandom.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\FloaterAnchor.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\SpawnEntry.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Factory.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\RuntimeBodies.cs" />
@@ -155,6 +157,10 @@
     </Reference>
     <Reference Include="Mono.Cecil">
       <HintPath>Library\PackageCache\com.unity.nuget.mono-cecil\Mono.Cecil.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>Library\PackageCache\com.unity.nuget.newtonsoft-json\Runtime\Newtonsoft.Json.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.Android.Types">

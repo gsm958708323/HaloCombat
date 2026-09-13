@@ -78,7 +78,7 @@ namespace Combat.Demos
             var second = SeasonTwoDemoSupport.Spawn(homingWorld, "stake", 1.5f, 2f);
             var homingTrace = new DemoTrace("AuraHoming", CombatCategories.AuraHoming, homingWorld, dt => SeasonTwoDemoSupport.Step(homingWorld, dt));
             homingTrace.Step("初始化 Homing Projectile 子场景", () => $"{DemoTrace.Snapshot(shooter)} target={DemoTrace.Snapshot(second)}");
-            shooter.GetComp<TransformComp>().YawDegrees = 0f;
+            shooter.GetComp<TransformComp>().YawDegrees = LocomotionComp.YawFromStick(new SimVec3(1f, 0f, 0f));
             float homingHp = second.GetComp<AttributeSet>().GetBase(AttrId.Hp);
             homingWorld.Deliver(new IEffect[] { new SpawnProjectileEffect(CombatIds.HomingBolt) }, shooter, second, 10f);
             homingTrace.AdvanceUntil("追踪弹转向并命中偏置目标", () => second.GetComp<AttributeSet>().GetBase(AttrId.Hp) < homingHp,

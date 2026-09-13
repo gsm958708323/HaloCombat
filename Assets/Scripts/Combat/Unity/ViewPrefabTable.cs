@@ -86,5 +86,13 @@ namespace Combat.Unity.Presentation
         public ViewFeatures Features;
         public ViewAnimationProfile Animation;
         public bool KeepAliveOnDead;
+        // Art axis correction, applied as a local rotation on top of the logic yaw.
+        // The core yaw convention already matches Unity (0 = +Z, positive turns
+        // towards +X), so +Z-forward art keeps 0 here; only art authored along another
+        // axis needs a value (+X art: -90, -Z art: 180, -X art: 90).
+        public float ModelYawOffsetDeg;
+        // Visual-only roll about local Y for runtime bodies whose prefab has no
+        // animation of its own (boomerang disc, spike ball, rolling grenade).
+        public float SpinDegPerSec;
     }
 }

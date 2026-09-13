@@ -15,6 +15,8 @@ namespace Combat.Core
         public const int SkillBarrelValue = 2008;
         public const int SkillReloadValue = 2009;
         public const int SkillEnemyValue = 2010;
+        // Warp counterpart of the teleport bullet, resolved while its projectile is alive.
+        public const int SkillTeleportWarpValue = 2011;
 
         public const int TimelineFireValue = 3001;
         public const int TimelineRollValue = 3002;
@@ -59,6 +61,7 @@ namespace Combat.Core
         public static readonly SkillNodeId Barrel = new SkillNodeId(SkillBarrelValue);
         public static readonly SkillNodeId Reload = new SkillNodeId(SkillReloadValue);
         public static readonly SkillNodeId SkillEnemy = new SkillNodeId(SkillEnemyValue);
+        public static readonly SkillNodeId TeleportWarp = new SkillNodeId(SkillTeleportWarpValue);
 
         public static readonly TimelineId FireTimeline = new TimelineId(TimelineFireValue);
         public static readonly TimelineId RollTimeline = new TimelineId(TimelineRollValue);
@@ -142,6 +145,26 @@ namespace Combat.Core
         public InputToken Input;
         public int AmmoCost;
         public string AnimatorState;
+        // Teleport bullet: while a tracked projectile exists the skill resolves to
+        // WarpSkillId instead of casting itself again.
+        public bool RequiresTrackedProjectile;
+        public SkillNodeId WarpSkillId = SkillNodeId.None;
+    }
+
+    public sealed class BuffArenaSourceConfig
+    {
+        public string[] SkillIds = Array.Empty<string>();
+        public string[] ProjectileIds = Array.Empty<string>();
+        public string[] AoeIds = Array.Empty<string>();
+        public int PlayerMaxHp = 500;
+        public int PlayerAmmoCapacity = 60;
+        public int MaxEnemies = 10;
+        public float SpawnPeriod = 10f;
+        public float EnemyCleanupDelay = 5f;
+        public float BarrelSelfDamagePeriod = 5f;
+        // Pre-baked database produced from ScriptableObject assets. Null in the pure C#
+        // path, where the code-defined table below is registered instead.
+        public BuffArenaData Content;
     }
 
     public sealed class BuffArenaData
@@ -152,6 +175,12 @@ namespace Combat.Core
         public CueLibrary Cues = new CueLibrary();
         public MotorConfig Motor = MotorConfig.SeasonOneDefaults();
         public readonly List<BuffArenaSkill> Skills = new List<BuffArenaSkill>(9);
+        public int PlayerMaxHp = 500;
+        public int PlayerAmmoCapacity = 60;
+        public int MaxEnemies = 10;
+        public float SpawnPeriod = 10f;
+        public float EnemyCleanupDelay = 5f;
+        public float BarrelSelfDamagePeriod = 5f;
 
         public BuffArenaSkill RequireSkill(SkillNodeId id)
         {
@@ -199,20 +228,28 @@ namespace Combat.Core
                 (tags.Has(CommonTags.Dead) || tags.Has(CommonTags.Stunned) || tags.Has(CommonTags.Downed)))
                 return;
 
-            if (_director.IsPlaying)
+            // Source skill timelines gate on canUseSkill via SetCasterControlState. Only
+            // drop buffered input while the running timeline still forbids casting.
+            if (_director.IsPlaying && !_director.AllowsSkill)
             {
                 _input.Clear();
                 return;
             }
+            if (_director.IsPlaying) return;
 
             if (!_input.TryPeek(out var token)) return;
             _input.Consume();
 
-            if (token == BuffArenaIds.Fire4 && TryTeleport())
-                return;
-
             BuffArenaSkill skill = FindByInput(token);
             if (skill == null) return;
+
+            // Data-driven teleport bullet: the skill warps instead of firing while one of
+            // its tracked projectiles is still airborne.
+            if (skill.RequiresTrackedProjectile && _tracker != null && _tracker.HasProjectile &&
+                skill.WarpSkillId.IsValid)
+            {
+                if (TryTeleport()) return;
+            }
 
             if (skill.AmmoCost > 0 && (_ammo == null || !_ammo.TryConsume(skill.AmmoCost)))
             {
@@ -239,7 +276,7 @@ namespace Combat.Core
             float radius = Self.TryGetComp<CharacterRadiusComp>(out var body) ? body.Radius : .25f;
             if (!Self.World.Movement.CanPlace(projectileTf.Position, radius, false))
             {
-                Self.World.Events.Publish(new EvGameplayMessage(Self.Id, "无法传送"));
+                Self.World.Events.Publish(new EvGameplayMessage(Self.Id, "Teleport blocked"));
                 return true;
             }
 
@@ -258,80 +295,90 @@ namespace Combat.Core
         }
     }
 
-    public sealed class BuffArenaShooterComp : Comp
+    public sealed class WanderShooter : BtNode
     {
-        readonly BuffArenaData _data;
-        SkillDirectorComp _director;
-        LocomotionComp _loco;
-        EntityId _target = EntityId.Invalid;
+        readonly SkillNodeId _skill;
+        readonly TimelineId _timeline;
         float _wanderTimer = 2f;
         float _fireTimer = 3f;
         float _wanderYaw;
+        bool _initialized;
 
-        public override bool WantsTick => true;
-
-        public BuffArenaShooterComp(BuffArenaData data) => _data = data ?? throw new ArgumentNullException(nameof(data));
-
-        protected override void OnAttach()
+        public WanderShooter(SkillNodeId skill, TimelineId timeline)
         {
-            _director = Self.GetComp<SkillDirectorComp>();
-            _loco = Self.GetComp<LocomotionComp>();
-            _wanderYaw = Self.GetComp<TransformComp>().YawDegrees;
+            _skill = skill;
+            _timeline = timeline;
         }
 
-        protected override void OnDetach()
+        public override BtStatus Tick(in BtTick ctx)
         {
-            _director = null;
-            _loco = null;
-            _target = EntityId.Invalid;
-        }
+            if (ctx.World == null || !ctx.Self.TryGetComp<LocomotionComp>(out var loco) ||
+                !ctx.Self.TryGetComp<SkillDirectorComp>(out var director))
+                return BtStatus.Failure;
+            if (ctx.Self.TryGetComp<TagComp>(out var tags) &&
+                (tags.Has(CommonTags.Dead) || tags.Has(CommonTags.Stunned) || tags.Has(CommonTags.Downed)))
+            {
+                loco.RequestMoveIntent(0f, 0f);
+                return BtStatus.Running;
+            }
 
-        public void SetTarget(EntityId target) => _target = target;
+            if (!_initialized && ctx.Self.TryGetComp<TransformComp>(out var initialTf))
+            {
+                _wanderYaw = initialTf.YawDegrees;
+                _initialized = true;
+            }
 
-        public override void Tick(float dt)
-        {
-            if (_director == null || _loco == null || Self.World == null) return;
-            if (Self.TryGetComp<TagComp>(out var tags) && tags.Has(CommonTags.Dead)) return;
-
-            _wanderTimer -= dt;
+            _wanderTimer -= ctx.Dt;
             if (_wanderTimer <= 0f)
             {
-                _wanderYaw += Range(-90f, 90f);
-                _wanderTimer = Range(1.6f, 3.2f);
+                // The yaw convention is mirrored relative to the old +X axis, so the
+                // signed wander offset flips with it and the same random draw keeps
+                // producing the same world heading.
+                _wanderYaw -= Range(ctx.World, -90f, 90f);
+                _wanderTimer = Range(ctx.World, 1.6f, 3.2f);
             }
 
             var move = LocomotionComp.ForwardFromYaw(_wanderYaw);
-            _loco.RequestMoveIntent(move.X, move.Z);
+            loco.RequestMoveIntent(move.X, move.Z);
 
-            if (_target.IsValid && Self.World.TryGetActor(_target, out var target) && target != null &&
+            if (CondHasTarget.IsTargetValid(ctx) && ctx.World.TryGetActor(ctx.Board.Target, out var target) && target != null &&
                 target.TryGetComp<TransformComp>(out var targetTf))
             {
-                var tf = Self.GetComp<TransformComp>();
-                _loco.RequestAimYaw(YawTo(tf.Position, targetTf.Position));
+                var tf = ctx.Self.GetComp<TransformComp>();
+                loco.RequestAimYaw(YawTo(tf.Position, targetTf.Position));
             }
 
-            _fireTimer -= dt;
-            if (_fireTimer <= 0f && !_director.IsPlaying)
+            _fireTimer -= ctx.Dt;
+            if (_fireTimer <= 0f && !director.IsPlaying)
             {
-                _director.Play(BuffArenaIds.SkillEnemy, BuffArenaIds.TimelineEnemy);
-                _fireTimer = Range(2f, 5f);
+                director.Play(_skill, _timeline);
+                _fireTimer = Range(ctx.World, 2f, 5f);
             }
+            return BtStatus.Running;
         }
 
-        float Range(float min, float max) => min + (max - min) * Self.World.Random.Next01();
+        public override BtNode Clone() => new WanderShooter(_skill, _timeline);
+
+        static float Range(CombatWorld world, float min, float max)
+            => min + (max - min) * world.Random.Next01();
 
         static float YawTo(SimVec3 from, SimVec3 to)
-        {
-            return (float)(Math.Atan2(to.Z - from.Z, to.X - from.X) * 180.0 / Math.PI);
-        }
+            => LocomotionComp.YawFromStick(new SimVec3(to.X - from.X, 0f, to.Z - from.Z));
     }
 
     public sealed class BarrelComp : Comp
     {
         EntityId _owner = EntityId.Invalid;
-        float _damageTimer = 1f;
+        readonly float _selfDamagePeriod;
+        float _damageTimer = 5f;
         bool _exploded;
         public override bool WantsTick => true;
+
+        public BarrelComp(float selfDamagePeriod = 5f)
+        {
+            _selfDamagePeriod = selfDamagePeriod > 0f ? selfDamagePeriod : 5f;
+            _damageTimer = _selfDamagePeriod;
+        }
 
         public void SetOwner(EntityId owner) => _owner = owner;
 
@@ -348,7 +395,7 @@ namespace Combat.Core
             if (Self.TryGetComp<TagComp>(out var tags) && tags.Has(CommonTags.Dead)) return;
             _damageTimer -= dt;
             if (_damageTimer > 0f) return;
-            _damageTimer += 1f;
+            _damageTimer += _selfDamagePeriod;
             Self.World.Deliver(new IEffect[]
             {
                 new DamageEffect { Flat = 1f, CanCrit = false, FireOnHurted = false, DirectDamage = true }
@@ -370,7 +417,7 @@ namespace Combat.Core
         protected override void OnDetach()
         {
             _owner = EntityId.Invalid;
-            _damageTimer = 1f;
+            _damageTimer = _selfDamagePeriod;
             _exploded = false;
         }
     }
@@ -495,6 +542,9 @@ namespace Combat.Core
 
     public sealed class SpawnBuffArenaBarrelEffect : IEffect
     {
+        public float ForwardOffset = .55f;
+        public float MaxHp = 5f;
+
         public void Apply(ref EffectContext ctx)
         {
             if (ctx.World == null || ctx.Source == null || !ctx.Source.TryGetComp<TransformComp>(out var sourceTf)) return;
@@ -502,12 +552,12 @@ namespace Combat.Core
             if (!ctx.World.TryGetActor(id, out var barrel) || barrel == null) return;
             var fwd = LocomotionComp.ForwardFromYaw(sourceTf.YawDegrees);
             barrel.GetComp<TransformComp>().Position = new SimVec3(
-                sourceTf.Position.X + fwd.X * .55f, sourceTf.Position.Y,
-                sourceTf.Position.Z + fwd.Z * .55f);
+                sourceTf.Position.X + fwd.X * ForwardOffset, sourceTf.Position.Y,
+                sourceTf.Position.Z + fwd.Z * ForwardOffset);
             barrel.GetComp<TransformComp>().YawDegrees = sourceTf.YawDegrees;
             var attr = barrel.GetComp<AttributeSet>();
-            attr.SetBase(AttrId.MaxHp, 5f);
-            attr.SetBase(AttrId.Hp, 5f);
+            attr.SetBase(AttrId.MaxHp, MaxHp);
+            attr.SetBase(AttrId.Hp, MaxHp);
             attr.SetBase(AttrId.Atk, 0f);
             attr.SetBase(AttrId.MoveSpeed, 0f);
             barrel.GetComp<BarrelComp>().SetOwner(ctx.Source.Id);
@@ -535,7 +585,7 @@ namespace Combat.Core
                     return Combatant("buff_enemy", 2, .25f, 0, false);
                 case "buff_barrel":
                     var barrel = Combatant("buff_barrel", 0, .25f, 0, false);
-                    barrel.AddComp(new BarrelComp());
+                    barrel.AddComp(new BarrelComp(_data.BarrelSelfDamagePeriod));
                     return barrel;
                 default:
                     return RuntimeActor(null, 0);
@@ -576,7 +626,9 @@ namespace Combat.Core
             }
             else if (blueprint == "buff_enemy")
             {
-                actor.AddComp(new BuffArenaShooterComp(_data));
+                actor.AddComp(new BehaviorTreeComp(
+                    new WanderShooter(BuffArenaIds.SkillEnemy, BuffArenaIds.TimelineEnemy),
+                    board => board.AcquireRadius = 20f));
             }
 
             actor.GetComp<AttributeSet>().InitFighterDefaults();
@@ -591,284 +643,56 @@ namespace Combat.Core
         public static BuffArenaData Build()
         {
             var data = new BuffArenaData();
-            RegisterCues(data);
-            RegisterProjectiles(data);
-            RegisterAoes(data);
-            RegisterTimelines(data);
-            RegisterSkills(data);
+            BuffArenaContentTables.Populate(data);
             return data;
         }
 
-        static void RegisterCues(BuffArenaData data)
+        public static BuffArenaData Build(BuffArenaSourceConfig source)
         {
-            RegisterCue(data, BuffArenaIds.CueMuzzleValue, "fx_muzzle", "MuzzleFlash");
-            RegisterCue(data, BuffArenaIds.CueHeartValue, "fx_heart", "Heart");
-            RegisterCue(data, BuffArenaIds.CueRollFireValue, "fx_roll_fire", "Fire_B");
-            RegisterCue(data, BuffArenaIds.CueHitValue, "fx_hit", "HitEffect_A");
-            RegisterCue(data, BuffArenaIds.CueShieldValue, "fx_shield", "HitEffect_B");
-            RegisterCue(data, BuffArenaIds.CueExplosionValue, "fx_explosion", "Explosion_A");
-            RegisterCue(data, BuffArenaIds.CueStarValue, "fx_star", "Star_B");
-            RegisterCue(data, BuffArenaIds.CueShockwaveValue, "fx_shockwave", "ShockWave");
+            if (source == null) throw new ArgumentNullException(nameof(source));
+            ValidateSource(source);
+            // Asset-driven path: the ScriptableObject database already carries every
+            // definition, so nothing is registered from code here.
+            var data = source.Content ?? Build();
+            data.PlayerMaxHp = source.PlayerMaxHp;
+            data.PlayerAmmoCapacity = source.PlayerAmmoCapacity;
+            data.MaxEnemies = source.MaxEnemies;
+            data.SpawnPeriod = source.SpawnPeriod;
+            data.EnemyCleanupDelay = source.EnemyCleanupDelay;
+            data.BarrelSelfDamagePeriod = source.BarrelSelfDamagePeriod;
+            return data;
         }
 
-        static void RegisterCue(BuffArenaData data, int id, string prefabKey, string name)
+        static void ValidateSource(BuffArenaSourceConfig source)
         {
-            data.Cues.Register(new CueDef { CueId = id, PrefabKey = prefabKey, SfxKey = name, LifeTime = .8f });
+            RequireSet("skills", source.SkillIds, "fire", "roll", "spaceMonkeyBall", "homingMissle",
+                "cloakBoomerang", "teleportBullet", "grenade", "explosiveBarrel", "reload");
+            RequireSet("projectiles", source.ProjectileIds, "normal0", "normal1", "cloakBoomerang",
+                "teleportBullet", "boomball");
+            RequireSet("aoes", source.AoeIds, "BulletShield", "SpaceMonkeyBall", "BlackHole",
+                "BoomExplosive", "StayingBoom");
+            if (source.PlayerMaxHp <= 0 || source.PlayerAmmoCapacity <= 0 || source.MaxEnemies <= 0 ||
+                source.SpawnPeriod <= 0f || source.EnemyCleanupDelay <= 0f || source.BarrelSelfDamagePeriod <= 0f)
+                throw new InvalidOperationException("Buff Arena source database contains invalid runtime settings.");
         }
 
-        static void RegisterProjectiles(BuffArenaData data)
+        static void RequireSet(string name, string[] actual, params string[] expected)
         {
-            data.Projectiles.Register(new ProjectileDefinition
-            {
-                SpecId = BuffArenaIds.ProjectileNormalValue,
-                Speed = 6f,
-                Lifetime = 10f,
-                HitRadius = .1f,
-                MaxHits = 1,
-                SameTargetDelay = .1f,
-                RemoveOnObstacle = true,
-                ViewBlueprintId = "buff_projectile_normal_view",
-                OnHit = DamageBag(1f, true),
-                OnExpire = CueBag(BuffArenaIds.CueHitValue)
-            });
-            data.Projectiles.Register(new ProjectileDefinition
-            {
-                SpecId = BuffArenaIds.ProjectileEnemyValue,
-                Speed = 6f,
-                Lifetime = 10f,
-                HitRadius = .1f,
-                MaxHits = 1,
-                SameTargetDelay = .1f,
-                RemoveOnObstacle = true,
-                ViewBlueprintId = "buff_projectile_enemy_view",
-                OnHit = DamageBag(1f, true),
-                OnExpire = CueBag(BuffArenaIds.CueHitValue)
-            });
-            data.Projectiles.Register(new ProjectileDefinition
-            {
-                SpecId = BuffArenaIds.ProjectileHomingValue,
-                Speed = 3f,
-                Lifetime = 100f,
-                HitRadius = .1f,
-                MaxHits = 1,
-                SameTargetDelay = .1f,
-                HomingRate = 36000f,
-                HomingAcquireRadius = 14f,
-                RemoveOnObstacle = true,
-                ViewBlueprintId = "buff_projectile_normal_view",
-                OnHit = DamageBag(1f, true),
-                OnExpire = CueBag(BuffArenaIds.CueHitValue)
-            });
-            data.Projectiles.Register(new ProjectileDefinition
-            {
-                SpecId = BuffArenaIds.ProjectileBoomerangValue,
-                Speed = 5f,
-                Lifetime = 10f,
-                HitRadius = .5f,
-                MaxHits = 99999,
-                SameTargetDelay = .5f,
-                Motion = ProjectileMotionKind.ReturnToOwner,
-                MotionParam = 1f,
-                HitOwnerOnReturn = true,
-                RemoveOnObstacle = false,
-                ViewBlueprintId = "buff_projectile_boomerang_view",
-                OnHit = DamageBag(1f, true),
-                OnOwnerHit = CueBag(BuffArenaIds.CueHeartValue, "Body")
-            });
-            data.Projectiles.Register(new ProjectileDefinition
-            {
-                SpecId = BuffArenaIds.ProjectileTeleportValue,
-                Speed = 6f,
-                Lifetime = 3f,
-                HitRadius = .1f,
-                MaxHits = 1,
-                Motion = ProjectileMotionKind.Accelerate,
-                MotionParam = 5f,
-                TrackOwner = true,
-                RemoveOnObstacle = true,
-                ViewBlueprintId = "buff_projectile_teleport_view",
-                OnHit = DamageBag(.6f, false),
-                OnExpire = CueBag(BuffArenaIds.CueStarValue)
-            });
-            data.Projectiles.Register(new ProjectileDefinition
-            {
-                SpecId = BuffArenaIds.ProjectileBombValue,
-                Speed = 3f,
-                Lifetime = 2f,
-                HitRadius = .1f,
-                MaxHits = 1,
-                RemoveOnObstacle = true,
-                ViewBlueprintId = "buff_projectile_bomb_view",
-                OnHit = new IEffect[] { new SpawnAoeEffect(BuffArenaIds.AoeExplosionValue, false, 1.5f, .02f) },
-                OnExpire = new IEffect[] { new SpawnAoeEffect(BuffArenaIds.AoeStayingBombValue, false, .1f, 3f) },
-                OnObstacle = new IEffect[] { new SpawnAoeEffect(BuffArenaIds.AoeExplosionValue, false, 1.5f, .02f) }
-            });
+            if (actual == null || actual.Length != expected.Length)
+                throw new InvalidOperationException("Buff Arena source database has invalid " + name + " entries.");
+            var values = new HashSet<string>(actual, StringComparer.OrdinalIgnoreCase);
+            for (int i = 0; i < expected.Length; i++)
+                if (!values.Contains(expected[i]))
+                    throw new InvalidOperationException("Buff Arena source database is missing " + name + " entry " + expected[i] + ".");
         }
 
-        static void RegisterAoes(BuffArenaData data)
+        static void RegisterContent(BuffArenaData data)
         {
-            data.Aoes.Register(new AoeDefinition
-            {
-                SpecId = BuffArenaIds.AoeShieldValue,
-                Radius = 1.5f,
-                Duration = 0f,
-                TrackProjectiles = true,
-                ProjectileAbsorbForce = 0f,
-                ViewBlueprintId = "buff_aoe_shield_view"
-            });
-            data.Aoes.Register(new AoeDefinition
-            {
-                SpecId = BuffArenaIds.AoeMonkeyValue,
-                Radius = .25f,
-                Duration = 100f,
-                Motion = AoeMotionKind.Forward,
-                MoveSpeed = .1f,
-                RemoveOnObstacle = true,
-                TrackOccupancy = true,
-                TrackProjectiles = true,
-                ProjectileAbsorbForce = .05f,
-                ProjectileRadiusScale = .05f,
-                ViewBlueprintId = "buff_aoe_monkey_view",
-                OnEnter = DamageBag(.2f, true)
-            });
-            data.Aoes.Register(new AoeDefinition
-            {
-                SpecId = BuffArenaIds.AoeBlackHoleValue,
-                Radius = 2f,
-                Duration = 1f,
-                PulseInterval = .02f,
-                TrackOccupancy = true,
-                ViewBlueprintId = "buff_aoe_blackhole_view",
-                OnStay = new IEffect[] { new PullToPointEffect() }
-            });
-            data.Aoes.Register(new AoeDefinition
-            {
-                SpecId = BuffArenaIds.AoeExplosionValue,
-                Radius = 1.5f,
-                Duration = .02f,
-                PulseOnSpawn = true,
-                OnPulse = new IEffect[]
-                {
-                    new DamageEffect { Coeff = .1f, CanCrit = true, CritMul = 1.8f,
-                        CritChance = .05f, FireOnHurted = false, DirectDamage = true },
-                    new HurtFeedbackEffect(),
-                    new PlayBuffArenaCueEffect(BuffArenaIds.CueHitValue, "Body", target: true)
-                },
-                OnExpire = CueBag(BuffArenaIds.CueExplosionValue)
-            });
-            data.Aoes.Register(new AoeDefinition
-            {
-                SpecId = BuffArenaIds.AoeStayingBombValue,
-                Radius = .1f,
-                Duration = 3f,
-                ViewBlueprintId = "buff_aoe_stayingbomb_view",
-                OnExpire = new IEffect[]
-                {
-                    new SpawnAoeEffect(BuffArenaIds.AoeExplosionValue, false, 1.5f, .02f)
-                }
-            });
-        }
-
-        static void RegisterTimelines(BuffArenaData data)
-        {
-            data.Timelines.Register(Timeline(BuffArenaIds.TimelineFireValue, .5f, "Fire", true, true,
-                Payload(.1f, new PlayBuffArenaCueEffect(BuffArenaIds.CueMuzzleValue, "Muzzle"),
-                    new SpawnProjectileEffect(BuffArenaIds.ProjectileNormalValue))));
-            data.Timelines.Register(Timeline(BuffArenaIds.TimelineReloadValue, 1.15f, "Reload", true, true,
-                Payload(1.1f, new RefillAmmoEffect(60))));
-            data.Timelines.Register(Timeline(BuffArenaIds.TimelineBoomerangValue, .5f, "Fire", true, true,
-                Payload(.1f, new PlayBuffArenaCueEffect(BuffArenaIds.CueHeartValue, "Head"),
-                    new SpawnProjectileEffect(BuffArenaIds.ProjectileBoomerangValue))));
-            data.Timelines.Register(Timeline(BuffArenaIds.TimelineTeleportValue, .5f, "Fire", true, true,
-                Payload(.1f, new PlayBuffArenaCueEffect(BuffArenaIds.CueMuzzleValue, "Muzzle"),
-                    new SpawnProjectileEffect(BuffArenaIds.ProjectileTeleportValue))));
-            data.Timelines.Register(Timeline(BuffArenaIds.TimelineHomingValue, .5f, "Fire", true, true,
-                Payload(.1f, new PlayBuffArenaCueEffect(BuffArenaIds.CueMuzzleValue, "Muzzle"),
-                    new SpawnProjectileEffect(BuffArenaIds.ProjectileHomingValue))));
-            data.Timelines.Register(Timeline(BuffArenaIds.TimelineGrenadeValue, .5f, "Fire", true, true,
-                Payload(.1f, new SpawnProjectileEffect(BuffArenaIds.ProjectileBombValue))));
-            data.Timelines.Register(Timeline(BuffArenaIds.TimelineBarrelValue, .5f, "Fire", true, true,
-                Payload(.1f, new SpawnBuffArenaBarrelEffect())));
-            data.Timelines.Register(Timeline(BuffArenaIds.TimelineMonkeyValue, .5f, "Fire", true, true,
-                Payload(.1f, new PlayBuffArenaCueEffect(BuffArenaIds.CueMuzzleValue, "Muzzle"),
-                    new SpawnAoeEffect(BuffArenaIds.AoeMonkeyValue, false, .25f, 100f, .5f))));
-            data.Timelines.Register(Timeline(BuffArenaIds.TimelineEnemyValue, .5f, "Fire", true, true,
-                Payload(.1f, new SpawnProjectileEffect(BuffArenaIds.ProjectileEnemyValue))));
-
-            var roll = Timeline(BuffArenaIds.TimelineRollValue, .9f, "Roll", false, false,
-                Payload(0f, new PlayBuffArenaCueEffect(BuffArenaIds.CueRollFireValue, "Body", "roll_fire", false, false, true)),
-                Payload(.8f, new PlayBuffArenaCueEffect(BuffArenaIds.CueRollFireValue, "Body", "roll_fire", false, false, false, true),
-                    new PlayBuffArenaCueEffect(BuffArenaIds.CueShockwaveValue, "Body")));
-            roll.Clips = new[]
-            {
-                new TimelineClip { Start = .1f, End = .8f, Kind = ClipKind.IFrame },
-                new TimelineClip { Start = .2f, End = .7f, Kind = ClipKind.Move, MoveX = .4f }
-            };
-            data.Timelines.Register(roll);
-        }
-
-        static void RegisterSkills(BuffArenaData data)
-        {
-            AddSkill(data, BuffArenaIds.Fire, BuffArenaIds.FireTimeline, BuffArenaIds.Fire1, 1, "Fire");
-            AddSkill(data, BuffArenaIds.Roll, BuffArenaIds.RollTimeline, BuffArenaIds.RollInput, 0, "Roll");
-            AddSkill(data, BuffArenaIds.Monkey, BuffArenaIds.MonkeyTimeline, BuffArenaIds.MonkeyInput, 3, "Fire");
-            AddSkill(data, BuffArenaIds.Homing, BuffArenaIds.HomingTimeline, BuffArenaIds.HomingInput, 2, "Fire");
-            AddSkill(data, BuffArenaIds.Boomerang, BuffArenaIds.BoomerangTimeline, BuffArenaIds.Fire2, 0, "Fire");
-            AddSkill(data, BuffArenaIds.Teleport, BuffArenaIds.TeleportTimeline, BuffArenaIds.Fire4, 0, "Fire");
-            AddSkill(data, BuffArenaIds.Grenade, BuffArenaIds.GrenadeTimeline, BuffArenaIds.Fire3, 0, "Fire");
-            AddSkill(data, BuffArenaIds.Barrel, BuffArenaIds.BarrelTimeline, BuffArenaIds.Fire5, 0, "Fire");
-            AddSkill(data, BuffArenaIds.Reload, BuffArenaIds.ReloadTimeline, new InputToken(""), 0, "Reload");
-            AddSkill(data, BuffArenaIds.SkillEnemy, BuffArenaIds.TimelineEnemy, new InputToken(""), 0, "Fire");
-        }
-
-        static void AddSkill(BuffArenaData data, SkillNodeId id, TimelineId timeline, InputToken input,
-            int ammoCost, string animation)
-        {
-            data.Skills.Add(new BuffArenaSkill
-            {
-                Id = id,
-                Timeline = timeline,
-                Input = input,
-                AmmoCost = ammoCost,
-                AnimatorState = animation
-            });
-        }
-
-        static TimelineSO Timeline(int id, float duration, string animation, bool allowMove, bool allowRotate,
-            params TimelinePayload[] payloads)
-        {
-            return new TimelineSO
-            {
-                Id = new TimelineId(id),
-                Duration = duration,
-                AnimatorState = animation,
-                AllowMove = allowMove,
-                AllowRotate = allowRotate,
-                Payloads = payloads ?? Array.Empty<TimelinePayload>(),
-                Clips = Array.Empty<TimelineClip>()
-            };
-        }
-
-        static TimelinePayload Payload(float time, params IEffect[] effects)
-        {
-            return new TimelinePayload { Time = time, Effects = effects ?? Array.Empty<IEffect>() };
-        }
-
-        static IEffect[] DamageBag(float coefficient, bool canCrit)
-        {
-            return new IEffect[]
-            {
-                new DamageEffect { Coeff = coefficient, CanCrit = canCrit, CritMul = 1.8f,
-                    CritChance = canCrit ? .05f : 0f, FireOnHurted = false, DirectDamage = true },
-                new HurtFeedbackEffect(),
-                new PlayBuffArenaCueEffect(BuffArenaIds.CueHitValue, "Body", target: true)
-            };
-        }
-
-        static IEffect[] CueBag(int cueId, string anchor = "")
-        {
-            return new IEffect[] { new PlayBuffArenaCueEffect(cueId, anchor, point: anchor.Length == 0) };
+            // The value table lives in BuffArenaContentTables so this file only owns
+            // the runtime plumbing. The generated ScriptableObject assets are the
+            // day-to-day tuning surface; this table seeds them and backs the pure C#
+            // regression suite.
+            BuffArenaContentTables.Populate(data);
         }
     }
-
 }

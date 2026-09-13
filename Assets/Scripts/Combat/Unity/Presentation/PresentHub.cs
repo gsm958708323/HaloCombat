@@ -25,11 +25,14 @@ namespace Combat.Presentation
         Action<EvImmune> _immune;
         Action<EvHeal> _heal;
         Action<EvHurt> _hurt;
+        Action<EvGameplayMessage> _message;
         Action<EvEntityCleanup> _cleanup;
         public int Count => _map.Count;
         public CueDirector Cues => _cues;
         public FloaterLayer Floaters => _floaters;
         public EntityId LocalId => _local;
+        public string LastGameplayMessage { get; private set; }
+        public float GameplayMessageTime { get; private set; }
 
         public void CopyActors(List<PresentActor> destination)
         {
@@ -44,6 +47,7 @@ namespace Combat.Presentation
         {
             _factory = f ?? throw new ArgumentNullException(nameof(f));
             _cues.SetAnchorResolver(ResolveAnchorPosition);
+            _floaters.SetAnchorResolver(ResolveAnchorPosition);
         }
 
         public void SetWorld(CombatWorld w)
@@ -74,6 +78,7 @@ namespace Combat.Presentation
             _immune = OnImmune;
             _heal = OnHeal;
             _hurt = OnHurt;
+            _message = OnGameplayMessage;
             _cleanup = OnCleanup;
             b.Subscribe(_spawn);
             b.Subscribe(_cue);
@@ -81,6 +86,7 @@ namespace Combat.Presentation
             b.Subscribe(_immune);
             b.Subscribe(_heal);
             b.Subscribe(_hurt);
+            b.Subscribe(_message);
             b.Subscribe(_cleanup);
         }
 
@@ -100,6 +106,8 @@ namespace Combat.Presentation
                 _bus.Unsubscribe(_heal);
             if (_hurt != null)
                 _bus.Unsubscribe(_hurt);
+            if (_message != null)
+                _bus.Unsubscribe(_message);
             if (_cleanup != null)
                 _bus.Unsubscribe(_cleanup);
             _bus = null;
@@ -109,6 +117,7 @@ namespace Combat.Presentation
             _immune = null;
             _heal = null;
             _hurt = null;
+            _message = null;
             _cleanup = null;
         }
 
@@ -155,6 +164,15 @@ namespace Combat.Presentation
         {
             _cues.Pump(dt);
             _floaters.Pump(dt);
+            if (GameplayMessageTime > 0f)
+            {
+                GameplayMessageTime -= dt;
+                if (GameplayMessageTime <= 0f)
+                {
+                    GameplayMessageTime = 0f;
+                    LastGameplayMessage = string.Empty;
+                }
+            }
         }
 
         public void OnCleanup(EvEntityCleanup e)
@@ -233,6 +251,13 @@ namespace Combat.Presentation
         }
 
         void OnHeal(EvHeal e) => _floaters.OnHeal(e);
+
+        void OnGameplayMessage(EvGameplayMessage e)
+        {
+            if (e.Target != _local) return;
+            LastGameplayMessage = e.Text;
+            GameplayMessageTime = 1.25f;
+        }
 
         void OnHurt(EvHurt e)
         {

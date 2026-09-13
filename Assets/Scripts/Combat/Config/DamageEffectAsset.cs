@@ -14,6 +14,10 @@ namespace Combat.Config
         public bool ScaleByBuffStacks;
         public int HitstopFrames;
         public float CritMul = 2f;
+        // -1 keeps the source actor's CritRate; >= 0 pins the roll for this effect.
+        public float CritChance = -1f;
+        public bool DirectDamage = true;
+        public bool FireOnHurted = true;
 
         protected override IEffect BakeNew() => new DamageEffect
         {
@@ -24,7 +28,10 @@ namespace Combat.Config
             UseSnapshotAtk = UseSnapshotAtk,
             ScaleByBuffStacks = ScaleByBuffStacks,
             HitstopFrames = HitstopFrames,
-            CritMul = CritMul
+            CritMul = CritMul,
+            CritChance = CritChance,
+            DirectDamage = DirectDamage,
+            FireOnHurted = FireOnHurted
         };
     }
 }

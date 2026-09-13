@@ -56,12 +56,22 @@ namespace Combat.Core
     public sealed class GridMovementConstraint : IMovementConstraint
     {
         readonly bool[,] _walkable;
+        readonly bool[,] _flyingWalkable;
         readonly float _cellSize;
         readonly List<SimVec3> _spawnPoints = new List<SimVec3>(64);
 
         public GridMovementConstraint(bool[,] walkable, float cellSize = 1f)
+            : this(walkable, walkable, cellSize)
+        {
+        }
+
+        public GridMovementConstraint(bool[,] walkable, bool[,] flyingWalkable, float cellSize = 1f)
         {
             _walkable = walkable ?? throw new ArgumentNullException(nameof(walkable));
+            _flyingWalkable = flyingWalkable ?? throw new ArgumentNullException(nameof(flyingWalkable));
+            if (_flyingWalkable.GetLength(0) != _walkable.GetLength(0) ||
+                _flyingWalkable.GetLength(1) != _walkable.GetLength(1))
+                throw new ArgumentException("Flying navigation dimensions must match ground navigation.", nameof(flyingWalkable));
             _cellSize = cellSize > 0f ? cellSize : 1f;
             BuildSpawnPoints();
         }
@@ -74,9 +84,14 @@ namespace Combat.Core
             return x >= 0 && x < Width && z >= 0 && z < Height && _walkable[x, z];
         }
 
+        public bool IsWalkable(int x, int z, bool flying)
+        {
+            if (x < 0 || x >= Width || z < 0 || z >= Height) return false;
+            return (flying ? _flyingWalkable : _walkable)[x, z];
+        }
+
         public bool CanPlace(in SimVec3 position, float radius, bool flying, bool ignoreBorder = false)
         {
-            _ = flying;
             float r = radius < 0f ? 0f : radius;
             if (!ignoreBorder &&
                 (position.X - r < -_cellSize * .5f ||
@@ -93,7 +108,7 @@ namespace Combat.Core
             {
                 for (int z = minZ; z <= maxZ; z++)
                 {
-                    if (IsWalkable(x, z)) continue;
+                    if (IsWalkable(x, z, flying)) continue;
                     float left = (x - .5f) * _cellSize;
                     float right = (x + .5f) * _cellSize;
                     float bottom = (z - .5f) * _cellSize;
@@ -169,7 +184,7 @@ namespace Combat.Core
                 int cell = first + direction * i;
                 int x = xAxis ? cell : Cell(fixedAxis);
                 int z = xAxis ? Cell(fixedAxis) : cell;
-                if (IsWalkable(x, z) && (ignoreBorder || InBounds(x, z))) continue;
+                if (IsWalkable(x, z, flying) && (ignoreBorder || InBounds(x, z))) continue;
 
                 float wall = (cell - direction * .5f) * _cellSize - direction * Math.Max(0f, radius);
                 return direction > 0 ? Math.Min(wall, desired) : Math.Max(wall, desired);

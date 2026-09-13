@@ -66,6 +66,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\Combat\Unity\Game\LogicTicker.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\Presentation\ProjectileVisualPresent.cs" />
     <Compile Include="Assets\Scripts\Combat\Unity\Presentation\ProceduralVfx.cs" />
     <Compile Include="Assets\Scripts\Combat\Unity\UnityVfxPool.cs" />
     <Compile Include="Assets\Scripts\Combat\Unity\BuffArenaRenderUtility.cs" />
@@ -633,6 +634,10 @@
     </Reference>
     <Reference Include="Mono.Cecil">
       <HintPath>Library\PackageCache\com.unity.nuget.mono-cecil\Mono.Cecil.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>Library\PackageCache\com.unity.nuget.newtonsoft-json\Runtime\Newtonsoft.Json.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.Android.Types">

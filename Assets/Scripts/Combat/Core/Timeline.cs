@@ -17,6 +17,8 @@ namespace Combat.Core
         public float Start;
         public float End;
         public ClipKind Kind;
+        // MoveX/MoveY/MoveZ are authored in the actor's local frame: +Z advances along
+        // the facing and +X is the actor's right (see TransformComp.YawDegrees).
         public float MoveX, MoveY, MoveZ;
         public float Steer;
         public float HitRadius;
@@ -45,6 +47,9 @@ namespace Combat.Core
         public float Duration = 0.55f;
         public bool AllowMove;
         public bool AllowRotate;
+        // Source SetCasterControlState(canUseSkill). Tracked apart from IsPlaying so a
+        // timeline can keep steering input alive while still locking new casts.
+        public bool AllowSkill = true;
         public bool ScaleWithActionSpeed;
         public string AnimatorState;
         public TimelineClip[] Clips = Array.Empty<TimelineClip>();
@@ -59,7 +64,7 @@ namespace Combat.Core
                 Clips = new[]
                 {
                     new TimelineClip { Start = 0.12f, End = 0.40f, Kind = ClipKind.CancelTag },
-                    new TimelineClip { Start = 0.08f, End = 0.28f, Kind = ClipKind.Move, MoveX = 0.6f, Steer = 0f },
+                    new TimelineClip { Start = 0.08f, End = 0.28f, Kind = ClipKind.Move, MoveZ = 0.6f, Steer = 0f },
                     new TimelineClip
                     {
                         Start = 0.18f, End = 0.30f, Kind = ClipKind.Hitbox,
@@ -91,7 +96,7 @@ namespace Combat.Core
                 Clips = new[]
                 {
                     new TimelineClip { Start = 0.00f, End = 0.20f, Kind = ClipKind.CancelTag },
-                    new TimelineClip { Start = 0.00f, End = 0.12f, Kind = ClipKind.Move, MoveX = 0.25f, Steer = 0f }
+                    new TimelineClip { Start = 0.00f, End = 0.12f, Kind = ClipKind.Move, MoveZ = 0.25f, Steer = 0f }
                 },
                 Payloads = new[]
                 {
@@ -116,7 +121,7 @@ namespace Combat.Core
                 Duration = 0.40f,
                 Clips = new[]
                 {
-                    new TimelineClip { Start = 0.00f, End = 0.28f, Kind = ClipKind.Move, MoveX = 1.2f, Steer = 0f },
+                    new TimelineClip { Start = 0.00f, End = 0.28f, Kind = ClipKind.Move, MoveZ = 1.2f, Steer = 0f },
                     new TimelineClip { Start = 0.04f, End = 0.22f, Kind = ClipKind.IFrame },
                     new TimelineClip { Start = 0.24f, End = 0.40f, Kind = ClipKind.CancelTag }
                 },
@@ -239,7 +244,7 @@ namespace Combat.Core
             double r = yawDeg * Math.PI / 180.0;
             float c = (float)Math.Cos(r);
             float s = (float)Math.Sin(r);
-            return new SimVec3(x * c - z * s, y, x * s + z * c);
+            return new SimVec3(x * c + z * s, y, -x * s + z * c);
         }
     }
 

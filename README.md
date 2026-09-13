@@ -1,4 +1,4 @@
-﻿# HaloCombat
+# HaloCombat
 
 纯 C# 动作战斗核，Unity 只负责表现与关卡。逻辑可脱离引擎，用 `dotnet run` 做回归；正式对局入口是 `Assets/Scenes/Arena.unity`。
 
@@ -17,6 +17,7 @@
 - 技能：Combo 边表 + `Play(skill, timeline)`
 - 输入：`InputBuffer` 单槽，窗口 `0.2s`
 - 位姿：`Request*` → `Locomotion.Integrate`
+- 朝向：yaw `0` 朝 `+Z`（Unity 前向），正角朝 `+X`，`ForwardFromYaw(yaw)` 等价于 `Quaternion.Euler(0, yaw, 0) * Vector3.forward`；局部偏移同坐标系（`+Z` 前、`+X` 右）。旧 2D 极角约定（`0 = +X`）作废，换算为 `90 - yaw`
 - 血量：只通过 `AttributeSet.SetBase(Hp)` 修改
 
 ## 分层（表现层直接写unity相关逻辑）
@@ -115,6 +116,19 @@ dotnet run --project Combat.csproj -- --category TagInput tag
 | `season2` | 第二期总装 |
 | `lesson` | 第三期课程验收 |
 | `regress` | 回归套件 |
+
+无人值守 / CI 跑法（要求全过程零弹窗）：先 `dotnet build`，再直接跑产物并重定向输出、加超时，只用退出码判定成败。
+未处理异常一旦逃出进程入口，CLR 会 terminate 进程（`0xE0434352`）并拉起 Windows JIT 调试器框和"应用程序错误"框，把自动化挂到有人点击为止。
+`Program.Main` 已把任何 demo 失败转成 `DEMO FAILED:` + 退出码 `1`，`NoPopup.Arm()` 再用 `SetErrorMode` 关掉原生 fault 的错误框；`SeasonTwoDemo.Regression` 逐个 demo 兜底，一个失败不再吞掉后面的用例。
+
+```powershell
+dotnet build Combat.csproj -v q --nologo
+$env:DOTNET_EnableDiagnostics = '0'
+$p = Start-Process .\bin\Debug\net8.0\Combat.exe -ArgumentList 'regress' -NoNewWindow -PassThru `
+     -RedirectStandardOutput out.log -RedirectStandardError err.log
+if (-not $p.WaitForExit(600000)) { $p.Kill(); throw '超时已 kill' }
+"exit=$($p.ExitCode)"; Get-Content err.log -Tail 20
+```
 
 默认 `season` 验收：G1 近战 + 刀光 Cue + 火球灼烧、G2 火地叠 3、受击停轴、Bake 清缓存、死亡清弹圈。
 

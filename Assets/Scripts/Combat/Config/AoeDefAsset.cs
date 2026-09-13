@@ -1,3 +1,4 @@
+using System;
 using Combat.Core;
 using UnityEngine;
 
@@ -14,10 +15,19 @@ namespace Combat.Config
         public bool TrackOccupancy;
         public int HostileMask;
         public int CueId;
+        public AoeMotionKind Motion;
+        public float MoveSpeed;
+        public bool RemoveOnObstacle;
+        public bool Flying = true;
+        public bool TrackProjectiles;
+        public float ProjectileAbsorbForce;
+        public float ProjectileRadiusScale = .05f;
+        public string ViewBlueprintId;
         public EffectAsset[] OnPulse;
         public EffectAsset[] OnEnter;
         public EffectAsset[] OnExit;
         public EffectAsset[] OnStay;
+        public EffectAsset[] OnExpire;
         AoeDefinition _baked;
 
         public AoeDefinition Bake()
@@ -33,10 +43,19 @@ namespace Combat.Config
                 TrackOccupancy = TrackOccupancy,
                 HostileMask = HostileMask,
                 CueId = CueId,
+                Motion = Motion,
+                MoveSpeed = MoveSpeed,
+                RemoveOnObstacle = RemoveOnObstacle,
+                Flying = Flying,
+                TrackProjectiles = TrackProjectiles,
+                ProjectileAbsorbForce = ProjectileAbsorbForce,
+                ProjectileRadiusScale = ProjectileRadiusScale,
+                ViewBlueprintId = ViewBlueprintId,
                 OnPulse = ProjectileDefAsset.BakeFx(OnPulse),
                 OnEnter = ProjectileDefAsset.BakeFx(OnEnter),
                 OnExit = ProjectileDefAsset.BakeFx(OnExit),
-                OnStay = ProjectileDefAsset.BakeFx(OnStay)
+                OnStay = ProjectileDefAsset.BakeFx(OnStay),
+                OnExpire = ProjectileDefAsset.BakeFx(OnExpire)
             };
             return _baked;
         }
@@ -48,6 +67,7 @@ namespace Combat.Config
             ProjectileDefAsset.ClearFx(OnEnter);
             ProjectileDefAsset.ClearFx(OnExit);
             ProjectileDefAsset.ClearFx(OnStay);
+            ProjectileDefAsset.ClearFx(OnExpire);
         }
 
         void OnValidate() => ClearCache();

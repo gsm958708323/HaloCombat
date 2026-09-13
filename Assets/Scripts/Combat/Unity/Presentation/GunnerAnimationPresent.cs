@@ -9,20 +9,26 @@ namespace Combat.Presentation
         public override bool WantsLateTick => true;
 
         string _state = "Stand";
+        string _appliedState;
+        bool _wasCasting;
         float _progress;
         bool _dead;
+        bool _casting;
         bool _hitstop;
         float _speed;
 
         public override void SyncLogic(CombatWorld world)
         {
             if (!Self.TryLogic(world, out var actor)) return;
+            _wasCasting = _casting;
             _dead = actor.TryGetComp<TagComp>(out var tags) && tags.Has(CommonTags.Dead);
             _hitstop = world.InHitstop;
             _speed = 0f;
 
             if (actor.TryGetComp<LocomotionComp>(out var loco))
                 _speed = LocomotionComp.StickMag(loco.MoveIntent);
+
+            _casting = false;
 
             if (_dead)
             {
@@ -38,6 +44,7 @@ namespace Combat.Presentation
 
             if (actor.TryGetComp<SkillDirectorComp>(out var director) && director.IsPlaying)
             {
+                _casting = true;
                 _state = string.IsNullOrEmpty(director.AnimatorState) ? "Fire" : director.AnimatorState;
                 if (_state == "Roll")
                     _state = RollState(actor);
@@ -61,12 +68,63 @@ namespace Combat.Presentation
             if (!Self.TryGet<ActorViewPresent>(out var view)) return;
             var animator = view.Animator;
             if (animator == null) return;
-            int hash = Animator.StringToHash(_state);
-            if (animator.HasState(0, hash))
+            int hash = ResolveState(animator, _state);
+            if (hash == 0) return;
+
+            animator.speed = _hitstop ? 0f : 1f;
+
+            // Play() every frame reset looping clips to frame 0, which is why walking
+            // never cycled. CrossFadeInFixedTime silently no-ops on this controller
+            // (state stayed on Idle), so Play is used but only on a real state change.
+            bool becameCasting = _casting && !_wasCasting;
+            if (_appliedState == _state)
             {
-                animator.speed = _hitstop ? 0f : 1f;
-                animator.Play(hash, 0, _progress);
+                // Casting timelines own the clip phase; looping states run free.
+                if (_casting && _progress > 0f)
+                    animator.Play(hash, 0, _progress);
+                return;
             }
+
+            _appliedState = _state;
+            animator.Play(hash, 0, becameCasting ? _progress : 0f);
+        }
+
+        static int ResolveState(Animator animator, string state)
+        {
+            switch (state)
+            {
+                case "Stand":
+                    return FirstState(animator, "Stand", "StandAndRun");
+                case "Fire":
+                    return FirstState(animator, "Fire", "0Fire", "1RapidFire");
+                case "Reload":
+                    return FirstState(animator, "Reload", "2Reload");
+                case "Hurt0":
+                case "Hurt1":
+                    return FirstState(animator, state, "Hurt");
+                case "MoveForward":
+                case "MoveBack":
+                case "MoveLeft":
+                case "MoveRight":
+                    return FirstState(animator, state, "StandAndRun");
+                case "RollForward":
+                case "RollBack":
+                case "RollLeft":
+                case "RollRight":
+                    return FirstState(animator, state, "Roll", "StepAndRoll");
+                default:
+                    return FirstState(animator, state);
+            }
+        }
+
+        static int FirstState(Animator animator, params string[] states)
+        {
+            for (int i = 0; i < states.Length; i++)
+            {
+                int hash = Animator.StringToHash(states[i]);
+                if (animator.HasState(0, hash)) return hash;
+            }
+            return 0;
         }
 
         string MoveState(Actor actor)
@@ -98,8 +156,11 @@ namespace Combat.Presentation
         protected override void OnDetach()
         {
             _state = "Stand";
+            _appliedState = null;
             _progress = 0f;
             _dead = false;
+            _casting = false;
+            _wasCasting = false;
             _hitstop = false;
         }
     }

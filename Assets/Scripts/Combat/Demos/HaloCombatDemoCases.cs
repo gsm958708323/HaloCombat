@@ -460,7 +460,7 @@ namespace Combat.Demos
             world.TryGetActor(world.SpawnActor(new ActorSpawnSpec("fighter")), out var player);
             world.TryGetActor(world.SpawnActor(new ActorSpawnSpec("stake")), out var stake);
             player.GetComp<TransformComp>().Position = new SimVec3(0, 0, 0);
-            player.GetComp<TransformComp>().YawDegrees = 0f;
+            player.GetComp<TransformComp>().YawDegrees = LocomotionComp.YawFromStick(new SimVec3(1f, 0f, 0f));
             stake.GetComp<TransformComp>().Position = new SimVec3(2.5f, 0, 0);
             var pAttr = player.GetComp<AttributeSet>();
             var sBuff = stake.GetComp<BuffComp>();
@@ -574,7 +574,7 @@ namespace Combat.Demos
                 ns == SkillNodeId.G1 && nt == TimelineId.TL_G1;
 
             ptf.Position = new SimVec3(0, 0, 0);
-            ptf.YawDegrees = 0f;
+            ptf.YawDegrees = LocomotionComp.YawFromStick(new SimVec3(1f, 0f, 0f));
             stf.Position = new SimVec3(0.55f, 0, 0);
             void Step(float dt)
             {

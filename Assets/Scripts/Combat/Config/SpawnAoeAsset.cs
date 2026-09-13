@@ -8,6 +8,10 @@ namespace Combat.Config
     {
         public int SpecId;
         public bool UseTargetPoint;
-        protected override IEffect BakeNew() => new SpawnAoeEffect(SpecId, UseTargetPoint);
+        public float RadiusOverride;
+        public float DurationOverride;
+        public float ForwardOffset;
+        protected override IEffect BakeNew()
+            => new SpawnAoeEffect(SpecId, UseTargetPoint, RadiusOverride, DurationOverride, ForwardOffset);
     }
 }

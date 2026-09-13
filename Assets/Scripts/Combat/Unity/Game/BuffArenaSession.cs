@@ -25,6 +25,10 @@ namespace Combat.Game
             public float CleanupAt;
         }
 
+        // Corpse cleanup runs on wall time so it keeps working after the player dies,
+        // which freezes the logic clock.
+        float _wallTime;
+
         public CombatWorld World { get; private set; }
         public PresentHub Hub { get; private set; }
         public EntityId LocalPlayerId { get; private set; }
@@ -96,6 +100,13 @@ namespace Combat.Game
             Hub.PumpUnscaled(dt < 0f ? 0f : dt);
         }
 
+        public void PumpUnscaled(float dt)
+        {
+            if (_disposed || World == null) return;
+            _wallTime += dt < 0f ? 0f : dt;
+            ProcessDeadEnemies();
+        }
+
         void TickLogic(float step)
         {
             if (_playerDead) return;
@@ -103,7 +114,7 @@ namespace Combat.Game
             ProcessDeadEnemies();
 
             _spawnTimer += step;
-            if (_firstSpawn || _spawnTimer >= 10f)
+            if (_firstSpawn || _spawnTimer >= _data.SpawnPeriod)
             {
                 _firstSpawn = false;
                 _spawnTimer = 0f;
@@ -131,7 +142,7 @@ namespace Combat.Game
         void SpawnToLimit()
         {
             CountEnemies();
-            while (!_playerDead && EnemyCount < 10)
+            while (!_playerDead && EnemyCount < _data.MaxEnemies)
             {
                 if (!SpawnEnemy()) break;
                 EnemyCount++;
@@ -147,10 +158,12 @@ namespace Combat.Game
             if (!World.TryGetActor(id, out var enemy) || enemy == null)
                 return false;
             enemy.GetComp<TransformComp>().Position = position;
-            enemy.GetComp<TransformComp>().YawDegrees = World.Random.Next01() * 360f;
+            // Same world heading as before the yaw convention flip (90 - oldYaw) so a
+            // given SeededRandom draw keeps producing the same spawn facing.
+            enemy.GetComp<TransformComp>().YawDegrees = 90f - World.Random.Next01() * 360f;
             ConfigureEnemy(enemy, index);
-            if (enemy.TryGetComp<BuffArenaShooterComp>(out var ai))
-                ai.SetTarget(LocalPlayerId);
+            if (enemy.TryGetComp<BehaviorTreeComp>(out var ai))
+                ai.Board.Target = LocalPlayerId;
             World.PublishSpawn(id, "buff_enemy", "buff_enemy_view");
             return true;
         }
@@ -158,13 +171,13 @@ namespace Combat.Game
         void ConfigurePlayer(Actor player)
         {
             var attr = player.GetComp<AttributeSet>();
-            attr.SetBase(AttrId.MaxHp, 500f);
-            attr.SetBase(AttrId.Hp, 500f);
+            attr.SetBase(AttrId.MaxHp, _data.PlayerMaxHp);
+            attr.SetBase(AttrId.Hp, _data.PlayerMaxHp);
             attr.SetBase(AttrId.Atk, 50f + (int)(World.Random.Next01() * 20f));
             attr.SetBase(AttrId.MoveSpeed, 3f);
             attr.SetBase(AttrId.ActionSpeed, 1f);
             attr.SetBase(AttrId.CritRate, .05f);
-            player.GetComp<AmmoComp>().Set(60, 60);
+            player.GetComp<AmmoComp>().Set(_data.PlayerAmmoCapacity, _data.PlayerAmmoCapacity);
         }
 
         void ConfigureEnemy(Actor enemy, int index)
@@ -184,7 +197,7 @@ namespace Combat.Game
             for (int i = _deadEnemies.Count - 1; i >= 0; i--)
             {
                 var dead = _deadEnemies[i];
-                if (World.Time.Time < dead.CleanupAt) continue;
+                if (_wallTime < dead.CleanupAt) continue;
                 World.RequestDespawn(dead.Id);
                 _deadEnemies.RemoveAt(i);
             }
@@ -206,6 +219,10 @@ namespace Combat.Game
 
         void OnDead(EvEntityDead e)
         {
+            // Every corpse (player included) is removed after the cleanup delay; the
+            // source only spares the main actor, but leaving the body forever reads as
+            // "death did nothing".
+            _deadEnemies.Add(new DeadEnemy { Id = e.Id, CleanupAt = _wallTime + _data.EnemyCleanupDelay });
             if (e.Id == LocalPlayerId)
             {
                 _playerDead = true;
@@ -214,7 +231,6 @@ namespace Combat.Game
             if (!World.TryGetActor(e.Id, out var actor) || actor == null ||
                 !actor.TryGetComp<TeamComp>(out var team) || team.TeamId != 2)
                 return;
-            _deadEnemies.Add(new DeadEnemy { Id = e.Id, CleanupAt = World.Time.Time + 5f });
         }
 
         public void Dispose()

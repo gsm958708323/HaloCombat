@@ -77,7 +77,7 @@ namespace Combat.Demos
             var pAttr = player.GetComp<AttributeSet>();
 
             ptf.Position = new SimVec3(0f, 0f, 0f);
-            ptf.YawDegrees = 0f;
+            ptf.YawDegrees = LocomotionComp.YawFromStick(new SimVec3(1f, 0f, 0f));
 
             var gtf = guard.GetComp<TransformComp>();
             gtf.Position = new SimVec3(2.2f, 0f, 0f);
@@ -365,12 +365,29 @@ namespace Combat.Demos
                 ("spawn", SpawnEventDemo.Run),
             };
 
+            var failures = new System.Collections.Generic.List<string>();
             for (int i = 0; i < steps.Length; i++)
             {
                 Console.WriteLine($"======== REGRESS {steps[i].name} ========");
                 DemoTables.ResetG1MeleeDefaults();
-                steps[i].run();
+                try
+                {
+                    steps[i].run();
+                }
+                catch (Exception error)
+                {
+                    // Keep running the remaining demos so one failure cannot hide the
+                    // state of the rest. The aggregate result is reported through the
+                    // log and the exit code, never as an unhandled crash.
+                    failures.Add(steps[i].name + ": " + error.Message);
+                    Console.WriteLine($"======== REGRESS {steps[i].name} FAILED: {error.Message} ========");
+                    Console.WriteLine(error.StackTrace);
+                }
             }
+
+            if (failures.Count > 0)
+                throw new Exception("REGRESSION FAILED (" + failures.Count + "/" + steps.Length + "): " +
+                                    string.Join(" | ", failures));
 
             Console.WriteLine("======== ALL S1+S2 REGRESSION PASSED ========");
         }

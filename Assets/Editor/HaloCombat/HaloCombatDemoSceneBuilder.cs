@@ -72,6 +72,7 @@ namespace Combat.Unity.Editor
         [MenuItem("Tools/HaloCombat/Verify Demo Scenes")]
         public static void VerifyAll()
         {
+            Combat.Core.CombatValidator.VerifyYawConvention();
             for (int i = 0; i < Specs.Length; i++)
             {
                 var spec = Specs[i];

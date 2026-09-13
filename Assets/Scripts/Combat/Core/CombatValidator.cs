@@ -13,9 +13,61 @@ namespace Combat.Core
 
     public static class CombatValidator
     {
+        const float YawEpsilon = 1e-3f;
+
+        /// <summary>
+        /// Frozen geometry contract (see TransformComp.YawDegrees): yaw 0 faces +Z like
+        /// Unity's forward, a positive angle turns towards +X, and local offsets use
+        /// Unity's frame (+Z forward, +X right) so the view layer needs no correction.
+        /// Throws when the convention is broken.
+        /// </summary>
+        public static void VerifyYawConvention()
+        {
+            var forward = LocomotionComp.ForwardFromYaw(0f);
+            if (Math.Abs(forward.X) > YawEpsilon || Math.Abs(forward.Z - 1f) > YawEpsilon)
+                throw new InvalidOperationException(
+                    "Yaw convention: ForwardFromYaw(0) must be +Z, got X=" + forward.X + " Z=" + forward.Z);
+            var right = LocomotionComp.ForwardFromYaw(90f);
+            if (Math.Abs(right.X - 1f) > YawEpsilon || Math.Abs(right.Z) > YawEpsilon)
+                throw new InvalidOperationException(
+                    "Yaw convention: ForwardFromYaw(90) must be +X, got X=" + right.X + " Z=" + right.Z);
+
+            var probes = new[] { -135f, -90f, -45f, 0f, 45f, 90f, 135f, 180f, 225f, 270f };
+            for (int i = 0; i < probes.Length; i++)
+            {
+                float yaw = probes[i];
+                float roundTrip = LocomotionComp.YawFromStick(LocomotionComp.ForwardFromYaw(yaw));
+                if (Math.Abs(NormalizeDelta(roundTrip - yaw)) > YawEpsilon)
+                    throw new InvalidOperationException(
+                        "Yaw convention: YawFromStick(ForwardFromYaw(" + yaw + ")) == " + roundTrip);
+
+                var origin = new SimVec3(2f, 1f, -3f);
+                var aheadDir = LocomotionComp.ForwardFromYaw(yaw);
+                var ahead = CombatGeom.WorldPoint(origin, yaw, new SimVec3(0f, 0f, 1.5f));
+                if (!Near(ahead, new SimVec3(origin.X + aheadDir.X * 1.5f, origin.Y, origin.Z + aheadDir.Z * 1.5f)))
+                    throw new InvalidOperationException(
+                        "Yaw convention: local +Z must be ForwardFromYaw(" + yaw + "), got " + ahead.X + "," + ahead.Z);
+
+                var sideDir = LocomotionComp.ForwardFromYaw(yaw + 90f);
+                var side = CombatGeom.WorldPoint(origin, yaw, new SimVec3(1.5f, 0f, 0f));
+                if (!Near(side, new SimVec3(origin.X + sideDir.X * 1.5f, origin.Y, origin.Z + sideDir.Z * 1.5f)))
+                    throw new InvalidOperationException(
+                        "Yaw convention: local +X must be the actor's right at yaw " + yaw + ", got " + side.X + "," + side.Z);
+            }
+        }
+
         public static ValidateReport Validate(BakedCombatData data)
         {
             var r = new ValidateReport();
+            try
+            {
+                VerifyYawConvention();
+            }
+            catch (InvalidOperationException e)
+            {
+                r.Errors.AppendLine(e.Message);
+            }
+
             if (data == null)
             {
                 r.Errors.AppendLine("data null");
@@ -59,6 +111,17 @@ namespace Combat.Core
             if (data.Motor.JumpSpeed <= 0f)
                 r.Errors.AppendLine("JumpSpeed");
             return r;
+        }
+
+        static bool Near(in SimVec3 a, in SimVec3 b)
+            => Math.Abs(a.X - b.X) <= YawEpsilon && Math.Abs(a.Y - b.Y) <= YawEpsilon &&
+               Math.Abs(a.Z - b.Z) <= YawEpsilon;
+
+        static float NormalizeDelta(float deg)
+        {
+            while (deg > 180f) deg -= 360f;
+            while (deg < -180f) deg += 360f;
+            return deg;
         }
 
         static void CheckTl(TimelineSO so, ValidateReport r)

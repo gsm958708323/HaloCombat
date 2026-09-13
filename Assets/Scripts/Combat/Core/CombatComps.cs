@@ -31,6 +31,18 @@ namespace Combat.Core
         public override bool WantsTick => true;
         public bool InIFrame => _iframe > 0f;
 
+        // Source BulletState.CanHit skips any target with immuneTime > 0, so an
+        // invulnerable body is passed through without consuming the projectile.
+        public bool IsInvulnerable
+        {
+            get
+            {
+                if (_iframe > 0f) return true;
+                var tags = _tags;
+                return tags != null && tags.Has(CommonTags.Invincible);
+            }
+        }
+
         protected override void OnAttach() => _tags = Self.GetComp<TagComp>();
         protected override void OnDetach() { _iframe = 0f; _tags = null; }
 
@@ -266,6 +278,7 @@ namespace Combat.Core
         public bool IsPlaying => _player.IsPlaying;
         public bool AllowsMove => _player.IsPlaying && _player.Current != null && _player.Current.AllowMove;
         public bool AllowsRotate => _player.IsPlaying && _player.Current != null && _player.Current.AllowRotate;
+        public bool AllowsSkill => !_player.IsPlaying || _player.Current == null || _player.Current.AllowSkill;
         public string AnimatorState => _player.Current != null ? _player.Current.AnimatorState : string.Empty;
         public override bool WantsTick => true;
 

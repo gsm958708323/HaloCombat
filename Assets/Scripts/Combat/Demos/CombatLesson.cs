@@ -65,7 +65,7 @@ namespace Combat.Demos
             var player = Get(Player);
             if (player == null || !player.TryGetComp<TransformComp>(out var playerTf)) return;
             playerTf.Position = new SimVec3(-2f, 0f, 0f);
-            playerTf.YawDegrees = 0f;
+            playerTf.YawDegrees = LocomotionComp.YawFromStick(new SimVec3(1f, 0f, 0f));
             if (!Target.IsValid || !World.TryGetActor(Target, out var target) || target == null ||
                 !target.TryGetComp<TransformComp>(out var targetTf)) return;
             targetTf.Position = Kind == CombatLessonKind.Melee

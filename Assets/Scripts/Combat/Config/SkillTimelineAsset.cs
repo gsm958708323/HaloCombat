@@ -9,6 +9,12 @@ namespace Combat.Config
     {
         public int TimelineIdValue;
         public float Duration = 0.55f;
+        public string AnimatorState;
+        public bool AllowMove;
+        public bool AllowRotate;
+        // Source SetCasterControlState(canUseSkill); false blocks new casts mid-timeline.
+        public bool AllowSkill = true;
+        public bool ScaleWithActionSpeed;
         public TimelineClipAsset[] Clips;
         public TimelinePayloadAsset[] Payloads;
         TimelineSO _baked;
@@ -52,6 +58,11 @@ namespace Combat.Config
             {
                 Id = new TimelineId(TimelineIdValue),
                 Duration = Duration,
+                AnimatorState = AnimatorState,
+                AllowMove = AllowMove,
+                AllowRotate = AllowRotate,
+                AllowSkill = AllowSkill,
+                ScaleWithActionSpeed = ScaleWithActionSpeed,
                 Clips = clips,
                 Payloads = payloads
             };

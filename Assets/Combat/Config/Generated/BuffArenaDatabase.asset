@@ -1,0 +1,80 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1f3c5a7d9b2468c8a0e4d2f6b1c3a5d, type: 3}
+  m_Name: BuffArenaDatabase
+  m_EditorClassIdentifier: 
+  SkillIds:
+  - fire
+  - roll
+  - spaceMonkeyBall
+  - homingMissle
+  - cloakBoomerang
+  - teleportBullet
+  - grenade
+  - explosiveBarrel
+  - reload
+  ProjectileIds:
+  - normal0
+  - normal1
+  - cloakBoomerang
+  - teleportBullet
+  - boomball
+  AoeIds:
+  - BulletShield
+  - SpaceMonkeyBall
+  - BlackHole
+  - BoomExplosive
+  - StayingBoom
+  PlayerMaxHp: 500
+  PlayerAmmoCapacity: 60
+  MaxEnemies: 10
+  SpawnPeriod: 10
+  EnemyCleanupDelay: 5
+  BarrelSelfDamagePeriod: 5
+  Projectiles:
+  - {fileID: 11400000, guid: 304936e0d5691574a8ff9ebb70d92e52, type: 2}
+  - {fileID: 11400000, guid: 9ac812fa903d725418bd4cb52dab7d1a, type: 2}
+  - {fileID: 11400000, guid: b8f43c22bc9c1d64d96c2c1f92fbfb53, type: 2}
+  - {fileID: 11400000, guid: f288e2179da85e546b686fa99aae11f0, type: 2}
+  - {fileID: 11400000, guid: 1c80883fddf54fd418b2674757d10563, type: 2}
+  - {fileID: 11400000, guid: e0d0dccff9eb42548a8128cb7bbd1eaa, type: 2}
+  Aoes:
+  - {fileID: 11400000, guid: 5f804e2aec4288a4e8d279d67979ebfb, type: 2}
+  - {fileID: 11400000, guid: c926c81c4ef6eb6429415cb41063e8ab, type: 2}
+  - {fileID: 11400000, guid: fdd95ea71ea1b324b92e6acab536c995, type: 2}
+  - {fileID: 11400000, guid: 076e21c1524e439488dfa24ee56113f5, type: 2}
+  - {fileID: 11400000, guid: 8680d5ebe677a1b48944d1d406d01320, type: 2}
+  Timelines:
+  - {fileID: 11400000, guid: 79b83eff601d8a44f8f180497fa22671, type: 2}
+  - {fileID: 11400000, guid: f4a05ded3078a0f419701d5c132ddc93, type: 2}
+  - {fileID: 11400000, guid: fe72aab37b3da974dbd9e4b434926295, type: 2}
+  - {fileID: 11400000, guid: 44965eb0356c7064dbfd436e0d5a3627, type: 2}
+  - {fileID: 11400000, guid: bde46b534d4f7ce4aa9908cacd8ef4b1, type: 2}
+  - {fileID: 11400000, guid: a30bd3c1d1a1ce6409bb2ff69c470058, type: 2}
+  - {fileID: 11400000, guid: 5ee3f5e25a641ea45a8f8ed8d514fdcf, type: 2}
+  - {fileID: 11400000, guid: b86019a3cb98f2f4b834c5136325dd5a, type: 2}
+  - {fileID: 11400000, guid: a75f58821979bba44b318b386307b11d, type: 2}
+  - {fileID: 11400000, guid: 79980486285031046b46446ba643810f, type: 2}
+  Skills:
+  - {fileID: 11400000, guid: 7c0ceeca49ab01c43a9ccb2e2ca7db5d, type: 2}
+  - {fileID: 11400000, guid: 11fa4edaaa4258d4b849a0cba66abd7b, type: 2}
+  - {fileID: 11400000, guid: 89315847c2f03c14a953d7a7ff68da9e, type: 2}
+  - {fileID: 11400000, guid: 7c017cac09a277d4480f0a78b41ac58a, type: 2}
+  - {fileID: 11400000, guid: d258fc5bbbcd1934fbcab3b66f857149, type: 2}
+  - {fileID: 11400000, guid: e304b429343b28a4fbace49e57dcbb3b, type: 2}
+  - {fileID: 11400000, guid: 6a84aaa6df06b0b4d95703bf717a5e15, type: 2}
+  - {fileID: 11400000, guid: f4f3aac8069ecdb4da11b24274ecf822, type: 2}
+  - {fileID: 11400000, guid: 1fe56a0b7eeb6954687c6fbfd7409a98, type: 2}
+  - {fileID: 11400000, guid: 498eb0bcaf5a5a74b8094b52b56221d8, type: 2}
+  - {fileID: 11400000, guid: 59a45c71414aa2f48a504be1d37e3342, type: 2}
+  Cues: {fileID: 0}
+  UseGeneratedContent: 1

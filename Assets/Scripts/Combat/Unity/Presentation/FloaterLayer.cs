@@ -1,3 +1,4 @@
+using System;
 using Combat.Core;
 
 namespace Combat.Presentation
@@ -55,8 +56,12 @@ namespace Combat.Presentation
     {
         CombatWorld _world;
         IFloaterPool _pool = new NullFloaterPool();
+        Func<EntityId, string, SimVec3?> _anchorResolver;
 
         public void SetWorld(CombatWorld w) => _world = w;
+
+        public void SetAnchorResolver(Func<EntityId, string, SimVec3?> resolver)
+            => _anchorResolver = resolver;
 
         public void SetPool(IFloaterPool p) => _pool = p ?? new NullFloaterPool();
 
@@ -97,9 +102,13 @@ namespace Combat.Presentation
 
         bool TryHead(EntityId id, out SimVec3 p)
         {
-            if (!TryBody(id, out p))
+            // The anchor policy lives in Core.FloaterAnchor so it stays unit-testable.
+            if (!TryBody(id, out var body))
+            {
+                p = default(SimVec3);
                 return false;
-            p.Y += 1.6f;
+            }
+            p = FloaterAnchor.Resolve(body, _anchorResolver, id);
             return true;
         }
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Combat.Config;
 using Combat.Core;
 using Combat.Game;
 using Combat.Presentation;
@@ -13,6 +14,7 @@ namespace Combat.Unity.Game
     {
         public ViewPrefabTable Views;
         public InputActionAsset Actions;
+        public BuffArenaDatabaseAsset Database;
         public BuffArenaMapVisuals MapVisuals;
         public CameraRig Rig;
         public Transform PresentRoot;
@@ -39,7 +41,7 @@ namespace Combat.Unity.Game
         {
             ValidateReferences();
             EnsureRoots();
-            _data = BuffArenaContent.Build();
+            _data = BuffArenaContent.Build(Database.Bake());
             var navigation = MapVisuals.Build();
             var hub = new PresentHub(new UnityPresentFactory(Views, null, PresentRoot, VfxRoot));
             hub.SetWorld(null);
@@ -64,6 +66,7 @@ namespace Combat.Unity.Game
 
         void LateUpdate()
         {
+            _session?.PumpUnscaled(Time.deltaTime);
             _session?.PumpPresent(Time.deltaTime);
             Hud?.Refresh(_session != null ? _session.Hub : null, Time.deltaTime);
             Rig?.Apply(_session != null ? _session.Hub : null);
@@ -80,6 +83,7 @@ namespace Combat.Unity.Game
             var missing = new List<string>();
             if (Views == null) missing.Add(nameof(Views));
             if (Actions == null) missing.Add(nameof(Actions));
+            if (Database == null) missing.Add(nameof(Database));
             if (MapVisuals == null) missing.Add(nameof(MapVisuals));
             if (missing.Count > 0)
                 throw new InvalidOperationException("Buff Arena scene is missing: " + string.Join(", ", missing));

@@ -36,6 +36,11 @@ namespace Combat.Core
         public float MotionParam = 5f;
         public float SameTargetDelay;
         public bool RemoveOnObstacle;
+        public bool Flying = true;
+        // Ages (seconds since launch) at which the body falls back to the ground
+        // layer for one frame. Source BoomBallRolling flips MoveType to ground while
+        // the bouncing grenade is touching down, so it explodes on water then.
+        public float[] GroundPhaseAt = Array.Empty<float>();
         public bool TrackOwner;
         public bool HitOwnerOnReturn;
         public string ViewBlueprintId;
@@ -58,6 +63,7 @@ namespace Combat.Core
         public AoeMotionKind Motion;
         public float MoveSpeed;
         public bool RemoveOnObstacle;
+        public bool Flying = true;
         public bool TrackProjectiles;
         public float ProjectileAbsorbForce;
         public float ProjectileRadiusScale = .05f;
@@ -188,6 +194,7 @@ namespace Combat.Core
         public float SnapshotAtk { get; private set; }
         public AoeDefinition Def { get; private set; }
         public float Radius { get; private set; }
+        public float BaseRadius { get; private set; }
         public float Duration { get; private set; }
         public float Age { get; set; }
         public float PulseAcc { get; set; }
@@ -207,6 +214,14 @@ namespace Combat.Core
                 CurrentVelocity.Y + velocity.Y * force,
                 CurrentVelocity.Z + velocity.Z * force);
             SetVisualScale(1f + AbsorbedProjectileCount * radiusScale);
+            // Source SpaceMonkeyBallHit grows the *collision* radius with every
+            // absorbed bullet (aoeState.radius = 0.25f * scaleTo), not just the view.
+            SetRadius(BaseRadius * VisualScale);
+        }
+
+        public void SetRadius(float radius)
+        {
+            if (radius > 0f) Radius = radius;
         }
 
         public void Setup(AoeDefinition def, EntityId owner, float snapshotAtk, int bornFrame,
@@ -219,6 +234,7 @@ namespace Combat.Core
             PulseAcc = 0f;
             BornFrame = bornFrame;
             Radius = radiusOverride > 0f ? radiusOverride : (def != null ? def.Radius : 0f);
+            BaseRadius = Radius;
             Duration = durationOverride > 0f ? durationOverride : (def != null ? def.Duration : 0f);
             AbsorbedProjectileCount = 0;
             VisualScale = 1f;
@@ -231,6 +247,7 @@ namespace Combat.Core
             _inside?.Clear();
             Def = null;
             Radius = 0f;
+            BaseRadius = 0f;
             Duration = 0f;
             AbsorbedProjectileCount = 0;
             VisualScale = 1f;
@@ -329,7 +346,8 @@ namespace Combat.Core
                     tf.Position.Y + velocity.Y * dt,
                     tf.Position.Z + velocity.Z * dt);
                 bool blocked;
-                next = _world.Movement.Resolve(tf.Position, next, def.HitRadius, false, false, out blocked);
+                bool flyNow = def.Flying && !InGroundPhase(def, body.Age);
+                next = _world.Movement.Resolve(tf.Position, next, def.HitRadius, flyNow, false, out blocked);
                 if (blocked)
                 {
                     if (def.RemoveOnObstacle)
@@ -374,6 +392,11 @@ namespace Combat.Core
                 for (int k = 0; k < n; k++)
                 {
                     var victim = _buffer[k];
+                    // Pass through instead of consuming a hit: matches the source
+                    // BulletState.CanHit early-out for immuneTime > 0.
+                    if (victim != null && victim.TryGetComp<HealthComp>(out var victimHealth) &&
+                        victimHealth.IsInvulnerable)
+                        continue;
                     if (victim == null || !body.TryRecord(victim.Id, def.SameTargetDelay)) continue;
                     float snap = def.SnapshotAtk ? body.SnapshotAtk : (owner != null && owner.TryGetComp<AttributeSet>(out var at) ? at.GetFinal(AttrId.Atk) : body.SnapshotAtk);
                     var vpos = victim.TryGetComp<TransformComp>(out var vtf) ? vtf.Position : tf.Position;
@@ -399,16 +422,28 @@ namespace Combat.Core
                 float pivot = def.MotionParam > 0f ? def.MotionParam : 5f;
                 scale = 2f * t / (t + pivot);
             }
-            else if (def.Motion == ProjectileMotionKind.ReturnToOwner && body.Age >= def.MotionParam && owner != null &&
-                     owner.TryGetComp<TransformComp>(out var ownerTf))
+            else if (def.Motion == ProjectileMotionKind.ReturnToOwner)
             {
-                float t = Math.Min(0.5f, Math.Max(0f, (body.Age - def.MotionParam) / Math.Max(def.MotionParam, .0001f) * (float)Math.PI));
-                float magnitude = (float)Math.Sin(t) + .1f;
-                float dx = ownerTf.Position.X - tf.Position.X;
-                float dz = ownerTf.Position.Z - tf.Position.Z;
-                float len = (float)Math.Sqrt(dx * dx + dz * dz);
-                if (len > .0001f)
-                    return new SimVec3(dx / len * def.Speed * magnitude, 0f, dz / len * def.Speed * magnitude);
+                // Mirrors the source CloakBoomerangTween: the outbound leg is
+                // modulated by sin(t / backTime * PI) + 0.1, and once backTime has
+                // elapsed the body turns back toward the thrower with the same
+                // sine curve capped at half a period.
+                float backTime = def.MotionParam > 0f ? def.MotionParam : 1f;
+                if (body.Age < backTime)
+                {
+                    float outRad = body.Age / backTime * (float)Math.PI;
+                    scale = (float)Math.Sin(outRad) + .1f;
+                }
+                else if (owner != null && owner.TryGetComp<TransformComp>(out var ownerTf))
+                {
+                    float backRad = Math.Min((body.Age - backTime) / backTime * (float)Math.PI, .5f);
+                    float magnitude = (float)Math.Sin(backRad) + .1f;
+                    float dx = ownerTf.Position.X - tf.Position.X;
+                    float dz = ownerTf.Position.Z - tf.Position.Z;
+                    float len = (float)Math.Sqrt(dx * dx + dz * dz);
+                    if (len > .0001f)
+                        return new SimVec3(dx / len * def.Speed * magnitude, 0f, dz / len * def.Speed * magnitude);
+                }
             }
 
             var fwd = LocomotionComp.ForwardFromYaw(tf.YawDegrees);
@@ -471,6 +506,19 @@ namespace Combat.Core
             return deg;
         }
 
+        // True while the body is inside one of its touchdown windows (one logic frame
+        // of tolerance, matching the 0.02s fixed step used by the source tweens).
+        static bool InGroundPhase(ProjectileDefinition def, float age)
+        {
+            var phases = def.GroundPhaseAt;
+            if (phases == null || phases.Length == 0) return false;
+            for (int i = 0; i < phases.Length; i++)
+            {
+                if (Math.Abs(age - phases[i]) <= .02f) return true;
+            }
+            return false;
+        }
+
         void Expire(Actor proj, ProjectileComp body, bool obstacle)
         {
             body.Exhausted = true;
@@ -522,7 +570,7 @@ namespace Combat.Core
                         tf.Position.Y + body.CurrentVelocity.Y * dt,
                         tf.Position.Z + fwd.Z * def.MoveSpeed * dt + body.CurrentVelocity.Z * dt);
                     bool blocked;
-                    var resolved = _world.Movement.Resolve(tf.Position, desired, body.Radius, false, false, out blocked);
+                    var resolved = _world.Movement.Resolve(tf.Position, desired, body.Radius, def.Flying, false, out blocked);
                     if (blocked && def.RemoveOnObstacle)
                     {
                         DespawnAoe(a, body, owner);

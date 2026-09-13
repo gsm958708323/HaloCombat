@@ -20,8 +20,20 @@ namespace Combat.Config
         public float HomingMaxTurn;
         public bool HomingRetarget;
         public float HomingAcquireRadius = 12f;
+        public ProjectileMotionKind Motion;
+        public float MotionParam = 5f;
+        public float SameTargetDelay;
+        public bool RemoveOnObstacle;
+        public bool Flying = true;
+        [Tooltip("Ages (seconds since launch) at which the body drops to the ground layer for one frame.")]
+        public float[] GroundPhaseAt = Array.Empty<float>();
+        public bool TrackOwner;
+        public bool HitOwnerOnReturn;
+        public string ViewBlueprintId;
         public EffectAsset[] OnHit;
         public EffectAsset[] OnExpire;
+        public EffectAsset[] OnObstacle;
+        public EffectAsset[] OnOwnerHit;
         ProjectileDefinition _baked;
 
         public ProjectileDefinition Bake()
@@ -42,8 +54,19 @@ namespace Combat.Config
                 HomingMaxTurn = HomingMaxTurn,
                 HomingRetarget = HomingRetarget,
                 HomingAcquireRadius = HomingAcquireRadius,
+                Motion = Motion,
+                MotionParam = MotionParam,
+                SameTargetDelay = SameTargetDelay,
+                RemoveOnObstacle = RemoveOnObstacle,
+                Flying = Flying,
+                GroundPhaseAt = GroundPhaseAt ?? Array.Empty<float>(),
+                TrackOwner = TrackOwner,
+                HitOwnerOnReturn = HitOwnerOnReturn,
+                ViewBlueprintId = ViewBlueprintId,
                 OnHit = BakeFx(OnHit),
-                OnExpire = BakeFx(OnExpire)
+                OnExpire = BakeFx(OnExpire),
+                OnObstacle = BakeFx(OnObstacle),
+                OnOwnerHit = BakeFx(OnOwnerHit)
             };
             return _baked;
         }
@@ -53,6 +76,8 @@ namespace Combat.Config
             _baked = null;
             ClearFx(OnHit);
             ClearFx(OnExpire);
+            ClearFx(OnObstacle);
+            ClearFx(OnOwnerHit);
         }
 
         public static IEffect[] BakeFx(EffectAsset[] source)

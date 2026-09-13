@@ -22,6 +22,11 @@ namespace Combat.Unity.Game
 
     public sealed class BuffArenaInputSource
     {
+        // Below this |y| the camera ray is treated as parallel to the ground plane.
+        const float MinGroundRaySlope = .05f;
+        const float MaxAimDistance = 200f;
+        const float MinAimDeltaSqr = .01f;
+
         readonly InputAction _move;
         readonly InputAction _fire1;
         readonly InputAction _fire2;
@@ -72,15 +77,18 @@ namespace Combat.Unity.Game
             if (_camera != null && Mouse.current != null)
             {
                 Ray ray = _camera.ScreenPointToRay(Mouse.current.position.ReadValue());
-                if (Mathf.Abs(ray.direction.y) > .0001f)
+                // A ray nearly parallel to the ground plane intersects it kilometres
+                // away, which makes the resulting yaw jitter. Reject those and cap
+                // the usable distance instead of trusting the raw hit point.
+                if (ray.direction.y < -MinGroundRaySlope)
                 {
                     float distance = -ray.origin.y / ray.direction.y;
-                    if (distance >= 0f)
+                    if (distance >= 0f && distance <= MaxAimDistance)
                     {
                         Vector3 point = ray.origin + ray.direction * distance;
                         Vector3 delta = point - aimOrigin;
                         delta.y = 0f;
-                        if (delta.sqrMagnitude > .0001f)
+                        if (delta.sqrMagnitude > MinAimDeltaSqr)
                         {
                             frame.AimYaw = LocomotionComp.YawFromStick(new SimVec3(delta.x, 0f, delta.z));
                             frame.AimValid = true;

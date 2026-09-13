@@ -77,6 +77,7 @@
     <Compile Include="Assets\Scripts\Combat\Config\SpawnAoeAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\ArenaSpawnTableSO.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\ActStartReturnAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\BuffArenaEffectAssets.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\ActMoveTowardHomeAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\CharacterDefinitionAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\ActPatrolAsset.cs" />
@@ -88,11 +89,13 @@
     <Compile Include="Assets\Scripts\Combat\Config\KnockdownAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\ActPlaySkillAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\CombatDatabaseAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\BuffArenaDatabaseAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\DamageEffectAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\BtSelectorAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\KnockbackAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\DefinitionAssets.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\ActMoveTowardAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\BuffArenaSkillAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\DurationSpecAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\BtSequenceAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\SpawnProjectileAsset.cs" />
@@ -648,6 +651,10 @@
     </Reference>
     <Reference Include="Mono.Cecil">
       <HintPath>Library\PackageCache\com.unity.nuget.mono-cecil\Mono.Cecil.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>Library\PackageCache\com.unity.nuget.newtonsoft-json\Runtime\Newtonsoft.Json.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.Android.Types">

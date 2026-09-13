@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b736701361a88546a2fa7ee6587d207, type: 3}
+  m_Name: TL_3002
+  m_EditorClassIdentifier: 
+  TimelineIdValue: 3002
+  Duration: 0.9
+  AnimatorState: Roll
+  AllowMove: 0
+  AllowRotate: 0
+  AllowSkill: 1
+  ScaleWithActionSpeed: 0
+  Clips:
+  - Start: 0.1
+    End: 0.8
+    Kind: 4
+    MoveX: 0
+    MoveY: 0
+    MoveZ: 0
+    Steer: 0
+    HitRadius: 0
+    HitOffsetX: 0
+    HitOffsetY: 0
+    HitOffsetZ: 0
+    HitProfile: {fileID: 0}
+  - Start: 0.2
+    End: 0.8
+    Kind: 2
+    MoveX: 0
+    MoveY: 0
+    MoveZ: 2
+    Steer: 0
+    HitRadius: 0
+    HitOffsetX: 0
+    HitOffsetY: 0
+    HitOffsetZ: 0
+    HitProfile: {fileID: 0}
+  Payloads:
+  - Time: 0
+    Effects:
+    - {fileID: 0}
+  - Time: 0.8
+    Effects:
+    - {fileID: 0}
+    - {fileID: 0}

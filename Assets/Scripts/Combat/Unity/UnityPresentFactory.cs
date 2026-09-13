@@ -37,9 +37,12 @@ namespace Combat.Unity.Presentation
             if (Has(entry.Features, ViewFeatures.Pose) || entry.Prefab != null)
                 actor.Add(new PoseFollowPresent());
             if (entry.Prefab != null)
-                actor.Add(new ActorViewPresent(entry.Prefab, _root, entry.KeepAliveOnDead));
+                actor.Add(new ActorViewPresent(entry.Prefab, _root, entry.KeepAliveOnDead,
+                    entry.ModelYawOffsetDeg));
             if (entry.Kind == ViewKind.RuntimeBody && entry.Prefab != null)
                 actor.Add(new AoeVisualPresent());
+            if (entry.SpinDegPerSec != 0f)
+                actor.Add(new ProjectileVisualPresent(entry.SpinDegPerSec));
             if (Has(entry.Features, ViewFeatures.Animation))
                 actor.Add(entry.Animation == ViewAnimationProfile.Gunner
                     ? (PresentComp)new GunnerAnimationPresent()
