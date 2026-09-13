@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Combat.Core", "Combat.Core.csproj", "{9469A838-808A-7FC0-7FD4-464804FF8D09}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Combat.Unity", "Combat.Unity.csproj", "{9FD0009E-61AD-1D21-D9B1-AAA8DEBC451A}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "cn.lys.aibridge.Editor", "cn.lys.aibridge.Editor.csproj", "{16532C1F-6F5D-6412-AF1A-57D3F03C5670}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Combat.Unity", "Combat.Unity.csproj", "{9FD0009E-61AD-1D21-D9B1-AAA8DEBC451A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Combat.Config", "Combat.Config.csproj", "{BC6F6038-0069-8AC4-F9EC-8D58341873EE}"
 EndProject
@@ -29,14 +29,14 @@ Global
 		{9469A838-808A-7FC0-7FD4-464804FF8D09}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9469A838-808A-7FC0-7FD4-464804FF8D09}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9469A838-808A-7FC0-7FD4-464804FF8D09}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9FD0009E-61AD-1D21-D9B1-AAA8DEBC451A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9FD0009E-61AD-1D21-D9B1-AAA8DEBC451A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9FD0009E-61AD-1D21-D9B1-AAA8DEBC451A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9FD0009E-61AD-1D21-D9B1-AAA8DEBC451A}.Release|Any CPU.Build.0 = Release|Any CPU
 		{16532C1F-6F5D-6412-AF1A-57D3F03C5670}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{16532C1F-6F5D-6412-AF1A-57D3F03C5670}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{16532C1F-6F5D-6412-AF1A-57D3F03C5670}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{16532C1F-6F5D-6412-AF1A-57D3F03C5670}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9FD0009E-61AD-1D21-D9B1-AAA8DEBC451A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9FD0009E-61AD-1D21-D9B1-AAA8DEBC451A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9FD0009E-61AD-1D21-D9B1-AAA8DEBC451A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9FD0009E-61AD-1D21-D9B1-AAA8DEBC451A}.Release|Any CPU.Build.0 = Release|Any CPU
 		{BC6F6038-0069-8AC4-F9EC-8D58341873EE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{BC6F6038-0069-8AC4-F9EC-8D58341873EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BC6F6038-0069-8AC4-F9EC-8D58341873EE}.Release|Any CPU.ActiveCfg = Release|Any CPU

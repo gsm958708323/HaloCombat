@@ -67,9 +67,6 @@
   <ItemGroup>
     <Compile Include="Assets\Editor\HaloCombat\HaloCombatDemoSceneBuilder.cs" />
     <Compile Include="Assets\Editor\HaloCombat\FinalVerification.cs" />
-    <Compile Include="Assets\Editor\HaloCombat\StickmanPaletteGenerator.cs" />
-    <Compile Include="Assets\Editor\HaloCombat\StickmanSpriteAnimatorGenerator.cs" />
-    <Compile Include="Assets\Editor\HaloCombat\GenerateDefaultDatabase.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Editor\HaloCombat\Combat.Editor.asmdef" />

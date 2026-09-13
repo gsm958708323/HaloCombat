@@ -3,6 +3,20 @@ using System.Collections.Generic;
 
 namespace Combat.Core
 {
+    public enum ProjectileMotionKind : byte
+    {
+        Linear,
+        ImmediateHoming,
+        Accelerate,
+        ReturnToOwner
+    }
+
+    public enum AoeMotionKind : byte
+    {
+        Static,
+        Forward
+    }
+
     public sealed class ProjectileDefinition
     {
         public int SpecId;
@@ -18,8 +32,17 @@ namespace Combat.Core
         public float HomingMaxTurn;
         public bool HomingRetarget;
         public float HomingAcquireRadius = 12f;
+        public ProjectileMotionKind Motion;
+        public float MotionParam = 5f;
+        public float SameTargetDelay;
+        public bool RemoveOnObstacle;
+        public bool TrackOwner;
+        public bool HitOwnerOnReturn;
+        public string ViewBlueprintId;
         public IEffect[] OnHit = Array.Empty<IEffect>();
         public IEffect[] OnExpire = Array.Empty<IEffect>();
+        public IEffect[] OnObstacle = Array.Empty<IEffect>();
+        public IEffect[] OnOwnerHit = Array.Empty<IEffect>();
     }
 
     public sealed class AoeDefinition
@@ -32,10 +55,18 @@ namespace Combat.Core
         public bool TrackOccupancy;
         public int HostileMask;
         public int CueId;
+        public AoeMotionKind Motion;
+        public float MoveSpeed;
+        public bool RemoveOnObstacle;
+        public bool TrackProjectiles;
+        public float ProjectileAbsorbForce;
+        public float ProjectileRadiusScale = .05f;
+        public string ViewBlueprintId;
         public IEffect[] OnPulse = Array.Empty<IEffect>();
         public IEffect[] OnEnter = Array.Empty<IEffect>();
         public IEffect[] OnExit = Array.Empty<IEffect>();
         public IEffect[] OnStay = Array.Empty<IEffect>();
+        public IEffect[] OnExpire = Array.Empty<IEffect>();
     }
 
     public sealed class ProjectileCatalog
@@ -74,6 +105,8 @@ namespace Combat.Core
         public EntityId OwnerId { get; private set; }
         public float SnapshotAtk { get; private set; }
         public ProjectileDefinition Def { get; private set; }
+        public float FireYaw { get; private set; }
+        public SimVec3 CurrentVelocity { get; private set; }
         public float Age { get; set; }
         public int HitCount { get; set; }
         public bool Exhausted { get; set; }
@@ -84,24 +117,67 @@ namespace Combat.Core
             Def = def;
             OwnerId = owner;
             SnapshotAtk = snapshotAtk;
+            FireYaw = 0f;
+            CurrentVelocity = SimVec3.Zero;
             Age = 0f;
             HitCount = 0;
             Exhausted = false;
             HomingTarget = homingTarget;
             _hits.Clear();
+            _cooldowns.Clear();
         }
 
         public bool TryRecord(EntityId id)
+            => TryRecord(id, 0f);
+
+        public bool TryRecord(EntityId id, float cooldown)
         {
             if (!id.IsValid || Exhausted) return false;
-            return _hits.Add(HitboxComp.Pack(id));
+            long packed = HitboxComp.Pack(id);
+            if (!_hits.Add(packed)) return false;
+            if (cooldown > 0f)
+                _cooldowns[packed] = cooldown;
+            return true;
+        }
+
+        readonly Dictionary<long, float> _cooldowns = new Dictionary<long, float>();
+
+        public void TickHitCooldowns(float dt)
+        {
+            if (_cooldowns.Count == 0) return;
+            var expired = new List<long>();
+            var keys = new List<long>(_cooldowns.Keys);
+            for (int i = 0; i < keys.Count; i++)
+            {
+                long key = keys[i];
+                float left = _cooldowns[key] - dt;
+                if (left <= 0f) expired.Add(key);
+                else _cooldowns[key] = left;
+            }
+            for (int i = 0; i < expired.Count; i++)
+            {
+                _cooldowns.Remove(expired[i]);
+                _hits.Remove(expired[i]);
+            }
+        }
+
+        public void SetMotion(float yaw, in SimVec3 velocity)
+        {
+            FireYaw = yaw;
+            CurrentVelocity = velocity;
         }
 
         protected override void OnDetach()
         {
+            if (OwnerId.IsValid && Self != null && Self.World != null &&
+                Self.World.TryGetActor(OwnerId, out var owner) && owner != null &&
+                owner.TryGetComp<ProjectileTrackerComp>(out var tracker))
+                tracker.ClearIf(Self.Id);
             _hits.Clear();
+            _cooldowns.Clear();
             Def = null;
             Exhausted = true;
+            CurrentVelocity = SimVec3.Zero;
         }
     }
 
@@ -111,12 +187,30 @@ namespace Combat.Core
         public EntityId OwnerId { get; private set; }
         public float SnapshotAtk { get; private set; }
         public AoeDefinition Def { get; private set; }
+        public float Radius { get; private set; }
+        public float Duration { get; private set; }
         public float Age { get; set; }
         public float PulseAcc { get; set; }
         public int BornFrame { get; private set; }
         public HashSet<long> Inside => _inside;
+        public int AbsorbedProjectileCount { get; private set; }
+        public float VisualScale { get; private set; } = 1f;
+        public SimVec3 CurrentVelocity { get; private set; }
 
-        public void Setup(AoeDefinition def, EntityId owner, float snapshotAtk, int bornFrame)
+        public void SetVisualScale(float scale) => VisualScale = scale > 0f ? scale : 1f;
+
+        public void RegisterAbsorption(in SimVec3 velocity, float force, float radiusScale)
+        {
+            AbsorbedProjectileCount++;
+            CurrentVelocity = new SimVec3(
+                CurrentVelocity.X + velocity.X * force,
+                CurrentVelocity.Y + velocity.Y * force,
+                CurrentVelocity.Z + velocity.Z * force);
+            SetVisualScale(1f + AbsorbedProjectileCount * radiusScale);
+        }
+
+        public void Setup(AoeDefinition def, EntityId owner, float snapshotAtk, int bornFrame,
+            float radiusOverride = 0f, float durationOverride = 0f)
         {
             Def = def;
             OwnerId = owner;
@@ -124,6 +218,11 @@ namespace Combat.Core
             Age = 0f;
             PulseAcc = 0f;
             BornFrame = bornFrame;
+            Radius = radiusOverride > 0f ? radiusOverride : (def != null ? def.Radius : 0f);
+            Duration = durationOverride > 0f ? durationOverride : (def != null ? def.Duration : 0f);
+            AbsorbedProjectileCount = 0;
+            VisualScale = 1f;
+            CurrentVelocity = SimVec3.Zero;
             _inside = (def != null && def.TrackOccupancy) ? new HashSet<long>() : null;
         }
 
@@ -131,6 +230,11 @@ namespace Combat.Core
         {
             _inside?.Clear();
             Def = null;
+            Radius = 0f;
+            Duration = 0f;
+            AbsorbedProjectileCount = 0;
+            VisualScale = 1f;
+            CurrentVelocity = SimVec3.Zero;
         }
     }
 
@@ -144,7 +248,7 @@ namespace Combat.Core
             var tf = aoe.GetComp<TransformComp>();
             world.TryGetActor(body.OwnerId, out var owner);
             var buffer = new List<Actor>(64);
-            int n = world.Query.OverlapCircle(tf.Position, def.Radius, owner, def.HostileMask, buffer);
+            int n = world.Query.OverlapCircle(tf.Position, body.Radius, owner, def.HostileMask, buffer);
             for (int i = 0; i < n; i++)
             {
                 var target = buffer[i];
@@ -196,8 +300,12 @@ namespace Combat.Core
                 float snap = def.SnapshotAtk ? intent.SnapshotAtk : 0f;
                 if (!def.SnapshotAtk && owner != null && owner.TryGetComp<AttributeSet>(out var attr))
                     snap = attr.GetFinal(AttrId.Atk);
-                proj.GetComp<ProjectileComp>().Setup(def, intent.Owner, snap, intent.Target);
-                _world.PublishSpawn(id, "projectile");
+                var projectile = proj.GetComp<ProjectileComp>();
+                projectile.Setup(def, intent.Owner, snap, intent.Target);
+                projectile.SetMotion(intent.Yaw, SimVec3.Zero);
+                if (def.TrackOwner && owner != null && owner.TryGetComp<ProjectileTrackerComp>(out var tracker))
+                    tracker.Track(id);
+                _world.PublishSpawn(id, "projectile", def.ViewBlueprintId);
             });
         }
 
@@ -212,24 +320,61 @@ namespace Combat.Core
                 if (!a.TryGetComp<TransformComp>(out var tf)) continue;
                 var def = body.Def;
                 _world.TryGetActor(body.OwnerId, out var owner);
+                body.TickHitCooldowns(dt);
                 SteerHoming(a, body, tf, dt, owner);
-                var fwd = LocomotionComp.ForwardFromYaw(tf.YawDegrees);
-                tf.Position = new SimVec3(
-                    tf.Position.X + fwd.X * def.Speed * dt,
-                    tf.Position.Y,
-                    tf.Position.Z + fwd.Z * def.Speed * dt);
+                var velocity = MotionVelocity(body, tf, def, owner);
+                body.SetMotion(tf.YawDegrees, velocity);
+                var next = new SimVec3(
+                    tf.Position.X + velocity.X * dt,
+                    tf.Position.Y + velocity.Y * dt,
+                    tf.Position.Z + velocity.Z * dt);
+                bool blocked;
+                next = _world.Movement.Resolve(tf.Position, next, def.HitRadius, false, false, out blocked);
+                if (blocked)
+                {
+                    if (def.RemoveOnObstacle)
+                    {
+                        Expire(a, body, true);
+                        continue;
+                    }
+                    velocity = new SimVec3(
+                        (next.X - tf.Position.X) / Math.Max(dt, .0001f),
+                        velocity.Y,
+                        (next.Z - tf.Position.Z) / Math.Max(dt, .0001f));
+                    body.SetMotion(tf.YawDegrees, velocity);
+                }
+                tf.Position = next;
                 body.Age += dt;
                 if (body.Age >= def.Lifetime)
                 {
-                    Expire(a, body);
+                    Expire(a, body, false);
                     continue;
+                }
+
+                if (def.HitOwnerOnReturn && body.Age >= def.MotionParam && owner != null &&
+                    owner.TryGetComp<TransformComp>(out var ownerTf))
+                {
+                    float ownerRadius = owner.TryGetComp<CharacterRadiusComp>(out var ownerBody)
+                        ? ownerBody.Radius
+                        : .25f;
+                    float dx = ownerTf.Position.X - tf.Position.X;
+                    float dz = ownerTf.Position.Z - tf.Position.Z;
+                    float rr = def.HitRadius + ownerRadius;
+                    if (dx * dx + dz * dz <= rr * rr)
+                    {
+                        body.Exhausted = true;
+                        _world.Deliver(def.OnOwnerHit, owner, owner, body.SnapshotAtk, tf.Position, null, 0);
+                        _world.RequestDespawn(a.Id);
+                        a.SetActive(false);
+                        continue;
+                    }
                 }
 
                 int n = _world.Query.OverlapCircle(tf.Position, def.HitRadius, owner, def.HostileMask, _buffer);
                 for (int k = 0; k < n; k++)
                 {
                     var victim = _buffer[k];
-                    if (victim == null || !body.TryRecord(victim.Id)) continue;
+                    if (victim == null || !body.TryRecord(victim.Id, def.SameTargetDelay)) continue;
                     float snap = def.SnapshotAtk ? body.SnapshotAtk : (owner != null && owner.TryGetComp<AttributeSet>(out var at) ? at.GetFinal(AttrId.Atk) : body.SnapshotAtk);
                     var vpos = victim.TryGetComp<TransformComp>(out var vtf) ? vtf.Position : tf.Position;
                     _world.Intents.Post(new ApplyEffectsIntent(def.OnHit, body.OwnerId, victim.Id, snap, 0, vpos, true));
@@ -243,6 +388,31 @@ namespace Combat.Core
                     }
                 }
             }
+        }
+
+        static SimVec3 MotionVelocity(ProjectileComp body, TransformComp tf, ProjectileDefinition def, Actor owner)
+        {
+            float scale = 1f;
+            if (def.Motion == ProjectileMotionKind.Accelerate)
+            {
+                float t = Math.Max(0f, body.Age);
+                float pivot = def.MotionParam > 0f ? def.MotionParam : 5f;
+                scale = 2f * t / (t + pivot);
+            }
+            else if (def.Motion == ProjectileMotionKind.ReturnToOwner && body.Age >= def.MotionParam && owner != null &&
+                     owner.TryGetComp<TransformComp>(out var ownerTf))
+            {
+                float t = Math.Min(0.5f, Math.Max(0f, (body.Age - def.MotionParam) / Math.Max(def.MotionParam, .0001f) * (float)Math.PI));
+                float magnitude = (float)Math.Sin(t) + .1f;
+                float dx = ownerTf.Position.X - tf.Position.X;
+                float dz = ownerTf.Position.Z - tf.Position.Z;
+                float len = (float)Math.Sqrt(dx * dx + dz * dz);
+                if (len > .0001f)
+                    return new SimVec3(dx / len * def.Speed * magnitude, 0f, dz / len * def.Speed * magnitude);
+            }
+
+            var fwd = LocomotionComp.ForwardFromYaw(tf.YawDegrees);
+            return new SimVec3(fwd.X * def.Speed * scale, 0f, fwd.Z * def.Speed * scale);
         }
 
         void SteerHoming(Actor proj, ProjectileComp body, TransformComp tf, float dt, Actor owner)
@@ -301,14 +471,15 @@ namespace Combat.Core
             return deg;
         }
 
-        void Expire(Actor proj, ProjectileComp body)
+        void Expire(Actor proj, ProjectileComp body, bool obstacle)
         {
             body.Exhausted = true;
             _world.TryGetActor(body.OwnerId, out var owner);
-            if (body.Def.OnExpire != null && body.Def.OnExpire.Length > 0)
+            var effects = obstacle ? body.Def.OnObstacle : body.Def.OnExpire;
+            if (effects != null && effects.Length > 0)
             {
                 var tf = proj.GetComp<TransformComp>();
-                _world.Deliver(body.Def.OnExpire, owner, null, body.SnapshotAtk, tf.Position, null, 0);
+                _world.Deliver(effects, owner, null, body.SnapshotAtk, tf.Position, null, 0);
             }
 
             _world.RequestDespawn(proj.Id);
@@ -343,7 +514,27 @@ namespace Combat.Core
                 body.Age += dt;
                 _world.TryGetActor(body.OwnerId, out var owner);
                 var tf = a.GetComp<TransformComp>();
-                int n = _world.Query.OverlapCircle(tf.Position, def.Radius, owner, def.HostileMask, _buffer);
+                if (def.Motion == AoeMotionKind.Forward && def.MoveSpeed != 0f)
+                {
+                    var fwd = LocomotionComp.ForwardFromYaw(tf.YawDegrees);
+                    var desired = new SimVec3(
+                        tf.Position.X + fwd.X * def.MoveSpeed * dt + body.CurrentVelocity.X * dt,
+                        tf.Position.Y + body.CurrentVelocity.Y * dt,
+                        tf.Position.Z + fwd.Z * def.MoveSpeed * dt + body.CurrentVelocity.Z * dt);
+                    bool blocked;
+                    var resolved = _world.Movement.Resolve(tf.Position, desired, body.Radius, false, false, out blocked);
+                    if (blocked && def.RemoveOnObstacle)
+                    {
+                        DespawnAoe(a, body, owner);
+                        continue;
+                    }
+                    tf.Position = resolved;
+                }
+
+                if (def.TrackProjectiles)
+                    AbsorbProjectiles(body, tf.Position, owner, actors);
+
+                int n = _world.Query.OverlapCircle(tf.Position, body.Radius, owner, def.HostileMask, _buffer);
 
                 HashSet<long> entered = null;
                 if (def.TrackOccupancy)
@@ -381,8 +572,33 @@ namespace Combat.Core
                     }
                 }
 
-                if (def.Duration > 0f && body.Age >= def.Duration)
+                if (body.Duration > 0f && body.Age >= body.Duration)
                     DespawnAoe(a, body, owner);
+            }
+        }
+
+        void AbsorbProjectiles(AoeComp body, SimVec3 center, Actor owner, List<Actor> actors)
+        {
+            if (owner == null || !owner.TryGetComp<TeamComp>(out var ownerTeam)) return;
+            for (int i = 0; i < actors.Count; i++)
+            {
+                var projectile = actors[i];
+                if (projectile == null || !projectile.IsActive || !projectile.TryGetComp<ProjectileComp>(out var p) ||
+                    p.Def == null || !projectile.TryGetComp<TransformComp>(out var tf)) continue;
+                if (!projectile.TryGetComp<TeamComp>(out var projectileTeam) ||
+                    projectileTeam.TeamId != ownerTeam.TeamId) continue;
+                float dx = tf.Position.X - center.X;
+                float dz = tf.Position.Z - center.Z;
+                float radius = body.Radius + p.Def.HitRadius;
+                if (dx * dx + dz * dz > radius * radius) continue;
+
+                body.RegisterAbsorption(p.CurrentVelocity, body.Def.ProjectileAbsorbForce,
+                    body.Def.ProjectileRadiusScale);
+                p.Exhausted = true;
+                _world.RequestDespawn(projectile.Id);
+                projectile.SetActive(false);
+                if (body.Def.CueId != 0)
+                    _world.Events.Publish(new EvCue(body.Def.CueId, owner.Id, "ProjectileAbsorb"));
             }
         }
 
@@ -433,6 +649,12 @@ namespace Combat.Core
                 }
 
                 body.Inside.Clear();
+            }
+
+            if (body.Def != null && body.Def.OnExpire != null && body.Def.OnExpire.Length > 0)
+            {
+                var tf = aoe.GetComp<TransformComp>();
+                _world.Deliver(body.Def.OnExpire, owner, null, body.SnapshotAtk, tf.Position, null, 0);
             }
 
             _world.RequestDespawn(aoe.Id);

@@ -72,6 +72,7 @@
     <Compile Include="Assets\Scripts\Combat\Core\Motor.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\CombatValidator.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Summons.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\ArenaNavigation.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\BehaviorTree.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Attributes.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\BehaviorTreeComp.cs" />
@@ -80,6 +81,7 @@
     <Compile Include="Assets\Scripts\Combat\Core\Buffs.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Catalog.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Presentation.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\BuffArenaGameplay.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\TagsInput.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\BakedContent.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Infrastructure.cs" />

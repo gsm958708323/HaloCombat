@@ -32,6 +32,7 @@ namespace Combat
                 case "perc": PerceptionDemo.Run(); break;
                 case "enemy": EnemyAiDemo.Run(); break;
                 case "summon": SummonDemo.Run(); break;
+                case "buffarena": BuffArenaDemo.Run(); break;
                 case "clock": ClockDemo.Run(); break;
                 case "spawn": SpawnEventDemo.Run(); break;
                 case "lesson": SeasonThreeLessonDemo.Run(); break;

@@ -38,7 +38,6 @@ namespace Combat.Core
         {
             if (_world == null || results == null) return 0;
             results.Clear();
-            float r2 = radius * radius;
             _world.RegistryActive(_actors);
             var actors = _actors;
             for (int i = 0; i < actors.Count; i++)
@@ -49,7 +48,9 @@ namespace Combat.Core
                 if (!a.TryGetComp<TransformComp>(out var tf)) continue;
                 float dx = tf.Position.X - center.X;
                 float dz = tf.Position.Z - center.Z;
-                if (dx * dx + dz * dz > r2) continue;
+                float targetRadius = a.TryGetComp<CharacterRadiusComp>(out var body) ? body.Radius : 0f;
+                float reach = radius + targetRadius;
+                if (dx * dx + dz * dz > reach * reach) continue;
                 results.Add(a);
             }
 

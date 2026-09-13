@@ -9,11 +9,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 4347834898465629862}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8303260b0b6178141b64e7793adc246b, type: 3}
+  m_Script: {fileID: 11500000, guid: 6965e371ee947234f9ca3ddf5e84fae1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  key: Muzzle
-  offset: {x: 0, y: 0.2, z: 0.5}
+  Key: Muzzle
+  Offset: {x: 0, y: 0.2, z: 0.5}
 --- !u!1 &7830203463684231425
 GameObject:
   m_ObjectHideFlags: 0
@@ -1288,11 +1288,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 7830203463684231503}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8303260b0b6178141b64e7793adc246b, type: 3}
+  m_Script: {fileID: 11500000, guid: 6965e371ee947234f9ca3ddf5e84fae1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  key: Head
-  offset: {x: 0, y: 0, z: 0}
+  Key: Head
+  Offset: {x: 0, y: 0, z: 0}
 --- !u!1 &7830203463684231505
 GameObject:
   m_ObjectHideFlags: 0
@@ -1487,11 +1487,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 7830203463684231511}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8303260b0b6178141b64e7793adc246b, type: 3}
+  m_Script: {fileID: 11500000, guid: 6965e371ee947234f9ca3ddf5e84fae1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  key: Body
-  offset: {x: 0, y: 0, z: 0}
+  Key: Body
+  Offset: {x: 0, y: 0, z: 0}
 --- !u!1 &7830203463684231513
 GameObject:
   m_ObjectHideFlags: 0

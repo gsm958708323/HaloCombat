@@ -14,6 +14,7 @@ namespace Combat.Core
 
         TransformComp _tf;
         StateMachineComp _fsm;
+        SkillDirectorComp _director;
         TagComp _tags;
         AttributeSet _attr;
 
@@ -31,6 +32,8 @@ namespace Combat.Core
         float _airSteer;
         float _groundY;
         float _stickDeadzone;
+        float _aimYaw;
+        bool _hasAimYaw;
 
         public float Yaw => _tf != null ? _tf.YawDegrees : 0f;
         public bool IsGrounded => _grounded;
@@ -47,6 +50,7 @@ namespace Combat.Core
             _stickDeadzone = motor.StickDeadzone;
             _tf = Self.GetComp<TransformComp>();
             _fsm = Self.GetComp<StateMachineComp>();
+            Self.TryGetComp(out _director);
             _tags = Self.GetComp<TagComp>();
             Self.TryGetComp(out _attr);
             _grounded = _tf.Position.Y <= _groundY + 1e-4f;
@@ -57,12 +61,19 @@ namespace Combat.Core
         {
             _tf = null;
             _fsm = null;
+            _director = null;
             _tags = null;
             _attr = null;
             ClearFrameRequests();
         }
 
         public void RequestMoveIntent(float x, float z) => _moveIntent = new SimVec3(x, 0f, z);
+
+        public void RequestAimYaw(float yaw)
+        {
+            _aimYaw = yaw;
+            _hasAimYaw = true;
+        }
 
         public void RequestSkillDelta(float x, float y, float z)
         {
@@ -164,12 +175,17 @@ namespace Combat.Core
                 delta.Z += _skillDelta.Z;
             }
 
-            ApplyFacing(policy.Facing);
+            ApplyFacing(policy.Facing, dt);
 
             if (delta.X != 0f || delta.Y != 0f || delta.Z != 0f)
-                _tf.Position = _tf.Position + delta;
+            {
+                var target = _tf.Position + delta;
+                target = _worldResolve(target, false, out _);
+                _tf.Position = target;
+            }
 
             _skillDelta = SimVec3.Zero;
+            _hasAimYaw = false;
         }
 
         public void IntegrateAfterHitDetection(float dt)
@@ -195,13 +211,19 @@ namespace Combat.Core
                 _verticalVel = 0f;
 
             if (delta.X != 0f || delta.Y != 0f || delta.Z != 0f)
-                _tf.Position = _tf.Position + delta;
+            {
+                var target = _tf.Position + delta;
+                target = _worldResolve(target, false, out _);
+                _tf.Position = target;
+            }
 
             _hitDelta = SimVec3.Zero;
         }
 
         float MotorScale(in LocoProfile loco)
         {
+            if (_fsm != null && _fsm.Current == ActivityId.Attack && _director != null && _director.AllowsMove)
+                return _clipSteer > 0f ? _clipSteer : 1f;
             if (_grounded)
                 return _clipSteer > 0f ? _clipSteer : loco.MotorScale;
             return _airSteer;
@@ -245,10 +267,17 @@ namespace Combat.Core
             return dy;
         }
 
-        void ApplyFacing(in FacingPolicy facing)
+        void ApplyFacing(in FacingPolicy facing, float dt)
         {
             bool stick = StickMag(_moveIntent) >= _stickDeadzone;
             float want = stick ? YawFromStick(_moveIntent) : _tf.YawDegrees;
+            if (_hasAimYaw && _grounded && facing.Mode != FacingMode.Lock &&
+                (_fsm == null || _fsm.Current != ActivityId.Attack || _director == null || _director.AllowsRotate))
+            {
+                float turn = facing.TurnRate > 0f ? facing.TurnRate * dt : 1800f * dt;
+                _tf.YawDegrees = MoveTowardsAngle(_tf.YawDegrees, _aimYaw, turn);
+                return;
+            }
             switch (facing.Mode)
             {
                 case FacingMode.Lock:
@@ -286,6 +315,32 @@ namespace Combat.Core
         {
             _skillDelta = SimVec3.Zero;
             _hitDelta = SimVec3.Zero;
+        }
+
+        SimVec3 _worldResolve(in SimVec3 target, bool flying, out bool obstructed)
+        {
+            if (Self == null || Self.World == null || _tf == null)
+            {
+                obstructed = false;
+                return target;
+            }
+            float radius = _attr != null ? Math.Max(0f, _attr.GetFinal(AttrId.MoveSpeed) * 0f) : 0f;
+            // Character radius is stored by HitboxComp in source-style actors;
+            // generic actors keep the zero-radius navigation path.
+            if (Self.TryGetComp<HitboxComp>(out var hitbox) && hitbox.Radius > 0f)
+                radius = hitbox.Radius;
+            else if (Self.TryGetComp<CharacterRadiusComp>(out var body))
+                radius = body.Radius;
+            return Self.World.Movement.Resolve(_tf.Position, target, radius, flying, false, out obstructed);
+        }
+
+        static float MoveTowardsAngle(float current, float target, float maxDelta)
+        {
+            float delta = target - current;
+            while (delta > 180f) delta -= 360f;
+            while (delta < -180f) delta += 360f;
+            if (Math.Abs(delta) <= maxDelta) return target;
+            return current + Math.Sign(delta) * maxDelta;
         }
 
         public static float StickMag(in SimVec3 v)

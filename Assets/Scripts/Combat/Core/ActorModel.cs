@@ -22,6 +22,7 @@ namespace Combat.Core
 
         protected virtual void OnAttach() { }
         protected virtual void OnDetach() { }
+        public virtual void OnDeath(Actor killer) { }
         public virtual void Tick(float dt) { }
     }
 
@@ -84,6 +85,12 @@ namespace Combat.Core
             if (!IsActive) return;
             for (int i = 0; i < _ticks.Count; i++)
                 _ticks[i].Tick(dt);
+        }
+
+        public void NotifyDeath(Actor killer)
+        {
+            for (int i = 0; i < _order.Count; i++)
+                _order[i].OnDeath(killer);
         }
 
         public T GetComp<T>() where T : Comp

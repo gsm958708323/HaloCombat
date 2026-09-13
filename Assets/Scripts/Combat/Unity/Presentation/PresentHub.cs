@@ -24,6 +24,8 @@ namespace Combat.Presentation
         Action<EvDamage> _damage;
         Action<EvImmune> _immune;
         Action<EvHeal> _heal;
+        Action<EvHurt> _hurt;
+        Action<EvEntityCleanup> _cleanup;
         public int Count => _map.Count;
         public CueDirector Cues => _cues;
         public FloaterLayer Floaters => _floaters;
@@ -38,7 +40,11 @@ namespace Combat.Presentation
                 destination.Add(pair.Value);
         }
 
-        public PresentHub(IPresentFactory f) => _factory = f ?? throw new ArgumentNullException(nameof(f));
+        public PresentHub(IPresentFactory f)
+        {
+            _factory = f ?? throw new ArgumentNullException(nameof(f));
+            _cues.SetAnchorResolver(ResolveAnchorPosition);
+        }
 
         public void SetWorld(CombatWorld w)
         {
@@ -67,11 +73,15 @@ namespace Combat.Presentation
             _damage = OnDamage;
             _immune = OnImmune;
             _heal = OnHeal;
+            _hurt = OnHurt;
+            _cleanup = OnCleanup;
             b.Subscribe(_spawn);
             b.Subscribe(_cue);
             b.Subscribe(_damage);
             b.Subscribe(_immune);
             b.Subscribe(_heal);
+            b.Subscribe(_hurt);
+            b.Subscribe(_cleanup);
         }
 
         public void UnbindBus()
@@ -88,12 +98,18 @@ namespace Combat.Presentation
                 _bus.Unsubscribe(_immune);
             if (_heal != null)
                 _bus.Unsubscribe(_heal);
+            if (_hurt != null)
+                _bus.Unsubscribe(_hurt);
+            if (_cleanup != null)
+                _bus.Unsubscribe(_cleanup);
             _bus = null;
             _spawn = null;
             _cue = null;
             _damage = null;
             _immune = null;
             _heal = null;
+            _hurt = null;
+            _cleanup = null;
         }
 
         PresentActor BindSpawn(EntityId id, string bp)
@@ -109,7 +125,10 @@ namespace Combat.Presentation
             return p;
         }
 
-        void OnSpawn(EvEntitySpawn e) => BindSpawn(e.Id, e.BlueprintId);
+        void OnSpawn(EvEntitySpawn e) => BindSpawn(
+            e.Id,
+            string.IsNullOrEmpty(e.ViewBlueprintId) ? e.BlueprintId : e.ViewBlueprintId
+        );
 
         public bool TryGet(EntityId id, out PresentActor p) =>
             _map.TryGetValue(HitboxComp.Pack(id), out p);
@@ -174,6 +193,13 @@ namespace Combat.Presentation
             return TryGet(_local, out var actor) && actor.TryGet(out feedback);
         }
 
+        public SimVec3? ResolveAnchorPosition(EntityId id, string key)
+        {
+            return TryGet(id, out var actor) && actor.TryGet<ActorViewPresent>(out var view)
+                ? view.ResolveAnchor(key)
+                : (SimVec3?)null;
+        }
+
         public void ReleaseAll()
         {
             Copy();
@@ -207,6 +233,12 @@ namespace Combat.Presentation
         }
 
         void OnHeal(EvHeal e) => _floaters.OnHeal(e);
+
+        void OnHurt(EvHurt e)
+        {
+            if (TryGet(e.Target, out var actor) && actor.TryGet<GunnerAnimationPresent>(out var animation))
+                animation.NotifyHurt();
+        }
 
         void Copy()
         {

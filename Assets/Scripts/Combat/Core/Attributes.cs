@@ -13,7 +13,8 @@ namespace Combat.Core
         MoveSpeed = 5,
         CritRate = 6,
         DmgDealMul = 7,
-        DmgTakenMul = 8
+        DmgTakenMul = 8,
+        ActionSpeed = 9
     }
 
     public enum ModOp : byte { Add = 0, Mul = 1, Override = 2 }
@@ -29,7 +30,7 @@ namespace Combat.Core
 
     public sealed class AttributeSet : Comp
     {
-        const int SlotCount = 9;
+        const int SlotCount = 10;
         readonly float[] _base = new float[SlotCount];
         readonly float[] _final = new float[SlotCount];
         readonly bool[] _validFinal = new bool[SlotCount];
@@ -41,6 +42,7 @@ namespace Combat.Core
         {
             _base[(int)AttrId.DmgDealMul] = 1f;
             _base[(int)AttrId.DmgTakenMul] = 1f;
+            _base[(int)AttrId.ActionSpeed] = 1f;
         }
 
         public void InitFighterDefaults()
@@ -54,6 +56,7 @@ namespace Combat.Core
             SetBase(AttrId.CritRate, 0f);
             SetBase(AttrId.DmgDealMul, 1f);
             SetBase(AttrId.DmgTakenMul, 1f);
+            SetBase(AttrId.ActionSpeed, 1f);
         }
 
         public float GetBase(AttrId id) => _base[(int)id];
@@ -118,6 +121,7 @@ namespace Combat.Core
             _mods.Clear();
             _base[(int)AttrId.DmgDealMul] = 1f;
             _base[(int)AttrId.DmgTakenMul] = 1f;
+            _base[(int)AttrId.ActionSpeed] = 1f;
         }
 
         float Recalc(AttrId id)

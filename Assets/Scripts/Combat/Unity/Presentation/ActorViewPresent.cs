@@ -7,17 +7,29 @@ namespace Combat.Presentation
     {
         readonly GameObject _prefab;
         readonly Transform _root;
+        readonly bool _keepAliveOnDead;
         GameObject _view;
         Animator _animator;
 
-        public ActorViewPresent(GameObject prefab, Transform root)
+        public ActorViewPresent(GameObject prefab, Transform root, bool keepAliveOnDead = false)
         {
             _prefab = prefab;
             _root = root;
+            _keepAliveOnDead = keepAliveOnDead;
         }
 
         public GameObject View => _view;
         internal Animator Animator => _animator;
+
+        public SimVec3? ResolveAnchor(string key)
+        {
+            if (_view == null || string.IsNullOrEmpty(key)) return null;
+            var anchors = _view.GetComponentsInChildren<BuffArenaViewAnchor>(true);
+            for (int i = 0; i < anchors.Length; i++)
+                if (string.Equals(anchors[i].Key, key, System.StringComparison.Ordinal))
+                    return ToSim(anchors[i].transform.TransformPoint(anchors[i].Offset));
+            return null;
+        }
         public override bool WantsLogicSync => true;
         public override bool WantsLateTick => true;
 
@@ -25,7 +37,8 @@ namespace Combat.Presentation
         {
             if (_prefab == null)
                 return;
-            _view = Object.Instantiate(_prefab, _root);
+            _view = UnityEngine.Object.Instantiate(_prefab, _root);
+            Combat.Unity.Game.BuffArenaRenderUtility.Normalize(_view);
             _animator = _view != null ? _view.GetComponentInChildren<Animator>() : null;
         }
 
@@ -34,7 +47,7 @@ namespace Combat.Presentation
             if (_view == null || !Self.TryLogic(world, out var actor))
                 return;
             if (actor.TryGetComp<TagComp>(out var tags))
-                _view.SetActive(!tags.Has(CommonTags.Dead));
+                _view.SetActive(_keepAliveOnDead || !tags.Has(CommonTags.Dead));
         }
 
         public override void LateTick(float dt)
@@ -66,5 +79,7 @@ namespace Combat.Presentation
             else
                 UnityEngine.Object.DestroyImmediate(value);
         }
+
+        static SimVec3 ToSim(Vector3 value) => new SimVec3(value.x, value.y, value.z);
     }
 }

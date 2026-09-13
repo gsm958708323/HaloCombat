@@ -43,6 +43,10 @@ namespace Combat.Core
 
         public TimelineId Id;
         public float Duration = 0.55f;
+        public bool AllowMove;
+        public bool AllowRotate;
+        public bool ScaleWithActionSpeed;
+        public string AnimatorState;
         public TimelineClip[] Clips = Array.Empty<TimelineClip>();
         public TimelinePayload[] Payloads = Array.Empty<TimelinePayload>();
 
@@ -287,6 +291,7 @@ namespace Combat.Core
         public float Time => _time;
         public float Duration => _so != null ? _so.Duration : 0f;
         public TimelineId Id => _so != null ? _so.Id : TimelineId.None;
+        public TimelineSO Current => _so;
 
         public void Play(TimelineSO so)
         {

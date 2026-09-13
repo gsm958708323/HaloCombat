@@ -25,7 +25,7 @@ namespace Combat.Unity.Presentation
                 if (entry.Kind == ViewKind.Character && entry.Prefab == null)
                     Debug.LogError("Character view requires a Prefab: " + entry.BlueprintId, this);
                 if ((entry.Features & (ViewFeatures.Animation | ViewFeatures.BuffFx | ViewFeatures.Camera |
-                                      ViewFeatures.Feedback | ViewFeatures.Hud)) != 0 &&
+                                      ViewFeatures.Feedback | ViewFeatures.Hud | ViewFeatures.HealthRing)) != 0 &&
                     entry.Kind != ViewKind.Character)
                     Debug.LogError("Character-only view features are invalid for: " + entry.BlueprintId, this);
             }
@@ -67,7 +67,14 @@ namespace Combat.Unity.Presentation
         Camera = 1 << 3,
         Feedback = 1 << 4,
         Hud = 1 << 5,
-        HitboxGizmo = 1 << 6
+        HitboxGizmo = 1 << 6,
+        HealthRing = 1 << 7
+    }
+
+    public enum ViewAnimationProfile : byte
+    {
+        Generic,
+        Gunner
     }
 
     [System.Serializable]
@@ -77,5 +84,7 @@ namespace Combat.Unity.Presentation
         public GameObject Prefab;
         public ViewKind Kind;
         public ViewFeatures Features;
+        public ViewAnimationProfile Animation;
+        public bool KeepAliveOnDead;
     }
 }

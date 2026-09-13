@@ -5,12 +5,14 @@ namespace Combat.Core
         public readonly EntityId Id;
         public readonly string BlueprintId;
         public readonly EntityId Owner;
+        public readonly string ViewBlueprintId;
 
-        public EvEntitySpawn(EntityId id, string blueprintId, EntityId owner)
+        public EvEntitySpawn(EntityId id, string blueprintId, EntityId owner, string viewBlueprintId = null)
         {
             Id = id;
             BlueprintId = blueprintId ?? string.Empty;
             Owner = owner;
+            ViewBlueprintId = viewBlueprintId ?? string.Empty;
         }
     }
 
@@ -19,11 +21,49 @@ namespace Combat.Core
         public readonly int CueId;
         public readonly EntityId Source;
         public readonly string Name;
+        public readonly EntityId Target;
+        public readonly SimVec3 Point;
+        public readonly bool HasPoint;
+        public readonly string AnchorKey;
+        public readonly string InstanceKey;
+        public readonly bool Loop;
+        public readonly bool Stop;
+
         public EvCue(int cueId, EntityId source, string name)
+            : this(cueId, source, name, EntityId.Invalid, SimVec3.Zero, false, string.Empty, string.Empty, false, false)
+        {
+        }
+
+        public EvCue(int cueId, EntityId source, string name, EntityId target, in SimVec3 point,
+            bool hasPoint, string anchorKey, string instanceKey, bool loop, bool stop)
         {
             CueId = cueId;
             Source = source;
             Name = name ?? string.Empty;
+            Target = target;
+            Point = point;
+            HasPoint = hasPoint;
+            AnchorKey = anchorKey ?? string.Empty;
+            InstanceKey = instanceKey ?? string.Empty;
+            Loop = loop;
+            Stop = stop;
+        }
+    }
+
+    public readonly struct EvHurt
+    {
+        public readonly EntityId Target;
+        public EvHurt(EntityId target) => Target = target;
+    }
+
+    public readonly struct EvGameplayMessage
+    {
+        public readonly EntityId Target;
+        public readonly string Text;
+        public EvGameplayMessage(EntityId target, string text)
+        {
+            Target = target;
+            Text = text ?? string.Empty;
         }
     }
 

@@ -6,8 +6,6 @@ namespace Combat.EditorTools
     {
         public static void Run()
         {
-            GenerateDefaultDatabase.GenerateBatch();
-            ValidateMenu.Validate();
             HaloCombatDemoSceneBuilder.VerifyAll();
         }
     }

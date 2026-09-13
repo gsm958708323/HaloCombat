@@ -103,7 +103,7 @@ namespace Combat.Presentation
                     Visible = true,
                     Kind = GizmoKind.Aoe,
                     Center = at.Position,
-                    Radius = ao.Def.Radius,
+                    Radius = ao.Radius,
                 };
         }
 

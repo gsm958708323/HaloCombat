@@ -15,6 +15,7 @@ namespace Combat.Core
         readonly HitDetectService _hitDetect;
         readonly ProjectileService _projectilesSvc;
         readonly AoeService _aoe;
+        readonly IMovementConstraint _movement;
         ProjectileCatalog _projectiles = new ProjectileCatalog();
         AoeCatalog _aoes = new AoeCatalog();
         SummonCatalog _summons = new SummonCatalog();
@@ -38,6 +39,7 @@ namespace Combat.Core
         public bool AllowsHitstopSkip => InHitstop;
         public CueLibrary Cues => _cues;
         public MotorConfig Motor => _motor;
+        public IMovementConstraint Movement => _movement;
 
         public CombatWorld(
             IActorFactory actorFactory,
@@ -46,7 +48,8 @@ namespace Combat.Core
             CombatTime time = null,
             IRandom random = null,
             CueLibrary cues = null,
-            MotorConfig? motor = null)
+            MotorConfig? motor = null,
+            IMovementConstraint movement = null)
         {
             _time = time ?? new CombatTime();
             _intents = intents ?? new IntentQueue();
@@ -55,6 +58,7 @@ namespace Combat.Core
             _random = random ?? new SeededRandom(1);
             _cues = cues ?? CueLibrary.DefaultCombat();
             _motor = motor ?? MotorConfig.SeasonOneDefaults();
+            _movement = movement ?? new FreeMovementConstraint();
             _query = new SimpleTargetQuery();
             _query.Bind(this);
             _registry = new EntityRegistry(actorFactory ?? throw new ArgumentNullException(nameof(actorFactory)), this);
@@ -101,7 +105,7 @@ namespace Combat.Core
             return id;
         }
 
-        public void PublishSpawn(EntityId id, string blueprintId)
+        public void PublishSpawn(EntityId id, string blueprintId, string viewBlueprintId = null)
         {
             if (!TryGetActor(id, out var actor) || actor == null)
                 return;
@@ -112,7 +116,7 @@ namespace Combat.Core
                 owner = aoe.OwnerId;
             else if (actor.TryGetComp<SummonComp>(out var summon) && summon.OwnerId.IsValid)
                 owner = summon.OwnerId;
-            _events.Publish(new EvEntitySpawn(id, blueprintId, owner));
+            _events.Publish(new EvEntitySpawn(id, blueprintId, owner, viewBlueprintId));
         }
         public bool TryGetActor(EntityId id, out Actor actor) => _registry.TryGet(id, out actor);
         public void RequestDespawn(EntityId id) => _registry.RequestDespawn(id);

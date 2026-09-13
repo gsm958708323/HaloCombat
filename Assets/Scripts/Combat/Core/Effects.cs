@@ -136,10 +136,18 @@ namespace Combat.Core
     {
         readonly int _specId;
         readonly bool _useTargetPoint;
-        public SpawnAoeEffect(int specId, bool useTargetPoint = false)
+        readonly float _radiusOverride;
+        readonly float _durationOverride;
+        readonly float _forwardOffset;
+
+        public SpawnAoeEffect(int specId, bool useTargetPoint = false, float radiusOverride = 0f,
+            float durationOverride = 0f, float forwardOffset = 0f)
         {
             _specId = specId;
             _useTargetPoint = useTargetPoint;
+            _radiusOverride = radiusOverride;
+            _durationOverride = durationOverride;
+            _forwardOffset = forwardOffset;
         }
 
         public void Apply(ref EffectContext ctx)
@@ -156,6 +164,14 @@ namespace Combat.Core
                 origin = stf.Position;
             else origin = SimVec3.Zero;
 
+            if (_forwardOffset != 0f && ctx.Source != null &&
+                ctx.Source.TryGetComp<TransformComp>(out var sourceTf))
+            {
+                var fwd = LocomotionComp.ForwardFromYaw(sourceTf.YawDegrees);
+                origin = new SimVec3(origin.X + fwd.X * _forwardOffset, origin.Y,
+                    origin.Z + fwd.Z * _forwardOffset);
+            }
+
             float snap = ctx.SnapshotAtk;
             if (snap == 0f && ctx.Source != null && ctx.Source.TryGetComp<AttributeSet>(out var attr))
                 snap = attr.GetFinal(AttrId.Atk);
@@ -169,7 +185,8 @@ namespace Combat.Core
             CopyTeam(ctx.Source, aoe);
 
             var body = aoe.GetComp<AoeComp>();
-            body.Setup(def, ctx.Source != null ? ctx.Source.Id : EntityId.Invalid, snap, ctx.World.Time.LogicFrame);
+            body.Setup(def, ctx.Source != null ? ctx.Source.Id : EntityId.Invalid, snap,
+                ctx.World.Time.LogicFrame, _radiusOverride, _durationOverride);
 
             if (def.CueId != 0)
                 ctx.World.Events.Publish(new EvCue(def.CueId, body.OwnerId, "AoeSpawn"));
@@ -177,7 +194,8 @@ namespace Combat.Core
             if (def.PulseOnSpawn)
                 AoePulse.PulseNow(ctx.World, aoe, body);
 
-            ctx.World.PublishSpawn(id, "aoe");
+            if (!string.IsNullOrEmpty(def.ViewBlueprintId))
+                ctx.World.PublishSpawn(id, "aoe", def.ViewBlueprintId);
         }
 
         public static void CopyTeam(Actor owner, Actor spawned)
@@ -220,6 +238,8 @@ namespace Combat.Core
         public bool UseSnapshotAtk = true;
         public bool ScaleByBuffStacks;
         public float CritMul = 2f;
+        public float CritChance = -1f;
+        public bool DirectDamage = true;
         public bool FireOnHurted = true;
         public int HitstopFrames;
 
@@ -251,10 +271,12 @@ namespace Combat.Core
                 raw *= Math.Max(1, ctx.BuffStacks);
 
             bool crit = false;
-            if (CanCrit && source != null && source.TryGetComp<AttributeSet>(out var srcAttr))
+            float critChance = CritChance;
+            if (critChance < 0f && source != null && source.TryGetComp<AttributeSet>(out var srcAttr))
+                critChance = srcAttr.GetFinal(AttrId.CritRate);
+            if (CanCrit && critChance >= 0f)
             {
-                float rate = srcAttr.GetFinal(AttrId.CritRate);
-                if (ctx.World.Random.Next01() < rate)
+                if (ctx.World.Random.Next01() < critChance)
                 {
                     crit = true;
                     raw *= CritMul > 0f ? CritMul : 2f;
@@ -267,6 +289,9 @@ namespace Combat.Core
                 dealMul = srcM.GetFinal(AttrId.DmgDealMul);
             raw *= dealMul * takenMul;
             if (raw < 0f) raw = 0f;
+
+            if (DirectDamage && target.TryGetComp<BarrelComp>(out var barrel))
+                raw = barrel.FilterDamage(source, raw);
 
             float shield = dstAttr.GetBase(AttrId.Shield);
             float absorb = 0f;

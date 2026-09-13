@@ -20,6 +20,7 @@ namespace Combat.Presentation
         public override bool WantsLogicSync => true;
         public override bool WantsLateTick => true;
         public CameraFocus Focus { get; private set; }
+        public bool HasFocus { get; private set; }
         public float StandEye = 1.6f,
             DownedEye = .55f,
             SpringHz = 8f;
@@ -42,6 +43,7 @@ namespace Combat.Presentation
         {
             _pose = null;
             _init = false;
+            HasFocus = false;
         }
 
         public override void SyncLogic(CombatWorld w)
@@ -57,12 +59,15 @@ namespace Combat.Presentation
                 f.Downed = t.Has(CommonTags.Downed);
                 f.Dead = t.Has(CommonTags.Dead);
                 f.EyeHeight = f.Downed || f.Dead ? DownedEye : StandEye;
+                HasFocus = true;
             }
             Focus = f;
         }
 
         public override void LateTick(float dt)
         {
+            if (!HasFocus)
+                return;
             var f = Focus;
             var target = new SimVec3(f.Logic.X, f.Logic.Y + f.EyeHeight, f.Logic.Z);
             if (!_init)

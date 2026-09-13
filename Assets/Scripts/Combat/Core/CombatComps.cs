@@ -264,6 +264,9 @@ namespace Combat.Core
         public float CurrentDuration => _player.Duration;
         public bool UsesSkillCatalog => _skills != null;
         public bool IsPlaying => _player.IsPlaying;
+        public bool AllowsMove => _player.IsPlaying && _player.Current != null && _player.Current.AllowMove;
+        public bool AllowsRotate => _player.IsPlaying && _player.Current != null && _player.Current.AllowRotate;
+        public string AnimatorState => _player.Current != null ? _player.Current.AnimatorState : string.Empty;
         public override bool WantsTick => true;
 
         public SkillDirectorComp(TimelineLibrary library, SkillCatalog skills = null)
@@ -352,7 +355,11 @@ namespace Combat.Core
         public override void Tick(float dt)
         {
             if (!_player.IsPlaying) return;
-            _player.Tick(dt, Self);
+            float scale = 1f;
+            if (_player.Current != null && _player.Current.ScaleWithActionSpeed &&
+                Self.TryGetComp<AttributeSet>(out var attr))
+                scale = Math.Max(.1f, attr.GetFinal(AttrId.ActionSpeed));
+            _player.Tick(dt * scale, Self);
         }
 
         public void FlushTimeline()

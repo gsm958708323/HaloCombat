@@ -175,9 +175,12 @@ namespace Combat.Core
             ctx.Loco?.ClearClipSteer();
             ctx.Loco?.ClearPendingSkill();
             ctx.Tags.Add(CommonTags.Dead, 1, TagSource.StateEnter("Dead"));
+            var world = ctx.Self.World;
+            ctx.Self.NotifyDeath(args.Killer.IsValid && world != null && world.TryGetActor(args.Killer, out var killer)
+                ? killer
+                : null);
             if (ctx.Self.TryGetComp<BuffComp>(out var buffs))
                 buffs.ClearAllWithExpire();
-            var world = ctx.Self.World;
             if (world != null)
             {
                 world.CleanupByOwner(ctx.Self.Id);

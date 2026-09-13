@@ -14,7 +14,7 @@ namespace Combat.Unity.Presentation
         public UnityPresentFactory(ViewPrefabTable views, BakedCombatData data, Transform root, Transform vfxRoot)
         {
             _views = views;
-            _data = data ?? throw new System.ArgumentNullException(nameof(data));
+            _data = data;
             _root = root;
             _vfxRoot = vfxRoot != null ? vfxRoot : root;
         }
@@ -23,7 +23,7 @@ namespace Combat.Unity.Presentation
         {
             string viewBlueprint = blueprintId;
             CharacterDefinition definition = null;
-            if (_data.Characters != null && _data.Characters.TryGet(blueprintId, out definition) &&
+            if (_data != null && _data.Characters != null && _data.Characters.TryGet(blueprintId, out definition) &&
                 !string.IsNullOrEmpty(definition.ViewBlueprintId))
                 viewBlueprint = definition.ViewBlueprintId;
 
@@ -37,9 +37,13 @@ namespace Combat.Unity.Presentation
             if (Has(entry.Features, ViewFeatures.Pose) || entry.Prefab != null)
                 actor.Add(new PoseFollowPresent());
             if (entry.Prefab != null)
-                actor.Add(new ActorViewPresent(entry.Prefab, _root));
+                actor.Add(new ActorViewPresent(entry.Prefab, _root, entry.KeepAliveOnDead));
+            if (entry.Kind == ViewKind.RuntimeBody && entry.Prefab != null)
+                actor.Add(new AoeVisualPresent());
             if (Has(entry.Features, ViewFeatures.Animation))
-                actor.Add(new AnimationPresent());
+                actor.Add(entry.Animation == ViewAnimationProfile.Gunner
+                    ? (PresentComp)new GunnerAnimationPresent()
+                    : new AnimationPresent());
             if (Has(entry.Features, ViewFeatures.BuffFx))
                 actor.Add(new BuffFxPresent(_vfxRoot));
             if (Has(entry.Features, ViewFeatures.Camera))
@@ -50,8 +54,10 @@ namespace Combat.Unity.Presentation
                 actor.Add(new PlayerHudSourcePresent());
             if (Has(entry.Features, ViewFeatures.HitboxGizmo))
                 actor.Add(new HitboxGizmoPresent(_root));
+            if (Has(entry.Features, ViewFeatures.HealthRing))
+                actor.Add(new HealthRingPresent(_root));
 
-            if (entry.Kind == ViewKind.Character && definition == null)
+            if (entry.Kind == ViewKind.Character && definition == null && _data != null)
             {
                 throw new System.InvalidOperationException("Character view requires a character definition: " + blueprintId);
             }

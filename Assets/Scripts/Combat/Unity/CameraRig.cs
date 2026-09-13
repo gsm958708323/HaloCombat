@@ -21,6 +21,8 @@ namespace Combat.Unity.Presentation
         {
             if (hub == null || !hub.TryGetLocalCamera(out var c))
                 return;
+            if (!c.HasFocus)
+                return;
             var p = c.Focus.Spring;
             var s = new Vector3(p.X, p.Y, p.Z);
             if (Cam != null)
