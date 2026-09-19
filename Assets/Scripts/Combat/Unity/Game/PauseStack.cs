@@ -1,4 +1,4 @@
-namespace Combat.Game
+namespace Combat.Unity.Game
 {
     public sealed class PauseStack
     {

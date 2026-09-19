@@ -1,7 +1,7 @@
 using Combat.Core;
 using UnityEngine;
 
-namespace Combat.Presentation
+namespace Combat.Unity.Presentation
 {
     public sealed class GunnerAnimationPresent : PresentComp
     {

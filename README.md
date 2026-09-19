@@ -19,26 +19,45 @@
 - 位姿：`Request*` → `Locomotion.Integrate`
 - 朝向：yaw `0` 朝 `+Z`（Unity 前向），正角朝 `+X`，`ForwardFromYaw(yaw)` 等价于 `Quaternion.Euler(0, yaw, 0) * Vector3.forward`；局部偏移同坐标系（`+Z` 前、`+X` 右）。旧 2D 极角约定（`0 = +X`）作废，换算为 `90 - yaw`
 - 血量：只通过 `AttributeSet.SetBase(Hp)` 修改
+- 分层：命名空间前缀 == 所属程序集名；`Game` / `Presentation` 是 `Combat.Unity` 内的逻辑分区，不拆 asmdef
 
-## 分层（表现层直接写unity相关逻辑）
+## 分层与程序集
 
-| 模块 | 职责 |
+**命名空间前缀 = 所属程序集名，无例外。** 模块 ≠ 程序集：`Combat.Unity.Game` / `Combat.Unity.Presentation` 是 `Combat.Unity` 程序集内的**逻辑分区**（同程序集内没有编译期隔离），不是独立程序集。
+
+| 命名空间 | 程序集 |
 | --- | --- |
-| `Combat.Core` | 纯 C# 战斗核。实体、时间、效果、技能、弹体、AoE、Buff、行为树 |
-| `Combat.Config` | Unity SO 配置，`Bake()` 成运行时定义 |
-| `Combat.Game` | 对局会话、50Hz 逻辑步、暂停、胜负、输入路由 |
-| `Combat.Presentation` | `PresentHub → PresentActor → PresentComp` 视图组件 |
-| `Combat.Unity` | 场景入口、Input System、HUD、VFX / Floater 池 |
-| `Combat.Demos` | 纯 C# 逻辑 Demo，Editor-only |
-| `Combat.Editor` | 数据库生成、场景检查、Demo 校验 |
+| `Combat.Core` | `Combat.Core` |
+| `Combat.Config` | `Combat.Config` |
+| `Combat.Demos` | `Combat.Demos` |
+| `Combat.Unity.Game` / `Combat.Unity.Presentation` / `Combat.Unity` | `Combat.Unity` |
+| `Combat.Editor` | `Combat.Editor` |
 
-`Core` / `Config` / `Unity` / `Demos` / `Editor` 是独立 asmdef。`Game` 与 `Presentation` 编进 `Combat.Unity`。
+| 模块 | 职责 | 隔离 |
+| --- | --- | --- |
+| `Combat.Core` | 纯 C# 战斗核。实体、时间、效果、技能、弹体、AoE、Buff、行为树 | 程序集；零引擎引用 |
+| `Combat.Config` | Unity SO 配置，`Bake()` 成运行时定义 | 程序集 |
+| `Combat.Unity.Game` | 对局会话、50Hz 逻辑步、暂停、胜负、输入路由 | 逻辑分区 |
+| `Combat.Unity.Presentation` | `PresentHub → PresentActor → PresentComp` 视图组件 | 逻辑分区 |
+| `Combat.Unity` | 场景入口、Input System、HUD、VFX / Floater 池 | 程序集 |
+| `Combat.Demos` | 纯 C# 逻辑 Demo，Editor-only | 程序集；零引擎引用 |
+| `Combat.Editor` | 数据库生成、场景检查、Demo 校验 | 程序集；Editor-only |
+
+### 表现层：`PresentComp`
+
+表现层的解耦单元是 `PresentComp`——**表现层角色的组件**。
+
+- **表现行为按组件横向拆开**，而不是堆进一个视图类。每个 `PresentComp` 只管一件事（位姿跟随、动画状态、Buff 特效、受击反馈、飘字锚点……），再组合进 `PresentActor`。
+- **组件可以直接写 Unity 逻辑**（`GameObject` / `Transform` / `Animator` / `ParticleSystem`……）——这是有意设计，不是技术债。
+- **数据来源是 `Combat.Core` 的 comp**：在 `SyncLogic(world)` 里经 `Self.TryLogic(world, out var actor)` 取到 `Actor`，再用 `actor.TryGetComp<T>()` 读取逻辑状态。表现层不回写逻辑状态。
+
+因此：只有 `Combat.Core` 与 `Combat.Demos` 受零引擎约束（asmdef `noEngineReferences: true`，编译器强制）。把表现层改成引擎无关层、或为 `Game` / `Presentation` 新建独立 asmdef，都已明确否决。
 
 源码位置：
 
 - 逻辑核：`Assets/Scripts/Combat/Core`
 - 配置：`Assets/Scripts/Combat/Config`
-- 对局 / 表现 / Unity 胶水：`Assets/Scripts/Combat/Game`、`Presentation`、`Unity`
+- 对局 / 表现 / Unity 胶水：`Assets/Scripts/Combat/Unity/Game`、`Unity/Presentation`、`Unity`
 - 烘焙资源：`Assets/Combat/Config/Generated`
 
 ## 战斗核

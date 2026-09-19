@@ -1,6 +1,4 @@
-using Combat.Unity.Editor;
-
-namespace Combat.EditorTools
+namespace Combat.Editor
 {
     public static class FinalVerification
     {

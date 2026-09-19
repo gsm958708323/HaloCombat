@@ -66,10 +66,11 @@ namespace Combat.Config
         /// code-defined table (used by the pure C# regression suite).
         public BuffArenaData BakeContent()
         {
-            // The generated assets do not carry timeline payloads/clips yet, so serving
-            // content from them would ship castless skills. Until the builder mirrors
-            // timeline payloads the code table stays authoritative at runtime; flip this
-            // on once the equivalence check reports zero diffs.
+            // The generated timeline assets do not carry working payload effects yet (the
+            // builder resolves effect assets by name and most asset class names do not match),
+            // so serving them would ship castless skills. Until that is fixed the code table
+            // stays authoritative at runtime; flip this on once the equivalence check reports
+            // zero diffs.
             if (!UseGeneratedContent) return null;
             if (!HasCompleteContent()) return null;
 
@@ -86,7 +87,43 @@ namespace Combat.Config
                 data.Cues = Cues.Bake();
             for (int i = 0; i < Skills.Length; i++)
                 data.Skills.Add(Skills[i].Bake());
+
+            if (HasCastlessPayload(data))
+            {
+                Debug.LogError(
+                    "BuffArenaDatabase: generated timelines hold payload slots whose effect failed to bake. "
+                        + "Serving them would ship castless skills, so the code-defined table stays authoritative. "
+                        + "Fix the builder's effect-asset resolution, or turn Use Generated Content off.",
+                    this
+                );
+                return null;
+            }
             return data;
+        }
+
+        /// <summary>
+        /// True when any timeline payload holds a slot whose IEffect failed to bake. The builder
+        /// resolves effect assets by name, so a naming mismatch yields null slots — a skill that
+        /// casts but spawns nothing.
+        /// </summary>
+        static bool HasCastlessPayload(BuffArenaData data)
+        {
+            foreach (var timeline in data.Timelines.All)
+            {
+                var payloads = timeline.Payloads;
+                if (payloads == null)
+                    continue;
+                for (int i = 0; i < payloads.Length; i++)
+                {
+                    var effects = payloads[i].Effects;
+                    if (effects == null)
+                        continue;
+                    for (int j = 0; j < effects.Length; j++)
+                        if (effects[j] == null)
+                            return true;
+                }
+            }
+            return false;
         }
 
         /// True when every definition the runtime needs is present. The id lists are the

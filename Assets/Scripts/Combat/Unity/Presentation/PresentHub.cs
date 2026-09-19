@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Combat.Core;
 
-namespace Combat.Presentation
+namespace Combat.Unity.Presentation
 {
     public interface IPresentFactory
     {

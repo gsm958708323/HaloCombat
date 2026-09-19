@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Combat.Core;
-using Combat.Presentation;
 using UnityEngine;
 
 namespace Combat.Unity.Presentation

@@ -2,7 +2,7 @@ using Combat.Core;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Combat.Presentation
+namespace Combat.Unity.Presentation
 {
     public struct BuffVisualRule
     {

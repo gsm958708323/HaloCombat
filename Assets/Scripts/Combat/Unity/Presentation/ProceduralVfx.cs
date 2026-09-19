@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Combat.Presentation
+namespace Combat.Unity.Presentation
 {
     public static class ProceduralVfxFactory
     {

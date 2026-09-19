@@ -1,7 +1,7 @@
 using System;
 using Combat.Core;
 
-namespace Combat.Presentation
+namespace Combat.Unity.Presentation
 {
     public readonly struct FloaterRequest
     {

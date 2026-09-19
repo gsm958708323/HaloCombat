@@ -1,6 +1,6 @@
 using System;
 
-namespace Combat.Game
+namespace Combat.Unity.Game
 {
     public sealed class LogicTicker
     {

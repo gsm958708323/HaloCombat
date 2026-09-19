@@ -1,7 +1,7 @@
 using Combat.Core;
 using UnityEngine;
 
-namespace Combat.Presentation
+namespace Combat.Unity.Presentation
 {
     public enum GizmoKind : byte
     {

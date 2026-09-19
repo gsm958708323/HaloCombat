@@ -6,7 +6,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Combat.Unity.Editor
+namespace Combat.Editor
 {
     public static class HaloCombatDemoSceneBuilder
     {

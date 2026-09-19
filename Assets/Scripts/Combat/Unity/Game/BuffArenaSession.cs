@@ -1,10 +1,9 @@
 using System;
 using System.Collections.Generic;
 using Combat.Core;
-using Combat.Presentation;
-using Combat.Unity.Game;
+using Combat.Unity.Presentation;
 
-namespace Combat.Game
+namespace Combat.Unity.Game
 {
     public sealed class BuffArenaSession : IDisposable
     {

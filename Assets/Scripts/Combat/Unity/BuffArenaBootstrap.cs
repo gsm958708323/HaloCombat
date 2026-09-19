@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using Combat.Config;
 using Combat.Core;
-using Combat.Game;
-using Combat.Presentation;
 using Combat.Unity.Presentation;
 using UnityEngine;
 using UnityEngine.InputSystem;

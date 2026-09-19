@@ -77,4 +77,4 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 498eb0bcaf5a5a74b8094b52b56221d8, type: 2}
   - {fileID: 11400000, guid: 59a45c71414aa2f48a504be1d37e3342, type: 2}
   Cues: {fileID: 0}
-  UseGeneratedContent: 1
+  UseGeneratedContent: 0

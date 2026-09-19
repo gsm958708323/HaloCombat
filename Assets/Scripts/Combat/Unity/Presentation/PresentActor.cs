@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Combat.Core;
 using UnityEngine;
 
-namespace Combat.Presentation
+namespace Combat.Unity.Presentation
 {
     public abstract class PresentComp
     {

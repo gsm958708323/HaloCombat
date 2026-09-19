@@ -1,4 +1,4 @@
-namespace Combat.Presentation
+namespace Combat.Unity.Presentation
 {
     public static class PresentSettings
     {

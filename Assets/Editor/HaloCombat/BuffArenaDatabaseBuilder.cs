@@ -6,7 +6,7 @@ using Combat.Core;
 using UnityEditor;
 using UnityEngine;
 
-namespace Combat.EditorTools
+namespace Combat.Editor
 {
     /// One-shot migration helper: reads the code-defined Buff Arena table and writes it
     /// out as ScriptableObject assets under Generated/Content. Definition values are

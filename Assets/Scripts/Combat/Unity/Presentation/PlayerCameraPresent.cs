@@ -1,6 +1,6 @@
 using Combat.Core;
 
-namespace Combat.Presentation
+namespace Combat.Unity.Presentation
 {
     public struct CameraFocus
     {

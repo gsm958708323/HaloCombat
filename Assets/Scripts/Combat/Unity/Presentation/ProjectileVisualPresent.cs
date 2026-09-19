@@ -1,7 +1,7 @@
 using Combat.Core;
 using UnityEngine;
 
-namespace Combat.Presentation
+namespace Combat.Unity.Presentation
 {
     /// Visual-only spin for runtime bodies whose prefab has no animation of its own.
     /// The source boomerang and spike ball both spin in flight; without this they read
