@@ -20,15 +20,6 @@ namespace Combat.Unity.Game
         public Transform FloaterRoot;
         public BuffArenaHudView Hud;
 
-        public GameObject MuzzleFlashPrefab;
-        public GameObject HeartPrefab;
-        public GameObject RollFirePrefab;
-        public GameObject HitPrefab;
-        public GameObject ShieldPrefab;
-        public GameObject ExplosionPrefab;
-        public GameObject StarPrefab;
-        public GameObject ShockwavePrefab;
-
         BuffArenaData _data;
         BuffArenaSession _session;
         BuffArenaInputSource _input;
@@ -43,7 +34,13 @@ namespace Combat.Unity.Game
             var navigation = MapVisuals.Build();
             var hub = new PresentHub(new UnityPresentFactory(Views, null, PresentRoot, VfxRoot));
             hub.SetWorld(null);
-            hub.Cues.SetPool(new UnityVfxPool(VfxRoot, BuildCueMap(), hub.ResolveAnchorPosition));
+            var cuePrefabs = BuildCueMap();
+            if (cuePrefabs.Count == 0)
+                throw new InvalidOperationException(
+                    "Buff Arena has no visual cue prefab bound. Assign a Prefab and tick Visual Enabled on the "
+                    + "cue entries of " + (Database.Cues != null ? Database.Cues.name : "(no cue asset assigned)")
+                    + ".");
+            hub.Cues.SetPool(new UnityVfxPool(VfxRoot, cuePrefabs, hub.ResolveAnchorPosition));
             hub.Floaters.SetPool(new UnityFloaterPool(FloaterRoot, Camera.main));
             _session = new BuffArenaSession(_data, hub, navigation);
             _input = new BuffArenaInputSource(Actions, Camera.main);
@@ -99,9 +96,9 @@ namespace Combat.Unity.Game
                 var camera = go.AddComponent<Camera>();
                 Rig = go.AddComponent<CameraRig>();
                 Rig.Cam = camera;
-                Rig.Distance = 2.5f;
-                Rig.Height = 2.5f;
-                Rig.BaseFov = 60f;
+                Rig.Distance = Database.CameraDistance;
+                Rig.Height = Database.CameraHeight;
+                Rig.BaseFov = Database.CameraBaseFov;
             }
             if (Hud == null)
             {
@@ -118,19 +115,23 @@ namespace Combat.Unity.Game
             return go.transform;
         }
 
+        /// <summary>
+        /// Cue prefab bindings come from the database's cue asset, so the key list has a single
+        /// source: rebuilding the cue definitions cannot drift away from the prefab bindings.
+        /// </summary>
         Dictionary<string, GameObject> BuildCueMap()
         {
-            return new Dictionary<string, GameObject>
+            var map = new Dictionary<string, GameObject>();
+            var cues = Database != null ? Database.Cues : null;
+            if (cues == null || cues.Entries == null) return map;
+            for (int i = 0; i < cues.Entries.Length; i++)
             {
-                ["fx_muzzle"] = MuzzleFlashPrefab,
-                ["fx_heart"] = HeartPrefab,
-                ["fx_roll_fire"] = RollFirePrefab,
-                ["fx_hit"] = HitPrefab,
-                ["fx_shield"] = ShieldPrefab,
-                ["fx_explosion"] = ExplosionPrefab,
-                ["fx_star"] = StarPrefab,
-                ["fx_shockwave"] = ShockwavePrefab
-            };
+                var entry = cues.Entries[i];
+                if (!entry.VisualEnabled || entry.Prefab == null) continue;
+                if (string.IsNullOrEmpty(entry.PrefabKey)) continue;
+                map[entry.PrefabKey] = entry.Prefab;
+            }
+            return map;
         }
     }
 }

@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c9a9ef257ce1beb49af3c30bb2550971, type: 3}
+  m_Name: BA_buff_enemy
+  m_EditorClassIdentifier: 
+  BlueprintId: buff_enemy
+  ViewBlueprintId: buff_enemy_view
+  IsPlayer: 0
+  TeamId: 2
+  BodyRadius: 0.25
+  AmmoCapacity: 0
+  MaxHp: 50
+  MaxHpPerIndex: 2
+  Atk: 15
+  AtkRandomRange: 15
+  AtkPerIndex: 1
+  MoveSpeed: 5
+  ActionSpeed: 1
+  CritRate: 0.05
+  UseLegacySpeedCurve: 1
+  LegacySpeedBase: 50
+  LegacySpeedRandomRange: 20
+  MoveSpeedCurveScale: 5.6
+  MoveSpeedCurveDivisor: 100
+  MoveSpeedCurveOffset: 0.2

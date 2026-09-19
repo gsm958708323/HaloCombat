@@ -74,16 +74,19 @@
     <Compile Include="Assets\Scripts\Combat\Config\CondHasTagAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\LaunchAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\CharacterMotorAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\BarrelExplosionAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\SpawnAoeAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\ArenaSpawnTableSO.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\ActStartReturnAsset.cs" />
-    <Compile Include="Assets\Scripts\Combat\Config\BuffArenaEffectAssets.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\PullToPointAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\ActMoveTowardHomeAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\CharacterDefinitionAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\ActPatrolAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\HitProfileAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\CondTargetHasTagAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\RefillAmmoAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\SpawnSummonAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\PlayBuffArenaCueAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\SummonDefAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\ActAcquireHostileAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\KnockdownAsset.cs" />
@@ -96,6 +99,7 @@
     <Compile Include="Assets\Scripts\Combat\Config\DefinitionAssets.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\ActMoveTowardAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\BuffArenaSkillAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\HurtFeedbackAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\DurationSpecAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\BtSequenceAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\SpawnProjectileAsset.cs" />
@@ -113,7 +117,9 @@
     <Compile Include="Assets\Scripts\Combat\Config\ComboTableAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\ActFollowOwnerAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\HitStunAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\BuffArenaActorDefAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\CondBeyondLeashAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\SpawnBarrelAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\CondOwnerDeadAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\PlayCueAsset.cs" />
   </ItemGroup>

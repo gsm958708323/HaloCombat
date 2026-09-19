@@ -1,5 +1,24 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-8629634026234351923
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a3674ad07407ebf4ab8901433fb55c3e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  CueId: 4208
+  AnchorKey: Body
+  InstanceKey: 
+  TargetIsVictim: 0
+  AtCuePoint: 0
+  Loop: 0
+  Stop: 0
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -47,8 +66,46 @@ MonoBehaviour:
   Payloads:
   - Time: 0
     Effects:
-    - {fileID: 0}
+    - {fileID: 8721886346967227515}
   - Time: 0.8
     Effects:
-    - {fileID: 0}
-    - {fileID: 0}
+    - {fileID: 6105355595220515007}
+    - {fileID: -8629634026234351923}
+--- !u!114 &6105355595220515007
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a3674ad07407ebf4ab8901433fb55c3e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  CueId: 4203
+  AnchorKey: Body
+  InstanceKey: roll_fire
+  TargetIsVictim: 0
+  AtCuePoint: 0
+  Loop: 0
+  Stop: 1
+--- !u!114 &8721886346967227515
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a3674ad07407ebf4ab8901433fb55c3e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  CueId: 4203
+  AnchorKey: Body
+  InstanceKey: roll_fire
+  TargetIsVictim: 0
+  AtCuePoint: 0
+  Loop: 1
+  Stop: 0

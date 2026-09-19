@@ -40,6 +40,11 @@ MonoBehaviour:
   SpawnPeriod: 10
   EnemyCleanupDelay: 5
   BarrelSelfDamagePeriod: 5
+  Seed: 1
+  Motor: {fileID: 11400000, guid: 2f9be78e8a5c71b4290bc42c9050b88f, type: 2}
+  CameraDistance: 2.5
+  CameraHeight: 2.5
+  CameraBaseFov: 60
   Projectiles:
   - {fileID: 11400000, guid: 304936e0d5691574a8ff9ebb70d92e52, type: 2}
   - {fileID: 11400000, guid: 9ac812fa903d725418bd4cb52dab7d1a, type: 2}
@@ -76,5 +81,10 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 1fe56a0b7eeb6954687c6fbfd7409a98, type: 2}
   - {fileID: 11400000, guid: 498eb0bcaf5a5a74b8094b52b56221d8, type: 2}
   - {fileID: 11400000, guid: 59a45c71414aa2f48a504be1d37e3342, type: 2}
-  Cues: {fileID: 0}
-  UseGeneratedContent: 0
+  Actors:
+  - {fileID: 11400000, guid: 28a65263a32b682479cf894fa265f9eb, type: 2}
+  - {fileID: 11400000, guid: 2fbafe46917ad944594f073e7cc45d91, type: 2}
+  - {fileID: 11400000, guid: 0f4d1e5cea979d240a0407a59b7c899e, type: 2}
+  Cues: {fileID: 11400000, guid: f18a00c4ce1abfd4782694728abafa89, type: 2}
+  UseGeneratedContent: 1
+  Policy: 1

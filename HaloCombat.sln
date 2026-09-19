@@ -13,6 +13,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Combat.Demos", "Combat.Demo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Assembly-CSharp-Editor", "Assembly-CSharp-Editor.csproj", "{112FCC5D-D972-E0E2-F410-C61AE5304B19}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Combat.EditModeTests", "Combat.EditModeTests.csproj", "{CC3F4358-A8D1-68CC-708F-50CE59FACAD5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Combat.PlayModeTests", "Combat.PlayModeTests.csproj", "{66E04501-E412-B74F-CFC9-6785C87E3B81}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Assembly-CSharp", "Assembly-CSharp.csproj", "{C5B38940-611C-0F5D-736B-83A09FFB4537}"
 EndProject
 Global
@@ -45,6 +49,14 @@ Global
 		{112FCC5D-D972-E0E2-F410-C61AE5304B19}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{112FCC5D-D972-E0E2-F410-C61AE5304B19}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{112FCC5D-D972-E0E2-F410-C61AE5304B19}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CC3F4358-A8D1-68CC-708F-50CE59FACAD5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CC3F4358-A8D1-68CC-708F-50CE59FACAD5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CC3F4358-A8D1-68CC-708F-50CE59FACAD5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CC3F4358-A8D1-68CC-708F-50CE59FACAD5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{66E04501-E412-B74F-CFC9-6785C87E3B81}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{66E04501-E412-B74F-CFC9-6785C87E3B81}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{66E04501-E412-B74F-CFC9-6785C87E3B81}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{66E04501-E412-B74F-CFC9-6785C87E3B81}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C5B38940-611C-0F5D-736B-83A09FFB4537}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C5B38940-611C-0F5D-736B-83A09FFB4537}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C5B38940-611C-0F5D-736B-83A09FFB4537}.Release|Any CPU.ActiveCfg = Release|Any CPU

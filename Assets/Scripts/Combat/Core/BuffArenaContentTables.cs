@@ -15,6 +15,47 @@ namespace Combat.Core
             RegisterAoes(data);
             RegisterTimelines(data);
             RegisterSkills(data);
+            RegisterActors(data);
+        }
+
+        static void RegisterActors(BuffArenaData data)
+        {
+            data.Actors.Add(new BuffArenaActorDef
+            {
+                BlueprintId = BuffArenaIds.PlayerBlueprint,
+                ViewBlueprintId = "buff_player_view",
+                IsPlayer = true,
+                TeamId = 1,
+                BodyRadius = .25f,
+                AmmoCapacity = 60,
+                Atk = 50f,
+                AtkRandomRange = 20f,
+                MoveSpeed = 3f,
+                ActionSpeed = 1f,
+                CritRate = .05f
+            });
+            data.Actors.Add(new BuffArenaActorDef
+            {
+                BlueprintId = BuffArenaIds.EnemyBlueprint,
+                ViewBlueprintId = "buff_enemy_view",
+                TeamId = 2,
+                BodyRadius = .25f,
+                MaxHp = 50f,
+                MaxHpPerIndex = 2f,
+                Atk = 15f,
+                AtkRandomRange = 15f,
+                AtkPerIndex = 1f,
+                ActionSpeed = 1f,
+                CritRate = .05f,
+                UseLegacySpeedCurve = true
+            });
+            data.Actors.Add(new BuffArenaActorDef
+            {
+                BlueprintId = BuffArenaIds.BarrelBlueprint,
+                ViewBlueprintId = "buff_barrel_view",
+                TeamId = 0,
+                BodyRadius = .25f
+            });
         }
 
         static void RegisterCues(BuffArenaData data)

@@ -85,6 +85,7 @@
     <Compile Include="Assets\Scripts\Combat\Core\BuffArenaGameplay.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\TagsInput.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\BakedContent.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\BuffArenaActorDef.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Infrastructure.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\World.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Timeline.cs" />

@@ -29,6 +29,14 @@ namespace Combat.Config
         public float SpawnPeriod = 10f;
         public float EnemyCleanupDelay = 5f;
         public float BarrelSelfDamagePeriod = 5f;
+        public int Seed = 1;
+        public CharacterMotorAsset Motor;
+
+        [Header("Presentation")]
+        [Tooltip("Framing used when the Arena scene has to build its own camera rig at runtime.")]
+        public float CameraDistance = 2.5f;
+        public float CameraHeight = 2.5f;
+        public float CameraBaseFov = 60f;
 
         [Header("Content (Generated)")]
         [Tooltip("Index-aligned with ProjectileIds. When fully populated this replaces the code-defined projectiles.")]
@@ -38,11 +46,15 @@ namespace Combat.Config
         [Tooltip("Registered in order; ids come from each asset.")]
         public SkillTimelineAsset[] Timelines;
         public BuffArenaSkillAsset[] Skills;
+        public BuffArenaActorDefAsset[] Actors;
         public CueLibraryAsset Cues;
 
         [Header("Switches")]
-        [Tooltip("Off while the generated assets are still missing timeline payloads/clips.")]
+        [Tooltip("Master switch: when off the runtime uses the code-defined table instead.")]
         public bool UseGeneratedContent;
+        [Tooltip("SoStrict refuses to start when the generated content is unusable; SoWithWarnings " +
+                 "falls back to the code table and reports an error. SoStrict is the target state.")]
+        public ContentSourcePolicy Policy = ContentSourcePolicy.SoWithWarnings;
 
         public BuffArenaSourceConfig Bake()
         {
@@ -57,23 +69,60 @@ namespace Combat.Config
                 SpawnPeriod = SpawnPeriod,
                 EnemyCleanupDelay = EnemyCleanupDelay,
                 BarrelSelfDamagePeriod = BarrelSelfDamagePeriod,
-                Content = BakeContent()
+                Seed = Seed,
+                Motor = Motor != null ? Motor.Bake() : MotorConfig.SeasonOneDefaults(),
+                Actors = BakeActors(),
+                Policy = Policy,
+                Content = BakeContent(),
+                ContentError = LastContentError
             };
         }
 
         /// Builds the runtime database straight from the assigned assets. Returns null when
         /// the content arrays are not fully populated, so callers can fall back to the
         /// code-defined table (used by the pure C# regression suite).
+        /// Explains why the last BakeContent() call returned null, so the runtime fallback
+        /// message can say what is actually missing.
+        public string LastContentError { get; private set; }
+
         public BuffArenaData BakeContent()
         {
-            // The generated timeline assets do not carry working payload effects yet (the
-            // builder resolves effect assets by name and most asset class names do not match),
-            // so serving them would ship castless skills. Until that is fixed the code table
-            // stays authoritative at runtime; flip this on once the equivalence check reports
-            // zero diffs.
-            if (!UseGeneratedContent) return null;
-            if (!HasCompleteContent()) return null;
+            LastContentError = null;
+            if (!UseGeneratedContent)
+            {
+                LastContentError = "Use Generated Content is off";
+                return null;
+            }
+            if (!HasCompleteContent())
+            {
+                LastContentError = IncompleteReason;
+                return null;
+            }
+            return BakeContentCore();
+        }
 
+        const string IncompleteReason =
+            "the generated assets are incomplete: projectiles, aoes, timelines, skills, "
+            + "actor definitions and a motor asset all have to be present and non-empty";
+
+        /// <summary>
+        /// Bakes the generated content without consulting UseGeneratedContent, so editor tooling
+        /// can verify the assets while the runtime still runs on the code table. Returns null
+        /// (with LastContentError set) when the content is unusable.
+        /// </summary>
+        public BuffArenaData BakeContentForVerification()
+        {
+            LastContentError = null;
+            if (!HasCompleteContent())
+            {
+                LastContentError = IncompleteReason;
+                return null;
+            }
+            return BakeContentCore();
+        }
+
+        BuffArenaData BakeContentCore()
+        {
             var data = new BuffArenaData();
             for (int i = 0; i < Timelines.Length; i++)
                 data.Timelines.Register(Timelines[i].Bake());
@@ -87,13 +136,17 @@ namespace Combat.Config
                 data.Cues = Cues.Bake();
             for (int i = 0; i < Skills.Length; i++)
                 data.Skills.Add(Skills[i].Bake());
+            var actorDefs = BakeActors();
+            for (int i = 0; i < actorDefs.Length; i++)
+                if (actorDefs[i] != null) data.Actors.Add(actorDefs[i]);
 
             if (HasCastlessPayload(data))
             {
+                LastContentError = "generated timelines hold payload slots whose effect failed to bake";
                 Debug.LogError(
-                    "BuffArenaDatabase: generated timelines hold payload slots whose effect failed to bake. "
-                        + "Serving them would ship castless skills, so the code-defined table stays authoritative. "
-                        + "Fix the builder's effect-asset resolution, or turn Use Generated Content off.",
+                    "BuffArenaDatabase: " + LastContentError
+                        + ". Serving them would ship castless skills, so the code-defined table stays "
+                        + "authoritative. Rebuild the content assets, or turn Use Generated Content off.",
                     this
                 );
                 return null;
@@ -131,10 +184,30 @@ namespace Combat.Config
         /// so the counts only have to cover the ids that have a spec.
         public bool HasCompleteContent()
         {
-            return Projectiles != null && Projectiles.Length >= ProjectileIds.Length &&
-                   Aoes != null && Aoes.Length >= AoeIds.Length &&
-                   Timelines != null && Timelines.Length > 0 &&
-                   Skills != null && Skills.Length > 0;
+            if (Projectiles == null || Projectiles.Length < ProjectileIds.Length) return false;
+            if (Aoes == null || Aoes.Length < AoeIds.Length) return false;
+            if (Timelines == null || Timelines.Length == 0) return false;
+            if (Skills == null || Skills.Length == 0) return false;
+            if (Actors == null || Actors.Length == 0) return false;
+            if (Motor == null) return false;
+            for (int i = 0; i < Timelines.Length; i++)
+                if (Timelines[i] == null) return false;
+            for (int i = 0; i < Skills.Length; i++)
+                if (Skills[i] == null) return false;
+            for (int i = 0; i < Actors.Length; i++)
+                if (Actors[i] == null || string.IsNullOrEmpty(Actors[i].BlueprintId)) return false;
+            return true;
+        }
+
+        /// <summary>Baked per-blueprint actor definitions. Shared by the code path (which
+        /// registers the same shape) and the asset path.</summary>
+        public BuffArenaActorDef[] BakeActors()
+        {
+            if (Actors == null) return Array.Empty<BuffArenaActorDef>();
+            var result = new BuffArenaActorDef[Actors.Length];
+            for (int i = 0; i < Actors.Length; i++)
+                result[i] = Actors[i] != null ? Actors[i].Bake() : null;
+            return result;
         }
 
         void OnValidate()

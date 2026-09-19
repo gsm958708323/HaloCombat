@@ -5,6 +5,12 @@ namespace Combat.Core
 {
     public static class BuffArenaIds
     {
+        // Blueprint ids are shared identity, not tuning: the content table, the actor
+        // factory and the session all have to agree on them.
+        public const string PlayerBlueprint = "buff_player";
+        public const string EnemyBlueprint = "buff_enemy";
+        public const string BarrelBlueprint = "buff_barrel";
+
         public const int SkillFireValue = 2001;
         public const int SkillRollValue = 2002;
         public const int SkillMonkeyValue = 2003;
@@ -151,6 +157,17 @@ namespace Combat.Core
         public SkillNodeId WarpSkillId = SkillNodeId.None;
     }
 
+    /// <summary>
+    /// How the runtime treats a missing or incomplete baked content database. The Unity
+    /// runtime is supposed to run on its ScriptableObject assets, so SoStrict is the target
+    /// state; SoWithWarnings exists only so a build stays runnable while assets are authored.
+    /// </summary>
+    public enum ContentSourcePolicy : byte
+    {
+        SoWithWarnings = 0,
+        SoStrict = 1
+    }
+
     public sealed class BuffArenaSourceConfig
     {
         public string[] SkillIds = Array.Empty<string>();
@@ -162,9 +179,15 @@ namespace Combat.Core
         public float SpawnPeriod = 10f;
         public float EnemyCleanupDelay = 5f;
         public float BarrelSelfDamagePeriod = 5f;
+        public MotorConfig Motor = MotorConfig.SeasonOneDefaults();
+        public int Seed = 1;
+        public BuffArenaActorDef[] Actors = Array.Empty<BuffArenaActorDef>();
+        public ContentSourcePolicy Policy = ContentSourcePolicy.SoWithWarnings;
         // Pre-baked database produced from ScriptableObject assets. Null in the pure C#
         // path, where the code-defined table below is registered instead.
         public BuffArenaData Content;
+        /// Explains why Content is null. Set by BuffArenaDatabaseAsset.BakeContent().
+        public string ContentError;
     }
 
     public sealed class BuffArenaData
@@ -181,6 +204,16 @@ namespace Combat.Core
         public float SpawnPeriod = 10f;
         public float EnemyCleanupDelay = 5f;
         public float BarrelSelfDamagePeriod = 5f;
+        public int Seed = 1;
+        public readonly List<BuffArenaActorDef> Actors = new List<BuffArenaActorDef>(4);
+
+        public BuffArenaActorDef RequireActor(string blueprintId)
+        {
+            for (int i = 0; i < Actors.Count; i++)
+                if (string.Equals(Actors[i].BlueprintId, blueprintId, StringComparison.Ordinal))
+                    return Actors[i];
+            throw new InvalidOperationException("Missing Buff Arena actor definition " + blueprintId);
+        }
 
         public BuffArenaSkill RequireSkill(SkillNodeId id)
         {
@@ -424,11 +457,13 @@ namespace Combat.Core
 
     public sealed class PlayBuffArenaCueEffect : IEffect
     {
+        // Field names follow the "_<AssetFieldName>" convention so BuffArenaDatabaseBuilder
+        // can copy this configuration into PlayBuffArenaCueAsset by reflection.
         readonly int _cueId;
-        readonly string _anchor;
-        readonly string _key;
-        readonly bool _target;
-        readonly bool _point;
+        readonly string _anchorKey;
+        readonly string _instanceKey;
+        readonly bool _targetIsVictim;
+        readonly bool _atCuePoint;
         readonly bool _loop;
         readonly bool _stop;
 
@@ -436,10 +471,10 @@ namespace Combat.Core
             bool point = false, bool loop = false, bool stop = false)
         {
             _cueId = cueId;
-            _anchor = anchor ?? string.Empty;
-            _key = key ?? string.Empty;
-            _target = target;
-            _point = point;
+            _anchorKey = anchor ?? string.Empty;
+            _instanceKey = key ?? string.Empty;
+            _targetIsVictim = target;
+            _atCuePoint = point;
             _loop = loop;
             _stop = stop;
         }
@@ -448,9 +483,9 @@ namespace Combat.Core
         {
             if (ctx.World == null) return;
             var source = ctx.Source != null ? ctx.Source.Id : EntityId.Invalid;
-            var target = _target && ctx.Target != null ? ctx.Target.Id : EntityId.Invalid;
+            var target = _targetIsVictim && ctx.Target != null ? ctx.Target.Id : EntityId.Invalid;
             ctx.World.Events.Publish(new EvCue(_cueId, source, "BuffArena", target, ctx.Point,
-                _point && ctx.HasPoint, _anchor, _key, _loop, _stop));
+                _atCuePoint && ctx.HasPoint, _anchorKey, _instanceKey, _loop, _stop));
         }
     }
 
@@ -480,6 +515,9 @@ namespace Combat.Core
     {
         public float Radius = 2.2f;
         public float DamageCoeff = .15f;
+        // The source content stores team ids as raw numbers; keep it configurable so the
+        // effect does not hard-code "the enemy team".
+        public int EnemyTeamId = 2;
 
         public void Apply(ref EffectContext ctx)
         {
@@ -508,7 +546,7 @@ namespace Combat.Core
                         new DamageEffect { Flat = 9999f, CanCrit = false, FireOnHurted = false, DirectDamage = true }
                     }, ctx.Target, target, 0f, point);
                 }
-                else if (target.TryGetComp<TeamComp>(out var team) && team.TeamId == 2)
+                else if (target.TryGetComp<TeamComp>(out var team) && team.TeamId == EnemyTeamId)
                 {
                     ctx.World.Deliver(new IEffect[]
                     {
@@ -544,11 +582,15 @@ namespace Combat.Core
     {
         public float ForwardOffset = .55f;
         public float MaxHp = 5f;
+        // Identity is configuration here too: the effect spawns a content blueprint and
+        // publishes its view, both of which the baked asset can override.
+        public string BlueprintId = BuffArenaIds.BarrelBlueprint;
+        public string ViewBlueprintId = "buff_barrel_view";
 
         public void Apply(ref EffectContext ctx)
         {
             if (ctx.World == null || ctx.Source == null || !ctx.Source.TryGetComp<TransformComp>(out var sourceTf)) return;
-            var id = ctx.World.SpawnActor(new ActorSpawnSpec("buff_barrel"), publishSpawn: false);
+            var id = ctx.World.SpawnActor(new ActorSpawnSpec(BlueprintId), publishSpawn: false);
             if (!ctx.World.TryGetActor(id, out var barrel) || barrel == null) return;
             var fwd = LocomotionComp.ForwardFromYaw(sourceTf.YawDegrees);
             barrel.GetComp<TransformComp>().Position = new SimVec3(
@@ -561,7 +603,7 @@ namespace Combat.Core
             attr.SetBase(AttrId.Atk, 0f);
             attr.SetBase(AttrId.MoveSpeed, 0f);
             barrel.GetComp<BarrelComp>().SetOwner(ctx.Source.Id);
-            ctx.World.PublishSpawn(id, "buff_barrel", "buff_barrel_view");
+            ctx.World.PublishSpawn(id, BlueprintId, ViewBlueprintId);
         }
     }
 
@@ -579,12 +621,12 @@ namespace Combat.Core
                     return RuntimeActor(new ProjectileComp(), 0);
                 case "aoe":
                     return RuntimeActor(new AoeComp(), 0);
-                case "buff_player":
-                    return Combatant("buff_player", 1, .25f, 60, true);
-                case "buff_enemy":
-                    return Combatant("buff_enemy", 2, .25f, 0, false);
-                case "buff_barrel":
-                    var barrel = Combatant("buff_barrel", 0, .25f, 0, false);
+                case BuffArenaIds.PlayerBlueprint:
+                    return Combatant(_data.RequireActor(BuffArenaIds.PlayerBlueprint), true);
+                case BuffArenaIds.EnemyBlueprint:
+                    return Combatant(_data.RequireActor(BuffArenaIds.EnemyBlueprint), false);
+                case BuffArenaIds.BarrelBlueprint:
+                    var barrel = Combatant(_data.RequireActor(BuffArenaIds.BarrelBlueprint), false);
                     barrel.AddComp(new BarrelComp(_data.BarrelSelfDamagePeriod));
                     return barrel;
                 default:
@@ -602,21 +644,21 @@ namespace Combat.Core
             return actor;
         }
 
-        Actor Combatant(string blueprint, int team, float radius, int ammoCapacity, bool player)
+        Actor Combatant(BuffArenaActorDef def, bool player)
         {
             var actor = new Actor();
             actor.AddComp(new TransformComp());
             actor.AddComp(new TagComp());
             actor.AddComp(new AttributeSet());
             actor.AddComp(new BuffComp());
-            actor.AddComp(new TeamComp(team));
+            actor.AddComp(new TeamComp(def.TeamId));
             actor.AddComp(new HealthComp());
             actor.AddComp(new StateMachineComp());
-            actor.AddComp(new CharacterRadiusComp(radius));
+            actor.AddComp(new CharacterRadiusComp(def.BodyRadius));
             actor.AddComp(new LocomotionComp());
             actor.AddComp(new HitboxComp());
             actor.AddComp(new SkillDirectorComp(_data.Timelines));
-            if (ammoCapacity > 0) actor.AddComp(new AmmoComp(ammoCapacity));
+            if (def.AmmoCapacity > 0) actor.AddComp(new AmmoComp(def.AmmoCapacity));
 
             if (player)
             {
@@ -624,7 +666,7 @@ namespace Combat.Core
                 actor.AddComp(new ProjectileTrackerComp());
                 actor.AddComp(new BuffArenaPlayerComp(_data));
             }
-            else if (blueprint == "buff_enemy")
+            else if (def.BlueprintId == BuffArenaIds.EnemyBlueprint)
             {
                 actor.AddComp(new BehaviorTreeComp(
                     new WanderShooter(BuffArenaIds.SkillEnemy, BuffArenaIds.TimelineEnemy),
@@ -651,6 +693,20 @@ namespace Combat.Core
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
             ValidateSource(source);
+            if (source.Content == null)
+            {
+                string reason = string.IsNullOrEmpty(source.ContentError)
+                    ? "the generated database is incomplete"
+                    : source.ContentError;
+                if (source.Policy == ContentSourcePolicy.SoStrict)
+                    throw new InvalidOperationException(
+                        "Buff Arena is configured to run on ScriptableObject content, but " + reason
+                        + ". Rebuild or finish the assets under Assets/Combat/Config/Generated, "
+                        + "or set the content policy back to SoWithWarnings.");
+                CombatLog.Error(
+                    "Buff Arena fell back to the code-defined table: " + reason
+                    + ". The Unity runtime is supposed to run on ScriptableObject content.");
+            }
             // Asset-driven path: the ScriptableObject database already carries every
             // definition, so nothing is registered from code here.
             var data = source.Content ?? Build();
@@ -660,6 +716,12 @@ namespace Combat.Core
             data.SpawnPeriod = source.SpawnPeriod;
             data.EnemyCleanupDelay = source.EnemyCleanupDelay;
             data.BarrelSelfDamagePeriod = source.BarrelSelfDamagePeriod;
+            data.Motor = source.Motor;
+            data.Seed = source.Seed;
+            data.Actors.Clear();
+            if (source.Actors != null)
+                for (int i = 0; i < source.Actors.Length; i++)
+                    if (source.Actors[i] != null) data.Actors.Add(source.Actors[i]);
             return data;
         }
 

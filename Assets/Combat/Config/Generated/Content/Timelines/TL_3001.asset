@@ -1,5 +1,37 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-3405855640069361711
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a11494fbd7447746ab6efae2869c88c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SpecId: 4001
+--- !u!114 &-3079690566459623188
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a3674ad07407ebf4ab8901433fb55c3e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  CueId: 4201
+  AnchorKey: Muzzle
+  InstanceKey: 
+  TargetIsVictim: 0
+  AtCuePoint: 0
+  Loop: 0
+  Stop: 0
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -23,5 +55,5 @@ MonoBehaviour:
   Payloads:
   - Time: 0.1
     Effects:
-    - {fileID: 0}
-    - {fileID: 0}
+    - {fileID: -3079690566459623188}
+    - {fileID: -3405855640069361711}

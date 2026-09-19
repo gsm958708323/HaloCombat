@@ -10,6 +10,7 @@ namespace Combat.Unity.Game
         readonly BuffArenaData _data;
         readonly GridMovementConstraint _map;
         readonly LogicTicker _ticker = new LogicTicker();
+        readonly int _enemyTeamId;
         readonly List<DeadEnemy> _deadEnemies = new List<DeadEnemy>(16);
         Action<EvEntityDead> _dead;
         bool _firstSpawn = true;
@@ -41,12 +42,13 @@ namespace Combat.Unity.Game
             _data = data ?? throw new ArgumentNullException(nameof(data));
             Hub = hub ?? throw new ArgumentNullException(nameof(hub));
             _map = map ?? throw new ArgumentNullException(nameof(map));
+            _enemyTeamId = _data.RequireActor(BuffArenaIds.EnemyBlueprint).TeamId;
             World = new CombatWorld(
                 new BuffArenaActorFactory(_data),
                 new IntentQueue(),
                 new EventBus(),
                 new CombatTime(),
-                new SeededRandom(1),
+                new SeededRandom(_data.Seed),
                 _data.Cues,
                 _data.Motor,
                 _map);
@@ -126,16 +128,17 @@ namespace Combat.Unity.Game
 
         void SpawnPlayer()
         {
-            if (!_map.TryGetRandomPosition(World.Random, .25f, false, out var position))
+            var def = _data.RequireActor(BuffArenaIds.PlayerBlueprint);
+            if (!_map.TryGetRandomPosition(World.Random, def.BodyRadius, false, out var position))
                 throw new InvalidOperationException("Buff Arena map has no player spawn point.");
-            var id = World.SpawnActor(new ActorSpawnSpec("buff_player"), publishSpawn: false);
+            var id = World.SpawnActor(new ActorSpawnSpec(def.BlueprintId), publishSpawn: false);
             if (!World.TryGetActor(id, out var player) || player == null)
                 throw new InvalidOperationException("Unable to create Buff Arena player.");
             player.GetComp<TransformComp>().Position = position;
             ConfigurePlayer(player);
             LocalPlayerId = id;
             Hub.SetLocalPlayer(id);
-            World.PublishSpawn(id, "buff_player", "buff_player_view");
+            World.PublishSpawn(id, def.BlueprintId, def.ViewBlueprintId);
         }
 
         void SpawnToLimit()
@@ -150,10 +153,11 @@ namespace Combat.Unity.Game
 
         bool SpawnEnemy()
         {
-            if (!_map.TryGetRandomPosition(World.Random, .25f, false, out var position))
+            var def = _data.RequireActor(BuffArenaIds.EnemyBlueprint);
+            if (!_map.TryGetRandomPosition(World.Random, def.BodyRadius, false, out var position))
                 return false;
             int index = _spawned++;
-            var id = World.SpawnActor(new ActorSpawnSpec("buff_enemy"), publishSpawn: false);
+            var id = World.SpawnActor(new ActorSpawnSpec(def.BlueprintId), publishSpawn: false);
             if (!World.TryGetActor(id, out var enemy) || enemy == null)
                 return false;
             enemy.GetComp<TransformComp>().Position = position;
@@ -163,32 +167,52 @@ namespace Combat.Unity.Game
             ConfigureEnemy(enemy, index);
             if (enemy.TryGetComp<BehaviorTreeComp>(out var ai))
                 ai.Board.Target = LocalPlayerId;
-            World.PublishSpawn(id, "buff_enemy", "buff_enemy_view");
+            World.PublishSpawn(id, def.BlueprintId, def.ViewBlueprintId);
             return true;
         }
 
         void ConfigurePlayer(Actor player)
         {
+            var def = _data.RequireActor(BuffArenaIds.PlayerBlueprint);
             var attr = player.GetComp<AttributeSet>();
             attr.SetBase(AttrId.MaxHp, _data.PlayerMaxHp);
             attr.SetBase(AttrId.Hp, _data.PlayerMaxHp);
-            attr.SetBase(AttrId.Atk, 50f + (int)(World.Random.Next01() * 20f));
-            attr.SetBase(AttrId.MoveSpeed, 3f);
-            attr.SetBase(AttrId.ActionSpeed, 1f);
-            attr.SetBase(AttrId.CritRate, .05f);
+            attr.SetBase(AttrId.Atk, def.Atk + (int)(World.Random.Next01() * def.AtkRandomRange));
+            attr.SetBase(AttrId.MoveSpeed, def.MoveSpeed);
+            attr.SetBase(AttrId.ActionSpeed, def.ActionSpeed);
+            attr.SetBase(AttrId.CritRate, def.CritRate);
             player.GetComp<AmmoComp>().Set(_data.PlayerAmmoCapacity, _data.PlayerAmmoCapacity);
         }
 
         void ConfigureEnemy(Actor enemy, int index)
         {
+            var def = _data.RequireActor(BuffArenaIds.EnemyBlueprint);
             var attr = enemy.GetComp<AttributeSet>();
-            attr.SetBase(AttrId.MaxHp, 50f + index * 2f);
-            attr.SetBase(AttrId.Hp, 50f + index * 2f);
-            attr.SetBase(AttrId.Atk, 15f + (int)(World.Random.Next01() * 15f) + index);
-            int legacySpeed = 50 + (int)(World.Random.Next01() * 20f);
-            attr.SetBase(AttrId.MoveSpeed, legacySpeed * 5.6f / (legacySpeed + 100f) + .2f);
-            attr.SetBase(AttrId.ActionSpeed, 1f);
-            attr.SetBase(AttrId.CritRate, .05f);
+            float maxHp = def.MaxHp + index * def.MaxHpPerIndex;
+            attr.SetBase(AttrId.MaxHp, maxHp);
+            attr.SetBase(AttrId.Hp, maxHp);
+            attr.SetBase(
+                AttrId.Atk,
+                def.Atk + (int)(World.Random.Next01() * def.AtkRandomRange) + index * def.AtkPerIndex
+            );
+            attr.SetBase(AttrId.MoveSpeed, ResolveMoveSpeed(def));
+            attr.SetBase(AttrId.ActionSpeed, def.ActionSpeed);
+            attr.SetBase(AttrId.CritRate, def.CritRate);
+        }
+
+        /// <summary>
+        /// The source game stored a legacy speed stat and converted it when spawning. The
+        /// conversion and its inputs live in configuration so the pre-migration numbers stay
+        /// reproducible bit for bit; the random draw order must not change.
+        /// </summary>
+        float ResolveMoveSpeed(BuffArenaActorDef def)
+        {
+            if (!def.UseLegacySpeedCurve)
+                return def.MoveSpeed;
+            int legacySpeed =
+                (int)def.LegacySpeedBase + (int)(World.Random.Next01() * def.LegacySpeedRandomRange);
+            return legacySpeed * def.MoveSpeedCurveScale / (legacySpeed + def.MoveSpeedCurveDivisor)
+                + def.MoveSpeedCurveOffset;
         }
 
         void ProcessDeadEnemies()
@@ -209,7 +233,7 @@ namespace Combat.Unity.Game
             for (int i = 0; i < actors.Count; i++)
             {
                 var actor = actors[i];
-                if (actor == null || !actor.TryGetComp<TeamComp>(out var team) || team.TeamId != 2)
+                if (actor == null || !actor.TryGetComp<TeamComp>(out var team) || team.TeamId != _enemyTeamId)
                     continue;
                 if (actor.TryGetComp<TagComp>(out var tags) && tags.Has(CommonTags.Dead)) continue;
                 EnemyCount++;
@@ -228,7 +252,7 @@ namespace Combat.Unity.Game
                 return;
             }
             if (!World.TryGetActor(e.Id, out var actor) || actor == null ||
-                !actor.TryGetComp<TeamComp>(out var team) || team.TeamId != 2)
+                !actor.TryGetComp<TeamComp>(out var team) || team.TeamId != _enemyTeamId)
                 return;
         }
 
