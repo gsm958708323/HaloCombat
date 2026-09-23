@@ -1,9 +1,12 @@
 using System;
 using Combat.Core;
-using UnityEngine;
 
 namespace Combat.Config
 {
+    // Only the two [Serializable] payload/clip shapes live here now: they are inline data inside
+    // SkillTimelineAsset, not assets of their own, so they need no MonoScript and can share a file.
+    // The season-1 ScriptableObject authoring schema (the database asset, its combo/summon/character
+    // definitions and the behaviour-tree node assets) was never wired to anything and has been removed.
     [Serializable]
     public sealed class TimelineClipAsset
     {
@@ -26,44 +29,5 @@ namespace Combat.Config
     {
         public float Time;
         public EffectAsset[] Effects;
-    }
-
-    [Serializable]
-    public sealed class ComboEntryAsset
-    {
-        public SkillDefinitionAsset[] PreSkillAssets;
-        public string InputAction = "Attack";
-        public int[] RequiredTags;
-        public int Priority;
-        public SkillDefinitionAsset Skill;
-    }
-
-    public sealed class SoCombatContent : ICombatContent
-    {
-        readonly CombatDatabaseAsset _database;
-
-        public SoCombatContent(CombatDatabaseAsset database) => _database = database;
-        public BakedCombatData Bake()
-        {
-            if (_database == null)
-                throw new InvalidOperationException("SoCombatContent requires a CombatDatabaseAsset.");
-            return _database.BakeAll();
-        }
-    }
-
-    public enum TreeRecipeKind { None, Puncher, Guard, SummonMelee }
-
-    public static class TreeRecipe
-    {
-        public static BtNode Build(TreeRecipeKind kind)
-        {
-            switch (kind)
-            {
-                case TreeRecipeKind.Puncher: return BtFactory.MeleePuncher(SkillNodeId.G1, TimelineId.TL_G1);
-                case TreeRecipeKind.Guard: return BtFactory.MeleeGuard(SkillNodeId.G1, TimelineId.TL_G1);
-                case TreeRecipeKind.SummonMelee: return BtFactory.SummonMelee(SkillNodeId.G1, TimelineId.TL_G1);
-                default: return null;
-            }
-        }
     }
 }

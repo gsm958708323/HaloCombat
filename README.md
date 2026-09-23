@@ -20,6 +20,9 @@
 - 朝向：yaw `0` 朝 `+Z`（Unity 前向），正角朝 `+X`，`ForwardFromYaw(yaw)` 等价于 `Quaternion.Euler(0, yaw, 0) * Vector3.forward`；局部偏移同坐标系（`+Z` 前、`+X` 右）。旧 2D 极角约定（`0 = +X`）作废，换算为 `90 - yaw`
 - 血量：只通过 `AttributeSet.SetBase(Hp)` 修改
 - 分层：命名空间前缀 == 所属程序集名；`Game` / `Presentation` 是 `Combat.Unity` 内的逻辑分区，不拆 asmdef
+- 内容来源唯一：Arena 只认 `BuffArenaDatabaseAsset`（`SoStrict`），CLI 只认代码表；两侧由 builder 的 `Verify()` 对齐
+- 一个 ScriptableObject 类 = 一个同名 `.cs` 文件：Unity 只给与文件名同名的类铸 MonoScript，否则落盘成 `m_Script: 0`、域重载后变 null
+- Arena 的 AI 结构与节奏留在代码：敌人树固定为单个 `WanderShooter` 叶子，开火 / 游走区间与 `AcquireRadius` 是代码常量；AI 编排属逻辑，不纳入 SO 配置
 
 ## 分层与程序集
 
@@ -74,15 +77,16 @@
 8. 命中后位移积分
 9. Flush Despawn
 
-Hitstop 只推进 wall time，暂停逻辑帧。实体用 `EntityId(index, generation)`，Blueprint 由 `FighterActorFactory` 组装玩家、敌人、木桩、召唤物、弹体和 AoE。
+Hitstop 只推进 wall time，暂停逻辑帧。实体用 `EntityId(index, generation)`。季节 1/2 的 Blueprint 由 `FighterActorFactory` 组装玩家、敌人、木桩、召唤物、弹体和 AoE；正式 Arena 走 `BuffArenaActorFactory`，按 `BuffArenaActorDef`（team / 半径 / 弹药 / HP / Atk / 速度 / 暴击）组装。
 
 ### 技能与活动
 
 - Timeline Clip：`CancelTag` / `Move` / `Hitbox` / `IFrame`
 - Timeline Payload：Cue、生成弹体 / AoE / 召唤物
 - 活动机：`Root` / `Attack` / `Hit` / `Knockdown` / `Dead`，各自带位移与朝向策略
-- 玩家：`PlayerCombatDriver` 消费输入缓冲，走 Combo 或闪避技能
+- 玩家：季节 1/2 由 `PlayerCombatDriver` 消费输入缓冲走 Combo / 闪避；Arena 由 `BuffArenaPlayerComp` 消费同一个 `InputBufferComp`（单槽、窗口 `0.2s`）
 - AI：感知写黑板，行为树只编排移动和 `PlaySkill`，不直接结算。约定 AI 不得 `Director.Stop`，树按 Actor 克隆
+- Arena 敌人的树是**单个 `WanderShooter` 叶子**（游走 + 朝目标 + 定时施法），没有 selector / sequence；`BtFactory` 那套完整代码树服务于季节 1/2
 
 ### 效果与状态
 
@@ -94,17 +98,33 @@ Hitstop 只推进 wall time，暂停逻辑帧。实体用 `EntityId(index, gener
 
 ## 内容管线
 
-Unity 侧 `CombatDatabaseAsset.BakeAll()` 把技能、角色、时间轴、弹体、AoE、召唤物、Cue、Motor 烘焙成 `BakedCombatData`。Demo 走 `CodeCombatContent`，内嵌第一期默认表，不依赖 SO。
+两条路径，边界明确：
 
-已覆盖内容包括近战连段、火球灼烧、火地叠层、闪避无敌帧、追踪弹、光环减速、近战 / 远程 / 守卫 AI 和召唤物。
+**Arena（运行时，SO 驱动）** —— `BuffArenaDatabaseAsset.Bake()` → `BuffArenaContent.Build(source)` → `BuffArenaData`。开关是 `UseGeneratedContent=true` + `ContentSourcePolicy.SoStrict`：内容不可用时**启动直接失败**，不会静默回退到代码表。定义资产在 `Assets/Combat/Config/Generated`：
+
+| 目录 / 文件 | 内容 |
+| --- | --- |
+| `Content/Timelines/TL_*.asset` | 技能时间轴（Clip + Payload） |
+| `Content/Projectiles/PD_*.asset` | 弹体定义（OnHit / OnExpire 效果以 sub-asset 挂载） |
+| `Content/Aoes/AD_*.asset` | AoE 定义 |
+| `Content/Skills/SK_*.asset` | 技能（输入 token / 时间轴 / 弹药消耗） |
+| `Content/Actors/BA_*.asset` | 每个 Blueprint 的 Actor 数值 |
+| `Content/BA_Motor.asset` / `Content/Cues.asset` | 运动策略 / Cue 表（Cue 的预制体绑定是唯一需要人工在 Inspector 维护的部分，重建会保留） |
+| `BuffArenaDatabase.asset` | 总入口（引用上面全部 + 开关 + 相机取景） |
+
+两个菜单项：`Combat/Buff Arena/Rebuild Content Assets`（从代码表重建全部生成资产；写盘前先逐字段校验，不一致就中止且不改动旧资产）、`Combat/Buff Arena/Verify Content Assets`（只比对，`0 differences` 才算一致）。
+
+**CLI / 逻辑 Demo（代码表驱动）** —— `BuffArenaContent.Build()` 无参重载 / `CodeCombatContent`，内嵌第一 / 二期默认表，不依赖 SO（命令行加载不了 Unity 资产）。已覆盖内容包括近战连段、火球灼烧、火地叠层、闪避无敌帧、追踪弹、光环减速、近战 / 远程 / 守卫 AI 和召唤物。
+
+**两者的桥**：builder 的 `Verify()` 逐字段比对「生成资产 ↔ 代码表」，任一侧漂移都会被抓住。
 
 ## 表现与对局
 
 `LogicTicker` 以 `1/50s` 固定步长推进逻辑，渲染用 remainder 插值。`GameFlow` 状态为 Title → Loading → Arena → Result。
 
-正式 Arena 由 `ArenaBootstrap` 创建 `CombatWorld`、`PresentHub` 和 `ArenaSession`。表现层订阅 `EvEntitySpawn`、`EvCue`、`EvDamage`、`EvImmune`、`EvHeal`、`EvHitstop`，用对象池播放特效和飘字。
+正式 Arena 由 `BuffArenaBootstrap` 创建 `CombatWorld`、`PresentHub` 和 `BuffArenaSession`。表现层订阅 `EvEntitySpawn`、`EvCue`、`EvDamage`、`EvImmune`、`EvHeal`、`EvHitstop`，用对象池播放特效和飘字。
 
-逻辑验证场景不包含可操作表现层。第二季 16 个 Demo 场景仍是纯逻辑验收，不跑 SO Bake 或 Arena 操作关。
+逻辑验证场景不包含可操作表现层。第二季 16 个 Demo 场景仍是纯逻辑验收；Arena 另有 PlayMode 冒烟测试覆盖 SO 内容可用性、五个技能的出弹 / 出桶与命中扣血。
 
 ## 运行 Demo
 
@@ -153,7 +173,18 @@ if (-not $p.WaitForExit(600000)) { $p.Kill(); throw '超时已 kill' }
 
 Unity Editor 中对应场景在 `Assets/Scenes/HaloCombat`。Play Mode 下 `HaloCombatDemoRunner` 会跑同一套 Demo，并把结果写到 Console。正式对局场景是 `Assets/Scenes/Arena.unity`。
 
-`FinalVerification.Run` 会生成默认数据库、检查场景，并校验全部 Demo。
+`FinalVerification.Run` 只调用 `HaloCombatDemoSceneBuilder.VerifyAll()` 校验场景，不生成数据库、也不跑 Demo。
+
+## 测试
+
+| 套件 | 位置 | 覆盖 |
+| --- | --- | --- |
+| PlayMode | `Assets/Tests/PlayMode`（`Combat.PlayModeTests`） | 加载 `Arena` 场景跑真实 `BuffArenaSession`：SO 内容可烘焙、五个技能各自出弹 / 出桶、技能 1 命中扣血 |
+| EditMode | `Assets/Tests/EditMode`（`Combat.EditModeTests`） | 全工程 `EffectAsset` 子类都必须有 MonoScript |
+
+PlayMode 用例在 `[UnitySetUp]` 里设 `Application.runInBackground = true`：编辑器窗口失焦会节流主循环，无人值守跑会在第一帧就停住。
+
+测试从磁盘读内容，所以「内存里看着对、磁盘上是坏的」这类问题只有跑测试才暴露 —— 改完生成资产要重跑一次。
 
 ## 日志
 

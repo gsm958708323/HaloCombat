@@ -21,6 +21,10 @@ namespace Combat.Tests
         const int TicksPerSkill = 70;
         const float EnemyTestHp = 100f;
 
+        // The Arena takes the player's facing from the mouse ray, so a test that wants a
+        // deterministic shot has to place the target on an aim yaw it can pin for the cast.
+        float _aimYaw;
+
         BuffArenaBootstrap _bootstrap;
         BuffArenaSession _session;
 
@@ -72,8 +76,9 @@ namespace Combat.Tests
 
         /// <summary>
         /// The regression this guards: the projectile spawned and flew, but its hitbox payload had
-        /// been baked with null effects, so it passed straight through the enemy. Spawning the
-        /// target on the player's own facing keeps the hit independent of aim timing.
+        /// been baked with null effects, so it passed straight through the enemy. The target goes on
+        /// a pinned aim yaw, because the Arena follows the mouse and the shot would otherwise fly
+        /// wherever the cursor happens to point.
         /// </summary>
         [UnityTest]
         public IEnumerator Fire1_DamagesEnemyInFront()
@@ -83,7 +88,7 @@ namespace Combat.Tests
             Assert.Greater(before, 0f, "The test enemy spawned with no health, so damage cannot be observed.");
             int ammoBefore = PlayerAmmo();
 
-            Press(f => { f.Fire1Held = true; return f; });
+            Press(f => { f.Fire1Held = true; f.AimValid = true; f.AimYaw = _aimYaw; return f; });
 
             Assert.Less(PlayerAmmo(), ammoBefore, "Fire1 did not spend ammo, so the skill never ran.");
             float after = Hp(enemy);
@@ -168,8 +173,11 @@ namespace Combat.Tests
         }
 
         /// <summary>
-        /// Spawns one enemy straight ahead of the player at the given distance, which is where a
-        /// skill 1 shot travels, and gives it a known health pool.
+        /// Spawns one enemy with a known health pool on the first direction from the player that the
+        /// map accepts, pins the shot to that yaw, and freezes the target's AI so it cannot wander
+        /// out of the line of fire. The player starts on a random free cell, so straight ahead can
+        /// be a wall; without the sweep the projectile would stop short and the test would read as
+        /// "the hit does nothing".
         /// </summary>
         Actor SpawnEnemyInFront(float distance)
         {
@@ -177,15 +185,33 @@ namespace Combat.Tests
                 _session.World.TryGetActor(_session.LocalPlayerId, out var player) && player != null,
                 "The local player is gone, so no shot origin exists.");
             var playerTf = player.GetComp<TransformComp>();
-            var forward = LocomotionComp.ForwardFromYaw(playerTf.YawDegrees);
+            var origin = playerTf.Position;
+            float radius = player.GetComp<CharacterRadiusComp>().Radius;
+
+            var target = new SimVec3();
+            bool placed = false;
+            for (int i = 0; i < 12 && !placed; i++)
+            {
+                float yaw = playerTf.YawDegrees + i * 30f;
+                var forward = LocomotionComp.ForwardFromYaw(yaw);
+                var candidate = new SimVec3(
+                    origin.X + forward.X * distance, origin.Y, origin.Z + forward.Z * distance);
+                if (!_session.Map.CanPlace(candidate, radius, false)) continue;
+                _aimYaw = yaw;
+                target = candidate;
+                placed = true;
+            }
+            Assert.IsTrue(placed, "No clear line of fire around the player for the damage test.");
+
             var id = _session.World.SpawnActor(
                 new ActorSpawnSpec(BuffArenaIds.EnemyBlueprint), publishSpawn: false);
             Assert.IsTrue(
                 _session.World.TryGetActor(id, out var enemy) && enemy != null,
                 "The test enemy could not be spawned from the generated actor table.");
-            var origin = playerTf.Position;
-            enemy.GetComp<TransformComp>().Position = new SimVec3(
-                origin.X + forward.X * distance, origin.Y, origin.Z + forward.Z * distance);
+            enemy.GetComp<TransformComp>().Position = target;
+            // This test is about the hit landing, not about enemy AI, so the target stands still.
+            if (enemy.TryGetComp<BehaviorTreeComp>(out var ai))
+                ai.SetEnabled(false);
             var attr = enemy.GetComp<AttributeSet>();
             attr.SetBase(AttrId.MaxHp, EnemyTestHp);
             attr.SetBase(AttrId.Hp, EnemyTestHp);
