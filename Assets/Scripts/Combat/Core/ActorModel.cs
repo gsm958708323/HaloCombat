@@ -3,9 +3,15 @@ using System.Collections.Generic;
 
 namespace Combat.Core
 {
+    /// <summary>
+    /// 组件基类。生命周期由 Actor 驱动：AddComp → AttachAll(OnAttach) → 每帧 Tick（仅 WantsTick）→ DetachAll(OnDetach)。
+    /// 组件可以在 OnAttach 里 GetComp 别的组件；缺件会抛异常，所以组装顺序由工厂负责。
+    /// </summary>
     public abstract class Comp
     {
         protected Actor Self { get; private set; }
+
+        /// <summary>是否参与阶段 1 的组件 Tick。位移与 Buff 由世界在各自阶段推动，所以它们是 false。</summary>
         public virtual bool WantsTick => false;
 
         internal void Attach(Actor actor)
@@ -38,8 +44,13 @@ namespace Combat.Core
         void Release(Actor actor);
     }
 
+    /// <summary>
+    /// 一个实体：组件容器 + 身份。组件按 AddComp 的顺序 Tick，_ticks 只装声明了 WantsTick 的那些。
+    /// Id 由 EntityRegistry 分配（槽位 + 世代）；失活与回收也由注册表统一处理。
+    /// </summary>
     public sealed class Actor
     {
+        // 具体类型走字典快路径；接口 / 基类等非具体类型走 _order 的线性扫描（见 TryGetComp）。
         readonly Dictionary<Type, Comp> _comps = new Dictionary<Type, Comp>(16);
         readonly List<Comp> _order = new List<Comp>(16);
         readonly List<Comp> _ticks = new List<Comp>(8);
@@ -47,6 +58,9 @@ namespace Combat.Core
         public EntityId Id { get; private set; }
         public bool IsActive { get; private set; }
         public CombatWorld World { get; internal set; }
+
+        /// <summary>生成时用的蓝图 id。只用于错误定位：缺组件时能看出是哪个蓝图装错了。</summary>
+        public string BlueprintId { get; internal set; }
 
         public void SetId(EntityId id) => Id = id;
         public void SetActive(bool active) => IsActive = active;
@@ -93,17 +107,21 @@ namespace Combat.Core
                 _order[i].OnDeath(killer);
         }
 
-        public T GetComp<T>() where T : Comp
+        /// <summary>取组件，缺件即抛。约束放宽到 class，因此接口（如 IIncomingDamage）也能查。</summary>
+        public T GetComp<T>() where T : class
         {
             if (TryGetComp<T>(out var c)) return c;
-            throw new InvalidOperationException("Actor " + Id + " missing " + typeof(T).Name);
+            throw new InvalidOperationException(
+                "Actor " + Id + (string.IsNullOrEmpty(BlueprintId) ? "" : " (blueprint '" + BlueprintId + "')")
+                + " missing " + typeof(T).Name);
         }
 
-        public bool TryGetComp<T>(out T comp) where T : Comp
+        /// <summary>按类型取组件：具体类型先查字典；接口 / 基类走线性扫描，返回第一个匹配的。</summary>
+        public bool TryGetComp<T>(out T comp) where T : class
         {
-            if (_comps.TryGetValue(typeof(T), out var exact))
+            if (_comps.TryGetValue(typeof(T), out var exact) && exact is T typed)
             {
-                comp = (T)exact;
+                comp = typed;
                 return true;
             }
 
@@ -129,9 +147,14 @@ namespace Combat.Core
             Id = EntityId.Invalid;
             IsActive = false;
             World = null;
+            BlueprintId = null;
         }
     }
 
+    /// <summary>
+    /// 实体表：槽位 + 世代。回收的槽位会被复用，世代 +1 让旧的 EntityId 立刻失效；
+    /// 销毁是延迟的（RequestDespawn → 帧末 FlushDespawn），所以同帧后面的阶段仍能看见待销毁实体。
+    /// </summary>
     public sealed class EntityRegistry
     {
         struct Slot
@@ -169,6 +192,10 @@ namespace Combat.Core
             return actor != null && actor.IsActive;
         }
 
+        /// <summary>
+        /// 生成实体：复用空闲槽位（世代 +1），写入身份与蓝图 id，然后 AttachAll。
+        /// 组件的 OnAttach 缺件会在这一步立刻抛出，并带上蓝图 id。
+        /// </summary>
         public EntityId Spawn(in ActorSpawnSpec spec)
         {
             var actor = _factory.Create(spec);
@@ -190,12 +217,14 @@ namespace Combat.Core
             actor.SetId(new EntityId(index, gen));
             actor.SetActive(true);
             actor.World = _world;
+            actor.BlueprintId = spec.BlueprintId;
             _slots[index] = new Slot { Actor = actor, Generation = gen, Occupied = true };
             actor.AttachAll();
             ActiveCount++;
             return actor.Id;
         }
 
+        /// <summary>标记待销毁。帧末才真正回收，所以同一帧后面的阶段仍能看见它。</summary>
         public void RequestDespawn(EntityId id)
         {
             if (!id.IsValid) return;
@@ -203,6 +232,7 @@ namespace Combat.Core
             _pending.Add(id);
         }
 
+        /// <summary>真正回收：发 EvEntityCleanup，DetachAll，归还工厂，槽位世代保留以便失效旧 id。</summary>
         public void FlushDespawn()
         {
             if (_pending.Count == 0) return;
@@ -232,6 +262,7 @@ namespace Combat.Core
             }
         }
 
+        /// <summary>把当前活跃实体填进调用方的列表。热路径用这个重载，避免每段分配新列表。</summary>
         public void CopyActiveActors(List<Actor> destination)
         {
             if (destination == null) throw new ArgumentNullException(nameof(destination));

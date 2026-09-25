@@ -14,16 +14,14 @@ namespace Combat.Demos
             var baked = new CodeCombatContent().Bake();
             events = eventsOverride ?? new EventBus();
             time = timeOverride ?? new CombatTime();
-            var world = new CombatWorld(
-                new FighterActorFactory(baked),
-                new IntentQueue(),
-                events,
-                time,
-                random ?? new FixedRandom(0f),
-                baked.Cues,
-                baked.Motor);
-            baked.Install(world);
-            return world;
+            // 一次装配：目录与 Cue 来自烘焙内容，其余用演示自己的实例。
+            var install = baked.ToInstall();
+            install.Intents = new IntentQueue();
+            install.Events = events;
+            install.Time = time;
+            install.Random = random ?? new FixedRandom(0f);
+            install.Motor = baked.Motor;
+            return new CombatWorld(new FighterActorFactory(baked), install);
         }
     }
 }

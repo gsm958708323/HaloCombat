@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace Combat.Core
 {
+    /// <summary>技能停止原因，只用于让调用方区分上下文（表现/日志），不参与结算。</summary>
     public enum DirectorStopReason : byte
     {
         Finished = 0,
@@ -14,8 +15,10 @@ namespace Combat.Core
         Knockdown = 6
     }
 
+    /// <summary>技能槽位：普通攻击 + 两个技能槽。</summary>
     public enum SkillSlot : byte { Normal = 0, Skill1 = 1, Skill2 = 2 }
 
+    /// <summary>阵营归属。运行时体（子弹/AoE）也带它，只为让伤害归属与敌我过滤正确；敌我判定就是 TeamId 不相等，没有阵营关系表。</summary>
     public sealed class TeamComp : Comp
     {
         public int TeamId { get; private set; }
@@ -24,6 +27,7 @@ namespace Combat.Core
         public bool IsHostileTo(TeamComp other) => other != null && TeamId != other.TeamId;
     }
 
+    /// <summary>无敌帧计时与「是否无敌」的持有者。Hp 本体存在 AttributeSet，这里不保存血量。</summary>
     public sealed class HealthComp : Comp
     {
         TagComp _tags;
@@ -33,6 +37,7 @@ namespace Combat.Core
 
         // Source BulletState.CanHit skips any target with immuneTime > 0, so an
         // invulnerable body is passed through without consuming the projectile.
+        /// <summary>无敌帧计时或 Invincible 标签任一为真即不可命中，供子弹与受击判定提前跳过。</summary>
         public bool IsInvulnerable
         {
             get
@@ -46,6 +51,7 @@ namespace Combat.Core
         protected override void OnAttach() => _tags = Self.GetComp<TagComp>();
         protected override void OnDetach() { _iframe = 0f; _tags = null; }
 
+        /// <summary>延长无敌：与已有计时取较大者（不叠加），从无到有时加一层 Invincible 标签；计时归零才由 Tick 移除。</summary>
         public void BeginIFrame(float seconds)
         {
             if (seconds <= 0f || _tags == null) return;
@@ -64,6 +70,7 @@ namespace Combat.Core
         }
     }
 
+    /// <summary>攻击判定盒：开启期间由 HitDetectService 每帧查询；_recorded 保证一次开启内同一目标只结算一次，Open/Close 都会清空记录。</summary>
     public sealed class HitboxComp : Comp
     {
         readonly HashSet<long> _recorded = new HashSet<long>();
@@ -72,6 +79,7 @@ namespace Combat.Core
         public SimVec3 LocalOffset { get; private set; }
         public IEffect[] BakedOnHit { get; private set; } = Array.Empty<IEffect>();
 
+        /// <summary>开启判定：先 Close 清掉上一次记录，再烘焙效果包、半径（非正回落到 0.8）与本地偏移。</summary>
         public void Open(IEffect[] onHit, float radius, in SimVec3 localOffset)
         {
             Close();
@@ -91,12 +99,14 @@ namespace Combat.Core
             _recorded.Clear();
         }
 
+        /// <summary>把 EntityId 压成 long（Index 在高 32 位、Generation 在低 32 位），以便放进 HashSet 去重。</summary>
         public static long Pack(EntityId id)
             => ((long)id.Index << 32) | (uint)id.Generation;
 
         public static EntityId Unpack(long packed)
             => new EntityId((int)(packed >> 32), (int)(uint)packed);
 
+        /// <summary>本次开启内首次记录该目标返回 true；未开启、非法 Id 或已记录返回 false。</summary>
         public bool TryRecord(EntityId id)
         {
             if (!IsOpen || !id.IsValid) return false;
@@ -106,6 +116,7 @@ namespace Combat.Core
         protected override void OnDetach() => Close();
     }
 
+    /// <summary>技能装载表：槽位映射到技能与时间轴，重复装备同一槽位直接覆盖；EquipNormalG1G2Defaults 是 S1 默认配置。</summary>
     public sealed class LoadoutComp : Comp
     {
         struct Slot
@@ -147,6 +158,7 @@ namespace Combat.Core
         }
     }
 
+    /// <summary>派生条目：输入、前置技能、必需标签三者同时满足才算命中，Priority 更大者优先。</summary>
     [Serializable]
     public struct ComboEntry
     {
@@ -158,6 +170,7 @@ namespace Combat.Core
         public TimelineId Timeline;
     }
 
+    /// <summary>派生结果（值类型），查表失败时调用方拿到 default。</summary>
     public readonly struct ComboResolveResult
     {
         public readonly SkillNodeId ToSkill;
@@ -171,6 +184,7 @@ namespace Combat.Core
         }
     }
 
+    /// <summary>派生表：TryResolve 取满足条件里优先级最高的条目；PreSkills 为空表示只接受「当前没有技能」的起手。</summary>
     public sealed class ComboTableSO
     {
         public ComboEntry[] Entries = Array.Empty<ComboEntry>();
@@ -219,6 +233,7 @@ namespace Combat.Core
         }
     }
 
+    /// <summary>派生组件：从输入缓冲 peek 一个 token 去查表，命中后才 Consume——失败不消耗输入，允许后续逻辑继续使用同一个 token。</summary>
     public sealed class ComboComp : Comp
     {
         readonly ComboTableSO _table;
@@ -245,6 +260,7 @@ namespace Combat.Core
             _director = null;
         }
 
+        /// <summary>尝试产出一条派生；当前技能取 director.CurrentSkill，没有 director 时按 None 处理。</summary>
         public bool TryResolve(out ComboResolveResult result)
         {
             result = default;
@@ -258,6 +274,12 @@ namespace Combat.Core
         }
     }
 
+    /// <summary>
+    /// 技能导演：持有一份每角色独立的 TimelinePlayer（严禁跨实体共享），负责播放守卫、冷却、空中/目标限制、时间轴推进与收尾通知。
+    /// Play(skill, timelineId) 只做通用守卫；Play(skill) 走技能目录，额外检查冷却、CanUseInAir 与 RequiresTarget。
+    /// AllowsMove / AllowsRotate / AllowsSkill 的区别：前两者只在播放中且当前时间轴对应许可位为真，
+    /// AllowsSkill 在没有播放时默认为真（时间轴之外可自由施放）。
+    /// </summary>
     public sealed class SkillDirectorComp : Comp
     {
         readonly TimelineLibrary _library;
@@ -276,8 +298,11 @@ namespace Combat.Core
         public float CurrentDuration => _player.Duration;
         public bool UsesSkillCatalog => _skills != null;
         public bool IsPlaying => _player.IsPlaying;
+        /// <summary>移动许可：仅当正在播放且当前时间轴 AllowMove 时为真。</summary>
         public bool AllowsMove => _player.IsPlaying && _player.Current != null && _player.Current.AllowMove;
+        /// <summary>转向许可：仅当正在播放且当前时间轴 AllowRotate 时为真（可与 AllowsMove 分开配置）。</summary>
         public bool AllowsRotate => _player.IsPlaying && _player.Current != null && _player.Current.AllowRotate;
+        /// <summary>施放许可：未播放时为真；播放中取决于时间轴的 AllowSkill（源 SetCasterControlState(canUseSkill)）。</summary>
         public bool AllowsSkill => !_player.IsPlaying || _player.Current == null || _player.Current.AllowSkill;
         public string AnimatorState => _player.Current != null ? _player.Current.AnimatorState : string.Empty;
         public override bool WantsTick => true;
@@ -304,9 +329,11 @@ namespace Combat.Core
             _cooldownUntil.Clear();
         }
 
+        /// <summary>按显式时间轴播放（跳过技能目录的冷却/前置检查，仍受死亡/眩晕/倒地/沉默守卫）。</summary>
         public bool Play(SkillNodeId skill, TimelineId timelineId)
             => PlayInternal(skill, timelineId, SkillAnimationMode.Attack);
 
+        /// <summary>播放核心：死亡/眩晕/倒地/沉默直接拒绝；时间轴缺失抛异常（属配置错误，不该静默失败）；播放前请求朝向吸附并中断上一段。</summary>
         bool PlayInternal(SkillNodeId skill, TimelineId timelineId, SkillAnimationMode animationMode)
         {
             if (_tags != null &&
@@ -329,6 +356,7 @@ namespace Combat.Core
             return true;
         }
 
+        /// <summary>走技能目录播放：先做冷却/空中/目标前置检查，成功后才写入冷却时间。</summary>
         public bool Play(SkillNodeId skill)
         {
             if (_skills == null)
@@ -343,6 +371,7 @@ namespace Combat.Core
             return true;
         }
 
+        /// <summary>技能目录播放的前置条件：冷却未到、不限制空中时才能在空中用、RequiresTarget 时行为树必须有合法目标。</summary>
         bool CanPlay(SkillDefinition definition)
         {
             if (definition == null)
@@ -358,6 +387,7 @@ namespace Combat.Core
             return true;
         }
 
+        /// <summary>立即停表并清空当前技能；reason 只用于调用方区分上下文。</summary>
         public void Stop(DirectorStopReason reason)
         {
             _player.Stop();
@@ -365,6 +395,7 @@ namespace Combat.Core
             _currentAnimationMode = SkillAnimationMode.Attack;
         }
 
+        /// <summary>按 ScaleWithActionSpeed 把 ActionSpeed 折进 dt（下限 0.1，防止 0 速度把时间轴卡死），再交给自己的播放器。</summary>
         public override void Tick(float dt)
         {
             if (!_player.IsPlaying) return;
@@ -375,6 +406,10 @@ namespace Combat.Core
             _player.Tick(dt * scale, Self);
         }
 
+        /// <summary>
+        /// 由外部（状态机/结束帧）调用：只有播放器确认「整段到期且所有 clip 已关闭」时才返回 true，
+        /// 此时才复位当前技能并通知状态机 Attack 结束；否则直接返回，避免提前打断收尾。
+        /// </summary>
         public void FlushTimeline()
         {
             if (!_player.FlushPendingCloses())
@@ -385,6 +420,7 @@ namespace Combat.Core
         }
     }
 
+    /// <summary>玩家操作驱动：按输入缓冲里的 token 依次处理跳跃、闪避、派生技能；死亡/眩晕/倒地一票否决。跳跃要求 Grounded，闪避被沉默拒绝且失败不消耗输入。</summary>
     public sealed class PlayerCombatDriverComp : Comp
     {
         readonly PlayerCombatConfig _config;
@@ -422,6 +458,7 @@ namespace Combat.Core
             _tags = null;
         }
 
+        /// <summary>每帧优先级：跳跃 → 闪避 → 派生；处理过的分支直接 return，避免同一 token 在一帧内被多条规则重复消费。</summary>
         public override void Tick(float dt)
         {
             if (_tags.Has(CommonTags.Dead) || _tags.Has(CommonTags.Stunned) || _tags.Has(CommonTags.Downed))

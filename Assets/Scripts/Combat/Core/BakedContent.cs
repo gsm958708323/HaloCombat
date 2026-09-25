@@ -2,34 +2,10 @@ using System;
 
 namespace Combat.Core
 {
-    public struct SpawnEntry
-    {
-        public string BlueprintId;
-        public SimVec3 Position;
-        public float YawDegrees;
-        public bool IsLocalPlayer;
-        public bool CountsForWin;
-        public float LeashOverride;
-        public float PatrolOverride;
-    }
-
-    public sealed class SpawnTable
-    {
-        public SpawnEntry[] Entries = System.Array.Empty<SpawnEntry>();
-    }
-
-    public sealed class BakedDatabase
-    {
-        public TimelineLibrary Timelines = new TimelineLibrary();
-        public ComboTableSO Combos = new ComboTableSO();
-        public ProjectileCatalog Projectiles = new ProjectileCatalog();
-        public AoeCatalog Aoes = new AoeCatalog();
-        public SummonCatalog Summons = new SummonCatalog();
-        public CueLibrary Cues = new CueLibrary();
-        public DurationSpec Burn;
-        public DurationSpec AuraSlow;
-        public SpawnTable Spawns = new SpawnTable();
-    }
+    /// <summary>
+    /// 季节 1/2 与课程演示用的一整套已烘焙内容（纯 C#，不依赖 Unity 资产）。
+    /// 构造 CombatWorld 时用 <see cref="ToInstall"/> 一次装配目录与 Cue。
+    /// </summary>
     public sealed class BakedCombatData
     {
         public ComboTableSO Combo;
@@ -43,11 +19,16 @@ namespace Combat.Core
         public MotorConfig Motor;
         public int ContentSerial;
 
-        public void Install(CombatWorld world)
+        /// <summary>本套内容对应的世界装配参数；调用方再补上意图队列 / 事件总线 / 时间 / 随机 / Motor。</summary>
+        public WorldInstall ToInstall()
         {
-            if (world == null) throw new ArgumentNullException(nameof(world));
-            world.ReplaceCatalogs(Projectiles, Aoes, Summons);
-            world.ReplaceCues(Cues);
+            return new WorldInstall
+            {
+                Projectiles = Projectiles,
+                Aoes = Aoes,
+                Summons = Summons,
+                Cues = Cues
+            };
         }
     }
 

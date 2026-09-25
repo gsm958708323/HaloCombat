@@ -8,6 +8,13 @@ using UnityEngine.InputSystem;
 
 namespace Combat.Unity.Game
 {
+    /// <summary>
+    /// Arena 场景的唯一入口，启动顺序是硬契约：
+    /// ValidateReferences（场景槽位）→ EnsureRoots（缺的根节点 / 相机 / HUD 现建）
+    /// → Database.Bake()（内容不可用立即抛，没有代码回退）→ MapVisuals.Build()（导航与地面）
+    /// → PresentHub 及 Cue / Floater 池 → BuffArenaSession → BuffArenaInputSource → session.Start()。
+    /// 顺序不能换：Hub 与 Cue 池必须先于 Session.Start()，因为首次生成当场就会用到这些池子。
+    /// </summary>
     public sealed class BuffArenaBootstrap : MonoBehaviour
     {
         public ViewPrefabTable Views;
@@ -26,6 +33,10 @@ namespace Combat.Unity.Game
 
         public BuffArenaSession Session => _session;
 
+        /// <summary>
+        /// 装配一局。任一必需品缺失都抛 InvalidOperationException 而不是降级运行：
+        /// Arena 的验收依赖“内容坏了就响亮地失败”，静默降级会把配错的内容伪装成正常游戏。
+        /// </summary>
         void Start()
         {
             ValidateReferences();
@@ -53,6 +64,10 @@ namespace Combat.Unity.Game
             _session.Start();
         }
 
+        /// <summary>
+        /// 逻辑帧：以玩家当前世界位置为瞄准射线起点采样输入，再交给 Session 按固定步长推进逻辑；
+        /// HUD 在逻辑之后刷新，所以读到的是本帧推进后的状态。
+        /// </summary>
         void Update()
         {
             if (_session == null || _input == null) return;
@@ -65,6 +80,10 @@ namespace Combat.Unity.Game
             Hud?.Refresh(_session.Hub, Time.deltaTime);
         }
 
+        /// <summary>
+        /// 表现帧：先 PumpUnscaled（wall time 清尸，见 BuffArenaSession）再 PumpPresent 插值，
+        /// 最后刷 HUD、让相机跟随。玩家死后逻辑停摆，这一路仍要走，否则画面会冻住。
+        /// </summary>
         void LateUpdate()
         {
             _session?.PumpUnscaled(Time.deltaTime);
@@ -73,12 +92,14 @@ namespace Combat.Unity.Game
             Rig?.Apply(_session != null ? _session.Hub : null);
         }
 
+        /// <summary>Dispose 会退订事件、释放表现池并 Shutdown 世界；随后置 null 防止 LateUpdate 再次访问。</summary>
         void OnDestroy()
         {
             _session?.Dispose();
             _session = null;
         }
 
+        /// <summary>只校验 Inspector 槽位是否赋值；内容层面的完整性由 Database.Bake() 负责，二者不能互相替代。</summary>
         void ValidateReferences()
         {
             var missing = new List<string>();
@@ -90,6 +111,7 @@ namespace Combat.Unity.Game
                 throw new InvalidOperationException("Buff Arena scene is missing: " + string.Join(", ", missing));
         }
 
+        /// <summary>补齐运行时根节点；相机缺席时现建一套带 CameraRig 的 Main Camera，取景参数来自数据库。</summary>
         void EnsureRoots()
         {
             if (PresentRoot == null) PresentRoot = CreateRoot("PresentRoot");
@@ -114,6 +136,7 @@ namespace Combat.Unity.Game
             }
         }
 
+        // 根节点挂在本对象下，随场景卸载一起收走，避免运行时对象泄漏回编辑器场景。
         Transform CreateRoot(string name)
         {
             var go = new GameObject(name);
@@ -122,8 +145,10 @@ namespace Combat.Unity.Game
         }
 
         /// <summary>
-        /// Cue prefab bindings come from the database's cue asset, so the key list has a single
-        /// source: rebuilding the cue definitions cannot drift away from the prefab bindings.
+        /// Cue 的 Prefab 绑定现场从数据库的 cue 资产读出，键只有这一个来源：
+        /// 重建 cue 定义时不会与 Prefab 绑定漂移。这里与 UnityPresentFactory 持有的
+        /// ViewPrefabTable 是运行期仅有的两处仍然直接读 SO 的例外——它们都是美术绑定表，
+        /// 不是内容数据，没有进烘焙数据库的必要。
         /// </summary>
         Dictionary<string, GameObject> BuildCueMap()
         {

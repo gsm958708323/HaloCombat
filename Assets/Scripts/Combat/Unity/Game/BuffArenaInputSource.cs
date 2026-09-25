@@ -5,9 +5,11 @@ using UnityEngine.InputSystem;
 namespace Combat.Unity.Game
 {
     /// <summary>
-    /// One frame of player input. The key -> skill mapping is code-owned and lives in
-    /// BuffArenaSession.ApplyInput, next to the tokens it pushes; this struct only carries
-    /// what the Input System sampled.
+    /// 一帧玩家输入。键位 → 技能的映射由代码拥有，放在 BuffArenaSession.ApplyInput 里、
+    /// 紧挨着它推送的技能令牌；本结构只承载 Input System 当帧采样到的值。
+    /// 契约：只在本帧有效——Held 表示“这一帧按住”，调用方每帧重新 Sample，不要跨帧缓存或复用。
+    /// AimYaw 由相机射线求得（见 BuffArenaInputSource.Sample），所以不是纯输入量：测试要断言瞄向，
+    /// 必须先钉死相机与鼠标位置，否则结果随视角漂移。
     /// </summary>
     public struct BuffArenaInputFrame
     {
@@ -25,6 +27,11 @@ namespace Combat.Unity.Game
         public bool MonkeyHeld;
     }
 
+    /// <summary>
+    /// 输入采样器：绑定 Gameplay 动作图里的 9 个动作——Move、Fire1..Fire5、Jump（它施放的是 Roll 技能）、
+    /// Homing、Monkey——并把手柄 / 键鼠读数折算成 BuffArenaInputFrame。
+    /// 任一动作用例缺失都在构造时抛异常：场景缺件要当场响亮地失败，而不是按了半天没反应。
+    /// </summary>
     public sealed class BuffArenaInputSource
     {
         // Below this |y| the camera ray is treated as parallel to the ground plane.
@@ -43,6 +50,7 @@ namespace Combat.Unity.Game
         readonly InputAction _monkey;
         readonly Camera _camera;
 
+        /// <summary>解析并 Enable 动作图；_camera 允许为 null（此时 AimValid 恒为 false，只做移动/施法采样）。</summary>
         public BuffArenaInputSource(InputActionAsset asset, Camera camera)
         {
             if (asset == null) throw new System.InvalidOperationException("Buff Arena input actions are required.");
@@ -62,6 +70,11 @@ namespace Combat.Unity.Game
             map.Enable();
         }
 
+        /// <summary>
+        /// 采样一帧。摇杆死区 0.25（sqrMagnitude &lt; .0625）直接归零，避免手抖漂移。
+        /// 瞄向来自相机穿过鼠标位置的射线与地面的交点，因此依赖相机当前姿态：
+        /// 射线几乎与地面平行会被拒绝（交点可能在数公里外，yaw 会剧烈抖动），距离也设有上限。
+        /// </summary>
         public BuffArenaInputFrame Sample(Vector3 aimOrigin)
         {
             var move = _move.ReadValue<Vector2>();
@@ -105,6 +118,7 @@ namespace Combat.Unity.Game
             return frame;
         }
 
+        /// <summary>按名字取动作，取不到即抛；动作名与 BuffArenaSession.ApplyInput 的技能令牌是两套东西，别混淆。</summary>
         static InputAction Require(InputActionMap map, string name)
         {
             var action = map.FindAction(name, false);

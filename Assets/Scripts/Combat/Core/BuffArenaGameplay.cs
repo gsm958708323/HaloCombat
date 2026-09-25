@@ -3,6 +3,11 @@ using System.Collections.Generic;
 
 namespace Combat.Core
 {
+    /// <summary>
+    /// Buff Arena 的固定 id 与归属边界。归代码的只有三类：蓝图名（player/enemy/barrel）、敌人 AI 的技能与时间轴、
+    /// 以及木桶爆炸发布的两个 cue；它们必须和 BuffArenaActorFactory / WanderShooter 逐字对上。
+    /// 玩家的技能、时间轴、弹道、AoE、cue 全部由 SO 授权（见下方注释的 Generated 目录），不在这里重复声明。
+    /// </summary>
     public static class BuffArenaIds
     {
         // Blueprint ids are shared identity, not tuning: the asset table, the actor
@@ -35,6 +40,10 @@ namespace Combat.Core
         public static readonly InputToken MonkeyInput = new InputToken("Monkey");
     }
 
+    /// <summary>
+    /// 弹药：Current 只能经 TryConsume/Refill/Set 变化，Capacity 是上限。
+    /// TryConsume 失败时不改变任何状态，调用方可以靠返回值决定是否回退（见 BuffArenaPlayerComp.Tick 的 FallbackSkill）。
+    /// </summary>
     public sealed class AmmoComp : Comp
     {
         public int Current { get; private set; }
@@ -73,6 +82,10 @@ namespace Combat.Core
         }
     }
 
+    /// <summary>
+    /// 追踪本角色最近发射的弹道实体（传送弹靠它判断“弹还在飞”）。
+    /// 弹被销毁/回收时必须 ClearIf，否则这里会一直认为有弹——EntityId.Generation 能挡住指向新实体的误用，但状态会卡住。
+    /// </summary>
     public sealed class ProjectileTrackerComp : Comp
     {
         public EntityId TrackedProjectile { get; private set; } = EntityId.Invalid;
@@ -89,6 +102,11 @@ namespace Combat.Core
         protected override void OnDetach() => TrackedProjectile = EntityId.Invalid;
     }
 
+    /// <summary>
+    /// 一条技能定义（SO 授权的只读共享数据，同一份会被多个角色读）。技能的运行态（冷却、位移、动画）
+    /// 存在角色/实体上，这里只放描述性字段。两条回退链：付不出 AmmoCost 时改用 FallbackSkill 及其时间轴；
+    /// RequiresTrackedProjectile 且已有弹在飞时改用 WarpSkillId。
+    /// </summary>
     public sealed class BuffArenaSkill
     {
         public SkillNodeId Id;
@@ -105,6 +123,10 @@ namespace Combat.Core
         public SkillNodeId FallbackSkill = SkillNodeId.None;
     }
 
+    /// <summary>
+    /// 一场 Buff Arena 的共享配置与目录（时间轴/弹道/AoE/cue/角色定义/技能表）。
+    /// 实例由会话创建后只读共享：可变状态属于角色与实体，不要写回这里，否则重开局或对象复用会串场。
+    /// </summary>
     public sealed class BuffArenaData
     {
         public TimelineLibrary Timelines = new TimelineLibrary();
@@ -143,6 +165,10 @@ namespace Combat.Core
         }
     }
 
+    /// <summary>
+    /// 玩家“输入 → 技能”的执行器：读 InputBuffer，经 FindByInput 把 token 映射到技能，再交给 SkillDirector 播放。
+    /// 契约：token 必须与技能资产上的 InputToken 一致，否则该次输入会被静默丢弃（不报错）。
+    /// </summary>
     public sealed class BuffArenaPlayerComp : Comp
     {
         readonly BuffArenaData _data;
@@ -174,6 +200,16 @@ namespace Combat.Core
             _loco = null;
         }
 
+        /// <summary>
+        /// 每帧判定顺序（顺序即语义，不要重排）：
+        /// 1) 缺组件，或已带 Dead/Stunned/Downed 标签 → 不响应输入；
+        /// 2) 时间轴正在播：若该时间轴锁技能则清掉缓冲输入；否则保留缓冲直接返回；
+        /// 3) 取一个 token（TryPeek + Consume，即使后面匹配不上也算消耗掉）；
+        /// 4) FindByInput 匹配不到技能 → 本次输入作废；
+        /// 5) 传送弹特例：需要追踪弹且弹还在飞时改为传送到弹的位置，成功即结束；
+        /// 6) 弹药不足：付不出 AmmoCost 就播 FallbackSkill（用回退自己的时间轴）后结束；
+        /// 7) Play 失败且本来要耗弹时把弹药退回去，避免“技能没播成却扣了弹”。
+        /// </summary>
         public override void Tick(float dt)
         {
             if (_input == null || _director == null || _loco == null ||
@@ -217,6 +253,11 @@ namespace Combat.Core
                 _ammo.Refill(skill.AmmoCost);
         }
 
+        /// <summary>
+        /// 传送到追踪弹的位置。弹实体已不存在时清掉追踪并返回 false，让调用方继续走普通施放；
+        /// 落点用地面规则 CanPlace 校验（flying=false），放不下就发一条 Teleport blocked 消息并返回 true——
+        /// 即“这次施放算消耗掉了，不要再放技能”，避免在墙里反复尝试。成功后弹道立即 despawn 并停用，防止重复传送。
+        /// </summary>
         bool TryTeleport()
         {
             if (_tracker == null || !_tracker.HasProjectile || Self.World == null)
@@ -242,6 +283,9 @@ namespace Combat.Core
             return true;
         }
 
+        /// <summary>
+        /// 按 token 线性扫描技能表；技能表是个位数规模，不值得建索引。找不到返回 null，由调用方决定怎么处理已消耗的输入。
+        /// </summary>
         BuffArenaSkill FindByInput(InputToken token)
         {
             for (int i = 0; i < _data.Skills.Count; i++)
@@ -250,6 +294,10 @@ namespace Combat.Core
         }
     }
 
+    /// <summary>
+    /// 敌人 AI 叶子：随机游走 + 定时施放。它直接调 SkillDirector.Play，不经过 InputBuffer、不查 InputToken、也不扣弹药，
+    /// 所以给 AI 用的技能不需要（也不应该）配 InputToken/AmmoCost。随机数一律走 World.Random，保证逻辑层可重放。
+    /// </summary>
     public sealed class WanderShooter : BtNode
     {
         readonly SkillNodeId _skill;
@@ -321,7 +369,12 @@ namespace Combat.Core
             => LocomotionComp.YawFromStick(new SimVec3(to.X - from.X, 0f, to.Z - from.Z));
     }
 
-    public sealed class BarrelComp : Comp
+    /// <summary>
+    /// Arena 炸药桶：每 BarrelSelfDamagePeriod 秒自伤 1 点，死亡时按所有者的攻击力爆炸。
+    /// 它同时实现 IIncomingDamage，让「普通伤害打桶最多 1 点、桶互爆放行」这条规则留在桶自己身上，
+    /// 而不是写进通用伤害公式。
+    /// </summary>
+    public sealed class BarrelComp : Comp, IIncomingDamage
     {
         EntityId _owner = EntityId.Invalid;
         readonly float _selfDamagePeriod;
@@ -337,13 +390,21 @@ namespace Combat.Core
 
         public void SetOwner(EntityId owner) => _owner = owner;
 
-        public float FilterDamage(Actor source, float amount)
+        /// <summary>
+        /// 受击过滤：来源本身也是木桶时原样通过（爆炸效果用 Flat=9999 连锁引爆就靠这条），
+        /// 其余来源一律封顶 1 点——所以普通射击打不爆木桶，只能靠周期自伤或连锁爆炸。
+        /// </summary>
+        public float Filter(Actor source, float amount, in EffectContext ctx)
         {
             if (source != null && source.TryGetComp<BarrelComp>(out _))
                 return amount;
             return Math.Min(1f, amount);
         }
 
+        /// <summary>
+        /// 周期自伤：计时到点后用 += period 而不是 = period，保留溢出的小数部分，掉帧时不会把周期越拉越长。
+        /// 已爆、已死或无世界时不再推进（死亡到 despawn 之间仍可能被 Tick）。
+        /// </summary>
         public override void Tick(float dt)
         {
             if (_exploded || Self.World == null) return;
@@ -357,6 +418,10 @@ namespace Combat.Core
             }, Self, Self, 0f);
         }
 
+        /// <summary>
+        /// 死亡即爆炸：伤害系数取拥有者当前的 Atk（没有拥有者则为 0），爆炸后立刻 despawn 并停用。
+        /// _exploded 保证只爆一次——自伤致死与敌人击杀同帧到达时也不会双爆。
+        /// </summary>
         public override void OnDeath(Actor killer)
         {
             if (_exploded || Self.World == null) return;
@@ -377,6 +442,10 @@ namespace Combat.Core
         }
     }
 
+    /// <summary>
+    /// 专用 Effect：把技能/资产里的 cue 参数翻译成 EvCue 事件交给表现层，本身不产生任何战斗效果。
+    /// atCuePoint 只有在上下文真的带点时才成立（_atCuePoint &amp;&amp; ctx.HasPoint）；targetIsVictim 决定 victim 字段取目标还是留空。
+    /// </summary>
     public sealed class PlayBuffArenaCueEffect : IEffect
     {
         // Every field mirrors the matching public field on PlayBuffArenaCueAsset, which
@@ -411,6 +480,10 @@ namespace Combat.Core
         }
     }
 
+    /// <summary>
+    /// 受伤反馈：只在结算后目标仍活着（GetBase(Hp) &gt; 0）时才发 EvHurt，
+    /// 因此致命一击不会额外播一次“受伤”表现，死亡表现由死亡流程负责。
+    /// </summary>
     public sealed class HurtFeedbackEffect : IEffect
     {
         public void Apply(ref EffectContext ctx)
@@ -421,6 +494,9 @@ namespace Combat.Core
         }
     }
 
+    /// <summary>
+    /// 补弹：没指定 target 时补给自己（Source），方便“施放者就是受益者”的技能只写一个字段。
+    /// </summary>
     public sealed class RefillAmmoEffect : IEffect
     {
         readonly int _amount;
@@ -433,6 +509,11 @@ namespace Combat.Core
         }
     }
 
+    /// <summary>
+    /// 木桶爆炸：对半径内的目标分两类处理——桶用 Flat=9999 连锁引爆（正是 BarrelComp.Filter 对“木桶来源放行”的那条规则），
+    /// 指定阵营的活体结算一次伤害并附带命中 cue 与受伤反馈。被炸的桶自身（ctx.Target）会被排除，避免自炸；
+    /// 爆炸点优先取 ctx.Point，没有点才退到目标位置。
+    /// </summary>
     public sealed class BarrelExplosionEffect : IEffect
     {
         public float Radius = 2.2f;
@@ -482,6 +563,10 @@ namespace Combat.Core
         }
     }
 
+    /// <summary>
+    /// 把目标沿地面拉向 ctx.Point：力度随距离饱和（近距离更轻、远距离趋近 Strength），并乘本帧 Delta 以与帧率无关；
+    /// 位移走 RequestHitDelta，不会被普通移动输入覆盖，因此是“强制位移”而不是“改朝向”。
+    /// </summary>
     public sealed class PullToPointEffect : IEffect
     {
         public float Strength = 1f;
@@ -500,6 +585,10 @@ namespace Combat.Core
         }
     }
 
+    /// <summary>
+    /// 生成木桶：放在施放者正前方、以施放者为拥有者，并把属性初始化为 0 攻 0 速（血上限由 MaxHp 覆写）。
+    /// 蓝图与视图 id 可被烘焙资产覆写；spawn 事件刻意延后到位置/属性都设好再 Publish，避免表现层先看到默认值。
+    /// </summary>
     public sealed class SpawnBuffArenaBarrelEffect : IEffect
     {
         public float ForwardOffset = .55f;
@@ -529,6 +618,10 @@ namespace Combat.Core
         }
     }
 
+    /// <summary>
+    /// 按蓝图名装配 Actor：projectile/aoe 只挂位置与阵营，是纯运行时实体；player/enemy/barrel 走角色装配。
+    /// 敌人额外挂 WanderShooter 行为树（技能/时间轴 id 见 BuffArenaIds）。工厂会被复用，Release 只做重置。
+    /// </summary>
     public sealed class BuffArenaActorFactory : IActorFactory
     {
         readonly BuffArenaData _data;
@@ -595,6 +688,7 @@ namespace Combat.Core
                     board => board.AcquireRadius = 20f));
             }
 
+            // 默认属性在所有组件装配完之后统一写入：组件挂载期不应依赖属性已有初值。
             actor.GetComp<AttributeSet>().InitFighterDefaults();
             return actor;
         }

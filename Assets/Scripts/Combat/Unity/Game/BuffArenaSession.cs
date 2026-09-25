@@ -5,6 +5,14 @@ using Combat.Unity.Presentation;
 
 namespace Combat.Unity.Game
 {
+    /// <summary>
+    /// 一局 Arena 的运行时大脑：持有 CombatWorld、表现中枢 Hub、固定步长时钟，以及刷怪 / 清尸计时。
+    /// 帧序契约：每帧先 ApplyInput（写意图与输入缓冲）→ PumpLogic 按 LogicTicker 固定步长推进，
+    /// 单个逻辑步是 World.Tick → 清尸 → 刷怪 → 重算敌人数 → Hub.AfterLogicTick（表现事件在逻辑之后收口）；
+    /// 呈现由 PumpPresent 插值、PumpUnscaled 用 wall time 清尸体。
+    /// 玩家死亡会冻结逻辑钟（TickLogic 直接返回），所以任何“死后仍要发生”的事都不能挂在逻辑时间上。
+    /// 键位 → 技能令牌的映射由本类代码拥有（见 ApplyInput 与 BuffArenaIds），不在资产里。
+    /// </summary>
     public sealed class BuffArenaSession : IDisposable
     {
         readonly BuffArenaData _data;
@@ -31,7 +39,10 @@ namespace Combat.Unity.Game
 
         public CombatWorld World { get; private set; }
         public PresentHub Hub { get; private set; }
-        /// The baked content this session runs on (including the player input bindings).
+        /// <summary>
+        /// 本会话运行的烘焙内容（含玩家的输入绑定）。给测试用：不必反射私有字段，
+        /// 就能读到这一局实际生效的技能与按键映射。
+        /// </summary>
         public BuffArenaData Data => _data;
         public EntityId LocalPlayerId { get; private set; }
         public bool PlayerDead => _playerDead;
@@ -45,18 +56,25 @@ namespace Combat.Unity.Game
             Hub = hub ?? throw new ArgumentNullException(nameof(hub));
             _map = map ?? throw new ArgumentNullException(nameof(map));
             _enemyTeamId = _data.RequireActor(BuffArenaIds.EnemyBlueprint).TeamId;
+            // 世界只装配一次：弹体 / AoE 目录与 Cue 来自烘焙数据，Arena 没有召唤物。
             World = new CombatWorld(
                 new BuffArenaActorFactory(_data),
-                new IntentQueue(),
-                new EventBus(),
-                new CombatTime(),
-                new SeededRandom(_data.Seed),
-                _data.Cues,
-                _data.Motor,
-                _map);
-            World.ReplaceCatalogs(_data.Projectiles, _data.Aoes, new SummonCatalog());
+                new WorldInstall
+                {
+                    Intents = new IntentQueue(),
+                    Events = new EventBus(),
+                    Time = new CombatTime(),
+                    Random = new SeededRandom(_data.Seed),
+                    Cues = _data.Cues,
+                    Motor = _data.Motor,
+                    Movement = _map,
+                    Projectiles = _data.Projectiles,
+                    Aoes = _data.Aoes,
+                    Summons = new SummonCatalog()
+                });
         }
 
+        /// <summary>绑定世界与事件总线后生成玩家；必须在 Bootstrap 建好 Hub / Cue 池之后调用，因为生成即发事件。</summary>
         public void Start()
         {
             Hub.SetWorld(World);
@@ -66,6 +84,13 @@ namespace Combat.Unity.Game
             SpawnPlayer();
         }
 
+        /// <summary>
+        /// 把本帧采样转成移动 / 瞄准意图和技能输入令牌。
+        /// 推送顺序沿用源工程 PlayerController，而输入缓冲只有单槽位（后来者覆盖），
+        /// 所以这段 if 序列本身就是优先级：Fire5 → Fire1 → Roll → Homing → Monkey。
+        /// 这里的每个令牌都必须等于目标技能资产上署名的 InputToken，对不上时技能永远不会被找到，
+        /// 而且是静默的。玩家已死 / 无 Actor / 已 Dispose 时整帧丢弃输入。
+        /// </summary>
         public void ApplyInput(in BuffArenaInputFrame input)
         {
             if (_disposed || _playerDead || !World.TryGetActor(LocalPlayerId, out var player) || player == null)
@@ -92,12 +117,17 @@ namespace Combat.Unity.Game
             if (input.MonkeyHeld) buffer.Push(BuffArenaIds.MonkeyInput);
         }
 
+        /// <summary>把真实帧时长交给固定步长时钟；一帧内可能跑 0..N 个逻辑步。</summary>
         public void PumpLogic(float dt)
         {
             if (_disposed) return;
             _ticker.Accumulate(dt, TickLogic);
         }
 
+        /// <summary>
+        /// 表现层推进：用 RenderLogicTime(World.Time.Time) 取插值时刻，负 dt 夹到 0。
+        /// 与逻辑解耦，玩家死后照常运行（否则死亡瞬间的表现会卡住）。
+        /// </summary>
         public void PumpPresent(float dt)
         {
             if (_disposed || World == null) return;
@@ -105,6 +135,11 @@ namespace Combat.Unity.Game
             Hub.PumpUnscaled(dt < 0f ? 0f : dt);
         }
 
+        /// <summary>
+        /// 不走逻辑钟的推进：累加 wall time 并清理到期尸体。
+        /// 用 wall time 的原因见 _wallTime 的注释：玩家死后逻辑钟冻住，
+        /// 若清尸按逻辑时间计，尸体会永远留在场上，“死亡”看起来像没生效。
+        /// </summary>
         public void PumpUnscaled(float dt)
         {
             if (_disposed || World == null) return;
@@ -112,6 +147,11 @@ namespace Combat.Unity.Game
             ProcessDeadEnemies();
         }
 
+        /// <summary>
+        /// 单个固定步：World.Tick → 清尸 → 首次 / 周期刷怪 → 重算敌人数 → Hub.AfterLogicTick。
+        /// AfterLogicTick 放在最后，是给表现层的收口点，保证它看到的是本步结算完之后的世界。
+        /// 玩家死后整步直接跳过：逻辑钟停摆，刷怪与输入随之停止。
+        /// </summary>
         void TickLogic(float step)
         {
             if (_playerDead) return;
@@ -130,6 +170,10 @@ namespace Combat.Unity.Game
             Hub.AfterLogicTick(World);
         }
 
+        /// <summary>
+        /// 在导航上取随机可站点生成玩家；先 publishSpawn:false、配置完再手动 PublishSpawn，
+        /// 是为了让表现层拿到位置和属性都已配好的 Actor，而不是默认状态。
+        /// </summary>
         void SpawnPlayer()
         {
             var def = _data.RequireActor(BuffArenaIds.PlayerBlueprint);
@@ -145,6 +189,7 @@ namespace Combat.Unity.Game
             World.PublishSpawn(id, def.BlueprintId, def.ViewBlueprintId);
         }
 
+        /// <summary>补怪到上限；单次生成失败（找不到站位）就停手，等下个周期再试。</summary>
         void SpawnToLimit()
         {
             CountEnemies();
@@ -155,6 +200,10 @@ namespace Combat.Unity.Game
             }
         }
 
+        /// <summary>
+        /// 生成一只敌人并立即发布。index 取自累计生成数（_spawned++）而非当前存活数，
+        /// 所以死掉再刷出来的下一只依然更强。随机站位 / 朝向失败时返回 false。
+        /// </summary>
         bool SpawnEnemy()
         {
             var def = _data.RequireActor(BuffArenaIds.EnemyBlueprint);
@@ -175,6 +224,7 @@ namespace Combat.Unity.Game
             return true;
         }
 
+        /// <summary>玩家属性取数据库设定而非 Actor 定义；Atk 在这里抽一次随机，会消耗随机序列。</summary>
         void ConfigurePlayer(Actor player)
         {
             var def = _data.RequireActor(BuffArenaIds.PlayerBlueprint);
@@ -188,6 +238,7 @@ namespace Combat.Unity.Game
             player.GetComp<AmmoComp>().Set(_data.PlayerAmmoCapacity, _data.PlayerAmmoCapacity);
         }
 
+        /// <summary>敌人属性 = 定义值 + index 递增成长；这里同样抽随机数，抽数顺序不能改。</summary>
         void ConfigureEnemy(Actor enemy, int index)
         {
             var def = _data.RequireActor(BuffArenaIds.EnemyBlueprint);
@@ -205,9 +256,8 @@ namespace Combat.Unity.Game
         }
 
         /// <summary>
-        /// The source game stored a legacy speed stat and converted it when spawning. The
-        /// conversion and its inputs live in configuration so the pre-migration numbers stay
-        /// reproducible bit for bit; the random draw order must not change.
+        /// 源工程保存的是旧速度值，生成时再换算。换算公式及其入参都留在配置里，
+        /// 好让迁移前的数值能逐位复现；随机抽数顺序不能改（改了会整体错位）。
         /// </summary>
         float ResolveMoveSpeed(BuffArenaActorDef def)
         {
@@ -219,6 +269,7 @@ namespace Combat.Unity.Game
                 + def.MoveSpeedCurveOffset;
         }
 
+        /// <summary>倒序遍历（RequestDespawn 只登记、不立即移除）；到期用 wall time 判定，见 PumpUnscaled。</summary>
         void ProcessDeadEnemies()
         {
             for (int i = _deadEnemies.Count - 1; i >= 0; i--)
@@ -230,6 +281,10 @@ namespace Combat.Unity.Game
             }
         }
 
+        /// <summary>
+        /// 每逻辑步重算存活敌人数（排除带 Dead 标签的）。刷怪上限以存活数为准而不是累计生成数；
+        /// 玩家不属敌人队伍，天然不计入。
+        /// </summary>
         void CountEnemies()
         {
             EnemyCount = 0;
@@ -244,6 +299,10 @@ namespace Combat.Unity.Game
             }
         }
 
+        /// <summary>
+        /// 收到死亡事件：登记尸体清理时间。玩家死亡只置标志，不在这里做表现或结算——
+        /// 逻辑钟随后会冻住，清尸只能靠 wall time 累加。
+        /// </summary>
         void OnDead(EvEntityDead e)
         {
             // Every corpse (player included) is removed after the cleanup delay; the
@@ -260,6 +319,7 @@ namespace Combat.Unity.Game
                 return;
         }
 
+        /// <summary>退订 → 解绑总线 → 释放表现池 → Shutdown 世界，并清空引用使二次 Dispose 成为 no-op。</summary>
         public void Dispose()
         {
             if (_disposed) return;

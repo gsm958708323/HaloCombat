@@ -17,7 +17,7 @@ MonoBehaviour:
   TeamId: 1
   BodyRadius: 0.25
   AmmoCapacity: 60
-  MaxHp: 100
+  MaxHp: 100000
   MaxHpPerIndex: 0
   Atk: 50
   AtkRandomRange: 20

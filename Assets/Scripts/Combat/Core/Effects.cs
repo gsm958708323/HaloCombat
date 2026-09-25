@@ -2,6 +2,7 @@ using System;
 
 namespace Combat.Core
 {
+    /// <summary>给目标叠加标签层数。契约：stacks 小于 1 时按 1 处理，调用方传 0 不代表「移除」。</summary>
     public sealed class AddTagEffect : IEffect
     {
         readonly TagId _tag;
@@ -19,6 +20,7 @@ namespace Combat.Core
         }
     }
 
+    /// <summary>移除目标标签层数，与 AddTagEffect 对称；stacks 小于 1 时同样按 1 处理。</summary>
     public sealed class RemoveTagEffect : IEffect
     {
         readonly TagId _tag;
@@ -36,6 +38,7 @@ namespace Combat.Core
         }
     }
 
+    /// <summary>给目标挂一条带时长的 Buff；层数与刷新规则由 BuffComp.Apply 决定，本效果只负责把来源一起传下去。</summary>
     public sealed class ApplyDurationEffect : IEffect
     {
         readonly DurationSpec _spec;
@@ -53,6 +56,7 @@ namespace Combat.Core
         }
     }
 
+    /// <summary>按模式驱散目标 Buff。DispelMode.BySource 且未显式给 key 时，把 Source 实体打包成 key，所以来源为空的驱散只能走其他模式。</summary>
     public sealed class DispelEffect : IEffect
     {
         readonly DispelMode _mode;
@@ -77,6 +81,7 @@ namespace Combat.Core
         }
     }
 
+    /// <summary>只广播一条表现事件 EvCue，不修改任何战斗数值；World 或 Events 缺失时静默跳过（无表现环境可复用）。</summary>
     public sealed class PlayCueEffect : IEffect
     {
         readonly int _cueId;
@@ -95,6 +100,7 @@ namespace Combat.Core
         }
     }
 
+    /// <summary>发射意图（值类型）：效果层只投递它，实体由 ProjectileService 稍后统一生成，因此这里携带的必须是生成后不再回查的只读快照。</summary>
     public readonly struct SpawnProjectileIntent
     {
         public readonly EntityId Owner;
@@ -114,6 +120,11 @@ namespace Combat.Core
         }
     }
 
+    /// <summary>
+    /// 投意图而不是当场生成：只把 SpawnProjectileIntent 投进 Intents，由 ProjectileService.DrainSpawns 稍后生成子弹实体。
+    /// 正因如此，快照 Atk 必须在投递当帧定死；ctx.SnapshotAtk 为 0 时才回落到施法者当前 Atk。
+    /// Target 只是初始追踪目标，可为 Invalid。
+    /// </summary>
     public sealed class SpawnProjectileEffect : IEffect
     {
         readonly int _specId;
@@ -132,6 +143,10 @@ namespace Combat.Core
         }
     }
 
+    /// <summary>
+    /// 与子弹相反：AoE 是当场生成实体（Apply 内立即 SpawnActor + Setup），所以脉冲与寿命从这一帧开始计时。
+    /// 原点选择顺序：useTargetPoint 取目标位置 → ctx.Point → 施法者位置 → 原点；forwardOffset 再沿施法者朝向平移。
+    /// </summary>
     public sealed class SpawnAoeEffect : IEffect
     {
         readonly int _specId;
@@ -198,6 +213,7 @@ namespace Combat.Core
                 ctx.World.PublishSpawn(id, "aoe", def.ViewBlueprintId);
         }
 
+        /// <summary>让运行时体继承施法者阵营，仅用于伤害归属与敌我过滤；运行时体本身不参战。</summary>
         public static void CopyTeam(Actor owner, Actor spawned)
         {
             if (owner == null || !spawned.TryGetComp<TeamComp>(out var dt)) return;
@@ -206,6 +222,7 @@ namespace Combat.Core
         }
     }
 
+    /// <summary>直接改 Hp 基础值并广播 EvHeal，不经过伤害管线（防御、护盾、受击过滤都不参与）。</summary>
     public sealed class HealEffect : IEffect
     {
         public float Amount = 10f;
@@ -219,6 +236,7 @@ namespace Combat.Core
         }
     }
 
+    /// <summary>把目标瞬移到效果点；没有点（HasPoint 为假）时什么都不做，实际位移交由 LocomotionComp 排队，避免与移动求解抢位置。</summary>
     public sealed class TeleportEffect : IEffect
     {
         public void Apply(ref EffectContext ctx)
@@ -229,6 +247,7 @@ namespace Combat.Core
         }
     }
 
+    /// <summary>通用伤害结算效果。字段都是配置：产品特有的减伤/限伤规则不要塞进这里，而应由目标实现 IIncomingDamage 自己决定。</summary>
     public sealed class DamageEffect : IEffect
     {
         public float Coeff = 1f;
@@ -243,6 +262,21 @@ namespace Combat.Core
         public bool FireOnHurted = true;
         public int HitstopFrames;
 
+        /// <summary>
+        /// 伤害结算顺序（固定，不可重排）：
+        /// 1) 无敌判定：Invincible 标签或 HealthComp.InIFrame 命中即广播 EvImmune 并返回；
+        /// 2) 取攻击值：UseSnapshotAtk 用快照，否则取来源当帧最终 Atk，来源缺失时退回快照；
+        /// 3) 减防御：IgnoreDef 时防御记 0，raw = atk*Coeff + Flat - def，并夹到不小于 0；
+        /// 4) Buff 层数：ScaleByBuffStacks 时乘 max(1, BuffStacks)；
+        /// 5) 暴击：CanCrit 且概率有效时用 World.Random 掷骰（CritChance 小于 0 回落到来源 CritRate）；
+        /// 6) 攻防乘区：乘来源 DmgDealMul 与目标 DmgTakenMul，再夹到不小于 0；
+        /// 7) 受击过滤 IIncomingDamage：DirectDamage 为真时让目标组件在写入血量前改写数值；
+        /// 8) 护盾吸收：先扣 Shield 基础值，剩余部分才进血量；
+        /// 9) 写血量：SetBase(Hp)（不走 final 属性重算），并夹到不小于 0；
+        /// 10) 后置：广播 EvDamage、命中停帧、死亡状态机切换、受击 Buff 回调。
+        /// 受击过滤必须放在扣血之前：它改的就是「最终进血量的数字」，一旦先扣血再过滤，
+        /// 护盾/血量已被不可逆写坏，上报的 EvDamage 也会与真实扣血不一致。
+        /// </summary>
         public void Apply(ref EffectContext ctx)
         {
             var target = ctx.Target;
@@ -290,8 +324,9 @@ namespace Combat.Core
             raw *= dealMul * takenMul;
             if (raw < 0f) raw = 0f;
 
-            if (DirectDamage && target.TryGetComp<BarrelComp>(out var barrel))
-                raw = barrel.FilterDamage(source, raw);
+            // 受击过滤交给目标组件（例如 Arena 木桶的「最多 1 点」）：通用伤害公式不认识具体产品组件。
+            if (DirectDamage && target.TryGetComp<IIncomingDamage>(out var filter))
+                raw = filter.Filter(source, raw, in ctx);
 
             float shield = dstAttr.GetBase(AttrId.Shield);
             float absorb = 0f;
@@ -333,6 +368,7 @@ namespace Combat.Core
         }
     }
 
+    /// <summary>把伤害回敬给施法者自身。Inner 默认关闭暴击与 OnHurted，避免自伤再次触发反击形成循环。</summary>
     public sealed class DamageAttackerEffect : IEffect
     {
         public DamageEffect Inner = new DamageEffect { FireOnHurted = false, CanCrit = false, UseSnapshotAtk = true };
@@ -346,6 +382,7 @@ namespace Combat.Core
         }
     }
 
+    /// <summary>进入受击硬直。超甲/死亡/倒地直接吞掉；Duration 非正时回落到 0.35s，IFrameDuration 交给状态机在进入时开无敌。</summary>
     public sealed class HitStunEffect : IEffect
     {
         public float Duration = 0.35f;
@@ -366,6 +403,7 @@ namespace Combat.Core
         }
     }
 
+    /// <summary>沿效果方向、否则沿施法者到目标的水平方向推一段位移；方向退化为零长度时回落到 +X，避免正常化除零。</summary>
     public sealed class KnockbackEffect : IEffect
     {
         public float Distance = 0.4f;
@@ -395,6 +433,7 @@ namespace Combat.Core
         }
     }
 
+    /// <summary>给目标一个向上的冲量；死亡与超甲免疫击飞，垂直速度非正时不做任何事。</summary>
     public sealed class LaunchEffect : IEffect
     {
         public float VerticalSpeed = 5f;
@@ -410,6 +449,7 @@ namespace Combat.Core
         }
     }
 
+    /// <summary>开启一段无敌帧。与 HitStun 自带的 IFrameDuration 共用 HealthComp 同一份计时（取较长者，不叠加）。</summary>
     public sealed class IFrameEffect : IEffect
     {
         public float Duration = 0.1f;
@@ -421,6 +461,7 @@ namespace Combat.Core
         }
     }
 
+    /// <summary>进入倒地状态；死亡与超甲免疫，Duration 非正时回落到 0.80s。</summary>
     public sealed class KnockdownEffect : IEffect
     {
         public float Duration = 0.80f;

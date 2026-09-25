@@ -3,6 +3,29 @@ using System.Collections.Generic;
 
 namespace Combat.Core
 {
+    /// <summary>
+    /// 构造 CombatWorld 需要的一次性装配参数。目录、Cue、Motor、移动约束在构造函数里一次给全，
+    /// 取代「构造后再 Replace」：漏装会在调用点暴露，而不是对局里表现为「技能放了但没有子弹」这种静默失败。
+    /// 每个字段都可以留空，留空即用默认值。
+    /// </summary>
+    public struct WorldInstall
+    {
+        public IntentQueue Intents;
+        public EventBus Events;
+        public CombatTime Time;
+        public IRandom Random;
+        public CueLibrary Cues;
+        public MotorConfig? Motor;
+        public IMovementConstraint Movement;
+        public ProjectileCatalog Projectiles;
+        public AoeCatalog Aoes;
+        public SummonCatalog Summons;
+    }
+
+    /// <summary>
+    /// 一场对局的唯一世界：持有时间、实体表、意图队列、事件总线、效果管线，以及弹体 / AoE / 命中服务。
+    /// 定义（目录、Cue、Motor）在构造时一次装配，之后不再替换；一帧的推进顺序见 <see cref="Tick"/>。
+    /// </summary>
     public sealed class CombatWorld
     {
         readonly CombatTime _time;
@@ -21,7 +44,6 @@ namespace Combat.Core
         SummonCatalog _summons = new SummonCatalog();
         CueLibrary _cues;
         MotorConfig _motor;
-        readonly List<Action> _servicePhase = new List<Action>(8);
         int _buffIds;
         int _hitstopPending;
         int _hitstopLeft;
@@ -41,27 +63,24 @@ namespace Combat.Core
         public MotorConfig Motor => _motor;
         public IMovementConstraint Movement => _movement;
 
-        public CombatWorld(
-            IActorFactory actorFactory,
-            IntentQueue intents = null,
-            EventBus events = null,
-            CombatTime time = null,
-            IRandom random = null,
-            CueLibrary cues = null,
-            MotorConfig? motor = null,
-            IMovementConstraint movement = null)
+        /// <summary>按装配参数构造世界。目录 / Cue / Motor / 移动约束在这里一次到位，之后不再替换。</summary>
+        public CombatWorld(IActorFactory actorFactory, in WorldInstall install)
         {
-            _time = time ?? new CombatTime();
-            _intents = intents ?? new IntentQueue();
-            _events = events ?? new EventBus();
+            if (actorFactory == null) throw new ArgumentNullException(nameof(actorFactory));
+            _time = install.Time ?? new CombatTime();
+            _intents = install.Intents ?? new IntentQueue();
+            _events = install.Events ?? new EventBus();
             _pipeline = new EffectPipeline();
-            _random = random ?? new SeededRandom(1);
-            _cues = cues ?? CueLibrary.DefaultCombat();
-            _motor = motor ?? MotorConfig.SeasonOneDefaults();
-            _movement = movement ?? new FreeMovementConstraint();
+            _random = install.Random ?? new SeededRandom(1);
+            _cues = install.Cues ?? CueLibrary.DefaultCombat();
+            _motor = install.Motor ?? MotorConfig.SeasonOneDefaults();
+            _movement = install.Movement ?? new FreeMovementConstraint();
+            if (install.Projectiles != null) _projectiles = install.Projectiles;
+            if (install.Aoes != null) _aoes = install.Aoes;
+            if (install.Summons != null) _summons = install.Summons;
             _query = new SimpleTargetQuery();
             _query.Bind(this);
-            _registry = new EntityRegistry(actorFactory ?? throw new ArgumentNullException(nameof(actorFactory)), this);
+            _registry = new EntityRegistry(actorFactory, this);
             _hitDetect = new HitDetectService(this);
             _projectilesSvc = new ProjectileService(this);
             _aoe = new AoeService(this);
@@ -69,32 +88,11 @@ namespace Combat.Core
 
         public int NextBuffInstanceId() => ++_buffIds;
 
-        public void ReplaceCatalogs(ProjectileCatalog projectiles, AoeCatalog aoes, SummonCatalog summons)
-        {
-            if (projectiles != null) _projectiles = projectiles;
-            if (aoes != null) _aoes = aoes;
-            if (summons != null) _summons = summons;
-        }
-
-        public void ReplaceCues(CueLibrary cues)
-        {
-            if (cues != null) _cues = cues;
-        }
-
-        public void ApplyCatalogs(BakedDatabase db)
-        {
-            if (db == null) return;
-            if (db.Projectiles != null) _projectiles = db.Projectiles;
-            if (db.Aoes != null) _aoes = db.Aoes;
-            if (db.Summons != null) _summons = db.Summons;
-            if (db.Cues != null) _cues = db.Cues;
-        }
-
+        /// <summary>清空实体与待处理意图。目录是只读的，不需要重置。</summary>
         public void Shutdown()
         {
             _registry.ClearAll();
             _intents.ClearAll();
-            _servicePhase.Clear();
         }
 
         public EntityId SpawnActor(in ActorSpawnSpec spec, bool publishSpawn = true)
@@ -120,10 +118,12 @@ namespace Combat.Core
         }
         public bool TryGetActor(EntityId id, out Actor actor) => _registry.TryGet(id, out actor);
         public void RequestDespawn(EntityId id) => _registry.RequestDespawn(id);
+        /// <summary>申请顿帧：只取本次更大的值，顿帧期间逻辑帧暂停、wall time 继续。</summary>
         public void RequestHitstop(int frames)
         {
             if (frames > _hitstopPending) _hitstopPending = frames;
         }
+        /// <summary>当前活跃实体的一份独立副本。演示与课程代码用；50Hz 热路径请用带 destination 的重载。</summary>
         public List<Actor> RegistryActive()
         {
             var result = new List<Actor>(64);
@@ -133,12 +133,7 @@ namespace Combat.Core
 
         public void RegistryActive(List<Actor> destination) => _registry.CopyActiveActors(destination);
 
-        public void AddServicePhase(Action phase)
-        {
-            if (phase == null) throw new ArgumentNullException(nameof(phase));
-            _servicePhase.Add(phase);
-        }
-
+        /// <summary>唯一的结算入口：按数组顺序跑效果管线（无优先级、无短路）。</summary>
         public void Deliver(
             IEffect[] effects,
             Actor source,
@@ -162,6 +157,7 @@ namespace Combat.Core
             _pipeline.Run(ref ctx, effects);
         }
 
+        /// <summary>所有者消失时清掉它生成的弹体 / AoE / 召唤物（召唤物会先清掉自己的后代）。</summary>
         public void CleanupByOwner(EntityId owner)
         {
             if (!owner.IsValid) return;
@@ -211,6 +207,20 @@ namespace Combat.Core
             }
         }
 
+        /// <summary>
+        /// 一个逻辑帧的固定顺序。每一段之间重新取一次活跃快照：上一段出生或失活的实体会在下一段生效，
+        /// 而本段循环中途的结构变化不会改掉正在走的下标。
+        ///   1. 组件 Tick（含时间轴推进；技能在这一段投出弹体生成意图）
+        ///   2. 命中前位移积分（让判定用的位置与本帧已积分的位置一致）
+        ///   3. 弹体移动与命中，然后近战 / 命中盒检测
+        ///   4. 排空 ApplyEffectsIntent（唯一的结算路径）
+        ///   5. 时间轴收尾 FlushTimeline
+        ///   6. AoE 脉冲与占用差分（本帧进入火地的目标能在同一逻辑帧吃到结算）
+        ///   7. Buff 周期
+        ///   8. 命中后位移积分（击退、技能位移在这里生效）
+        ///   9. 回收待销毁实体
+        /// Hitstop 期间只推进 wall time、暂停逻辑帧，但仍然回收。
+        /// </summary>
         public void Tick(float dt)
         {
             _time.AdvanceWall(dt);
@@ -238,9 +248,6 @@ namespace Combat.Core
             var actors = _registry.CopyActiveActors();
             for (int i = 0; i < actors.Count; i++)
                 actors[i].TickAll(_time.Delta);
-
-            for (int i = 0; i < _servicePhase.Count; i++)
-                _servicePhase[i]();
 
             // Apply regular and skill movement before hit detection so the displayed
             // hitbox and the position used for the actual query describe the same frame.
