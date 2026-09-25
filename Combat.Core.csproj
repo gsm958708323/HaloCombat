@@ -73,7 +73,6 @@
     <Compile Include="Assets\Scripts\Combat\Core\CombatValidator.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Summons.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\ArenaNavigation.cs" />
-    <Compile Include="Assets\Scripts\Combat\Core\BuffArenaContentTables.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\BehaviorTree.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Attributes.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\BehaviorTreeComp.cs" />

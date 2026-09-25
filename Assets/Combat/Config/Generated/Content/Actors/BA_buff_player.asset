@@ -14,7 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   BlueprintId: buff_player
   ViewBlueprintId: buff_player_view
-  IsPlayer: 1
   TeamId: 1
   BodyRadius: 0.25
   AmmoCapacity: 60

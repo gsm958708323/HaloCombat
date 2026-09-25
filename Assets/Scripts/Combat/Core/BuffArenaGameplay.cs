@@ -5,81 +5,26 @@ namespace Combat.Core
 {
     public static class BuffArenaIds
     {
-        // Blueprint ids are shared identity, not tuning: the content table, the actor
+        // Blueprint ids are shared identity, not tuning: the asset table, the actor
         // factory and the session all have to agree on them.
         public const string PlayerBlueprint = "buff_player";
         public const string EnemyBlueprint = "buff_enemy";
         public const string BarrelBlueprint = "buff_barrel";
 
-        public const int SkillFireValue = 2001;
-        public const int SkillRollValue = 2002;
-        public const int SkillMonkeyValue = 2003;
-        public const int SkillHomingValue = 2004;
-        public const int SkillBoomerangValue = 2005;
-        public const int SkillTeleportValue = 2006;
-        public const int SkillGrenadeValue = 2007;
-        public const int SkillBarrelValue = 2008;
-        public const int SkillReloadValue = 2009;
+        // Player skills, timelines, projectiles, AoEs and cues are SO-authored; their ids
+        // live in Assets/Combat/Config/Generated. Only the enemy AI tree is code-owned, so
+        // its two ids stay here, plus the two cue ids the barrel explosion publishes.
         public const int SkillEnemyValue = 2010;
-        // Warp counterpart of the teleport bullet, resolved while its projectile is alive.
-        public const int SkillTeleportWarpValue = 2011;
-
-        public const int TimelineFireValue = 3001;
-        public const int TimelineRollValue = 3002;
-        public const int TimelineMonkeyValue = 3003;
-        public const int TimelineHomingValue = 3004;
-        public const int TimelineBoomerangValue = 3005;
-        public const int TimelineTeleportValue = 3006;
-        public const int TimelineGrenadeValue = 3007;
-        public const int TimelineBarrelValue = 3008;
-        public const int TimelineReloadValue = 3009;
         public const int TimelineEnemyValue = 3010;
-
-        public const int ProjectileNormalValue = 4001;
-        public const int ProjectileEnemyValue = 4002;
-        public const int ProjectileBoomerangValue = 4003;
-        public const int ProjectileTeleportValue = 4004;
-        public const int ProjectileBombValue = 4005;
-        public const int ProjectileHomingValue = 4006;
-
-        public const int AoeShieldValue = 4101;
-        public const int AoeMonkeyValue = 4102;
-        public const int AoeBlackHoleValue = 4103;
-        public const int AoeExplosionValue = 4104;
-        public const int AoeStayingBombValue = 4105;
-
-        public const int CueMuzzleValue = 4201;
-        public const int CueHeartValue = 4202;
-        public const int CueRollFireValue = 4203;
         public const int CueHitValue = 4204;
-        public const int CueShieldValue = 4205;
         public const int CueExplosionValue = 4206;
-        public const int CueStarValue = 4207;
-        public const int CueShockwaveValue = 4208;
 
-        public static readonly SkillNodeId Fire = new SkillNodeId(SkillFireValue);
-        public static readonly SkillNodeId Roll = new SkillNodeId(SkillRollValue);
-        public static readonly SkillNodeId Monkey = new SkillNodeId(SkillMonkeyValue);
-        public static readonly SkillNodeId Homing = new SkillNodeId(SkillHomingValue);
-        public static readonly SkillNodeId Boomerang = new SkillNodeId(SkillBoomerangValue);
-        public static readonly SkillNodeId Teleport = new SkillNodeId(SkillTeleportValue);
-        public static readonly SkillNodeId Grenade = new SkillNodeId(SkillGrenadeValue);
-        public static readonly SkillNodeId Barrel = new SkillNodeId(SkillBarrelValue);
-        public static readonly SkillNodeId Reload = new SkillNodeId(SkillReloadValue);
         public static readonly SkillNodeId SkillEnemy = new SkillNodeId(SkillEnemyValue);
-        public static readonly SkillNodeId TeleportWarp = new SkillNodeId(SkillTeleportWarpValue);
-
-        public static readonly TimelineId FireTimeline = new TimelineId(TimelineFireValue);
-        public static readonly TimelineId RollTimeline = new TimelineId(TimelineRollValue);
-        public static readonly TimelineId MonkeyTimeline = new TimelineId(TimelineMonkeyValue);
-        public static readonly TimelineId HomingTimeline = new TimelineId(TimelineHomingValue);
-        public static readonly TimelineId BoomerangTimeline = new TimelineId(TimelineBoomerangValue);
-        public static readonly TimelineId TeleportTimeline = new TimelineId(TimelineTeleportValue);
-        public static readonly TimelineId GrenadeTimeline = new TimelineId(TimelineGrenadeValue);
-        public static readonly TimelineId BarrelTimeline = new TimelineId(TimelineBarrelValue);
-        public static readonly TimelineId ReloadTimeline = new TimelineId(TimelineReloadValue);
         public static readonly TimelineId TimelineEnemy = new TimelineId(TimelineEnemyValue);
 
+        // The player's key map is code-owned (see BuffArenaSession.ApplyInput): it has to agree
+        // with the Gameplay action map, which only exists in code anyway. These tokens are the
+        // other half of that contract - each must equal the InputToken authored on its skill asset.
         public static readonly InputToken Fire1 = new InputToken("Fire1");
         public static readonly InputToken Fire2 = new InputToken("Fire2");
         public static readonly InputToken Fire3 = new InputToken("Fire3");
@@ -155,39 +100,9 @@ namespace Combat.Core
         // WarpSkillId instead of casting itself again.
         public bool RequiresTrackedProjectile;
         public SkillNodeId WarpSkillId = SkillNodeId.None;
-    }
-
-    /// <summary>
-    /// How the runtime treats a missing or incomplete baked content database. The Unity
-    /// runtime is supposed to run on its ScriptableObject assets, so SoStrict is the target
-    /// state; SoWithWarnings exists only so a build stays runnable while assets are authored.
-    /// </summary>
-    public enum ContentSourcePolicy : byte
-    {
-        SoWithWarnings = 0,
-        SoStrict = 1
-    }
-
-    public sealed class BuffArenaSourceConfig
-    {
-        public string[] SkillIds = Array.Empty<string>();
-        public string[] ProjectileIds = Array.Empty<string>();
-        public string[] AoeIds = Array.Empty<string>();
-        public int PlayerMaxHp = 500;
-        public int PlayerAmmoCapacity = 60;
-        public int MaxEnemies = 10;
-        public float SpawnPeriod = 10f;
-        public float EnemyCleanupDelay = 5f;
-        public float BarrelSelfDamagePeriod = 5f;
-        public MotorConfig Motor = MotorConfig.SeasonOneDefaults();
-        public int Seed = 1;
-        public BuffArenaActorDef[] Actors = Array.Empty<BuffArenaActorDef>();
-        public ContentSourcePolicy Policy = ContentSourcePolicy.SoWithWarnings;
-        // Pre-baked database produced from ScriptableObject assets. Null in the pure C#
-        // path, where the code-defined table below is registered instead.
-        public BuffArenaData Content;
-        /// Explains why Content is null. Set by BuffArenaDatabaseAsset.BakeContent().
-        public string ContentError;
+        // Played instead when this skill cannot pay its AmmoCost. SO-authored, and the
+        // fallback's own timeline is used, so no second id pair is hard-coded here.
+        public SkillNodeId FallbackSkill = SkillNodeId.None;
     }
 
     public sealed class BuffArenaData
@@ -215,11 +130,16 @@ namespace Combat.Core
             throw new InvalidOperationException("Missing Buff Arena actor definition " + blueprintId);
         }
 
-        public BuffArenaSkill RequireSkill(SkillNodeId id)
+        public bool TryGetSkill(SkillNodeId id, out BuffArenaSkill skill)
         {
             for (int i = 0; i < Skills.Count; i++)
-                if (Skills[i].Id == id) return Skills[i];
-            throw new InvalidOperationException("Missing Buff Arena skill " + id.Value);
+            {
+                if (Skills[i].Id != id) continue;
+                skill = Skills[i];
+                return true;
+            }
+            skill = null;
+            return false;
         }
     }
 
@@ -286,8 +206,10 @@ namespace Combat.Core
 
             if (skill.AmmoCost > 0 && (_ammo == null || !_ammo.TryConsume(skill.AmmoCost)))
             {
-                if (skill.Id == BuffArenaIds.Fire)
-                    _director.Play(BuffArenaIds.Reload, BuffArenaIds.ReloadTimeline);
+                // The fallback is SO data (SK_2001 -> Reload). Play it on its own timeline,
+                // so no second skill/timeline id pair has to be hard-coded here.
+                if (skill.FallbackSkill.IsValid && _data.TryGetSkill(skill.FallbackSkill, out var fallback))
+                    _director.Play(fallback.Id, fallback.Timeline);
                 return;
             }
 
@@ -457,8 +379,8 @@ namespace Combat.Core
 
     public sealed class PlayBuffArenaCueEffect : IEffect
     {
-        // Field names follow the "_<AssetFieldName>" convention so BuffArenaDatabaseBuilder
-        // can copy this configuration into PlayBuffArenaCueAsset by reflection.
+        // Every field mirrors the matching public field on PlayBuffArenaCueAsset, which
+        // BakeNew() copies explicitly.
         readonly int _cueId;
         readonly string _anchorKey;
         readonly string _instanceKey;
@@ -678,83 +600,5 @@ namespace Combat.Core
         }
 
         public void Release(Actor actor) => actor?.ResetForPool();
-    }
-
-    public static class BuffArenaContent
-    {
-        public static BuffArenaData Build()
-        {
-            var data = new BuffArenaData();
-            BuffArenaContentTables.Populate(data);
-            return data;
-        }
-
-        public static BuffArenaData Build(BuffArenaSourceConfig source)
-        {
-            if (source == null) throw new ArgumentNullException(nameof(source));
-            ValidateSource(source);
-            if (source.Content == null)
-            {
-                string reason = string.IsNullOrEmpty(source.ContentError)
-                    ? "the generated database is incomplete"
-                    : source.ContentError;
-                if (source.Policy == ContentSourcePolicy.SoStrict)
-                    throw new InvalidOperationException(
-                        "Buff Arena is configured to run on ScriptableObject content, but " + reason
-                        + ". Rebuild or finish the assets under Assets/Combat/Config/Generated, "
-                        + "or set the content policy back to SoWithWarnings.");
-                CombatLog.Error(
-                    "Buff Arena fell back to the code-defined table: " + reason
-                    + ". The Unity runtime is supposed to run on ScriptableObject content.");
-            }
-            // Asset-driven path: the ScriptableObject database already carries every
-            // definition, so nothing is registered from code here.
-            var data = source.Content ?? Build();
-            data.PlayerMaxHp = source.PlayerMaxHp;
-            data.PlayerAmmoCapacity = source.PlayerAmmoCapacity;
-            data.MaxEnemies = source.MaxEnemies;
-            data.SpawnPeriod = source.SpawnPeriod;
-            data.EnemyCleanupDelay = source.EnemyCleanupDelay;
-            data.BarrelSelfDamagePeriod = source.BarrelSelfDamagePeriod;
-            data.Motor = source.Motor;
-            data.Seed = source.Seed;
-            data.Actors.Clear();
-            if (source.Actors != null)
-                for (int i = 0; i < source.Actors.Length; i++)
-                    if (source.Actors[i] != null) data.Actors.Add(source.Actors[i]);
-            return data;
-        }
-
-        static void ValidateSource(BuffArenaSourceConfig source)
-        {
-            RequireSet("skills", source.SkillIds, "fire", "roll", "spaceMonkeyBall", "homingMissle",
-                "cloakBoomerang", "teleportBullet", "grenade", "explosiveBarrel", "reload");
-            RequireSet("projectiles", source.ProjectileIds, "normal0", "normal1", "cloakBoomerang",
-                "teleportBullet", "boomball");
-            RequireSet("aoes", source.AoeIds, "BulletShield", "SpaceMonkeyBall", "BlackHole",
-                "BoomExplosive", "StayingBoom");
-            if (source.PlayerMaxHp <= 0 || source.PlayerAmmoCapacity <= 0 || source.MaxEnemies <= 0 ||
-                source.SpawnPeriod <= 0f || source.EnemyCleanupDelay <= 0f || source.BarrelSelfDamagePeriod <= 0f)
-                throw new InvalidOperationException("Buff Arena source database contains invalid runtime settings.");
-        }
-
-        static void RequireSet(string name, string[] actual, params string[] expected)
-        {
-            if (actual == null || actual.Length != expected.Length)
-                throw new InvalidOperationException("Buff Arena source database has invalid " + name + " entries.");
-            var values = new HashSet<string>(actual, StringComparer.OrdinalIgnoreCase);
-            for (int i = 0; i < expected.Length; i++)
-                if (!values.Contains(expected[i]))
-                    throw new InvalidOperationException("Buff Arena source database is missing " + name + " entry " + expected[i] + ".");
-        }
-
-        static void RegisterContent(BuffArenaData data)
-        {
-            // The value table lives in BuffArenaContentTables so this file only owns
-            // the runtime plumbing. The generated ScriptableObject assets are the
-            // day-to-day tuning surface; this table seeds them and backs the pure C#
-            // regression suite.
-            BuffArenaContentTables.Populate(data);
-        }
     }
 }

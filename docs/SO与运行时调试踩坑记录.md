@@ -293,7 +293,7 @@ void Press(Func<BuffArenaInputFrame, BuffArenaInputFrame> configure) {
 | SO 类能不能序列化 | §1.1 的 MonoScript 审计片段 |
 | 时间轴/payload 里有没有 null 洞 | 遍历 `Timelines[i].Bake().Payloads`，打 `Effects[e] == null` 的槽位；再看原始资产的 `Effects[e]` 是 `NULL REF` 还是 `Bake() → null`（两者根因不同） |
 | 哪个类是真死代码 | §5.2 双条件扫描（名字引用 + .meta GUID） |
-| 内容资产是否一致 | 菜单 `Combat/Buff Arena/Verify Content Assets` → `0 differences`；`Rebuild Content Assets` 写盘前自校验 |
+| 内容资产能不能用 | 找一台能编译的 Unity，`BuffArenaDatabaseAsset.Bake()` 返回非 null（引用校验都过）；或直接进 Play / 跑 PlayMode 冒烟。生成器与 `Verify` 菜单已随代码表一起移除 |
 | Unity 侧跑测试 | `run_tests` + `get_test_job`（`include_failed_tests`）；PlayMode 前确认 `Application.runInBackground` |
 | CLI 回归（零弹窗） | `SetErrorMode(0x0001|0x0002|0x8000)` + `DOTNET_EnableDiagnostics=0` + `[Process]::Start`（**不要** `Start-Process -PassThru`）+ 超时 + 异步重定向读 |
 | Play 内探测会话 | §3.4 骨架；`ref` 调 `in` 参数、每 tick 打状态 |
@@ -304,10 +304,10 @@ void Press(Func<BuffArenaInputFrame, BuffArenaInputFrame> configure) {
 
 1. `read_console` 0 error（编译先过，否则后面结论都不可信）。
 2. 跑 MonoScript 审计（§1.1）—— 尤其是新增了 `ScriptableObject` 类之后。
-3. `Combat/Buff Arena/Rebuild Content Assets`（写盘前自校验，不一致会中止）。
-4. `Combat/Buff Arena/Verify Content Assets` → `0 differences`。
+3. 进一次 Play（或重载域）让资产重新烘焙 —— Arena 的内容值与空弹回退技能都只在启动时读一次。（玩家按键表写死在 `BuffArenaSession.ApplyInput`，改键不用动资产。）
+4. 检查 `Bake()` 是否通过：引用校验（技能 → 时间轴、空弹回退 → 技能、必需 blueprint）失败时场景启动即抛异常并带上 `LastContentError`。
 5. EditMode + PlayMode 测试全绿（测试会强制域重载，等价于"从磁盘重来一次"）。
-6. CLI `regress` / `buffarena`：退出码 0、`ALL S1+S2 REGRESSION PASSED`、stderr 为空。
+6. CLI `regress`：退出码 0、`ALL S1+S2 REGRESSION PASSED`、stderr 为空。（Arena 没有 CLI 用例；`buffarena` 命令已移除。）
 7. `git status` 复核改动面：确认没有把 `ProjectSettings/EditorSettings.asset` 之类的框架副作用一起带走。
 
 ---

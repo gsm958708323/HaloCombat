@@ -2,14 +2,13 @@ namespace Combat.Core
 {
     /// <summary>
     /// Per-blueprint runtime tuning for the Buff Arena: team, body radius, ammo and the base
-    /// attribute values. Filled from the code table (dotnet) or from BuffArenaActorDefAsset
-    /// (Unity), so the runtime never reads these from literals.
+    /// attribute values. Baked from BuffArenaActorDefAsset, so the runtime never reads these
+    /// from literals.
     /// </summary>
     public sealed class BuffArenaActorDef
     {
         public string BlueprintId = string.Empty;
         public string ViewBlueprintId = string.Empty;
-        public bool IsPlayer;
         public int TeamId;
         public float BodyRadius = .25f;
         public int AmmoCapacity;

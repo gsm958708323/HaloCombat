@@ -12,28 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e1f3c5a7d9b2468c8a0e4d2f6b1c3a5d, type: 3}
   m_Name: BuffArenaDatabase
   m_EditorClassIdentifier: 
-  SkillIds:
-  - fire
-  - roll
-  - spaceMonkeyBall
-  - homingMissle
-  - cloakBoomerang
-  - teleportBullet
-  - grenade
-  - explosiveBarrel
-  - reload
-  ProjectileIds:
-  - normal0
-  - normal1
-  - cloakBoomerang
-  - teleportBullet
-  - boomball
-  AoeIds:
-  - BulletShield
-  - SpaceMonkeyBall
-  - BlackHole
-  - BoomExplosive
-  - StayingBoom
   PlayerMaxHp: 500
   PlayerAmmoCapacity: 60
   MaxEnemies: 10
@@ -86,5 +64,3 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 2fbafe46917ad944594f073e7cc45d91, type: 2}
   - {fileID: 11400000, guid: 0f4d1e5cea979d240a0407a59b7c899e, type: 2}
   Cues: {fileID: 11400000, guid: f18a00c4ce1abfd4782694728abafa89, type: 2}
-  UseGeneratedContent: 1
-  Policy: 1

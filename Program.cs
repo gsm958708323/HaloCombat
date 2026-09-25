@@ -49,7 +49,6 @@ namespace Combat
                 case "perc": PerceptionDemo.Run(); break;
                 case "enemy": EnemyAiDemo.Run(); break;
                 case "summon": SummonDemo.Run(); break;
-                case "buffarena": BuffArenaDemo.Run(); break;
                 case "clock": ClockDemo.Run(); break;
                 case "spawn": SpawnEventDemo.Run(); break;
                 case "lesson": SeasonThreeLessonDemo.Run(); break;
@@ -65,9 +64,11 @@ namespace Combat
                     SeasonTwoDemo.Regression();
                     break;
                 case "season":
-                default:
                     SeasonOneDemo.Run();
                     break;
+                default:
+                    Console.Error.WriteLine("Unknown demo '" + which + "'.");
+                    return 2;
             }
 
             return 0;

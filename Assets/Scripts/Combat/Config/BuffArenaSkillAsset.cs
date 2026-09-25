@@ -18,6 +18,9 @@ namespace Combat.Config
         public bool RequiresTrackedProjectile;
         // Skill cast instead while a tracked projectile is alive (teleport bullet warp).
         public int WarpSkillIdValue;
+        // Skill played instead when this one cannot pay its AmmoCost (0 = none). The
+        // referenced skill's own timeline is used.
+        public int FallbackSkillIdValue;
 
         public BuffArenaSkill Bake()
         {
@@ -29,7 +32,8 @@ namespace Combat.Config
                 AmmoCost = AmmoCost,
                 AnimatorState = AnimatorState,
                 RequiresTrackedProjectile = RequiresTrackedProjectile,
-                WarpSkillId = new SkillNodeId(WarpSkillIdValue)
+                WarpSkillId = new SkillNodeId(WarpSkillIdValue),
+                FallbackSkill = new SkillNodeId(FallbackSkillIdValue)
             };
         }
 

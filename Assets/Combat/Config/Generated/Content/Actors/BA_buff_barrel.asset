@@ -14,7 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   BlueprintId: buff_barrel
   ViewBlueprintId: buff_barrel_view
-  IsPlayer: 0
   TeamId: 0
   BodyRadius: 0.25
   AmmoCapacity: 0

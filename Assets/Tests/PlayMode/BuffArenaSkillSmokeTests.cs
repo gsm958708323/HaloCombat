@@ -51,16 +51,13 @@ namespace Combat.Tests
         }
 
         [UnityTest]
-        public IEnumerator Arena_RunsOnGeneratedContent()
+        public IEnumerator Arena_ContentBakes()
         {
             Assert.IsNotNull(_bootstrap.Database, "Arena bootstrap has no database assigned.");
-            Assert.IsTrue(
-                _bootstrap.Database.UseGeneratedContent,
-                "Arena is not running on generated content, so these tests would not cover the asset path.");
-            var content = _bootstrap.Database.BakeContent();
+            var content = _bootstrap.Database.Bake();
             Assert.IsNotNull(
                 content,
-                "Generated content did not bake: " + _bootstrap.Database.LastContentError);
+                "The authored content did not bake: " + _bootstrap.Database.LastContentError);
             yield return null;
         }
 
@@ -160,6 +157,82 @@ namespace Combat.Tests
             return peak;
         }
 
+        /// <summary>
+        /// Every key in BuffArenaSession.ApplyInput has to cast the skill declaring the token it
+        /// pushes. The key map is code-owned; the token -> skill half is authored on SK_*.asset.
+        /// The CLI demo that used to cover roll / homing / monkey is gone, so this is their guard.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator EveryKeyCastsItsSkill()
+        {
+            AssertKeyCasts("Fire1", f => { f.Fire1Held = true; return f; });
+            AssertKeyCasts("Fire2", f => { f.Fire2Held = true; return f; });
+            AssertKeyCasts("Fire3", f => { f.Fire3Held = true; return f; });
+            AssertKeyCasts("Fire4", f => { f.Fire4Held = true; return f; });
+            AssertKeyCasts("Fire5", f => { f.Fire5Held = true; return f; });
+            AssertKeyCasts("Roll", f => { f.RollHeld = true; return f; });
+            AssertKeyCasts("Homing", f => { f.HomingHeld = true; return f; });
+            AssertKeyCasts("Monkey", f => { f.MonkeyHeld = true; return f; });
+            yield return null;
+        }
+
+        void AssertKeyCasts(string token, Func<BuffArenaInputFrame, BuffArenaInputFrame> configure)
+        {
+            var data = _session.Data;
+            Assert.IsNotNull(data, "The session has no baked data.");
+            var expected = FindSkillByToken(data, new InputToken(token));
+            Assert.IsNotNull(
+                expected,
+                "No skill asset declares InputToken '" + token + "', so the bound key would do nothing.");
+
+            RefillPlayerAmmo();
+            WaitForDirectorIdle();
+
+            _session.ApplyInput(configure(new BuffArenaInputFrame()));
+            for (int i = 0; i < 3; i++) _session.PumpLogic(Step);
+
+            var director = PlayerDirector();
+            Assert.IsNotNull(director, "The player has no SkillDirectorComp.");
+            Assert.IsTrue(
+                director.IsPlaying,
+                "The key that pushes token '" + token + "' started no skill.");
+            Assert.AreEqual(
+                expected.Id.Value, director.CurrentSkill.Value,
+                "The key that pushes token '" + token + "' started skill "
+                    + director.CurrentSkill.Value + " instead of " + expected.Id.Value + ".");
+            WaitForDirectorIdle();
+        }
+
+        static BuffArenaSkill FindSkillByToken(BuffArenaData data, InputToken token)
+        {
+            for (int i = 0; i < data.Skills.Count; i++)
+                if (data.Skills[i].Input == token) return data.Skills[i];
+            return null;
+        }
+
+        SkillDirectorComp PlayerDirector()
+        {
+            if (!_session.World.TryGetActor(_session.LocalPlayerId, out var player) || player == null)
+                return null;
+            return player.TryGetComp<SkillDirectorComp>(out var director) ? director : null;
+        }
+
+        void WaitForDirectorIdle()
+        {
+            for (int i = 0; i < 200; i++)
+            {
+                var director = PlayerDirector();
+                if (director == null || !director.IsPlaying) return;
+                _session.PumpLogic(Step);
+            }
+        }
+
+        void RefillPlayerAmmo()
+        {
+            if (!_session.World.TryGetActor(_session.LocalPlayerId, out var player) || player == null) return;
+            if (player.TryGetComp<AmmoComp>(out var ammo)) ammo.Refill(ammo.Capacity);
+        }
+
         int CountBodies<T>() where T : Comp
         {
             int count = 0;
@@ -231,17 +304,25 @@ namespace Combat.Tests
             return player.TryGetComp<AmmoComp>(out var ammo) ? ammo.Current : -1;
         }
 
-        /// <summary>Removes the wandering enemies so only the player's own skills are counted.</summary>
+        /// <summary>
+        /// Removes the wandering enemies so only the player's own skills are counted.
+        /// The session spawns its first wave on its first logic step, so the removal runs after a
+        /// pump and is repeated once. Otherwise a leftover enemy standing point-blank could eat a
+        /// projectile on the very frame it spawns, which per-tick sampling cannot observe.
+        /// </summary>
         void ClearNonPlayerActors()
         {
-            var actors = _session.World.RegistryActive();
-            for (int i = 0; i < actors.Count; i++)
+            for (int pass = 0; pass < 2; pass++)
             {
-                var actor = actors[i];
-                if (actor == null || actor.Id == _session.LocalPlayerId) continue;
-                _session.World.RequestDespawn(actor.Id);
+                var actors = _session.World.RegistryActive();
+                for (int i = 0; i < actors.Count; i++)
+                {
+                    var actor = actors[i];
+                    if (actor == null || actor.Id == _session.LocalPlayerId) continue;
+                    _session.World.RequestDespawn(actor.Id);
+                }
+                _session.PumpLogic(Step);
             }
-            _session.PumpLogic(Step);
         }
     }
 }

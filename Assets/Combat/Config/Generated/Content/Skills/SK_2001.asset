@@ -19,3 +19,4 @@ MonoBehaviour:
   AnimatorState: Fire
   RequiresTrackedProjectile: 0
   WarpSkillIdValue: 0
+  FallbackSkillIdValue: 2009

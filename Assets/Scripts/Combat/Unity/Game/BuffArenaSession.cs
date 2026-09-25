@@ -31,6 +31,8 @@ namespace Combat.Unity.Game
 
         public CombatWorld World { get; private set; }
         public PresentHub Hub { get; private set; }
+        /// The baked content this session runs on (including the player input bindings).
+        public BuffArenaData Data => _data;
         public EntityId LocalPlayerId { get; private set; }
         public bool PlayerDead => _playerDead;
         public int SpawnedEnemies => _spawned;
@@ -76,8 +78,10 @@ namespace Combat.Unity.Game
             }
 
             if (!player.TryGetComp<InputBufferComp>(out var buffer)) return;
-            // The order mirrors the source PlayerController. Q/E expose the two
-            // learned source skills that had no physical button in that script.
+            // The order mirrors the source PlayerController, and the single-slot buffer means
+            // the last push wins. Q/E expose the two learned source skills that had no physical
+            // button in that script. Every token here must equal the InputToken authored on the
+            // skill asset it is meant to cast (see BuffArenaIds).
             if (input.Fire5Held) buffer.Push(BuffArenaIds.Fire5);
             if (input.Fire4Held) buffer.Push(BuffArenaIds.Fire4);
             if (input.Fire3Held) buffer.Push(BuffArenaIds.Fire3);

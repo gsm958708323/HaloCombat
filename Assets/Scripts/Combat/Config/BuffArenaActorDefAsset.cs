@@ -11,7 +11,6 @@ namespace Combat.Config
     {
         public string BlueprintId;
         public string ViewBlueprintId;
-        public bool IsPlayer;
         public int TeamId;
         public float BodyRadius = .25f;
         public int AmmoCapacity;
@@ -40,7 +39,6 @@ namespace Combat.Config
             {
                 BlueprintId = BlueprintId,
                 ViewBlueprintId = ViewBlueprintId,
-                IsPlayer = IsPlayer,
                 TeamId = TeamId,
                 BodyRadius = BodyRadius,
                 AmmoCapacity = AmmoCapacity,

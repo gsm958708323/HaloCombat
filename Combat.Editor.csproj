@@ -67,7 +67,6 @@
   <ItemGroup>
     <Compile Include="Assets\Editor\HaloCombat\HaloCombatDemoSceneBuilder.cs" />
     <Compile Include="Assets\Editor\HaloCombat\FinalVerification.cs" />
-    <Compile Include="Assets\Editor\HaloCombat\BuffArenaDatabaseBuilder.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Editor\HaloCombat\Combat.Editor.asmdef" />

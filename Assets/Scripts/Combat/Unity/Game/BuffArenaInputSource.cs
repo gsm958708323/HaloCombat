@@ -4,6 +4,11 @@ using UnityEngine.InputSystem;
 
 namespace Combat.Unity.Game
 {
+    /// <summary>
+    /// One frame of player input. The key -> skill mapping is code-owned and lives in
+    /// BuffArenaSession.ApplyInput, next to the tokens it pushes; this struct only carries
+    /// what the Input System sampled.
+    /// </summary>
     public struct BuffArenaInputFrame
     {
         public float MoveX;
@@ -49,6 +54,7 @@ namespace Combat.Unity.Game
             _fire3 = Require(map, "Fire3");
             _fire4 = Require(map, "Fire4");
             _fire5 = Require(map, "Fire5");
+            // Space casts Roll: the skill token is "Roll" while the action keeps its old name.
             _roll = Require(map, "Jump");
             _homing = Require(map, "Homing");
             _monkey = Require(map, "Monkey");

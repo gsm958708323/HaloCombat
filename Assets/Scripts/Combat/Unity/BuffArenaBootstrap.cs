@@ -30,7 +30,13 @@ namespace Combat.Unity.Game
         {
             ValidateReferences();
             EnsureRoots();
-            _data = BuffArenaContent.Build(Database.Bake());
+            _data = Database.Bake();
+            if (_data == null)
+            {
+                throw new InvalidOperationException(
+                    "Buff Arena content is unusable: " + Database.LastContentError
+                    + ". Author the assets under Assets/Combat/Config/Generated; there is no code fallback.");
+            }
             var navigation = MapVisuals.Build();
             var hub = new PresentHub(new UnityPresentFactory(Views, null, PresentRoot, VfxRoot));
             hub.SetWorld(null);
