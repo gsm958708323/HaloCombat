@@ -68,7 +68,7 @@ MonoBehaviour:
     Animation: 0
     KeepAliveOnDead: 0
     ModelYawOffsetDeg: 0
-    SpinDegPerSec: 240
+    SpinDegPerSec: 0
   - BlueprintId: buff_projectile_bomb_view
     Prefab: {fileID: 1962039199452369933, guid: 41cbbe6f58483474ebfb06f9eb647bb6, type: 3}
     Kind: 2

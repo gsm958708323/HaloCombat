@@ -135,7 +135,6 @@ namespace Combat.Core
         public CueLibrary Cues = new CueLibrary();
         public MotorConfig Motor = MotorConfig.SeasonOneDefaults();
         public readonly List<BuffArenaSkill> Skills = new List<BuffArenaSkill>(9);
-        public int PlayerMaxHp = 500;
         public int PlayerAmmoCapacity = 60;
         public int MaxEnemies = 10;
         public float SpawnPeriod = 10f;

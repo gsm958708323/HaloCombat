@@ -3,13 +3,14 @@ using System.Collections.Generic;
 
 namespace Combat.Core
 {
-    /// <summary>子弹速度曲线模式：Linear 匀速、ImmediateHoming 仍走直线（转向交给 HomingRate）、Accelerate 用 2t/(t+pivot) 渐入、ReturnToOwner 按正弦去程与回程。</summary>
+    /// <summary>子弹运动模式：Linear 匀速、ImmediateHoming 直线追踪、Accelerate 渐入、ReturnToOwner 往返、Bounce 分段抛物线弹跳。</summary>
     public enum ProjectileMotionKind : byte
     {
         Linear,
         ImmediateHoming,
         Accelerate,
-        ReturnToOwner
+        ReturnToOwner,
+        Bounce
     }
 
     /// <summary>AoE 位移模式：Static 原地不动，Forward 沿朝向以 MoveSpeed 前进并叠加被吸收的冲量。</summary>
@@ -40,12 +41,13 @@ namespace Combat.Core
         public float HomingAcquireRadius = 12f;
         public ProjectileMotionKind Motion;
         public float MotionParam = 5f;
+        public float BounceHeight;
         public float SameTargetDelay;
         public bool RemoveOnObstacle;
         public bool Flying = true;
-        // Ages (seconds since launch) at which the body falls back to the ground
-        // layer for one frame. Source BoomBallRolling flips MoveType to ground while
-        // the bouncing grenade is touching down, so it explodes on water then.
+        // Cumulative touchdown ages. Bounce uses them as segment ends; every crossed
+        // touchdown is resolved against the ground layer instead of relying on an
+        // exact frame-time match.
         public float[] GroundPhaseAt = Array.Empty<float>();
         public bool TrackOwner;
         public bool HitOwnerOnReturn;
@@ -126,6 +128,7 @@ namespace Combat.Core
         public ProjectileDefinition Def { get; private set; }
         public float FireYaw { get; private set; }
         public SimVec3 CurrentVelocity { get; private set; }
+        public float GroundY { get; private set; }
         public float Age { get; set; }
         public int HitCount { get; set; }
         public bool Exhausted { get; set; }
@@ -139,6 +142,7 @@ namespace Combat.Core
             SnapshotAtk = snapshotAtk;
             FireYaw = 0f;
             CurrentVelocity = SimVec3.Zero;
+            GroundY = 0f;
             Age = 0f;
             HitCount = 0;
             Exhausted = false;
@@ -146,6 +150,8 @@ namespace Combat.Core
             _hits.Clear();
             _cooldowns.Clear();
         }
+
+        public void SetGroundY(float groundY) => GroundY = groundY;
 
         public bool TryRecord(EntityId id)
             => TryRecord(id, 0f);
@@ -202,6 +208,7 @@ namespace Combat.Core
             Def = null;
             Exhausted = true;
             CurrentVelocity = SimVec3.Zero;
+            GroundY = 0f;
         }
     }
 
@@ -349,6 +356,7 @@ namespace Combat.Core
                     snap = attr.GetFinal(AttrId.Atk);
                 var projectile = proj.GetComp<ProjectileComp>();
                 projectile.Setup(def, intent.Owner, snap, intent.Target);
+                projectile.SetGroundY(tf.Position.Y);
                 projectile.SetMotion(intent.Yaw, SimVec3.Zero);
                 if (def.TrackOwner && owner != null && owner.TryGetComp<ProjectileTrackerComp>(out var tracker))
                     tracker.Track(id);
@@ -381,14 +389,22 @@ namespace Combat.Core
                 _world.TryGetActor(body.OwnerId, out var owner);
                 body.TickHitCooldowns(dt);
                 SteerHoming(a, body, tf, dt, owner);
+                float previousAge = body.Age;
+                float nextAge = Math.Min(previousAge + dt, def.Lifetime);
+                bool touchdown = CrossedGroundPhase(def, previousAge, nextAge);
                 var velocity = MotionVelocity(body, tf, def, owner);
-                body.SetMotion(tf.YawDegrees, velocity);
                 var next = new SimVec3(
                     tf.Position.X + velocity.X * dt,
-                    tf.Position.Y + velocity.Y * dt,
+                    def.Motion == ProjectileMotionKind.Bounce
+                        ? body.GroundY + BounceHeightAt(def, nextAge)
+                        : tf.Position.Y + velocity.Y * dt,
                     tf.Position.Z + velocity.Z * dt);
+                if (touchdown && def.Motion == ProjectileMotionKind.Bounce)
+                    next.Y = body.GroundY;
+                velocity.Y = (next.Y - tf.Position.Y) / Math.Max(dt, .0001f);
+                body.SetMotion(tf.YawDegrees, velocity);
                 bool blocked;
-                bool flyNow = def.Flying && !InGroundPhase(def, body.Age);
+                bool flyNow = def.Flying && !touchdown;
                 next = _world.Movement.Resolve(tf.Position, next, def.HitRadius, flyNow, false, out blocked);
                 if (blocked)
                 {
@@ -404,7 +420,7 @@ namespace Combat.Core
                     body.SetMotion(tf.YawDegrees, velocity);
                 }
                 tf.Position = next;
-                body.Age += dt;
+                body.Age = nextAge;
                 if (body.Age >= def.Lifetime)
                 {
                     Expire(a, body, false);
@@ -553,15 +569,45 @@ namespace Combat.Core
             return deg;
         }
 
-        // True while the body is inside one of its touchdown windows (one logic frame
-        // of tolerance, matching the 0.02s fixed step used by the source tweens).
-        static bool InGroundPhase(ProjectileDefinition def, float age)
+        static float BounceHeightAt(ProjectileDefinition def, float age)
+        {
+            var phases = def.GroundPhaseAt;
+            if (def.Motion != ProjectileMotionKind.Bounce || def.BounceHeight <= 0f ||
+                phases == null || phases.Length == 0 || age <= 0f)
+                return 0f;
+
+            float segmentStart = 0f;
+            float firstDuration = phases[0];
+            if (firstDuration <= 0f) return 0f;
+            for (int i = 0; i < phases.Length; i++)
+            {
+                float segmentEnd = phases[i];
+                float duration = segmentEnd - segmentStart;
+                if (duration <= 0f)
+                {
+                    segmentStart = segmentEnd;
+                    continue;
+                }
+                if (age <= segmentEnd)
+                {
+                    float t = Math.Max(0f, Math.Min(1f, (age - segmentStart) / duration));
+                    float durationScale = duration / firstDuration;
+                    float peak = def.BounceHeight * durationScale * durationScale;
+                    return 4f * peak * t * (1f - t);
+                }
+                segmentStart = segmentEnd;
+            }
+            return 0f;
+        }
+
+        static bool CrossedGroundPhase(ProjectileDefinition def, float previousAge, float nextAge)
         {
             var phases = def.GroundPhaseAt;
             if (phases == null || phases.Length == 0) return false;
             for (int i = 0; i < phases.Length; i++)
             {
-                if (Math.Abs(age - phases[i]) <= .02f) return true;
+                float touchdown = phases[i];
+                if (touchdown > previousAge && touchdown <= nextAge) return true;
             }
             return false;
         }

@@ -42,8 +42,9 @@ MonoBehaviour:
   HomingMaxTurn: 0
   HomingRetarget: 0
   HomingAcquireRadius: 12
-  Motion: 0
+  Motion: 4
   MotionParam: 5
+  BounceHeight: 1
   SameTargetDelay: 0
   RemoveOnObstacle: 1
   Flying: 1
@@ -57,8 +58,8 @@ MonoBehaviour:
   OnHit:
   - {fileID: 2042306023474237452}
   OnExpire:
-  - {fileID: 2062802174353824506}
   - {fileID: -5844892654923331097}
+  - {fileID: 2062802174353824506}
   OnObstacle:
   - {fileID: 7116296870225683803}
   OnOwnerHit: []

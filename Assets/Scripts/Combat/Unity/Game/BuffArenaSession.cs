@@ -26,6 +26,7 @@ namespace Combat.Unity.Game
         int _spawned;
         bool _playerDead;
         bool _disposed;
+        bool _fire4Held;
 
         struct DeadEnemy
         {
@@ -103,12 +104,14 @@ namespace Combat.Unity.Game
             }
 
             if (!player.TryGetComp<InputBufferComp>(out var buffer)) return;
+            bool fire4Pressed = input.Fire4Held && !_fire4Held;
+            _fire4Held = input.Fire4Held;
             // The order mirrors the source PlayerController, and the single-slot buffer means
             // the last push wins. Q/E expose the two learned source skills that had no physical
             // button in that script. Every token here must equal the InputToken authored on the
             // skill asset it is meant to cast (see BuffArenaIds).
             if (input.Fire5Held) buffer.Push(BuffArenaIds.Fire5);
-            if (input.Fire4Held) buffer.Push(BuffArenaIds.Fire4);
+            if (fire4Pressed) buffer.Push(BuffArenaIds.Fire4);
             if (input.Fire3Held) buffer.Push(BuffArenaIds.Fire3);
             if (input.Fire2Held) buffer.Push(BuffArenaIds.Fire2);
             if (input.Fire1Held) buffer.Push(BuffArenaIds.Fire1);
@@ -229,8 +232,10 @@ namespace Combat.Unity.Game
         {
             var def = _data.RequireActor(BuffArenaIds.PlayerBlueprint);
             var attr = player.GetComp<AttributeSet>();
-            attr.SetBase(AttrId.MaxHp, _data.PlayerMaxHp);
-            attr.SetBase(AttrId.Hp, _data.PlayerMaxHp);
+            // Player health is authored on the player blueprint so changing
+            // BA_buff_player.MaxHp changes the actual runtime value.
+            attr.SetBase(AttrId.MaxHp, def.MaxHp);
+            attr.SetBase(AttrId.Hp, def.MaxHp);
             attr.SetBase(AttrId.Atk, def.Atk + (int)(World.Random.Next01() * def.AtkRandomRange));
             attr.SetBase(AttrId.MoveSpeed, def.MoveSpeed);
             attr.SetBase(AttrId.ActionSpeed, def.ActionSpeed);

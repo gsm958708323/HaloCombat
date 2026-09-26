@@ -13,7 +13,6 @@ namespace Combat.Config
     [CreateAssetMenu(menuName = "Combat/Buff Arena Database")]
     public sealed class BuffArenaDatabaseAsset : ScriptableObject
     {
-        public int PlayerMaxHp = 500;
         public int PlayerAmmoCapacity = 60;
         public int MaxEnemies = 10;
         public float SpawnPeriod = 10f;
@@ -89,7 +88,6 @@ namespace Combat.Config
         {
             var data = new BuffArenaData
             {
-                PlayerMaxHp = PlayerMaxHp,
                 PlayerAmmoCapacity = PlayerAmmoCapacity,
                 MaxEnemies = MaxEnemies,
                 SpawnPeriod = SpawnPeriod,
@@ -194,7 +192,21 @@ namespace Combat.Config
                 }
             }
 
-            if (data.PlayerMaxHp <= 0 || data.PlayerAmmoCapacity <= 0 || data.MaxEnemies <= 0 ||
+            BuffArenaActorDef playerDef = null;
+            for (int i = 0; i < data.Actors.Count; i++)
+            {
+                if (!string.Equals(data.Actors[i].BlueprintId, BuffArenaIds.PlayerBlueprint, StringComparison.Ordinal))
+                    continue;
+                playerDef = data.Actors[i];
+                break;
+            }
+            if (playerDef == null || playerDef.MaxHp <= 0f)
+            {
+                error = "the player actor definition must have a positive MaxHp";
+                return false;
+            }
+
+            if (data.PlayerAmmoCapacity <= 0 || data.MaxEnemies <= 0 ||
                 data.SpawnPeriod <= 0f || data.EnemyCleanupDelay <= 0f || data.BarrelSelfDamagePeriod <= 0f)
             {
                 error = "runtime settings contain a non-positive value";

@@ -22,10 +22,11 @@ namespace Combat.Config
         public float HomingAcquireRadius = 12f;
         public ProjectileMotionKind Motion;
         public float MotionParam = 5f;
+        [Min(0f)] public float BounceHeight;
         public float SameTargetDelay;
         public bool RemoveOnObstacle;
         public bool Flying = true;
-        [Tooltip("Ages (seconds since launch) at which the body drops to the ground layer for one frame.")]
+        [Tooltip("Cumulative touchdown ages. Bounce uses these values as the ends of its parabolic segments.")]
         public float[] GroundPhaseAt = Array.Empty<float>();
         public bool TrackOwner;
         public bool HitOwnerOnReturn;
@@ -56,6 +57,7 @@ namespace Combat.Config
                 HomingAcquireRadius = HomingAcquireRadius,
                 Motion = Motion,
                 MotionParam = MotionParam,
+                BounceHeight = BounceHeight,
                 SameTargetDelay = SameTargetDelay,
                 RemoveOnObstacle = RemoveOnObstacle,
                 Flying = Flying,

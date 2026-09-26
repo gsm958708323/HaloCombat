@@ -7,7 +7,8 @@ namespace Combat.Unity.Game
     /// <summary>
     /// 一帧玩家输入。键位 → 技能的映射由代码拥有，放在 BuffArenaSession.ApplyInput 里、
     /// 紧挨着它推送的技能令牌；本结构只承载 Input System 当帧采样到的值。
-    /// 契约：只在本帧有效——Held 表示“这一帧按住”，调用方每帧重新 Sample，不要跨帧缓存或复用。
+    /// 契约：只在本帧有效——Held 表示“这一帧按住”，Fire4 使用按下沿避免传送后重复发射，
+    /// 调用方每帧重新 Sample，不要跨帧缓存或复用。
     /// AimYaw 由相机射线求得（见 BuffArenaInputSource.Sample），所以不是纯输入量：测试要断言瞄向，
     /// 必须先钉死相机与鼠标位置，否则结果随视角漂移。
     /// </summary>
@@ -83,6 +84,8 @@ namespace Combat.Unity.Game
             {
                 MoveX = move.x,
                 MoveZ = move.y,
+                // Fire4 has a two-stage action (launch, then teleport). BuffArenaSession
+                // consumes its press edge so holding the key cannot enqueue a third launch.
                 Fire1Held = _fire1.IsPressed(),
                 Fire2Held = _fire2.IsPressed(),
                 Fire3Held = _fire3.IsPressed(),

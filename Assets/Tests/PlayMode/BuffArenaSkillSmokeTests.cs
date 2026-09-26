@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Combat.Core;
 using Combat.Unity.Game;
 using NUnit.Framework;
@@ -20,6 +21,9 @@ namespace Combat.Tests
         const float Step = 1f / 50f;
         const int TicksPerSkill = 70;
         const float EnemyTestHp = 100f;
+        const int BombProjectileSpec = 4005;
+        const int ExplosionAoeSpec = 4104;
+        const int StayingBombAoeSpec = 4105;
 
         // The Arena takes the player's facing from the mouse ray, so a test that wants a
         // deterministic shot has to place the target on an aim yaw it can pin for the cast.
@@ -58,6 +62,19 @@ namespace Combat.Tests
             Assert.IsNotNull(
                 content,
                 "The authored content did not bake: " + _bootstrap.Database.LastContentError);
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator PlayerHealthComesFromPlayerActorDefinition()
+        {
+            Assert.IsTrue(
+                _session.World.TryGetActor(_session.LocalPlayerId, out var player) && player != null,
+                "The local player did not spawn.");
+            var attr = player.GetComp<AttributeSet>();
+            float configuredMaxHp = _session.Data.RequireActor(BuffArenaIds.PlayerBlueprint).MaxHp;
+            Assert.AreEqual(configuredMaxHp, attr.GetBase(AttrId.MaxHp), 0.0001f);
+            Assert.AreEqual(configuredMaxHp, attr.GetBase(AttrId.Hp), 0.0001f);
             yield return null;
         }
 
@@ -113,10 +130,258 @@ namespace Combat.Tests
         }
 
         [UnityTest]
+        public IEnumerator Fire3_BounceTrajectoryUsesAllConfiguredGroundPhases()
+        {
+            var data = _bootstrap.Database.Bake();
+            Assert.IsNotNull(data, "The Arena content did not bake: " + _bootstrap.Database.LastContentError);
+            Assert.IsTrue(
+                data.Projectiles.TryGet(BombProjectileSpec, out var bomb),
+                "The baked content has no projectile 4005.");
+            Assert.AreEqual(ProjectileMotionKind.Bounce, bomb.Motion, "4005 is not using bounce motion.");
+            Assert.AreEqual(1f, bomb.BounceHeight, 0.0001f, "4005 bounce height changed.");
+            CollectionAssert.AreEqual(
+                new[] { 1f, 1.6667f, 1.999f },
+                bomb.GroundPhaseAt,
+                "4005 touchdown phases changed.");
+
+            // Drive the actual baked 4005 through the core at a deliberately coarse and
+            // non-50Hz step. The trace proves that crossing a configured age still enters
+            // the ground collision mode even when no frame lands exactly on that age.
+            var movement = new TraceMovementConstraint();
+            var world = new CombatWorld(
+                new BuffArenaActorFactory(data),
+                new WorldInstall
+                {
+                    Events = new EventBus(),
+                    Time = new CombatTime(),
+                    Random = new FixedRandom(0f),
+                    Cues = data.Cues,
+                    Motor = data.Motor,
+                    Movement = movement,
+                    Projectiles = data.Projectiles,
+                    Aoes = data.Aoes,
+                    Summons = new SummonCatalog()
+                });
+            try
+            {
+                world.Intents.Post(new SpawnProjectileIntent(
+                    EntityId.Invalid, BombProjectileSpec, SimVec3.Zero, 0f, 0f));
+                for (int i = 0; i < 10; i++)
+                    world.Tick(0.2f);
+
+                var touchdowns = new List<ResolveSample>();
+                float peak = 0f;
+                for (int i = 0; i < movement.Samples.Count; i++)
+                {
+                    var sample = movement.Samples[i];
+                    if (sample.Target.Y > peak) peak = sample.Target.Y;
+                    if (!sample.Flying) touchdowns.Add(sample);
+                }
+
+                Assert.Greater(peak, 0.8f, "4005 never rose above the ground.");
+                Assert.AreEqual(3, touchdowns.Count, "A touchdown was lost when the frame crossed its configured age.");
+                for (int i = 0; i < touchdowns.Count; i++)
+                    Assert.That(touchdowns[i].Target.Y, Is.EqualTo(0f).Within(0.0001f), "Touchdown " + i + " was not on the ground.");
+
+                Assert.That(touchdowns[0].Target.Z, Is.EqualTo(0.4f + 3f * 1f).Within(0.01f));
+                Assert.That(touchdowns[1].Target.Z, Is.EqualTo(0.4f + 3f * 1.8f).Within(0.01f));
+                Assert.That(touchdowns[2].Target.Z, Is.EqualTo(0.4f + 3f * 2f).Within(0.01f));
+            }
+            finally
+            {
+                world.Shutdown();
+            }
+
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator Fire3_HitSpawnsExplosionDamagesEnemyAndPublishesCues()
+        {
+            var enemy = SpawnEnemyInFront(1.2f);
+            float before = Hp(enemy);
+            var cues = new List<EvCue>();
+            var damages = new List<EvDamage>();
+            Action<EvCue> onCue = e =>
+            {
+                if (e.CueId == BuffArenaIds.CueHitValue || e.CueId == BuffArenaIds.CueExplosionValue)
+                    cues.Add(e);
+            };
+            Action<EvDamage> onDamage = e =>
+            {
+                if (e.Target == enemy.Id) damages.Add(e);
+            };
+            bool sawExplosion = false;
+            _session.World.Events.Subscribe(onCue);
+            _session.World.Events.Subscribe(onDamage);
+            try
+            {
+                _session.ApplyInput(Fire3Input(_aimYaw));
+                for (int i = 0; i < 60; i++)
+                {
+                    _session.PumpLogic(Step);
+                    if (CountAoeSpec(ExplosionAoeSpec) > 0) sawExplosion = true;
+                }
+
+                Assert.AreEqual(0, CountProjectileSpec(BombProjectileSpec), "4005 survived its enemy hit.");
+                Assert.IsTrue(sawExplosion, "Enemy hit spawned no active 4104 explosion.");
+                Assert.Less(Hp(enemy), before, "The 4104 explosion did not damage the enemy.");
+                Assert.IsTrue(ContainsDamageFor(damages, enemy.Id), "No damage event was published for the 4104 pulse.");
+                Assert.IsTrue(ContainsCue(cues, BuffArenaIds.CueHitValue), "4104 did not publish hit cue 4204.");
+                Assert.IsTrue(ContainsCue(cues, BuffArenaIds.CueExplosionValue), "4104 did not publish explosion cue 4206.");
+            }
+            finally
+            {
+                _session.World.Events.Unsubscribe(onCue);
+                _session.World.Events.Unsubscribe(onDamage);
+            }
+
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator Fire3_NaturalExpiryCreatesExplosionThenStayingBombAndSecondExplosion()
+        {
+            var data = _bootstrap.Database.Bake();
+            Assert.IsNotNull(data, "The Arena content did not bake: " + _bootstrap.Database.LastContentError);
+            var movement = new TraceMovementConstraint();
+            var install = new WorldInstall
+            {
+                Events = new EventBus(),
+                Time = new CombatTime(),
+                Random = new FixedRandom(0f),
+                Cues = data.Cues,
+                Motor = data.Motor,
+                Movement = movement,
+                Projectiles = data.Projectiles,
+                Aoes = data.Aoes,
+                Summons = new SummonCatalog()
+            };
+            var world = new CombatWorld(new BuffArenaActorFactory(data), install);
+            var aoeSpawns = new List<AoeSpawnObservation>();
+            var cues = new List<EvCue>();
+            bool firstExplosionWasActiveWhenResidualSpawned = false;
+            Action<EvEntitySpawn> onSpawn = e =>
+            {
+                if (e.BlueprintId != "aoe" || !world.TryGetActor(e.Id, out var aoe) || aoe == null ||
+                    !aoe.TryGetComp<AoeComp>(out var body) || body.Def == null) return;
+                if (body.Def.SpecId != StayingBombAoeSpec) return;
+                firstExplosionWasActiveWhenResidualSpawned = CountAoeSpec(world, ExplosionAoeSpec) > 0;
+                aoeSpawns.Add(new AoeSpawnObservation
+                {
+                    SpecId = body.Def.SpecId,
+                    ViewBlueprintId = e.ViewBlueprintId
+                });
+            };
+            world.Events.Subscribe(onSpawn);
+            Action<EvCue> onCue = e =>
+            {
+                if (e.CueId == BuffArenaIds.CueExplosionValue) cues.Add(e);
+            };
+            world.Events.Subscribe(onCue);
+            try
+            {
+                var intent = new SpawnProjectileIntent(
+                    EntityId.Invalid, BombProjectileSpec, SimVec3.Zero, 0f, 0f);
+                world.Intents.Post(intent);
+                for (int i = 0; i < 10; i++)
+                    world.Tick(0.2f);
+
+                Assert.Greater(CountAoeSpec(world, ExplosionAoeSpec), 0, "Natural expiry did not leave its first active 4104.");
+                Assert.AreEqual(1, CountSpecSpawns(aoeSpawns, StayingBombAoeSpec), "Natural expiry did not create 4105.");
+                Assert.IsTrue(firstExplosionWasActiveWhenResidualSpawned, "4105 was not created after the first 4104.");
+                Assert.AreEqual(0, CountProjectileSpec(world, BombProjectileSpec), "4005 survived natural expiry.");
+                Assert.AreEqual(StayingBombAoeSpec, aoeSpawns[0].SpecId, "Natural expiry did not create 4105 after 4104.");
+                Assert.AreEqual(
+                    "buff_aoe_stayingbomb_view",
+                    aoeSpawns[0].ViewBlueprintId,
+                    "4105 is not using the existing staying-bomb view.");
+
+                for (int i = 0; i < 14; i++)
+                    world.Tick(0.2f);
+                Assert.AreEqual(1, CountAoeSpec(world, StayingBombAoeSpec), "4105 ended before three seconds.");
+
+                world.Tick(0.2f);
+                Assert.AreEqual(0, CountAoeSpec(world, StayingBombAoeSpec), "4105 did not end after about three seconds.");
+                Assert.Greater(CountAoeSpec(world, ExplosionAoeSpec), 0, "4105 expiry did not create the second active 4104.");
+                world.Tick(0.2f);
+                Assert.AreEqual(2, cues.Count, "The initial and residual 4104 explosions did not both publish cue 4206.");
+            }
+            finally
+            {
+                world.Events.Unsubscribe(onSpawn);
+                world.Events.Unsubscribe(onCue);
+                world.Shutdown();
+            }
+
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator Fire3_TerrainImpactCreatesOnlyInitialExplosion()
+        {
+            float yaw = FindYawWithTerrainAtGroundPhase();
+            var aoeSpawns = new List<AoeSpawnObservation>();
+            Action<EvEntitySpawn> onSpawn = SubscribeAoeSpawns(aoeSpawns);
+            bool sawExplosion = false;
+            try
+            {
+                _session.ApplyInput(Fire3Input(yaw));
+                for (int i = 0; i < 120; i++)
+                {
+                    _session.PumpLogic(Step);
+                    if (CountAoeSpec(ExplosionAoeSpec) > 0) sawExplosion = true;
+                }
+
+                Assert.IsTrue(sawExplosion, "Terrain impact did not create an active 4104.");
+                Assert.AreEqual(0, CountSpecSpawns(aoeSpawns, StayingBombAoeSpec), "Terrain impact incorrectly created residual 4105.");
+                Assert.AreEqual(0, CountProjectileSpec(BombProjectileSpec), "4005 survived terrain impact.");
+            }
+            finally
+            {
+                _session.World.Events.Unsubscribe(onSpawn);
+            }
+
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator Fire4_SpawnsProjectile()
         {
             int peak = PressAndWatch<ProjectileComp>(f => { f.Fire4Held = true; return f; });
             Assert.Greater(peak, 0, "Fire4 (skill 4) spawned no projectile.");
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator Fire4_HoldingThroughTeleportDoesNotLaunchAgain()
+        {
+            int launches = 0;
+            Action<EvEntitySpawn> onSpawn = e =>
+            {
+                if (e.BlueprintId != "projectile" ||
+                    !_session.World.TryGetActor(e.Id, out var projectile) || projectile == null ||
+                    !projectile.TryGetComp<ProjectileComp>(out var body) || body.Def == null ||
+                    body.Def.SpecId != 4004) return;
+                launches++;
+            };
+            _session.World.Events.Subscribe(onSpawn);
+            try
+            {
+                var input = new BuffArenaInputFrame { Fire4Held = true };
+                for (int i = 0; i < TicksPerSkill; i++)
+                {
+                    _session.ApplyInput(input);
+                    _session.PumpLogic(Step);
+                }
+
+                Assert.AreEqual(1, launches, "Holding Fire4 queued another launch after its first cast.");
+            }
+            finally
+            {
+                _session.World.Events.Unsubscribe(onSpawn);
+            }
+
             yield return null;
         }
 
@@ -322,6 +587,216 @@ namespace Combat.Tests
                     _session.World.RequestDespawn(actor.Id);
                 }
                 _session.PumpLogic(Step);
+            }
+        }
+
+        BuffArenaInputFrame Fire3Input(float yaw)
+        {
+            return new BuffArenaInputFrame
+            {
+                Fire3Held = true,
+                AimValid = true,
+                AimYaw = yaw
+            };
+        }
+
+        Action<EvEntitySpawn> SubscribeAoeSpawns(List<AoeSpawnObservation> destination)
+        {
+            Action<EvEntitySpawn> handler = e =>
+            {
+                if (e.BlueprintId != "aoe" || _session == null || _session.World == null) return;
+                if (!_session.World.TryGetActor(e.Id, out var aoe) || aoe == null ||
+                    !aoe.TryGetComp<AoeComp>(out var body) || body.Def == null) return;
+                destination.Add(new AoeSpawnObservation
+                {
+                    SpecId = body.Def.SpecId,
+                    ViewBlueprintId = e.ViewBlueprintId
+                });
+            };
+            _session.World.Events.Subscribe(handler);
+            return handler;
+        }
+
+        int CountAoeSpec(int specId)
+        {
+            int count = 0;
+            var actors = _session.World.RegistryActive();
+            for (int i = 0; i < actors.Count; i++)
+            {
+                if (actors[i] != null && actors[i].TryGetComp<AoeComp>(out var body) &&
+                    body.Def != null && body.Def.SpecId == specId)
+                    count++;
+            }
+            return count;
+        }
+
+        static int CountAoeSpec(CombatWorld world, int specId)
+        {
+            int count = 0;
+            var actors = world.RegistryActive();
+            for (int i = 0; i < actors.Count; i++)
+            {
+                if (actors[i] != null && actors[i].TryGetComp<AoeComp>(out var body) &&
+                    body.Def != null && body.Def.SpecId == specId)
+                    count++;
+            }
+            return count;
+        }
+
+        int CountProjectileSpec(int specId)
+        {
+            int count = 0;
+            var actors = _session.World.RegistryActive();
+            for (int i = 0; i < actors.Count; i++)
+            {
+                if (actors[i] != null && actors[i].TryGetComp<ProjectileComp>(out var body) &&
+                    body.Def != null && body.Def.SpecId == specId)
+                    count++;
+            }
+            return count;
+        }
+
+        static int CountProjectileSpec(CombatWorld world, int specId)
+        {
+            int count = 0;
+            var actors = world.RegistryActive();
+            for (int i = 0; i < actors.Count; i++)
+            {
+                if (actors[i] != null && actors[i].TryGetComp<ProjectileComp>(out var body) &&
+                    body.Def != null && body.Def.SpecId == specId)
+                    count++;
+            }
+            return count;
+        }
+
+        static int CountSpecSpawns(List<AoeSpawnObservation> spawns, int specId)
+        {
+            int count = 0;
+            for (int i = 0; i < spawns.Count; i++)
+                if (spawns[i].SpecId == specId) count++;
+            return count;
+        }
+
+        static bool ContainsCue(List<EvCue> cues, int cueId)
+        {
+            for (int i = 0; i < cues.Count; i++)
+                if (cues[i].CueId == cueId) return true;
+            return false;
+        }
+
+        static bool ContainsDamageFor(List<EvDamage> damages, EntityId target)
+        {
+            for (int i = 0; i < damages.Count; i++)
+                if (damages[i].Target == target && damages[i].Amount > 0f) return true;
+            return false;
+        }
+
+        float FindYawWithTerrainAtGroundPhase()
+        {
+            Assert.IsTrue(
+                _session.World.TryGetActor(_session.LocalPlayerId, out var player) && player != null,
+                "The local player is gone, so the bomb has no launch origin.");
+            var origin = player.GetComp<TransformComp>().Position;
+            Assert.IsTrue(
+                _session.Data.Projectiles.TryGet(BombProjectileSpec, out var bomb),
+                "The baked content has no projectile 4005.");
+
+            for (int i = 0; i < 24; i++)
+            {
+                float yaw = i * 15f;
+                if (BombPathHitsGroundObstacle(origin, yaw, bomb, out bool groundObstacle) && groundObstacle)
+                    return yaw;
+            }
+
+            Assert.Fail("The Arena map has no terrain collision at a 4005 ground phase.");
+            return 0f;
+        }
+
+        bool BombPathHitsGroundObstacle(
+            SimVec3 origin,
+            float yaw,
+            ProjectileDefinition bomb,
+            out bool groundObstacle)
+        {
+            groundObstacle = false;
+            var forward = LocomotionComp.ForwardFromYaw(yaw);
+            var position = new SimVec3(
+                origin.X + forward.X * bomb.SpawnForward,
+                origin.Y,
+                origin.Z + forward.Z * bomb.SpawnForward);
+            float age = 0f;
+            for (int i = 0; i < 100 && age < bomb.Lifetime; i++)
+            {
+                float nextAge = Math.Min(age + Step, bomb.Lifetime);
+                bool touchdown = CrossesGroundPhase(bomb, age, nextAge);
+                var desired = new SimVec3(
+                    position.X + forward.X * bomb.Speed * Step,
+                    origin.Y,
+                    position.Z + forward.Z * bomb.Speed * Step);
+                bool blocked;
+                var resolved = _session.Map.Resolve(
+                    position,
+                    desired,
+                    bomb.HitRadius,
+                    bomb.Flying && !touchdown,
+                    false,
+                    out blocked);
+                if (blocked)
+                {
+                    groundObstacle = touchdown;
+                    return true;
+                }
+                position = resolved;
+                age = nextAge;
+            }
+            return false;
+        }
+
+        static bool CrossesGroundPhase(ProjectileDefinition bomb, float previousAge, float nextAge)
+        {
+            if (bomb.GroundPhaseAt == null) return false;
+            for (int i = 0; i < bomb.GroundPhaseAt.Length; i++)
+                if (bomb.GroundPhaseAt[i] > previousAge && bomb.GroundPhaseAt[i] <= nextAge)
+                    return true;
+            return false;
+        }
+
+        sealed class AoeSpawnObservation
+        {
+            public int SpecId;
+            public string ViewBlueprintId;
+        }
+
+        sealed class ResolveSample
+        {
+            public SimVec3 Target;
+            public bool Flying;
+        }
+
+        sealed class TraceMovementConstraint : IMovementConstraint
+        {
+            public readonly List<ResolveSample> Samples = new List<ResolveSample>();
+
+            public bool CanPlace(in SimVec3 position, float radius, bool flying, bool ignoreBorder = false)
+                => true;
+
+            public SimVec3 Resolve(
+                in SimVec3 pivot,
+                in SimVec3 target,
+                float radius,
+                bool flying,
+                bool ignoreBorder,
+                out bool obstructed)
+            {
+                Samples.Add(new ResolveSample { Target = target, Flying = flying });
+                obstructed = false;
+                return target;
+            }
+
+            public bool TryGetRandomPosition(IRandom random, float radius, bool flying, out SimVec3 position)
+            {
+                position = SimVec3.Zero;
+                return true;
             }
         }
     }

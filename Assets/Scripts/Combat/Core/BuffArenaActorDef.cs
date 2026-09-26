@@ -13,8 +13,7 @@ namespace Combat.Core
         public float BodyRadius = .25f;
         public int AmmoCapacity;
 
-        // The player takes HP/ammo from BuffArenaData.PlayerMaxHp / PlayerAmmoCapacity, so
-        // these two are the enemy scaling inputs.
+        // The player takes HP from this blueprint. MaxHpPerIndex is used for enemy scaling.
         public float MaxHp = 100f;
         public float MaxHpPerIndex;
 
