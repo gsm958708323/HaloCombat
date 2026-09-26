@@ -145,7 +145,7 @@ namespace Combat.Core
             for (int i = 0; i < actors.Count; i++)
             {
                 var attacker = actors[i];
-                if (!attacker.TryGetComp<HitboxComp>(out var box) || !box.IsOpen) continue;
+                if (attacker.Time.IsStopped || !attacker.TryGetComp<HitboxComp>(out var box) || !box.IsOpen) continue;
                 if (box.BakedOnHit == null || box.BakedOnHit.Length == 0) continue;
                 if (!attacker.TryGetComp<TransformComp>(out var tf)) continue;
 

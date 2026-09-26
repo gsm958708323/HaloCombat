@@ -53,6 +53,7 @@ namespace Combat.Unity.Presentation
             f.Hitstop = w != null && w.InHitstop;
             if (Self.TryLogic(w, out var a))
             {
+                f.Hitstop = w.IsActorStopped(a);
                 f.Logic = _pose != null ? _pose.LogicPos : a.GetComp<TransformComp>().Position;
                 f.YawHint = _pose != null ? _pose.LogicYaw : a.GetComp<TransformComp>().YawDegrees;
                 var t = a.GetComp<TagComp>();

@@ -91,7 +91,7 @@ namespace Combat.Unity.Presentation
         public override void SyncLogic(CombatWorld world)
         {
             var next = Self.TryLogic(world, out var a)
-                ? HudSnapshot.Capture(a, world.InHitstop)
+                ? HudSnapshot.Capture(a, world.IsActorStopped(a))
                 : default(HudSnapshot);
             Dirty = !next.SameAs(Snapshot);
             Snapshot = next;

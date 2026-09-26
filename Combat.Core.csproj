@@ -67,6 +67,7 @@
   <ItemGroup>
     <Compile Include="Assets\Scripts\Combat\Core\MotorConfig.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\CombatGeom.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\ProjectileSteering.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Pipeline.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\CombatComps.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Motor.cs" />
@@ -87,6 +88,7 @@
     <Compile Include="Assets\Scripts\Combat\Core\BuffArenaActorDef.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Infrastructure.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\World.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\ProjectileMotion.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Timeline.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\ActorModel.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Logging.cs" />

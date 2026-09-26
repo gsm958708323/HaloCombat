@@ -201,9 +201,9 @@ namespace Combat.Core
 
         /// <summary>
         /// 每帧判定顺序（顺序即语义，不要重排）：
-        /// 1) 缺组件，或已带 Dead/Stunned/Downed 标签 → 不响应输入；
-        /// 2) 时间轴正在播：若该时间轴锁技能则清掉缓冲输入；否则保留缓冲直接返回；
-        /// 3) 取一个 token（TryPeek + Consume，即使后面匹配不上也算消耗掉）；
+        /// 1) 缺组件或导演不允许施法 → 保留队列并返回；
+        /// 2) 时间轴正在播 → 保留缓冲，不引入取消当前技能的机制；
+        /// 3) 消费一个排队 token；队列为空才使用 Held 普攻，本步最多尝试一次；
         /// 4) FindByInput 匹配不到技能 → 本次输入作废；
         /// 5) 传送弹特例：需要追踪弹且弹还在飞时改为传送到弹的位置，成功即结束；
         /// 6) 弹药不足：付不出 AmmoCost 就播 FallbackSkill（用回退自己的时间轴）后结束；
@@ -212,21 +212,11 @@ namespace Combat.Core
         public override void Tick(float dt)
         {
             if (_input == null || _director == null || _loco == null ||
-                Self.TryGetComp<TagComp>(out var tags) &&
-                (tags.Has(CommonTags.Dead) || tags.Has(CommonTags.Stunned) || tags.Has(CommonTags.Downed)))
-                return;
-
-            // Source skill timelines gate on canUseSkill via SetCasterControlState. Only
-            // drop buffered input while the running timeline still forbids casting.
-            if (_director.IsPlaying && !_director.AllowsSkill)
-            {
-                _input.Clear();
-                return;
-            }
-            if (_director.IsPlaying) return;
-
-            if (!_input.TryPeek(out var token)) return;
-            _input.Consume();
+                !_director.CanStartSkill || _director.IsPlaying) return;
+            InputToken token;
+            if (_input.TryPeek(out token)) _input.Consume();
+            else if (_input.PrimaryHeld) token = BuffArenaIds.Fire1;
+            else return;
 
             BuffArenaSkill skill = FindByInput(token);
             if (skill == null) return;
@@ -552,7 +542,7 @@ namespace Combat.Core
                 {
                     ctx.World.Deliver(new IEffect[]
                     {
-                        new DamageEffect { Coeff = DamageCoeff, CanCrit = true, CritMul = 1.8f,
+                        new DamageEffect { Coeff = DamageCoeff, TargetHitstopFrames = 3, CanCrit = true, CritMul = 1.8f,
                             CritChance = .05f, FireOnHurted = false, DirectDamage = true },
                         new HurtFeedbackEffect(),
                         new PlayBuffArenaCueEffect(BuffArenaIds.CueHitValue, "Body", target: true)

@@ -51,9 +51,7 @@ MonoBehaviour:
   TimelineIdValue: 3003
   Duration: 0.5
   AnimatorState: Fire
-  AllowMove: 1
-  AllowRotate: 1
-  AllowSkill: 1
+  ControlTags: []
   ScaleWithActionSpeed: 0
   Clips: []
   Payloads:

@@ -65,7 +65,9 @@
     <Analyzer Include="D:\Work\UnityInstall\6000.0.32f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Tests\PlayMode\BuffArenaMapGenerationTests.cs" />
     <Compile Include="Assets\Tests\PlayMode\BuffArenaSkillSmokeTests.cs" />
+    <Compile Include="Assets\Tests\PlayMode\BuffArenaControlSmokeTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Tests\PlayMode\Combat.PlayModeTests.asmdef" />
@@ -1033,6 +1035,10 @@
     </Reference>
     <Reference Include="System.Xml.Serialization">
       <HintPath>D:\Work\UnityInstall\6000.0.32f1\Editor\Data\NetStandard\compat\2.1.0\shims\netfx\System.Xml.Serialization.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.InputSystem">
+      <HintPath>Library\ScriptAssemblies\Unity.InputSystem.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine.TestRunner">

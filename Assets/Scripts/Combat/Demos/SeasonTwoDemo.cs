@@ -157,7 +157,7 @@ namespace Combat.Demos
                         Coeff = 1f,
                         CanCrit = false,
                         UseSnapshotAtk = true,
-                        HitstopFrames = 3
+                        SourceHitstopFrames = 3, TargetHitstopFrames = 3
                     }
                 },
                 guard, player, 50f);
@@ -213,20 +213,20 @@ namespace Combat.Demos
 
             // Projectile Freeze：命中结算当帧完成；下一 Tick 开始冻结服务，弹的位置保持不变。
             trace.AdvanceFor("进入顿帧服务阶段", 0.02f, 1,
-                () => $"frame={time.Frame} InHitstop={world.InHitstop} left={world.HitstopLeft} actorPos={ptf.Position.X.ToString("F3")} projectilePos={boltTf.Position.X.ToString("F3")}");
-            trace.Check("下一逻辑帧进入顿帧状态", world.InHitstop,
-                "InHitstop=true", $"InHitstop={world.InHitstop} left={world.HitstopLeft}",
+                () => $"frame={time.Frame} InHitstop={player.Time.IsStopped} left={player.Time.HitstopLeft} actorPos={ptf.Position.X.ToString("F3")} projectilePos={boltTf.Position.X.ToString("F3")}");
+            trace.Check("下一逻辑帧进入顿帧状态", player.Time.IsStopped,
+                "InHitstop=true", $"InHitstop={player.Time.IsStopped} left={player.Time.HitstopLeft}",
                 () => DemoTrace.Snapshot(player));
             SimVec3 frozen = boltTf.Position;
             float frozenActorX = ptf.Position.X;
             float frozenActorZ = ptf.Position.Z;
             int freezeFrame = time.Frame;
             trace.AdvanceFor("顿帧窗口内冻结 Actor 与 Projectile", 0.02f, 2,
-                () => $"frame={time.Frame} InHitstop={world.InHitstop} actorPos={ptf.Position.X.ToString("F3")} projectilePos={boltTf.Position.X.ToString("F3")}");
-            trace.Check("顿帧期间 Actor 与 Projectile 位置不变", Math.Abs(boltTf.Position.X - frozen.X) <= 1e-4f &&
-                Math.Abs(boltTf.Position.Z - frozen.Z) <= 1e-4f && Math.Abs(ptf.Position.X - frozenActorX) <= 1e-4f &&
+                () => $"frame={time.Frame} InHitstop={player.Time.IsStopped} actorPos={ptf.Position.X.ToString("F3")} projectilePos={boltTf.Position.X.ToString("F3")}");
+            trace.Check("顿帧期间 Actor 冻结而 Projectile 继续", (Math.Abs(boltTf.Position.X - frozen.X) > 1e-4f ||
+                Math.Abs(boltTf.Position.Z - frozen.Z) > 1e-4f) && Math.Abs(ptf.Position.X - frozenActorX) <= 1e-4f &&
                 Math.Abs(ptf.Position.Z - frozenActorZ) <= 1e-4f,
-                "顿帧期间 Actor 与 Projectile 位置保持不变", $"冻结前Actor={frozenActorX.ToString("F3")},{frozenActorZ.ToString("F3")} 当前Actor={ptf.Position.X.ToString("F3")},{ptf.Position.Z.ToString("F3")} 冻结前Projectile={frozen.X.ToString("F3")},{frozen.Z.ToString("F3")} 当前Projectile={boltTf.Position.X.ToString("F3")},{boltTf.Position.Z.ToString("F3")} freezeFrame={freezeFrame} currentFrame={time.Frame}",
+                "顿帧期间 Actor 冻结而 Projectile 继续", $"冻结前Actor={frozenActorX.ToString("F3")},{frozenActorZ.ToString("F3")} 当前Actor={ptf.Position.X.ToString("F3")},{ptf.Position.Z.ToString("F3")} 冻结前Projectile={frozen.X.ToString("F3")},{frozen.Z.ToString("F3")} 当前Projectile={boltTf.Position.X.ToString("F3")},{boltTf.Position.Z.ToString("F3")} freezeFrame={freezeFrame} currentFrame={time.Frame}",
                 () => DemoTrace.Snapshot(bolt));
             stakeAura.GetComp<TransformComp>().Position = new SimVec3(0f, 0f, 0f);
             trace.Step("记录冻前飞行与冻结后位置", () => $"冻前位置={flew.X.ToString("F3")},{flew.Z.ToString("F3")} 冻中位置={boltTf.Position.X.ToString("F3")},{boltTf.Position.Z.ToString("F3")}");

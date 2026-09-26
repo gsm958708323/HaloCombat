@@ -126,6 +126,7 @@ namespace Combat.Core
         public EntityId OwnerId { get; private set; }
         public float SnapshotAtk { get; private set; }
         public ProjectileDefinition Def { get; private set; }
+        public IProjectileMotion Motion { get; private set; }
         public float FireYaw { get; private set; }
         public SimVec3 CurrentVelocity { get; private set; }
         public float GroundY { get; private set; }
@@ -138,6 +139,7 @@ namespace Combat.Core
         public void Setup(ProjectileDefinition def, EntityId owner, float snapshotAtk, EntityId homingTarget = default)
         {
             Def = def;
+            Motion = ProjectileMotions.Resolve(def.Motion);
             OwnerId = owner;
             SnapshotAtk = snapshotAtk;
             FireYaw = 0f;
@@ -206,6 +208,7 @@ namespace Combat.Core
             _hits.Clear();
             _cooldowns.Clear();
             Def = null;
+            Motion = null;
             Exhausted = true;
             CurrentVelocity = SimVec3.Zero;
             GroundY = 0f;
@@ -322,9 +325,12 @@ namespace Combat.Core
         readonly List<Actor> _actors = new List<Actor>(64);
         readonly List<Actor> _buffer = new List<Actor>(64);
 
+        readonly ProjectileSteering _steering;
+
         public ProjectileService(CombatWorld world)
         {
             _world = world ?? throw new ArgumentNullException(nameof(world));
+            _steering = new ProjectileSteering(world);
         }
 
         /// <summary>固定两段：先生成再推进，所以本帧新生成的子弹本帧就会移动一帧。</summary>
@@ -388,20 +394,17 @@ namespace Combat.Core
                 var def = body.Def;
                 _world.TryGetActor(body.OwnerId, out var owner);
                 body.TickHitCooldowns(dt);
-                SteerHoming(a, body, tf, dt, owner);
+                _steering.Update(a, body, tf, dt, owner);
                 float previousAge = body.Age;
                 float nextAge = Math.Min(previousAge + dt, def.Lifetime);
-                bool touchdown = CrossedGroundPhase(def, previousAge, nextAge);
-                var velocity = MotionVelocity(body, tf, def, owner);
-                var next = new SimVec3(
-                    tf.Position.X + velocity.X * dt,
-                    def.Motion == ProjectileMotionKind.Bounce
-                        ? body.GroundY + BounceHeightAt(def, nextAge)
-                        : tf.Position.Y + velocity.Y * dt,
-                    tf.Position.Z + velocity.Z * dt);
-                if (touchdown && def.Motion == ProjectileMotionKind.Bounce)
-                    next.Y = body.GroundY;
-                velocity.Y = (next.Y - tf.Position.Y) / Math.Max(dt, .0001f);
+                SimVec3? ownerPosition = owner != null && owner.TryGetComp<TransformComp>(out var motionOwner)
+                    ? motionOwner.Position : (SimVec3?)null;
+                var motion = body.Motion.Evaluate(new ProjectileMotionContext(def, tf.Position, tf.YawDegrees,
+                    previousAge, nextAge, body.GroundY, dt, ownerPosition));
+                bool touchdown = motion.Touchdown;
+                var velocity = motion.Velocity;
+                var next = motion.Position;
+                tf.YawDegrees = motion.Yaw;
                 body.SetMotion(tf.YawDegrees, velocity);
                 bool blocked;
                 bool flyNow = def.Flying && !touchdown;
@@ -469,147 +472,6 @@ namespace Combat.Core
                     }
                 }
             }
-        }
-
-        /// <summary>按运动模式产出本帧速度：Accelerate 用 2t/(t+pivot) 渐入；ReturnToOwner 复刻源工程飞镖的正弦去程，回程直接朝拥有者飞。</summary>
-        static SimVec3 MotionVelocity(ProjectileComp body, TransformComp tf, ProjectileDefinition def, Actor owner)
-        {
-            float scale = 1f;
-            if (def.Motion == ProjectileMotionKind.Accelerate)
-            {
-                float t = Math.Max(0f, body.Age);
-                float pivot = def.MotionParam > 0f ? def.MotionParam : 5f;
-                scale = 2f * t / (t + pivot);
-            }
-            else if (def.Motion == ProjectileMotionKind.ReturnToOwner)
-            {
-                // Mirrors the source CloakBoomerangTween: the outbound leg is
-                // modulated by sin(t / backTime * PI) + 0.1, and once backTime has
-                // elapsed the body turns back toward the thrower with the same
-                // sine curve capped at half a period.
-                float backTime = def.MotionParam > 0f ? def.MotionParam : 1f;
-                if (body.Age < backTime)
-                {
-                    float outRad = body.Age / backTime * (float)Math.PI;
-                    scale = (float)Math.Sin(outRad) + .1f;
-                }
-                else if (owner != null && owner.TryGetComp<TransformComp>(out var ownerTf))
-                {
-                    float backRad = Math.Min((body.Age - backTime) / backTime * (float)Math.PI, .5f);
-                    float magnitude = (float)Math.Sin(backRad) + .1f;
-                    float dx = ownerTf.Position.X - tf.Position.X;
-                    float dz = ownerTf.Position.Z - tf.Position.Z;
-                    float len = (float)Math.Sqrt(dx * dx + dz * dz);
-                    if (len > .0001f)
-                        return new SimVec3(dx / len * def.Speed * magnitude, 0f, dz / len * def.Speed * magnitude);
-                }
-            }
-
-            var fwd = LocomotionComp.ForwardFromYaw(tf.YawDegrees);
-            return new SimVec3(fwd.X * def.Speed * scale, 0f, fwd.Z * def.Speed * scale);
-        }
-
-        /// <summary>锁定转向：锁定目标失效时按 HomingRetarget 决定重选还是保持原航向；单帧转角同时受 HomingRate*dt 与 HomingMaxTurn 限制。</summary>
-        void SteerHoming(Actor proj, ProjectileComp body, TransformComp tf, float dt, Actor owner)
-        {
-            var def = body.Def;
-            if (def == null || def.HomingRate <= 0f) return;
-            if (!body.HomingTarget.IsValid)
-                body.HomingTarget = AcquireNearest(tf.Position, owner, def);
-            else if (!IsValid(body.HomingTarget))
-            {
-                // A projectile keeps its last heading when the locked target dies.
-                // Optional retargeting is an explicit definition flag.
-                if (!def.HomingRetarget) return;
-                body.HomingTarget = AcquireNearest(tf.Position, owner, def);
-            }
-            if (!IsValid(body.HomingTarget) || !_world.TryGetActor(body.HomingTarget, out var target) ||
-                !target.TryGetComp<TransformComp>(out var targetTf)) return;
-
-            float want = LocomotionComp.YawFromStick(new SimVec3(
-                targetTf.Position.X - tf.Position.X, 0f, targetTf.Position.Z - tf.Position.Z));
-            float delta = NormalizeDeg(want - tf.YawDegrees);
-            float step = def.HomingRate * dt;
-            if (def.HomingMaxTurn > 0f && step > def.HomingMaxTurn) step = def.HomingMaxTurn;
-            if (delta > step) delta = step;
-            else if (delta < -step) delta = -step;
-            tf.YawDegrees += delta;
-        }
-
-        /// <summary>锁定目标是否仍可追击：实体存在且未挂 Dead 标签。</summary>
-        bool IsValid(EntityId id)
-        {
-            if (!_world.TryGetActor(id, out var a) || a == null) return false;
-            return !a.TryGetComp<TagComp>(out var tags) || !tags.Has(CommonTags.Dead);
-        }
-
-        /// <summary>在 HomingAcquireRadius 内重新锁定最近的可命中目标。</summary>
-        EntityId AcquireNearest(SimVec3 origin, Actor owner, ProjectileDefinition def)
-        {
-            int n = _world.Query.OverlapCircle(origin, def.HomingAcquireRadius, owner, def.HostileMask, _buffer);
-            float best = float.MaxValue;
-            EntityId pick = EntityId.Invalid;
-            for (int i = 0; i < n; i++)
-            {
-                var v = _buffer[i];
-                if (v == null || !v.TryGetComp<TransformComp>(out var tf)) continue;
-                float dx = tf.Position.X - origin.X;
-                float dz = tf.Position.Z - origin.Z;
-                float d2 = dx * dx + dz * dz;
-                if (d2 < best) { best = d2; pick = v.Id; }
-            }
-            return pick;
-        }
-
-        /// <summary>把角度归一到 ±180 以内，避免累计转向出现大跳变。</summary>
-        static float NormalizeDeg(float deg)
-        {
-            while (deg > 180f) deg -= 360f;
-            while (deg < -180f) deg += 360f;
-            return deg;
-        }
-
-        static float BounceHeightAt(ProjectileDefinition def, float age)
-        {
-            var phases = def.GroundPhaseAt;
-            if (def.Motion != ProjectileMotionKind.Bounce || def.BounceHeight <= 0f ||
-                phases == null || phases.Length == 0 || age <= 0f)
-                return 0f;
-
-            float segmentStart = 0f;
-            float firstDuration = phases[0];
-            if (firstDuration <= 0f) return 0f;
-            for (int i = 0; i < phases.Length; i++)
-            {
-                float segmentEnd = phases[i];
-                float duration = segmentEnd - segmentStart;
-                if (duration <= 0f)
-                {
-                    segmentStart = segmentEnd;
-                    continue;
-                }
-                if (age <= segmentEnd)
-                {
-                    float t = Math.Max(0f, Math.Min(1f, (age - segmentStart) / duration));
-                    float durationScale = duration / firstDuration;
-                    float peak = def.BounceHeight * durationScale * durationScale;
-                    return 4f * peak * t * (1f - t);
-                }
-                segmentStart = segmentEnd;
-            }
-            return 0f;
-        }
-
-        static bool CrossedGroundPhase(ProjectileDefinition def, float previousAge, float nextAge)
-        {
-            var phases = def.GroundPhaseAt;
-            if (phases == null || phases.Length == 0) return false;
-            for (int i = 0; i < phases.Length; i++)
-            {
-                float touchdown = phases[i];
-                if (touchdown > previousAge && touchdown <= nextAge) return true;
-            }
-            return false;
         }
 
         /// <summary>子弹收尾：先置 Exhausted，按 obstacle 选择 OnObstacle 或 OnExpire 投递，再请求销毁并立即 SetActive(false)，防止本帧后续步骤重复处理。</summary>

@@ -15,7 +15,7 @@
 
 - 骨架：`Actor` / `Comp` / `World` / `Time` / `EventBus` / `IntentQueue` / `Pool`
 - 技能：Combo 边表 + `Play(skill, timeline)`
-- 输入：`InputBuffer` 单槽，窗口 `0.2s`
+- 输入：`InputBuffer` 三条 FIFO，窗口为角色时间 `0.8s`；仅普攻支持按住连射
 - 位姿：`Request*` → `Locomotion.Integrate`
 - 朝向：yaw `0` 朝 `+Z`（Unity 前向），正角朝 `+X`，`ForwardFromYaw(yaw)` 等价于 `Quaternion.Euler(0, yaw, 0) * Vector3.forward`；局部偏移同坐标系（`+Z` 前、`+X` 右）。旧 2D 极角约定（`0 = +X`）作废，换算为 `90 - yaw`
 - 血量：只通过 `AttributeSet.SetBase(Hp)` 修改
@@ -85,7 +85,7 @@ Hitstop 只推进 wall time，暂停逻辑帧。实体用 `EntityId(index, gener
 - Timeline Clip：`CancelTag` / `Move` / `Hitbox` / `IFrame`
 - Timeline Payload：Cue、生成弹体 / AoE / 召唤物
 - 活动机：`Root` / `Attack` / `Hit` / `Knockdown` / `Dead`，各自带位移与朝向策略
-- 玩家：季节 1/2 由 `PlayerCombatDriver` 消费输入缓冲走 Combo / 闪避；Arena 由 `BuffArenaPlayerComp` 消费同一个 `InputBufferComp`（单槽、窗口 `0.2s`）
+- 玩家：季节 1/2 由 `PlayerCombatDriver` 消费输入缓冲走 Combo / 闪避；Arena 由 `BuffArenaPlayerComp` 消费 `InputBufferComp`（三条 FIFO、角色时间窗口 `0.8s`）
 - AI：感知写黑板，行为树只编排移动和 `PlaySkill`，不直接结算。约定 AI 不得 `Director.Stop`，树按 Actor 克隆
 - Arena 敌人的树是**单个 `WanderShooter` 叶子**（游走 + 朝目标 + 定时施法），没有 selector / sequence；`BtFactory` 那套完整代码树服务于季节 1/2
 
@@ -115,7 +115,7 @@ Hitstop 只推进 wall time，暂停逻辑帧。实体用 `EntityId(index, gener
 
 全部资产都在 Inspector 里手工维护：没有生成器，也没有「代码表 ↔ 资产」的比对。
 
-**输入映射不进 SO**：按键写在 [BuffArenaSession.ApplyInput](Assets/Scripts/Combat/Unity/Game/BuffArenaSession.cs)，8 个动作按固定顺序压进单槽缓冲（后写覆盖先写，所以顺序即优先级）。它只依赖 `BuffArenaIds` 的 8 个 token，且每个 token 必须与对应技能资产上的 `InputToken` 相等——这是唯一需要和资产对齐的字符串约定。技能侧的其余字段（耗弹、时间轴、动画、传送弹开关、空弹回退 `FallbackSkillIdValue`）仍在 SO 上。
+**输入映射不进 SO**：按键映射见 [BuffArenaSession.ApplyInput](Assets/Scripts/Combat/Unity/Game/BuffArenaSession.cs)。同帧优先级为 Roll、Fire4、Monkey、Homing、Fire5、Fire3、Fire2、Fire1，超过容量时保留前三项；不同帧遵循 FIFO。按住普攻独立于队列。`BuffArenaIds` 的 token 必须与技能资产的 `InputToken` 相等。耗弹、时间轴、动画、传送弹开关、空弹回退 `FallbackSkillIdValue` 仍在 SO 上。F5 重载当前 Arena，详见[玩家技能实现详解](docs/玩家技能实现详解.md)。
 
 `Bake()` 启动前做引用校验：每个技能必须命中时间轴、空弹回退必须命中技能、工厂按名索取的 blueprint 必须存在；任一条不通过就返回 null，场景启动即失败。
 

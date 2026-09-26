@@ -125,7 +125,7 @@ namespace Combat.Demos
                 if (Frame == 160 || Frame == 305)
                     Get(Target).GetComp<LocomotionComp>().RequestTeleport(player.GetComp<TransformComp>().Position + new SimVec3(0.65f, 0f, 0f));
                 if (Frame == 325)
-                    Deliver(new DamageEffect { Coeff = 1f, CanCrit = false, HitstopFrames = 5 }, Get(Target), player);
+                    Deliver(new DamageEffect { Coeff = 1f, CanCrit = false, SourceHitstopFrames = 5, TargetHitstopFrames = 5 }, Get(Target), player);
                 if (Frame == 395) Input(Season2Tokens.Dodge);
                 return;
             }

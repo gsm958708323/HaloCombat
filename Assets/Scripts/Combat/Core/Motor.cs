@@ -28,7 +28,6 @@ namespace Combat.Core
 
         TransformComp _tf;
         StateMachineComp _fsm;
-        SkillDirectorComp _director;
         TagComp _tags;
         AttributeSet _attr;
 
@@ -64,7 +63,6 @@ namespace Combat.Core
             _stickDeadzone = motor.StickDeadzone;
             _tf = Self.GetComp<TransformComp>();
             _fsm = Self.GetComp<StateMachineComp>();
-            Self.TryGetComp(out _director);
             _tags = Self.GetComp<TagComp>();
             Self.TryGetComp(out _attr);
             _grounded = _tf.Position.Y <= _groundY + 1e-4f;
@@ -75,7 +73,6 @@ namespace Combat.Core
         {
             _tf = null;
             _fsm = null;
-            _director = null;
             _tags = null;
             _attr = null;
             ClearFrameRequests();
@@ -107,6 +104,7 @@ namespace Combat.Core
 
         public void RequestSnapYaw()
         {
+            if (_tags.Has(CommonTags.BlockRotate) || Self.Time.IsStopped) return;
             // A live mouse-aim request outranks the move stick: the source game
             // orders the rotation from the cursor before it starts the skill
             // timeline, so a cast must never snap the body back to the last
@@ -126,16 +124,33 @@ namespace Combat.Core
 
         public void RequestSnapYawDegrees(float yaw)
         {
+            if (_tags.Has(CommonTags.BlockRotate) || Self.Time.IsStopped) return;
             _pendingYaw = yaw;
             _hasSnapYaw = true;
         }
 
+        public void SnapForCast()
+        {
+            RequestSnapYaw();
+            if (_hasSnapYaw && !_tags.Has(CommonTags.BlockRotate)) _tf.YawDegrees = _pendingYaw;
+            _hasSnapYaw = false;
+        }
+
+        public void ClearPendingMotion()
+        {
+            ClearFrameRequests();
+            _teleport = null;
+            _hasSnapYaw = _hasAimYaw = false;
+            _moveIntent = SimVec3.Zero;
+            _verticalVel = 0f;
+        }
+
         public float FacingForSkillMove()
-            => _hasSnapYaw ? _pendingYaw : (_tf != null ? _tf.YawDegrees : 0f);
+            => _hasSnapYaw && !_tags.Has(CommonTags.BlockRotate) ? _pendingYaw : (_tf != null ? _tf.YawDegrees : 0f);
 
         public void ImpulseJump()
         {
-            if (!_grounded) return;
+            if (!_grounded || _tags.Has(CommonTags.BlockMove) || Self.World.IsActorStopped(Self)) return;
             _verticalVel = _jumpSpeed;
             _grounded = false;
             WriteGroundTags(false);
@@ -162,6 +177,7 @@ namespace Combat.Core
 
         public void IntegrateBeforeHitDetection(float dt)
         {
+            if (Self.Time.IsStopped) return;
             if (_tf == null || _fsm == null)
             {
                 ClearFrameRequests();
@@ -175,15 +191,14 @@ namespace Combat.Core
             }
 
             var policy = _fsm.Motor;
-            var loco = policy.Loco;
 
             if (_hasSnapYaw)
             {
-                _tf.YawDegrees = _pendingYaw;
+                if (!_tags.Has(CommonTags.BlockRotate)) _tf.YawDegrees = _pendingYaw;
                 _hasSnapYaw = false;
             }
 
-            float motorScale = MotorScale(loco);
+            float motorScale = MotorScale();
             var delta = SimVec3.Zero;
             if (motorScale > 0f)
             {
@@ -192,7 +207,7 @@ namespace Combat.Core
                 delta.Z += walk.Z;
             }
 
-            if (loco.UseSkill)
+            if (!_tags.Has(CommonTags.BlockSkillMotion))
             {
                 delta.X += _skillDelta.X;
                 delta.Y += _skillDelta.Y;
@@ -214,22 +229,22 @@ namespace Combat.Core
 
         public void IntegrateAfterHitDetection(float dt)
         {
+            if (Self.Time.IsStopped) return;
             if (_tf == null || _fsm == null)
             {
                 _hitDelta = SimVec3.Zero;
                 return;
             }
 
-            var loco = _fsm.Motor.Loco;
             var delta = SimVec3.Zero;
-            if (loco.UseHit)
+            if (!_tags.Has(CommonTags.BlockHitMotion))
             {
                 delta.X += _hitDelta.X;
                 delta.Y += _hitDelta.Y;
                 delta.Z += _hitDelta.Z;
             }
 
-            if (loco.ApplyGravity)
+            if (!_tags.Has(CommonTags.BlockGravity))
                 delta.Y += IntegrateGravity(dt);
             else if (_grounded)
                 _verticalVel = 0f;
@@ -244,12 +259,10 @@ namespace Combat.Core
             _hitDelta = SimVec3.Zero;
         }
 
-        float MotorScale(in LocoProfile loco)
+        float MotorScale()
         {
-            if (_fsm != null && _fsm.Current == ActivityId.Attack && _director != null && _director.AllowsMove)
-                return _clipSteer > 0f ? _clipSteer : 1f;
-            if (_grounded)
-                return _clipSteer > 0f ? _clipSteer : loco.MotorScale;
+            if (_tags.Has(CommonTags.BlockMove)) return 0f;
+            if (_grounded) return _clipSteer > 0f ? _clipSteer : 1f;
             return _airSteer;
         }
 
@@ -293,6 +306,7 @@ namespace Combat.Core
 
         void ApplyFacing(in FacingPolicy facing, float dt)
         {
+            if (_tags.Has(CommonTags.BlockRotate)) return;
             bool stick = StickMag(_moveIntent) >= _stickDeadzone;
             float want = stick ? YawFromStick(_moveIntent) : _tf.YawDegrees;
             // Mouse aim owns the facing whenever it is requested and the activity
@@ -300,7 +314,7 @@ namespace Combat.Core
             // calling OrderRotateTo every FixedUpdate while a skill timeline runs
             // (SetCasterControlState(canRotate: true)), so an Attack must not gate
             // aiming behind a Move clip's steer value.
-            if (_hasAimYaw && _grounded && facing.Mode != FacingMode.Lock)
+            if (_hasAimYaw && _grounded)
             {
                 float turn = facing.TurnRate > 0f ? facing.TurnRate * dt : AimTurnRateDegPerSec * dt;
                 _tf.YawDegrees = MoveTowardsAngle(_tf.YawDegrees, _aimYaw, turn);
@@ -308,8 +322,6 @@ namespace Combat.Core
             }
             switch (facing.Mode)
             {
-                case FacingMode.Lock:
-                    return;
                 case FacingMode.FollowStickIfGrounded:
                     if (_grounded && stick) _tf.YawDegrees = want;
                     return;

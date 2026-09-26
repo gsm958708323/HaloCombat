@@ -66,7 +66,7 @@ namespace Combat.Unity.Presentation
         public override void SyncLogic(CombatWorld world)
         {
             if (Self.TryLogic(world, out var a))
-                Flags = AnimFlags.Capture(a, world.InHitstop);
+                Flags = AnimFlags.Capture(a, world.IsActorStopped(a));
         }
 
         public override void LateTick(float dt)

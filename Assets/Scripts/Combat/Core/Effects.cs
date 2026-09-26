@@ -260,7 +260,8 @@ namespace Combat.Core
         public float CritChance = -1f;
         public bool DirectDamage = true;
         public bool FireOnHurted = true;
-        public int HitstopFrames;
+        public int SourceHitstopFrames;
+        public int TargetHitstopFrames;
 
         /// <summary>
         /// 伤害结算顺序（固定，不可重排）：
@@ -347,11 +348,13 @@ namespace Combat.Core
                 source != null ? source.Id : EntityId.Invalid,
                 target.Id, raw + absorb, crit, absorb, kill));
 
-            if (HitstopFrames > 0 && raw + absorb > 0f)
+            if (raw + absorb > 0f && (SourceHitstopFrames > 0 || TargetHitstopFrames > 0))
             {
-                ctx.World.RequestHitstop(HitstopFrames);
+                source?.Time.RequestHitstop(SourceHitstopFrames);
+                target.Time.RequestHitstop(TargetHitstopFrames);
                 ctx.World.Events.Publish(new EvHitstop(
-                    source != null ? source.Id : EntityId.Invalid, target.Id, HitstopFrames));
+                    source != null ? source.Id : EntityId.Invalid, target.Id,
+                    SourceHitstopFrames, TargetHitstopFrames));
             }
 
             if (kill && target.TryGetComp<StateMachineComp>(out var fsm))

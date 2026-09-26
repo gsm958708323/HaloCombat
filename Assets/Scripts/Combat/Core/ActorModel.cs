@@ -58,6 +58,7 @@ namespace Combat.Core
         public EntityId Id { get; private set; }
         public bool IsActive { get; private set; }
         public CombatWorld World { get; internal set; }
+        public ActorTime Time { get; } = new ActorTime();
 
         /// <summary>生成时用的蓝图 id。只用于错误定位：缺组件时能看出是哪个蓝图装错了。</summary>
         public string BlueprintId { get; internal set; }
@@ -96,7 +97,7 @@ namespace Combat.Core
 
         public void TickAll(float dt)
         {
-            if (!IsActive) return;
+            if (!IsActive || Time.IsStopped) return;
             for (int i = 0; i < _ticks.Count; i++)
                 _ticks[i].Tick(dt);
         }
@@ -141,6 +142,7 @@ namespace Combat.Core
         public void ResetForPool()
         {
             DetachAll();
+            Time.Reset();
             _comps.Clear();
             _order.Clear();
             _ticks.Clear();

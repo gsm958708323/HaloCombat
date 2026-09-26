@@ -26,7 +26,6 @@ namespace Combat.Unity.Game
         int _spawned;
         bool _playerDead;
         bool _disposed;
-        bool _fire4Held;
 
         struct DeadEnemy
         {
@@ -87,8 +86,8 @@ namespace Combat.Unity.Game
 
         /// <summary>
         /// 把本帧采样转成移动 / 瞄准意图和技能输入令牌。
-        /// 推送顺序沿用源工程 PlayerController，而输入缓冲只有单槽位（后来者覆盖），
-        /// 所以这段 if 序列本身就是优先级：Fire5 → Fire1 → Roll → Homing → Monkey。
+        /// 同帧按 Roll、Fire4、Monkey、Homing、Fire5、Fire3、Fire2、Fire1 排序，最多保留前三项。
+        /// 不同帧按 FIFO 排队；Fire1Held 独立保存，不占队列容量。
         /// 这里的每个令牌都必须等于目标技能资产上署名的 InputToken，对不上时技能永远不会被找到，
         /// 而且是静默的。玩家已死 / 无 Actor / 已 Dispose 时整帧丢弃输入。
         /// </summary>
@@ -104,23 +103,28 @@ namespace Combat.Unity.Game
             }
 
             if (!player.TryGetComp<InputBufferComp>(out var buffer)) return;
-            bool fire4Pressed = input.Fire4Held && !_fire4Held;
-            _fire4Held = input.Fire4Held;
-            // The order mirrors the source PlayerController, and the single-slot buffer means
-            // the last push wins. Q/E expose the two learned source skills that had no physical
-            // button in that script. Every token here must equal the InputToken authored on the
-            // skill asset it is meant to cast (see BuffArenaIds).
-            if (input.Fire5Held) buffer.Push(BuffArenaIds.Fire5);
-            if (fire4Pressed) buffer.Push(BuffArenaIds.Fire4);
-            if (input.Fire3Held) buffer.Push(BuffArenaIds.Fire3);
-            if (input.Fire2Held) buffer.Push(BuffArenaIds.Fire2);
-            if (input.Fire1Held) buffer.Push(BuffArenaIds.Fire1);
-            if (input.RollHeld) buffer.Push(BuffArenaIds.RollInput);
-            if (input.HomingHeld) buffer.Push(BuffArenaIds.HomingInput);
-            if (input.MonkeyHeld) buffer.Push(BuffArenaIds.MonkeyInput);
+            buffer.PrimaryHeld = input.Fire1Held;
+            // One render-frame batch. Keep its highest-priority three presses;
+            // batches from later frames evict the oldest queued commands.
+            int accepted = 0;
+            EnqueuePress(buffer, input.RollPressed, BuffArenaIds.RollInput, ref accepted);
+            EnqueuePress(buffer, input.Fire4Pressed, BuffArenaIds.Fire4, ref accepted);
+            EnqueuePress(buffer, input.MonkeyPressed, BuffArenaIds.MonkeyInput, ref accepted);
+            EnqueuePress(buffer, input.HomingPressed, BuffArenaIds.HomingInput, ref accepted);
+            EnqueuePress(buffer, input.Fire5Pressed, BuffArenaIds.Fire5, ref accepted);
+            EnqueuePress(buffer, input.Fire3Pressed, BuffArenaIds.Fire3, ref accepted);
+            EnqueuePress(buffer, input.Fire2Pressed, BuffArenaIds.Fire2, ref accepted);
+            EnqueuePress(buffer, input.Fire1Pressed, BuffArenaIds.Fire1, ref accepted);
         }
 
         /// <summary>把真实帧时长交给固定步长时钟；一帧内可能跑 0..N 个逻辑步。</summary>
+        static void EnqueuePress(InputBufferComp buffer, bool pressed, InputToken token, ref int accepted)
+        {
+            if (!pressed || accepted == InputBufferComp.Capacity) return;
+            buffer.Push(token);
+            accepted++;
+        }
+
         public void PumpLogic(float dt)
         {
             if (_disposed) return;

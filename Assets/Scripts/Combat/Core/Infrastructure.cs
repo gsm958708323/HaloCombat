@@ -3,6 +3,33 @@ using System.Collections.Generic;
 
 namespace Combat.Core
 {
+    /// <summary>Per-actor simulation clock. Requests latch at the next world step.</summary>
+    public sealed class ActorTime
+    {
+        int _pending;
+        int _remaining;
+        public float Time { get; private set; }
+        public float Delta { get; private set; }
+        public bool IsStopped { get; private set; }
+        public int HitstopLeft => _remaining;
+        public void RequestHitstop(int frames) => _pending = Math.Max(_pending, frames);
+        internal void BeginStep(float dt)
+        {
+            _remaining = Math.Max(_remaining, _pending);
+            _pending = 0;
+            IsStopped = _remaining > 0;
+            Delta = IsStopped ? 0f : Math.Max(0f, dt);
+            Time += Delta;
+            if (IsStopped) _remaining--;
+        }
+        internal void Reset()
+        {
+            _pending = _remaining = 0;
+            Time = Delta = 0f;
+            IsStopped = false;
+        }
+    }
+
     /// <summary>
     /// 战斗双时钟。wall 墙钟由 <see cref="AdvanceWall"/> 推进，永不停摆，供表现/UI/计时使用；
     /// logic 逻辑钟由 <see cref="AdvanceLogic"/> 推进，是模拟的唯一时间来源。Hitstop 期间只推 wall、不推 logic

@@ -19,6 +19,7 @@ namespace Combat.Unity.Presentation
             _nextTime,
             _renderTime;
         bool _hasPrev;
+        bool _stopped;
 
         public void SetRenderLogicTime(float t) => _renderTime = t;
 
@@ -26,6 +27,7 @@ namespace Combat.Unity.Presentation
         {
             if (!Self.TryLogic(world, out var a) || !a.TryGetComp<TransformComp>(out var tf))
                 return;
+            _stopped = world.IsActorStopped(a);
             _prev = _next;
             _prevYaw = _nextYaw;
             _prevTime = _nextTime;
@@ -46,7 +48,7 @@ namespace Combat.Unity.Presentation
 
         public override void LateTick(float dt)
         {
-            if (!_hasPrev)
+            if (!_hasPrev || _stopped)
             {
                 DisplayPos = LogicPos;
                 DisplayYaw = LogicYaw;

@@ -5,6 +5,7 @@
         "Combat.Core",
         "Combat.Config",
         "Combat.Unity",
+        "Unity.InputSystem",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

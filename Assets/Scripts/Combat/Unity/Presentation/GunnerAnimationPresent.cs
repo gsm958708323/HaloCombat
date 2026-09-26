@@ -22,7 +22,7 @@ namespace Combat.Unity.Presentation
             if (!Self.TryLogic(world, out var actor)) return;
             _wasCasting = _casting;
             _dead = actor.TryGetComp<TagComp>(out var tags) && tags.Has(CommonTags.Dead);
-            _hitstop = world.InHitstop;
+            _hitstop = world.IsActorStopped(actor);
             _speed = 0f;
 
             if (actor.TryGetComp<LocomotionComp>(out var loco))

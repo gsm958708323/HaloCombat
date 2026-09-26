@@ -28,11 +28,11 @@ namespace Combat.Demos
             trace.Check("移除 Cancel 后归零", !tags.Has(CommonTags.Cancel), "Cancel=false",
                 $"Cancel={tags.Has(CommonTags.Cancel)}", () => DemoTrace.Snapshot(actor));
 
-            // 输入缓冲默认窗口为 0.2 秒；推进 0.25 秒后应过期。
+            // 输入队列默认窗口为 0.8 秒角色时间；推进 0.85 秒后应过期。
             input.Push(InputToken.Attack);
             trace.Check("写入 Attack 输入", input.TryPeek(out _), "缓冲存在", $"存在={input.HasBuffered}",
                 () => $"token=Attack {DemoTrace.Snapshot(actor)}");
-            trace.AdvanceFor("推进输入有效窗口之外", 0.25f, 1,
+            trace.AdvanceFor("推进输入有效窗口之外", 0.85f, 1,
                 () => $"buffered={input.HasBuffered} {DemoTrace.Snapshot(actor)}");
             trace.Check("输入缓冲自动过期", !input.TryPeek(out _), "Attack 不可读取",
                 $"可读取={input.HasBuffered}", () => DemoTrace.Snapshot(actor));
@@ -612,15 +612,16 @@ namespace Combat.Demos
             int stacks = sBuff.StacksOf(CombatIds.Burn);
             trace.Check("G2 Ground AoE 将 Burn 叠到上限", stacks == 3, "Ground AoE Burn层数=3", $"Burn层数={stacks}", () => DemoTrace.Snapshot(stake));
 
-            // 3. 受击时停止技能并清空输入缓存，恢复后回到 Root。
+            // 3. 受击停止技能但保留输入；清理测试输入后单独验证恢复活动。
             input.Push(InputToken.Attack);
             trace.AdvanceUntil("准备可被中断的技能", () => pDir.IsPlaying, 0.02f, 3,
                 () => $"skill={pDir.CurrentSkill} {DemoTrace.Snapshot(player)}");
             input.Push(InputToken.Attack);
             pFsm.TryEnter(ActivityId.Hit, new ActivityEnterArgs { Reason = "P1Hit", HitDuration = 0.25f });
-            trace.Check("受击中断停止技能并清空输入", !pDir.IsPlaying && !input.HasBuffered && pFsm.Current == ActivityId.Hit,
-                "技能停止、输入清空、Activity=Hit", $"playing={pDir.IsPlaying} buffered={input.HasBuffered} Activity={pFsm.Current}",
+            trace.Check("受击中断停止技能并保留输入", !pDir.IsPlaying && input.HasBuffered && pFsm.Current == ActivityId.Hit,
+                "技能停止、输入保留、Activity=Hit", $"playing={pDir.IsPlaying} buffered={input.HasBuffered} Activity={pFsm.Current}",
                 () => DemoTrace.Snapshot(player));
+            input.Clear();
             trace.AdvanceUntil("受击恢复 Root", () => pFsm.Current == ActivityId.Root, 0.05f, 8,
                 () => DemoTrace.Snapshot(player));
             trace.Check("受击结束后恢复 Root", pFsm.Current == ActivityId.Root, "Activity=Root", $"Activity={pFsm.Current}",

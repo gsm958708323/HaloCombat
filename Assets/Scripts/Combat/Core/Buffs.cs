@@ -53,6 +53,7 @@ namespace Combat.Core
             public float PeriodAcc;
             public DurationSpec Spec;
             public Actor Source;
+            public TagLease Tags;
         }
 
         readonly List<Inst> _list = new List<Inst>(8);
@@ -113,7 +114,7 @@ namespace Combat.Core
         {
             if (Self.World == null) return;
             int frame = Self.World.Time.LogicFrame;
-            float now = Self.World.Time.Time;
+            float now = Self.Time.Time;
 
             for (int i = _list.Count - 1; i >= 0; i--)
             {
@@ -280,7 +281,8 @@ namespace Combat.Core
                 ExpireTime = NextExpire(spec),
                 PeriodAcc = 0f,
                 Spec = spec,
-                Source = source
+                Source = source,
+                Tags = _tags.Acquire(spec.GrantedTags)
             };
             _list.Add(inst);
             AttachModsAndTags(inst);
@@ -320,19 +322,9 @@ namespace Combat.Core
                 }
             }
 
-            var tags = inst.Spec.GrantedTags;
-            if (tags == null || _tags == null) return;
-            for (int i = 0; i < tags.Length; i++)
-                _tags.Add(tags[i], 1, TagSource.Effect("Buff.Grant"));
         }
 
-        void DetachTags(in Inst inst)
-        {
-            var tags = inst.Spec.GrantedTags;
-            if (tags == null || _tags == null) return;
-            for (int i = 0; i < tags.Length; i++)
-                _tags.Remove(tags[i], 1, TagSource.Effect("Buff.Ungrant"));
-        }
+        void DetachTags(in Inst inst) => inst.Tags.Release();
 
         void Dispatch(IEffect[] bag, Actor source, Actor target, int stacks)
         {
@@ -346,7 +338,7 @@ namespace Combat.Core
         float NextExpire(DurationSpec spec)
         {
             if (spec.Duration <= 0f) return float.PositiveInfinity;
-            float t = Self.World != null ? Self.World.Time.Time : 0f;
+            float t = Self.World != null ? Self.Time.Time : 0f;
             return t + spec.Duration;
         }
 

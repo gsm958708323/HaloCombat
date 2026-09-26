@@ -1,70 +1,534 @@
 {
-  "name": "InputSystem_Actions",
-  "maps": [
-    {
-      "name": "Gameplay",
-      "id": "11111111-1111-4111-8111-111111111111",
-      "actions": [
-        {"name": "Move", "type": "Value", "id": "11111111-1111-4111-8111-111111111112", "expectedControlType": "Vector2"},
-        {"name": "Attack", "type": "Button", "id": "11111111-1111-4111-8111-111111111113"},
-        {"name": "Skill1", "type": "Button", "id": "11111111-1111-4111-8111-111111111114"},
-        {"name": "Skill2", "type": "Button", "id": "11111111-1111-4111-8111-111111111115"},
-        {"name": "Skill3", "type": "Button", "id": "11111111-1111-4111-8111-111111111116"},
-        {"name": "Dodge", "type": "Button", "id": "11111111-1111-4111-8111-111111111117"},
-        {"name": "Jump", "type": "Button", "id": "11111111-1111-4111-8111-111111111118"},
-        {"name": "Pause", "type": "Button", "id": "11111111-1111-4111-8111-111111111119"},
-        {"name": "Fire1", "type": "Button", "id": "11111111-1111-4111-8111-111111111132"},
-        {"name": "Fire2", "type": "Button", "id": "11111111-1111-4111-8111-111111111133"},
-        {"name": "Fire3", "type": "Button", "id": "11111111-1111-4111-8111-111111111134"},
-        {"name": "Fire4", "type": "Button", "id": "11111111-1111-4111-8111-111111111135"},
-        {"name": "Fire5", "type": "Button", "id": "11111111-1111-4111-8111-111111111136"},
-        {"name": "Homing", "type": "Button", "id": "11111111-1111-4111-8111-111111111137"},
-        {"name": "Monkey", "type": "Button", "id": "11111111-1111-4111-8111-111111111138"}
-      ],
-      "bindings": [
-        {"name": "WASD", "id": "11111111-1111-4111-8111-111111111120", "path": "2DVector", "action": "Move", "isComposite": true},
-        {"name": "up", "id": "11111111-1111-4111-8111-111111111121", "path": "<Keyboard>/w", "action": "Move", "isPartOfComposite": true},
-        {"name": "down", "id": "11111111-1111-4111-8111-111111111122", "path": "<Keyboard>/s", "action": "Move", "isPartOfComposite": true},
-        {"name": "left", "id": "11111111-1111-4111-8111-111111111123", "path": "<Keyboard>/a", "action": "Move", "isPartOfComposite": true},
-        {"name": "right", "id": "11111111-1111-4111-8111-111111111124", "path": "<Keyboard>/d", "action": "Move", "isPartOfComposite": true},
-        {"name": "Arrows", "id": "11111111-1111-4111-8111-111111111151", "path": "2DVector", "action": "Move", "isComposite": true},
-        {"name": "up", "id": "11111111-1111-4111-8111-111111111152", "path": "<Keyboard>/upArrow", "action": "Move", "isPartOfComposite": true},
-        {"name": "down", "id": "11111111-1111-4111-8111-111111111153", "path": "<Keyboard>/downArrow", "action": "Move", "isPartOfComposite": true},
-        {"name": "left", "id": "11111111-1111-4111-8111-111111111154", "path": "<Keyboard>/leftArrow", "action": "Move", "isPartOfComposite": true},
-        {"name": "right", "id": "11111111-1111-4111-8111-111111111155", "path": "<Keyboard>/rightArrow", "action": "Move", "isPartOfComposite": true},
-        {"id": "11111111-1111-4111-8111-111111111125", "path": "<Keyboard>/j", "action": "Attack"},
-        {"id": "11111111-1111-4111-8111-111111111126", "path": "<Keyboard>/k", "action": "Skill1"},
-        {"id": "11111111-1111-4111-8111-111111111127", "path": "<Keyboard>/l", "action": "Skill2"},
-        {"id": "11111111-1111-4111-8111-111111111128", "path": "<Keyboard>/i", "action": "Skill3"},
-        {"id": "11111111-1111-4111-8111-111111111129", "path": "<Keyboard>/leftShift", "action": "Dodge"},
-        {"id": "11111111-1111-4111-8111-111111111130", "path": "<Keyboard>/space", "action": "Jump"},
-        {"id": "11111111-1111-4111-8111-111111111131", "path": "<Keyboard>/escape", "action": "Pause"},
-        {"id": "11111111-1111-4111-8111-111111111139", "path": "<Keyboard>/1", "action": "Fire1"},
-        {"id": "11111111-1111-4111-8111-111111111140", "path": "<Mouse>/leftButton", "action": "Fire1"},
-        {"id": "11111111-1111-4111-8111-111111111141", "path": "<Keyboard>/2", "action": "Fire2"},
-        {"id": "11111111-1111-4111-8111-111111111142", "path": "<Mouse>/rightButton", "action": "Fire2"},
-        {"id": "11111111-1111-4111-8111-111111111143", "path": "<Keyboard>/3", "action": "Fire3"},
-        {"id": "11111111-1111-4111-8111-111111111144", "path": "<Mouse>/middleButton", "action": "Fire3"},
-        {"id": "11111111-1111-4111-8111-111111111145", "path": "<Keyboard>/4", "action": "Fire4"},
-        {"id": "11111111-1111-4111-8111-111111111146", "path": "<Mouse>/backButton", "action": "Fire4"},
-        {"id": "11111111-1111-4111-8111-111111111147", "path": "<Keyboard>/5", "action": "Fire5"},
-        {"id": "11111111-1111-4111-8111-111111111148", "path": "<Mouse>/forwardButton", "action": "Fire5"},
-        {"id": "11111111-1111-4111-8111-111111111149", "path": "<Keyboard>/q", "action": "Homing"},
-        {"id": "11111111-1111-4111-8111-111111111150", "path": "<Keyboard>/e", "action": "Monkey"}
-      ]
-    },
-    {
-      "name": "Debug",
-      "id": "22222222-2222-4222-8222-222222222222",
-      "actions": [
-        {"name": "Hitbox", "type": "Button", "id": "22222222-2222-4222-8222-222222222223"},
-        {"name": "ToggleEnemyAI", "type": "Button", "id": "22222222-2222-4222-8222-222222222225"}
-      ],
-      "bindings": [
-        {"id": "22222222-2222-4222-8222-222222222224", "path": "<Keyboard>/f3", "action": "Hitbox"},
-        {"id": "22222222-2222-4222-8222-222222222226", "path": "<Keyboard>/f4", "action": "ToggleEnemyAI"}
-      ]
-    }
-  ],
-  "controlSchemes": []
+    "name": "InputSystem_Actions",
+    "maps": [
+        {
+            "name": "Gameplay",
+            "id": "11111111-1111-4111-8111-111111111111",
+            "actions": [
+                {
+                    "name": "Move",
+                    "type": "Value",
+                    "id": "11111111-1111-4111-8111-111111111112",
+                    "expectedControlType": "Vector2",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                },
+                {
+                    "name": "Attack",
+                    "type": "Button",
+                    "id": "11111111-1111-4111-8111-111111111113",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Skill1",
+                    "type": "Button",
+                    "id": "11111111-1111-4111-8111-111111111114",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Skill2",
+                    "type": "Button",
+                    "id": "11111111-1111-4111-8111-111111111115",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Skill3",
+                    "type": "Button",
+                    "id": "11111111-1111-4111-8111-111111111116",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Dodge",
+                    "type": "Button",
+                    "id": "11111111-1111-4111-8111-111111111117",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Jump",
+                    "type": "Button",
+                    "id": "11111111-1111-4111-8111-111111111118",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Pause",
+                    "type": "Button",
+                    "id": "11111111-1111-4111-8111-111111111119",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Fire1",
+                    "type": "Button",
+                    "id": "11111111-1111-4111-8111-111111111132",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Fire2",
+                    "type": "Button",
+                    "id": "11111111-1111-4111-8111-111111111133",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Fire3",
+                    "type": "Button",
+                    "id": "11111111-1111-4111-8111-111111111134",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Fire4",
+                    "type": "Button",
+                    "id": "11111111-1111-4111-8111-111111111135",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Fire5",
+                    "type": "Button",
+                    "id": "11111111-1111-4111-8111-111111111136",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Homing",
+                    "type": "Button",
+                    "id": "11111111-1111-4111-8111-111111111137",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Monkey",
+                    "type": "Button",
+                    "id": "11111111-1111-4111-8111-111111111138",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "WASD",
+                    "id": "11111111-1111-4111-8111-111111111120",
+                    "path": "2DVector",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Move",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "up",
+                    "id": "11111111-1111-4111-8111-111111111121",
+                    "path": "<Keyboard>/w",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Move",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "down",
+                    "id": "11111111-1111-4111-8111-111111111122",
+                    "path": "<Keyboard>/s",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Move",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "left",
+                    "id": "11111111-1111-4111-8111-111111111123",
+                    "path": "<Keyboard>/a",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Move",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "right",
+                    "id": "11111111-1111-4111-8111-111111111124",
+                    "path": "<Keyboard>/d",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Move",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "Arrows",
+                    "id": "11111111-1111-4111-8111-111111111151",
+                    "path": "2DVector",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Move",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "up",
+                    "id": "11111111-1111-4111-8111-111111111152",
+                    "path": "<Keyboard>/upArrow",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Move",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "down",
+                    "id": "11111111-1111-4111-8111-111111111153",
+                    "path": "<Keyboard>/downArrow",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Move",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "left",
+                    "id": "11111111-1111-4111-8111-111111111154",
+                    "path": "<Keyboard>/leftArrow",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Move",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "right",
+                    "id": "11111111-1111-4111-8111-111111111155",
+                    "path": "<Keyboard>/rightArrow",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Move",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "",
+                    "id": "11111111-1111-4111-8111-111111111125",
+                    "path": "<Keyboard>/j",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Attack",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "11111111-1111-4111-8111-111111111126",
+                    "path": "<Keyboard>/k",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Skill1",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "11111111-1111-4111-8111-111111111127",
+                    "path": "<Keyboard>/l",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Skill2",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "11111111-1111-4111-8111-111111111128",
+                    "path": "<Keyboard>/i",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Skill3",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "11111111-1111-4111-8111-111111111129",
+                    "path": "<Keyboard>/leftShift",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Dodge",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "11111111-1111-4111-8111-111111111130",
+                    "path": "<Keyboard>/space",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Jump",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "11111111-1111-4111-8111-111111111131",
+                    "path": "<Keyboard>/escape",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Pause",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "11111111-1111-4111-8111-111111111139",
+                    "path": "<Keyboard>/1",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Fire1",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "11111111-1111-4111-8111-111111111140",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Fire1",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "11111111-1111-4111-8111-111111111141",
+                    "path": "<Keyboard>/2",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Fire2",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "11111111-1111-4111-8111-111111111142",
+                    "path": "<Mouse>/rightButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Fire2",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "11111111-1111-4111-8111-111111111143",
+                    "path": "<Keyboard>/3",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Fire3",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "11111111-1111-4111-8111-111111111144",
+                    "path": "<Mouse>/middleButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Fire3",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "11111111-1111-4111-8111-111111111145",
+                    "path": "<Keyboard>/4",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Fire4",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "11111111-1111-4111-8111-111111111146",
+                    "path": "<Mouse>/backButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Fire4",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "11111111-1111-4111-8111-111111111147",
+                    "path": "<Keyboard>/5",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Fire5",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "11111111-1111-4111-8111-111111111148",
+                    "path": "<Mouse>/forwardButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Fire5",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "11111111-1111-4111-8111-111111111149",
+                    "path": "<Keyboard>/q",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Homing",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "11111111-1111-4111-8111-111111111150",
+                    "path": "<Keyboard>/e",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Monkey",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        },
+        {
+            "name": "Debug",
+            "id": "22222222-2222-4222-8222-222222222222",
+            "actions": [
+                {
+                    "name": "Hitbox",
+                    "type": "Button",
+                    "id": "22222222-2222-4222-8222-222222222223",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "ToggleEnemyAI",
+                    "type": "Button",
+                    "id": "22222222-2222-4222-8222-222222222225",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "22222222-2222-4222-8222-222222222224",
+                    "path": "<Keyboard>/f3",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Hitbox",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "22222222-2222-4222-8222-222222222226",
+                    "path": "<Keyboard>/f4",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToggleEnemyAI",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        },
+        {
+            "name": "System",
+            "id": "10730010-7cd1-48b3-aaeb-f83496a6c398",
+            "actions": [
+                {
+                    "name": "Restart",
+                    "type": "Button",
+                    "id": "636d1f4c-4000-417f-b220-79d9a9dc31ec"
+                }
+            ],
+            "bindings": [
+                {
+                    "id": "d5467979-9160-436b-89f2-4f06648bdb4b",
+                    "path": "<Keyboard>/f5",
+                    "action": "Restart"
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
 }

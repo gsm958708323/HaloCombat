@@ -57,7 +57,8 @@ namespace Combat.Core
         public AoeCatalog Aoes => _aoes;
         public SummonCatalog Summons => _summons;
         public int HitstopLeft => _hitstopLeft;
-        public bool InHitstop => _hitstopLeft > 0;
+        public bool InHitstop { get; private set; }
+        public bool IsActorStopped(Actor actor) => InHitstop || (actor != null && actor.Time.IsStopped);
         public bool AllowsHitstopSkip => InHitstop;
         public CueLibrary Cues => _cues;
         public MotorConfig Motor => _motor;
@@ -225,19 +226,12 @@ namespace Combat.Core
         {
             _time.AdvanceWall(dt);
 
-            if (_hitstopLeft > 0)
+            _hitstopLeft = Math.Max(_hitstopLeft, _hitstopPending);
+            _hitstopPending = 0;
+            InHitstop = _hitstopLeft > 0;
+            if (InHitstop)
             {
                 _time.PauseLogic();
-                _hitstopLeft--;
-                _registry.FlushDespawn();
-                return;
-            }
-
-            if (_hitstopPending > 0)
-            {
-                _time.PauseLogic();
-                _hitstopLeft = _hitstopPending;
-                _hitstopPending = 0;
                 _hitstopLeft--;
                 _registry.FlushDespawn();
                 return;
@@ -246,15 +240,15 @@ namespace Combat.Core
             _time.AdvanceLogic(dt);
 
             var actors = _registry.CopyActiveActors();
-            for (int i = 0; i < actors.Count; i++)
-                actors[i].TickAll(_time.Delta);
+            for (int i = 0; i < actors.Count; i++) actors[i].Time.BeginStep(_time.Delta);
+            for (int i = 0; i < actors.Count; i++) actors[i].TickAll(actors[i].Time.Delta);
 
             // Apply regular and skill movement before hit detection so the displayed
             // hitbox and the position used for the actual query describe the same frame.
             actors = _registry.CopyActiveActors();
             for (int i = 0; i < actors.Count; i++)
             {
-                if (actors[i].TryGetComp<LocomotionComp>(out var loco))
+                if (!actors[i].Time.IsStopped && actors[i].TryGetComp<LocomotionComp>(out var loco))
                     loco.IntegrateBeforeHitDetection(_time.Delta);
             }
 
@@ -273,7 +267,7 @@ namespace Combat.Core
             actors = _registry.CopyActiveActors();
             for (int i = 0; i < actors.Count; i++)
             {
-                if (actors[i].TryGetComp<SkillDirectorComp>(out var director))
+                if (!actors[i].Time.IsStopped && actors[i].TryGetComp<SkillDirectorComp>(out var director))
                     director.FlushTimeline();
             }
 
@@ -282,14 +276,14 @@ namespace Combat.Core
             actors = _registry.CopyActiveActors();
             for (int i = 0; i < actors.Count; i++)
             {
-                if (actors[i].TryGetComp<BuffComp>(out var buffs))
-                    buffs.Tick(_time.Delta);
+                if (!actors[i].Time.IsStopped && actors[i].TryGetComp<BuffComp>(out var buffs))
+                    buffs.Tick(actors[i].Time.Delta);
             }
 
             actors = _registry.CopyActiveActors();
             for (int i = 0; i < actors.Count; i++)
             {
-                if (actors[i].TryGetComp<LocomotionComp>(out var loco))
+                if (!actors[i].Time.IsStopped && actors[i].TryGetComp<LocomotionComp>(out var loco))
                     loco.IntegrateAfterHitDetection(_time.Delta);
             }
 

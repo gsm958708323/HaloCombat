@@ -341,6 +341,7 @@ MonoBehaviour:
   WaterPrefab: {fileID: 1640771308685042, guid: ff78edb367a079b4a8f8ae2d128c581f, type: 3}
   MapRoot: {fileID: 0}
   Seed: 1
+  WalkableRatio: 0.62
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

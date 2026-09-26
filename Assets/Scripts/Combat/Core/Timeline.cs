@@ -41,7 +41,7 @@ namespace Combat.Core
     /// <summary>
     /// 一段技能时间轴的数据模板（只读共享，运行时状态全在 TimelinePlayer，不要挂在实体上改这里）。
     /// Clips 与 Payloads 的数组顺序就是执行顺序：同一帧到期的按数组下标从小到大处理。
-    /// AllowMove/AllowRotate/AllowSkill 只是给操控层读的许可位；播放不会因 Duration 自动通知结束，
+    /// ControlTags 是由导演持有的角色控制标签；播放不会因 Duration 自动通知结束，
     /// 必须由调用方在 FlushPendingCloses 返回 true 后收尾。
     /// </summary>
     [Serializable]
@@ -51,16 +51,12 @@ namespace Combat.Core
         {
             // The baseline G1 bag owns the short melee hitstop. Knockdown is opt-in and
             // deliberately remains outside the default Season One profile.
-            Damage = new DamageEffect { Coeff = 1f, CanCrit = true, UseSnapshotAtk = true, HitstopFrames = 3 }
+            Damage = new DamageEffect { Coeff = 1f, CanCrit = true, UseSnapshotAtk = true, SourceHitstopFrames = 3, TargetHitstopFrames = 3 }
         };
 
         public TimelineId Id;
         public float Duration = 0.55f;
-        public bool AllowMove;
-        public bool AllowRotate;
-        // Source SetCasterControlState(canUseSkill). Tracked apart from IsPlaying so a
-        // timeline can keep steering input alive while still locking new casts.
-        public bool AllowSkill = true;
+        public TagId[] ControlTags = Array.Empty<TagId>();
         public bool ScaleWithActionSpeed;
         public string AnimatorState;
         public TimelineClip[] Clips = Array.Empty<TimelineClip>();
@@ -71,6 +67,7 @@ namespace Combat.Core
         {
             return new TimelineSO
             {
+                ControlTags = new[] { CommonTags.BlockMove, CommonTags.BlockRotate },
                 Id = TimelineId.TL_G1,
                 Duration = 0.55f,
                 Clips = new[]
@@ -104,6 +101,7 @@ namespace Combat.Core
         {
             return new TimelineSO
             {
+                ControlTags = new[] { CommonTags.BlockMove, CommonTags.BlockRotate },
                 Id = TimelineId.TL_G2,
                 Duration = 0.40f,
                 Clips = new[]
@@ -131,6 +129,7 @@ namespace Combat.Core
         {
             return new TimelineSO
             {
+                ControlTags = new[] { CommonTags.BlockMove, CommonTags.BlockRotate },
                 Id = TimelineId.TL_Dodge,
                 Duration = 0.40f,
                 Clips = new[]
@@ -148,6 +147,7 @@ namespace Combat.Core
         {
             return new TimelineSO
             {
+                ControlTags = new[] { CommonTags.BlockMove, CommonTags.BlockRotate },
                 Id = TimelineId.TL_Homing,
                 Duration = 0.20f,
                 Payloads = new[]

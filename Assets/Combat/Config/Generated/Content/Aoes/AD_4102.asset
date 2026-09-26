@@ -85,7 +85,8 @@ MonoBehaviour:
   CanCrit: 1
   UseSnapshotAtk: 1
   ScaleByBuffStacks: 0
-  HitstopFrames: 0
+  SourceHitstopFrames: 0
+  TargetHitstopFrames: 2
   CritMul: 1.8
   CritChance: 0.05
   DirectDamage: 1

@@ -65,6 +65,7 @@
     <Analyzer Include="D:\Work\UnityInstall\6000.0.32f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Tests\EditMode\CombatControlTests.cs" />
     <Compile Include="Assets\Tests\EditMode\EffectAssetScriptTests.cs" />
     <Compile Include="Assets\Tests\EditMode\ActorCompositionTests.cs" />
   </ItemGroup>

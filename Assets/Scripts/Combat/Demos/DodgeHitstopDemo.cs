@@ -49,7 +49,7 @@ namespace Combat.Demos
             float attackerHp = attacker.GetComp<AttributeSet>().GetBase(AttrId.Hp);
             int immuneBefore = immune;
             int hitstopBefore = hitstops;
-            world.Deliver(new IEffect[] { new DamageEffect { HitstopFrames = 3 } }, target, attacker, 10f);
+            world.Deliver(new IEffect[] { new DamageEffect { SourceHitstopFrames = 3, TargetHitstopFrames = 3 } }, target, attacker, 10f);
             trace.Check("无敌期间受击不扣血也不顿帧", attacker.GetComp<AttributeSet>().GetBase(AttrId.Hp) == attackerHp &&
                 immune > immuneBefore && hitstops == hitstopBefore && targetAttr.GetBase(AttrId.Hp) == 100f,
                 "攻击者HP不变、Immune增加、Hitstop不增加、伤害源HP不变",
@@ -76,7 +76,7 @@ namespace Combat.Demos
                 () => DemoTrace.Snapshot(attacker));
 
             // 普通近战 Timeline 是顿帧来源；命中结算在当前帧完成，下一帧开始冻结，
-            // 因此投射物和 AI 服务暂停时，攻击者也不能继续移动。
+            // 攻击者冻结时停止移动，独立投射物和其他角色继续运行。
             attacker.GetComp<TransformComp>().Position = new SimVec3(0f, 0f, 0f);
             target.GetComp<TransformComp>().Position = new SimVec3(0.55f, 0f, 0f);
             trace.Check("准备近战顿帧场景", fsm.Current == ActivityId.Root && !input.HasBuffered &&
@@ -98,18 +98,18 @@ namespace Combat.Demos
                 () => $"source={attackerId} target={targetId} {DemoTrace.Snapshot(target)}");
             float frozenX = attacker.GetComp<TransformComp>().Position.X;
             trace.AdvanceFor("推进到顿帧服务开始", 0.02f, 1,
-                () => $"InHitstop={world.InHitstop} left={world.HitstopLeft} {DemoTrace.Snapshot(attacker)}");
-            trace.Check("下一逻辑帧进入冻结", world.InHitstop,
-                "InHitstop=true", $"InHitstop={world.InHitstop} left={world.HitstopLeft}",
+                () => $"InHitstop={attacker.Time.IsStopped} left={attacker.Time.HitstopLeft} {DemoTrace.Snapshot(attacker)}");
+            trace.Check("下一逻辑帧进入冻结", attacker.Time.IsStopped,
+                "InHitstop=true", $"InHitstop={attacker.Time.IsStopped} left={attacker.Time.HitstopLeft}",
                 () => DemoTrace.Snapshot(attacker));
             trace.AdvanceFor("冻结期间保持 Actor 位置", 0.02f, 2,
-                () => $"InHitstop={world.InHitstop} left={world.HitstopLeft} x={attacker.GetComp<TransformComp>().Position.X.ToString("F3")}");
+                () => $"InHitstop={attacker.Time.IsStopped} left={attacker.Time.HitstopLeft} x={attacker.GetComp<TransformComp>().Position.X.ToString("F3")}");
             trace.Check("顿帧期间攻击者位置不变", Math.Abs(attacker.GetComp<TransformComp>().Position.X - frozenX) < 1e-4f,
                 "位置X不变", $"冻结前X={frozenX.ToString("F3")} 当前X={attacker.GetComp<TransformComp>().Position.X.ToString("F3")}",
                 () => DemoTrace.Snapshot(attacker));
-            trace.AdvanceFor("等待顿帧结束", 0.02f, 5, () => $"InHitstop={world.InHitstop} left={world.HitstopLeft}");
+            trace.AdvanceFor("等待顿帧结束", 0.02f, 5, () => $"InHitstop={attacker.Time.IsStopped} left={attacker.Time.HitstopLeft}");
 
-            // 默认 DamageEffect 不主动顿帧，显式设置 HitstopFrames 才会请求顿帧。
+            // 默认 DamageEffect 不主动顿帧，显式配置来源/目标帧数才请求局部顿帧。
             int damageBeforeDefault = damage;
             int hitstopBeforeDefault = hitstops;
             world.Deliver(new IEffect[] { new DamageEffect() }, target, attacker, 10f);
@@ -118,11 +118,11 @@ namespace Combat.Demos
                 () => $"source={targetId} target={attackerId} {DemoTrace.Snapshot(attacker)}");
             int damageBeforeExplicit = damage;
             int hitstopBeforeExplicit = hitstops;
-            world.Deliver(new IEffect[] { new DamageEffect { HitstopFrames = 3 } }, target, attacker, 10f);
-            trace.Check("显式 HitstopFrames 请求顿帧", damage == damageBeforeExplicit + 1 && hitstops == hitstopBeforeExplicit + 1,
+            world.Deliver(new IEffect[] { new DamageEffect { SourceHitstopFrames = 3, TargetHitstopFrames = 3 } }, target, attacker, 10f);
+            trace.Check("显式配置来源和目标顿帧", damage == damageBeforeExplicit + 1 && hitstops == hitstopBeforeExplicit + 1,
                 "伤害+1 且 Hitstop+1", $"damage={damage} hitstops={hitstops}",
                 () => $"source={targetId} target={attackerId} {DemoTrace.Snapshot(attacker)}");
-            trace.AdvanceFor("推进显式顿帧请求后的恢复", 0.02f, 5, () => $"InHitstop={world.InHitstop} left={world.HitstopLeft}");
+            trace.AdvanceFor("推进显式顿帧请求后的恢复", 0.02f, 5, () => $"InHitstop={attacker.Time.IsStopped} left={attacker.Time.HitstopLeft}");
 
             // 让 HomingBolt 先进入飞行状态，再请求顿帧，检查其位置在冻结期间保持不变。
             var projectile = SeasonTwoDemoSupport.Spawn(world, "fighter", -10f, 0f);

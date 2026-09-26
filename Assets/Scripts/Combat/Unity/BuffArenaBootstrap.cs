@@ -5,6 +5,7 @@ using Combat.Core;
 using Combat.Unity.Presentation;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 namespace Combat.Unity.Game
 {
@@ -30,6 +31,7 @@ namespace Combat.Unity.Game
         BuffArenaData _data;
         BuffArenaSession _session;
         BuffArenaInputSource _input;
+        bool _restarting;
 
         public BuffArenaSession Session => _session;
 
@@ -70,6 +72,8 @@ namespace Combat.Unity.Game
         /// </summary>
         void Update()
         {
+            if (_input != null && _input.RestartPressed) RestartRun();
+            if (_restarting) return;
             if (_session == null || _input == null) return;
             Vector3 origin = Vector3.zero;
             if (_session.World != null && _session.World.TryGetActor(_session.LocalPlayerId, out var player) &&
@@ -93,11 +97,24 @@ namespace Combat.Unity.Game
         }
 
         /// <summary>Dispose 会退订事件、释放表现池并 Shutdown 世界；随后置 null 防止 LateUpdate 再次访问。</summary>
-        void OnDestroy()
+        public void RestartRun()
         {
+            if (_restarting) return;
+            _restarting = true;
+            Time.timeScale = 1f;
+            DisposeRun();
+            SceneManager.LoadSceneAsync(gameObject.scene.path, LoadSceneMode.Single);
+        }
+
+        void DisposeRun()
+        {
+            _input?.Dispose();
+            _input = null;
             _session?.Dispose();
             _session = null;
         }
+
+        void OnDestroy() => DisposeRun();
 
         /// <summary>只校验 Inspector 槽位是否赋值；内容层面的完整性由 Database.Bake() 负责，二者不能互相替代。</summary>
         void ValidateReferences()

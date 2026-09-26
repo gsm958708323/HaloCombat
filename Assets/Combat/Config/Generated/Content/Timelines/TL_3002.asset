@@ -34,9 +34,9 @@ MonoBehaviour:
   TimelineIdValue: 3002
   Duration: 0.9
   AnimatorState: Roll
-  AllowMove: 0
-  AllowRotate: 0
-  AllowSkill: 1
+  ControlTags:
+  - 1011
+  - 1012
   ScaleWithActionSpeed: 0
   Clips:
   - Start: 0.1

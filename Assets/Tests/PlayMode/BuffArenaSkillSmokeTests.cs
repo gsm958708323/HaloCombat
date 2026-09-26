@@ -16,7 +16,7 @@ namespace Combat.Tests
     /// configuration (for example a projectile spec id of 0, or an effect that deserialised as
     /// null), so every skill cast but spawned nothing while the game reported no errors at all.
     /// </summary>
-    public sealed class BuffArenaSkillSmokeTests
+    public sealed partial class BuffArenaSkillSmokeTests
     {
         const float Step = 1f / 50f;
         const int TicksPerSkill = 70;
@@ -62,6 +62,10 @@ namespace Combat.Tests
             Assert.IsNotNull(
                 content,
                 "The authored content did not bake: " + _bootstrap.Database.LastContentError);
+            Assert.IsTrue(content.Timelines.TryGet(new TimelineId(3002), out var roll));
+            CollectionAssert.AreEquivalent(new[] { CommonTags.BlockMove, CommonTags.BlockRotate }, roll.ControlTags);
+            Assert.IsTrue(content.Timelines.TryGet(new TimelineId(3005), out var boomerang));
+            CollectionAssert.Contains(boomerang.ControlTags, CommonTags.BlockSkill);
             yield return null;
         }
 
@@ -116,7 +120,7 @@ namespace Combat.Tests
         [UnityTest]
         public IEnumerator Fire2_SpawnsProjectile()
         {
-            int peak = PressAndWatch<ProjectileComp>(f => { f.Fire2Held = true; return f; });
+            int peak = PressAndWatch<ProjectileComp>(f => { f.Fire2Pressed = true; return f; });
             Assert.Greater(peak, 0, "Fire2 (skill 2) spawned no projectile.");
             yield return null;
         }
@@ -124,7 +128,7 @@ namespace Combat.Tests
         [UnityTest]
         public IEnumerator Fire3_SpawnsProjectile()
         {
-            int peak = PressAndWatch<ProjectileComp>(f => { f.Fire3Held = true; return f; });
+            int peak = PressAndWatch<ProjectileComp>(f => { f.Fire3Pressed = true; return f; });
             Assert.Greater(peak, 0, "Fire3 (skill 3) spawned no projectile.");
             yield return null;
         }
@@ -348,7 +352,7 @@ namespace Combat.Tests
         [UnityTest]
         public IEnumerator Fire4_SpawnsProjectile()
         {
-            int peak = PressAndWatch<ProjectileComp>(f => { f.Fire4Held = true; return f; });
+            int peak = PressAndWatch<ProjectileComp>(f => { f.Fire4Pressed = true; return f; });
             Assert.Greater(peak, 0, "Fire4 (skill 4) spawned no projectile.");
             yield return null;
         }
@@ -368,10 +372,11 @@ namespace Combat.Tests
             _session.World.Events.Subscribe(onSpawn);
             try
             {
-                var input = new BuffArenaInputFrame { Fire4Held = true };
+                var input = new BuffArenaInputFrame { Fire4Pressed = true };
                 for (int i = 0; i < TicksPerSkill; i++)
                 {
                     _session.ApplyInput(input);
+                    input.Fire4Pressed = false;
                     _session.PumpLogic(Step);
                 }
 
@@ -388,7 +393,7 @@ namespace Combat.Tests
         [UnityTest]
         public IEnumerator Fire5_SpawnsBarrel()
         {
-            int peak = PressAndWatch<BarrelComp>(f => { f.Fire5Held = true; return f; });
+            int peak = PressAndWatch<BarrelComp>(f => { f.Fire5Pressed = true; return f; });
             Assert.Greater(peak, 0, "Fire5 (skill 5) spawned no barrel.");
             yield return null;
         }
@@ -431,13 +436,13 @@ namespace Combat.Tests
         public IEnumerator EveryKeyCastsItsSkill()
         {
             AssertKeyCasts("Fire1", f => { f.Fire1Held = true; return f; });
-            AssertKeyCasts("Fire2", f => { f.Fire2Held = true; return f; });
-            AssertKeyCasts("Fire3", f => { f.Fire3Held = true; return f; });
-            AssertKeyCasts("Fire4", f => { f.Fire4Held = true; return f; });
-            AssertKeyCasts("Fire5", f => { f.Fire5Held = true; return f; });
-            AssertKeyCasts("Roll", f => { f.RollHeld = true; return f; });
-            AssertKeyCasts("Homing", f => { f.HomingHeld = true; return f; });
-            AssertKeyCasts("Monkey", f => { f.MonkeyHeld = true; return f; });
+            AssertKeyCasts("Fire2", f => { f.Fire2Pressed = true; return f; });
+            AssertKeyCasts("Fire3", f => { f.Fire3Pressed = true; return f; });
+            AssertKeyCasts("Fire4", f => { f.Fire4Pressed = true; return f; });
+            AssertKeyCasts("Fire5", f => { f.Fire5Pressed = true; return f; });
+            AssertKeyCasts("Roll", f => { f.RollPressed = true; return f; });
+            AssertKeyCasts("Homing", f => { f.HomingPressed = true; return f; });
+            AssertKeyCasts("Monkey", f => { f.MonkeyPressed = true; return f; });
             yield return null;
         }
 
@@ -484,6 +489,7 @@ namespace Combat.Tests
 
         void WaitForDirectorIdle()
         {
+            _session.ApplyInput(default);
             for (int i = 0; i < 200; i++)
             {
                 var director = PlayerDirector();
@@ -594,7 +600,7 @@ namespace Combat.Tests
         {
             return new BuffArenaInputFrame
             {
-                Fire3Held = true,
+                Fire3Pressed = true,
                 AimValid = true,
                 AimYaw = yaw
             };

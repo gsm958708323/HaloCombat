@@ -87,6 +87,12 @@ namespace Combat.Core
     /// </summary>
     public static class CommonTags
     {
+        public static readonly TagId BlockMove = new TagId(1011);
+        public static readonly TagId BlockRotate = new TagId(1012);
+        public static readonly TagId BlockSkill = new TagId(1013);
+        public static readonly TagId BlockSkillMotion = new TagId(1014);
+        public static readonly TagId BlockHitMotion = new TagId(1015);
+        public static readonly TagId BlockGravity = new TagId(1016);
         public static readonly TagId Cancel = new TagId(1001);
         public static readonly TagId Grounded = new TagId(1002);
         public static readonly TagId Airborne = new TagId(1003);

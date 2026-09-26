@@ -277,8 +277,7 @@ namespace Combat.Core
     /// <summary>
     /// 技能导演：持有一份每角色独立的 TimelinePlayer（严禁跨实体共享），负责播放守卫、冷却、空中/目标限制、时间轴推进与收尾通知。
     /// Play(skill, timelineId) 只做通用守卫；Play(skill) 走技能目录，额外检查冷却、CanUseInAir 与 RequiresTarget。
-    /// AllowsMove / AllowsRotate / AllowsSkill 的区别：前两者只在播放中且当前时间轴对应许可位为真，
-    /// AllowsSkill 在没有播放时默认为真（时间轴之外可自由施放）。
+    /// Timeline control restrictions are leased tags, released on every stop path.
     /// </summary>
     public sealed class SkillDirectorComp : Comp
     {
@@ -298,12 +297,8 @@ namespace Combat.Core
         public float CurrentDuration => _player.Duration;
         public bool UsesSkillCatalog => _skills != null;
         public bool IsPlaying => _player.IsPlaying;
-        /// <summary>移动许可：仅当正在播放且当前时间轴 AllowMove 时为真。</summary>
-        public bool AllowsMove => _player.IsPlaying && _player.Current != null && _player.Current.AllowMove;
-        /// <summary>转向许可：仅当正在播放且当前时间轴 AllowRotate 时为真（可与 AllowsMove 分开配置）。</summary>
-        public bool AllowsRotate => _player.IsPlaying && _player.Current != null && _player.Current.AllowRotate;
-        /// <summary>施放许可：未播放时为真；播放中取决于时间轴的 AllowSkill（源 SetCasterControlState(canUseSkill)）。</summary>
-        public bool AllowsSkill => !_player.IsPlaying || _player.Current == null || _player.Current.AllowSkill;
+        TagLease _controls;
+        public bool CanStartSkill => !Self.World.IsActorStopped(Self) && (_tags == null || !_tags.Has(CommonTags.BlockSkill));
         public string AnimatorState => _player.Current != null ? _player.Current.AnimatorState : string.Empty;
         public override bool WantsTick => true;
 
@@ -336,21 +331,18 @@ namespace Combat.Core
         /// <summary>播放核心：死亡/眩晕/倒地/沉默直接拒绝；时间轴缺失抛异常（属配置错误，不该静默失败）；播放前请求朝向吸附并中断上一段。</summary>
         bool PlayInternal(SkillNodeId skill, TimelineId timelineId, SkillAnimationMode animationMode)
         {
-            if (_tags != null &&
-                (_tags.Has(CommonTags.Dead) || _tags.Has(CommonTags.Stunned) ||
-                 _tags.Has(CommonTags.Downed) || _tags.Has(CommonTags.Silence)))
-                return false;
+            if (!CanStartSkill) return false;
             if (!_library.TryGet(timelineId, out var so))
                 throw new InvalidOperationException("Missing timeline " + timelineId);
 
-            _loco?.RequestSnapYaw();
-            if (_player.IsPlaying)
-                _player.Stop();
+            if (_player.IsPlaying) Stop(DirectorStopReason.Replaced);
+            _loco?.SnapForCast();
 
+            if (!_fsm.TryEnter(ActivityId.Attack, new ActivityEnterArgs { Reason = "PlaySkill" })) return false;
             _currentSkill = skill;
             _currentAnimationMode = animationMode;
+            _controls = _tags != null ? _tags.Acquire(so.ControlTags) : default;
             _player.Play(so);
-            _fsm.TryEnter(ActivityId.Attack, new ActivityEnterArgs { Reason = "PlaySkill" });
             if (Self.TryGetComp<BuffComp>(out var buffs))
                 buffs.DispatchOnOwnerCast();
             return true;
@@ -367,7 +359,7 @@ namespace Combat.Core
             if (!PlayInternal(skill, definition.Timeline, definition.AnimationMode))
                 return false;
             if (definition.Cooldown > 0f && Self.World != null)
-                _cooldownUntil[skill.Value] = Self.World.Time.Time + definition.Cooldown;
+                _cooldownUntil[skill.Value] = Self.Time.Time + definition.Cooldown;
             return true;
         }
 
@@ -377,7 +369,7 @@ namespace Combat.Core
             if (definition == null)
                 return false;
             if (Self.World != null && _cooldownUntil.TryGetValue(definition.Id.Value, out var readyAt) &&
-                Self.World.Time.Time < readyAt)
+                Self.Time.Time < readyAt)
                 return false;
             if (!definition.CanUseInAir && _tags != null && _tags.Has(CommonTags.Airborne))
                 return false;
@@ -391,6 +383,8 @@ namespace Combat.Core
         public void Stop(DirectorStopReason reason)
         {
             _player.Stop();
+            _controls.Release();
+            _controls = default;
             _currentSkill = SkillNodeId.None;
             _currentAnimationMode = SkillAnimationMode.Attack;
         }
@@ -412,8 +406,10 @@ namespace Combat.Core
         /// </summary>
         public void FlushTimeline()
         {
-            if (!_player.FlushPendingCloses())
+            if (Self.Time.IsStopped || !_player.FlushPendingCloses())
                 return;
+            _controls.Release();
+            _controls = default;
             _currentSkill = SkillNodeId.None;
             _currentAnimationMode = SkillAnimationMode.Attack;
             _fsm.NotifyActivityFinished(ActivityId.Attack, "TimelineFinished");
@@ -461,8 +457,7 @@ namespace Combat.Core
         /// <summary>每帧优先级：跳跃 → 闪避 → 派生；处理过的分支直接 return，避免同一 token 在一帧内被多条规则重复消费。</summary>
         public override void Tick(float dt)
         {
-            if (_tags.Has(CommonTags.Dead) || _tags.Has(CommonTags.Stunned) || _tags.Has(CommonTags.Downed))
-                return;
+            if (!_director.CanStartSkill) return;
 
             var jumpInput = _config != null ? _config.JumpInput : InputToken.Jump;
             if (_input.TryPeek(out var token) && token.Equals(jumpInput))

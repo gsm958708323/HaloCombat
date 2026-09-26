@@ -223,7 +223,8 @@ namespace Combat.Core
             TimelineSO.G1Melee.Damage.Coeff = 1f;
             TimelineSO.G1Melee.Damage.CanCrit = true;
             TimelineSO.G1Melee.Damage.UseSnapshotAtk = true;
-            TimelineSO.G1Melee.Damage.HitstopFrames = 3;
+            TimelineSO.G1Melee.Damage.SourceHitstopFrames = 3;
+            TimelineSO.G1Melee.Damage.TargetHitstopFrames = 3;
             TimelineSO.G1Melee.Stun = new HitStunEffect { Duration = 0.35f };
             TimelineSO.G1Melee.Knockback = new KnockbackEffect { Distance = 0.4f };
             TimelineSO.G1Melee.IFrame = null;

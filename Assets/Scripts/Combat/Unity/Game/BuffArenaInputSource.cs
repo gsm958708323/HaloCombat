@@ -7,7 +7,7 @@ namespace Combat.Unity.Game
     /// <summary>
     /// 一帧玩家输入。键位 → 技能的映射由代码拥有，放在 BuffArenaSession.ApplyInput 里、
     /// 紧挨着它推送的技能令牌；本结构只承载 Input System 当帧采样到的值。
-    /// 契约：只在本帧有效——Held 表示“这一帧按住”，Fire4 使用按下沿避免传送后重复发射，
+    /// 契约：所有技能用 Pressed 表示按下沿，仅 Fire1Held 额外表示“这一帧按住”，
     /// 调用方每帧重新 Sample，不要跨帧缓存或复用。
     /// AimYaw 由相机射线求得（见 BuffArenaInputSource.Sample），所以不是纯输入量：测试要断言瞄向，
     /// 必须先钉死相机与鼠标位置，否则结果随视角漂移。
@@ -19,13 +19,14 @@ namespace Combat.Unity.Game
         public float AimYaw;
         public bool AimValid;
         public bool Fire1Held;
-        public bool Fire2Held;
-        public bool Fire3Held;
-        public bool Fire4Held;
-        public bool Fire5Held;
-        public bool RollHeld;
-        public bool HomingHeld;
-        public bool MonkeyHeld;
+        public bool Fire1Pressed;
+        public bool Fire2Pressed;
+        public bool Fire3Pressed;
+        public bool Fire4Pressed;
+        public bool Fire5Pressed;
+        public bool RollPressed;
+        public bool HomingPressed;
+        public bool MonkeyPressed;
     }
 
     /// <summary>
@@ -33,13 +34,16 @@ namespace Combat.Unity.Game
     /// Homing、Monkey——并把手柄 / 键鼠读数折算成 BuffArenaInputFrame。
     /// 任一动作用例缺失都在构造时抛异常：场景缺件要当场响亮地失败，而不是按了半天没反应。
     /// </summary>
-    public sealed class BuffArenaInputSource
+    public sealed class BuffArenaInputSource : System.IDisposable
     {
         // Below this |y| the camera ray is treated as parallel to the ground plane.
         const float MinGroundRaySlope = .05f;
         const float MaxAimDistance = 200f;
         const float MinAimDeltaSqr = .01f;
 
+        readonly InputActionAsset _asset;
+        readonly InputAction _restart;
+        public bool RestartPressed => _restart.WasPressedThisFrame();
         readonly InputAction _move;
         readonly InputAction _fire1;
         readonly InputAction _fire2;
@@ -55,7 +59,10 @@ namespace Combat.Unity.Game
         public BuffArenaInputSource(InputActionAsset asset, Camera camera)
         {
             if (asset == null) throw new System.InvalidOperationException("Buff Arena input actions are required.");
-            var map = asset.FindActionMap("Gameplay", false);
+            _asset = Object.Instantiate(asset);
+            _restart = Require(_asset.FindActionMap("System", true), "Restart");
+            _restart.actionMap.Enable();
+            var map = _asset.FindActionMap("Gameplay", false);
             if (map == null) throw new System.InvalidOperationException("Gameplay action map is required.");
             _move = Require(map, "Move");
             _fire1 = Require(map, "Fire1");
@@ -87,13 +94,14 @@ namespace Combat.Unity.Game
                 // Fire4 has a two-stage action (launch, then teleport). BuffArenaSession
                 // consumes its press edge so holding the key cannot enqueue a third launch.
                 Fire1Held = _fire1.IsPressed(),
-                Fire2Held = _fire2.IsPressed(),
-                Fire3Held = _fire3.IsPressed(),
-                Fire4Held = _fire4.IsPressed(),
-                Fire5Held = _fire5.IsPressed(),
-                RollHeld = _roll.IsPressed(),
-                HomingHeld = _homing.IsPressed(),
-                MonkeyHeld = _monkey.IsPressed()
+                Fire1Pressed = _fire1.WasPressedThisFrame(),
+                Fire2Pressed = _fire2.WasPressedThisFrame(),
+                Fire3Pressed = _fire3.WasPressedThisFrame(),
+                Fire4Pressed = _fire4.WasPressedThisFrame(),
+                Fire5Pressed = _fire5.WasPressedThisFrame(),
+                RollPressed = _roll.WasPressedThisFrame(),
+                HomingPressed = _homing.WasPressedThisFrame(),
+                MonkeyPressed = _monkey.WasPressedThisFrame()
             };
 
             if (_camera != null && Mouse.current != null)
@@ -122,6 +130,13 @@ namespace Combat.Unity.Game
         }
 
         /// <summary>按名字取动作，取不到即抛；动作名与 BuffArenaSession.ApplyInput 的技能令牌是两套东西，别混淆。</summary>
+        public void Dispose()
+        {
+            if (_asset == null) return;
+            _asset.Disable();
+            Object.Destroy(_asset);
+        }
+
         static InputAction Require(InputActionMap map, string name)
         {
             var action = map.FindAction(name, false);

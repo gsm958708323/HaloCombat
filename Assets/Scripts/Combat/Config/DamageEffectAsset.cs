@@ -12,7 +12,8 @@ namespace Combat.Config
         public bool CanCrit = true;
         public bool UseSnapshotAtk = true;
         public bool ScaleByBuffStacks;
-        public int HitstopFrames;
+        public int SourceHitstopFrames;
+        public int TargetHitstopFrames;
         public float CritMul = 2f;
         // -1 keeps the source actor's CritRate; >= 0 pins the roll for this effect.
         public float CritChance = -1f;
@@ -27,7 +28,8 @@ namespace Combat.Config
             CanCrit = CanCrit,
             UseSnapshotAtk = UseSnapshotAtk,
             ScaleByBuffStacks = ScaleByBuffStacks,
-            HitstopFrames = HitstopFrames,
+            SourceHitstopFrames = SourceHitstopFrames,
+            TargetHitstopFrames = TargetHitstopFrames,
             CritMul = CritMul,
             CritChance = CritChance,
             DirectDamage = DirectDamage,

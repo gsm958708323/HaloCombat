@@ -101,18 +101,16 @@ namespace Combat.Core
     {
         public readonly EntityId Source;
         public readonly EntityId Target;
-        public readonly int LogicFrames;
-        public readonly bool FreezeSource;
-        public readonly bool FreezeTarget;
+        public readonly int SourceFrames;
+        public readonly int TargetFrames;
+        public int LogicFrames => System.Math.Max(SourceFrames, TargetFrames);
         public int Frames => LogicFrames;
-
-        public EvHitstop(EntityId source, EntityId target, int logicFrames)
+        public bool FreezeSource => SourceFrames > 0;
+        public bool FreezeTarget => TargetFrames > 0;
+        public EvHitstop(EntityId source, EntityId target, int sourceFrames, int targetFrames)
         {
-            Source = source;
-            Target = target;
-            LogicFrames = logicFrames;
-            FreezeSource = true;
-            FreezeTarget = true;
+            Source = source; Target = target;
+            SourceFrames = sourceFrames; TargetFrames = targetFrames;
         }
     }
 
