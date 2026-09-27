@@ -47,7 +47,7 @@ namespace Combat.Config
                     if (preAssets[j] == null) throw new InvalidOperationException("Combo entry " + i + " has a null prerequisite.");
                     pre[j] = preAssets[j].Bake().Id;
                 }
-                if (string.IsNullOrEmpty(entry.InputAction)) throw new InvalidOperationException("Combo entry " + i + " has no input.");
+                if (string.IsNullOrWhiteSpace(entry.InputAction)) throw new InvalidOperationException("Combo entry " + i + " has no input.");
                 result[i] = new ComboEntry { PreSkills = pre, Input = new InputToken(entry.InputAction),
                     RequiredTags = entry.RequiredTags == null ? Array.Empty<int>() : (int[])entry.RequiredTags.Clone(), Priority = entry.Priority,
                     ToSkill = target.Id, Timeline = target.Timeline };
@@ -55,11 +55,18 @@ namespace Combat.Config
             for (int i = 0; i < result.Length; i++)
                 for (int j = 0; j < i; j++)
                     if (result[i].Input == result[j].Input && result[i].Priority == result[j].Priority &&
-                        Same(result[i].PreSkills, result[j].PreSkills) && Same(result[i].RequiredTags, result[j].RequiredTags))
-                        throw new InvalidOperationException("Duplicate combo conditions and priority at entry " + i);
+                        PreOverlaps(result[i].PreSkills, result[j].PreSkills))
+                        throw new InvalidOperationException(name + ".Entries[" + i + "] overlaps Entries[" + j + "]: same input, prerequisite and priority; positive RequiredTags may coexist.");
             return new ComboTableSO { Entries = result };
         }
         static bool Same<T>(T[] a, T[] b)
             => new System.Collections.Generic.HashSet<T>(a).SetEquals(b);
+
+        static bool PreOverlaps(SkillNodeId[] a, SkillNodeId[] b)
+        {
+            if (a.Length == 0 || b.Length == 0) return a.Length == b.Length;
+            foreach (var id in a) if (Array.IndexOf(b, id) >= 0) return true;
+            return false;
+        }
     }
 }

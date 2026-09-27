@@ -36,6 +36,7 @@ namespace Combat.Core
         public CastId CastId;
         public SkillNodeId Skill;
         public int HitIndex;
+        public bool DamageApplied;
     }
 
     public readonly struct ApplyEffectsIntent

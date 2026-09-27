@@ -357,6 +357,7 @@ namespace Combat.Core
             hp -= raw;
             if (hp < 0f) hp = 0f;
             dstAttr.SetBase(AttrId.Hp, hp);
+            ctx.DamageApplied = raw > 0f;
 
             bool kill = hp <= 0f;
             var feedback = raw > 0f ? ResolveFeedback(ctx.Skill, FeedbackLevel) : HitFeedbackLevel.None;
@@ -390,7 +391,8 @@ namespace Combat.Core
 
             if (raw > 0f && ConfirmTag.Value != 0 && source != null && source != target &&
                 source.TryGetComp<TeamComp>(out var sourceTeam) && target.TryGetComp<TeamComp>(out var targetTeam) &&
-                sourceTeam.IsHostileTo(targetTeam) && source.TryGetComp<BuffComp>(out var sourceBuffs))
+                sourceTeam.IsHostileTo(targetTeam) && source.TryGetComp<SkillDirectorComp>(out var director) &&
+                director.LastCastId == ctx.CastId && source.TryGetComp<BuffComp>(out var sourceBuffs))
             {
                 sourceBuffs.Apply(new DurationSpec
                 {

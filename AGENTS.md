@@ -36,6 +36,10 @@
 - Tag 是可叠加、可跨系统查询的资格标记。写入主要来自状态进出、Timeline Effect 和 Buff；Tag Lease 必须按明确来源成对释放，移除一方不得减少其他来源。
 - Condition/连招匹配只读 Tag 和只读上下文，不修改世界。
 - 技能 Timeline 负责取消窗、无敌帧、位移请求、判定、Cue、投射物/AoE 和效果触发。逻辑时间以 Timeline 为权威，表现层不得反向驱动战斗状态。
+- Timeline 中的 `Clip` 与 `Payload` 职责必须分开：`Clip` 是带 `[Start, End)` 区间的持续行为，由 `ClipKind`（当前为 `CancelTag`、`Move`、`Hitbox`、`IFrame`）对应的 handler 管理 `Open`、区间内 `Tick` 和 `Close` 生命周期；它表达取消窗、位移、持续判定或持续资格，不直接承载任意一次性效果包。Clip 被打断时也必须执行 `Close`，按原来源释放 Tag、Hitbox 或移动控制，不能留下状态。
+- `Payload` 是单个 `Time` 的离散触发点；时间轴推进到该时间时只投递一次其 `IEffect[]`，数组下标决定同一时间点的投递顺序。它用于 Cue、生成投射物/AoE/召唤物及其他一次性效果，不拥有持续区间和 `Open/Close` 生命周期；需要持续生效的逻辑必须建模为 Clip 或独立运行时实体/Buff。
+- Clip 与 Payload 都属于 Timeline 的只读运行时定义，按时间轴实例播放；不得把表现层 `AnimationClip` 当作战斗 Clip，也不得让表现回写 Clip/Payload、HP、位姿、技能状态或 Tag。新增 `ClipKind` 必须同时实现对应 handler、打断清理和配置校验；Payload 的 Effect 顺序和失败语义遵循统一 `EffectPipeline`，不得绕过 `CombatWorld.Deliver`。
+- CancelClip取消窗口如果没有配置，默认在timeline结束后可连招，但不能中间打断。连招之间会默认检查CancelTag，不需要在Combo中多余配置
 - 统一伤害边界为 `CombatWorld.Deliver -> EffectPipeline -> DamageEffect`；新增跨实体逻辑优先 Intent，但保留服务内部已有直接 `World.Deliver`。
 - 属性、生命、伤害和 Buff 修改由专职属性组件承担，不混入 `SkillDirectorComp` 或状态组件；HP 通过 `AttributeSet.SetBase(AttrId.Hp)` 修改。
 - Attack 期间普通移动和 Timeline 位移可以并存；Root/Jump 的普通移动由移动组件负责，技能代码不得直接写 Transform。

@@ -12,10 +12,13 @@ namespace Combat.Config
         public KnockbackAsset Knockback;
         public LaunchAsset Launch;
         public IFrameAsset IFrame;
+        public EffectAsset[] Effects;
 
         public IEffect[] Bake()
         {
             var list = new List<IEffect>(4);
+            foreach (var effect in Effects ?? System.Array.Empty<EffectAsset>())
+                list.Add(effect != null ? effect.Bake() : null);
             if (Damage) list.Add(Damage.Bake());
             if (Stun) list.Add(Stun.Bake());
             if (Knockback) list.Add(Knockback.Bake());
@@ -31,6 +34,7 @@ namespace Combat.Config
             if (Knockback) Knockback.ClearCache();
             if (Launch) Launch.ClearCache();
             if (IFrame) IFrame.ClearCache();
+            foreach (var effect in Effects ?? System.Array.Empty<EffectAsset>()) if (effect) effect.ClearCache();
         }
 
         void OnValidate() => ClearCache();

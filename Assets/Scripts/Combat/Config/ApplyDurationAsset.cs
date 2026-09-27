@@ -8,9 +8,11 @@ namespace Combat.Config
     {
         public DurationSpecAsset Spec;
         public int Stacks = 1;
-        protected override IEffect BakeNew() => Spec == null
-            ? new ApplyDurationEffect(null, Stacks)
-            : new ApplyDurationEffect(Spec.Bake(), Stacks);
+        protected override IEffect BakeNew()
+        {
+            if (Spec == null) throw new System.InvalidOperationException(name + ": ApplyDuration.Spec is required.");
+            return new ApplyDurationEffect(Spec.Bake(), Stacks);
+        }
 
         public override void ClearCache()
         {

@@ -68,6 +68,8 @@
     <Compile Include="Assets\Scripts\Combat\Config\ArenaPresentationAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\AoeDefAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\ProjectileDefAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\AfterDamageAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\SummonDefinitionAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\ArenaContentManifestAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\LaunchAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\CharacterMotorAsset.cs" />

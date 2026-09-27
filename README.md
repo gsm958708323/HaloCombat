@@ -16,7 +16,7 @@
 - 当前位移链路为 `Request*` → `Locomotion.Integrate`；yaw `0` 朝 Unity 的 `+Z`，局部偏移 `+Z` 为前、`+X` 为右。
 - 当前 `Combat.Unity.Game` 与 `Combat.Unity.Presentation` 是 `Combat.Unity` 程序集中的逻辑分区；它们不是独立程序集。
 - Arena 与 CLI 使用独立内容源：Arena 使用 `BuffArenaDatabaseAsset` 烘焙资产，CLI 使用代码表，二者没有自动比对。
-- 玩家按键映射目前留在 `BuffArenaSession.ApplyInput`；技能资产保存 `InputToken`，两者需要保持一致。
+- 玩家按键映射留在 `BuffArenaSession.ApplyInput`，连招入口唯一由 `ComboEntryAsset.InputAction` 配置；技能资产不再承担重复输入映射。
 - Unity 资源脚本目前按“一种 ScriptableObject 类型对应一个同名 `.cs` 文件”组织，以保证 MonoScript 能正确落盘。
 - Arena 敌人当前使用代码中的 `WanderShooter` 叶子和节奏参数，未纳入 SO 配置。
 
@@ -118,7 +118,7 @@ Hitstop 只推进 wall time，暂停逻辑帧。实体用 `EntityId(index, gener
 
 作者数组只表示内容清单，不表示运行时顺序，也不能用数组下标充当 ID。`Bake()` 会检查 ID 唯一性、强类型引用是否在当前 Manifest、Timeline/Effect 的时间与 null 槽位，并生成类型明确的运行时 Catalog；运行时不保存 ScriptableObject 引用。
 
-**输入映射不进 SO**：按键映射见 [BuffArenaSession.ApplyInput](Assets/Scripts/Combat/Unity/Game/BuffArenaSession.cs)。同帧优先级为 Roll、Fire4、Monkey、Homing、Fire5、Fire3、Fire2、Fire1，超过容量时保留前三项；不同帧遵循 FIFO。按住普攻独立于队列。`BuffArenaIds` 的 token 必须与技能资产的 `InputToken` 相等。耗弹、时间轴、动画、传送弹开关、空弹回退 `FallbackSkillIdValue` 仍在 SO 上。F5 重载当前 Arena，详见[玩家技能实现详解](docs/玩家技能实现详解.md)。
+**输入映射不进技能 SO**：按键映射见 [BuffArenaSession.ApplyInput](Assets/Scripts/Combat/Unity/Game/BuffArenaSession.cs)，连招表的 `ComboEntryAsset.InputAction` 是唯一入口来源。同帧优先级为 Roll、Fire4、Monkey、Homing、Fire5、Fire3、Fire2、Fire1，超过容量时保留前三项；不同帧遵循 FIFO。按住普攻独立于队列。耗弹、时间轴、动画、传送弹开关、空弹回退 `FallbackSkillIdValue` 仍在 SO 上。F5 重载当前 Arena，详见[玩家技能实现详解](docs/玩家技能实现详解.md)。
 
 `Bake()` 启动前做引用校验：每个技能必须命中时间轴、空弹回退必须命中技能、工厂按名索取的 blueprint 必须存在；任一条不通过就返回 null，场景启动即失败。
 

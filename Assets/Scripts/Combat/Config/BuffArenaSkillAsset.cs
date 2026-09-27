@@ -8,12 +8,10 @@ namespace Combat.Config
     public sealed class BuffArenaSkillAsset : ScriptableObject
     {
         public int SkillIdValue;
-        // Input token name, e.g. "Fire1". Kept as a string so the mapping lives in data
-        // instead of being a positional argument in code.
+        [HideInInspector, Obsolete("Use ComboEntryAsset.InputAction for player input.")]
         public string InputToken = "";
         public SkillTimelineAsset Timeline;
         public int AmmoCost;
-        public string AnimatorState = "Fire";
         // Teleport bullet: the skill switches to its warp timeline once a projectile is
         // already airborne, so the flag has to be data too.
         public bool RequiresTrackedProjectile;
@@ -33,7 +31,6 @@ namespace Combat.Config
                 Timeline = new TimelineId(Timeline.TimelineIdValue),
                 Input = new InputToken(InputToken ?? string.Empty),
                 AmmoCost = AmmoCost,
-                AnimatorState = AnimatorState,
                 RequiresTrackedProjectile = RequiresTrackedProjectile,
                 WarpSkillId = new SkillNodeId(WarpSkill != null ? WarpSkill.SkillIdValue : 0),
                 FallbackSkill = new SkillNodeId(FallbackSkill != null ? FallbackSkill.SkillIdValue : 0)

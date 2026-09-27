@@ -15,8 +15,8 @@ namespace Combat.Tests
             a = ScriptableObject.CreateInstance<BuffArenaSkillAsset>();
             b = ScriptableObject.CreateInstance<BuffArenaSkillAsset>();
             table = ScriptableObject.CreateInstance<ComboTableAsset>();
-            a.SkillIdValue = 1; a.Timeline = ScriptableObject.CreateInstance<SkillTimelineAsset>(); a.Timeline.TimelineIdValue = 11; a.InputToken = "Fire1";
-            b.SkillIdValue = 2; b.Timeline = ScriptableObject.CreateInstance<SkillTimelineAsset>(); b.Timeline.TimelineIdValue = 12; b.InputToken = "Fire2";
+            a.SkillIdValue = 1; a.Timeline = ScriptableObject.CreateInstance<SkillTimelineAsset>(); a.Timeline.TimelineIdValue = 11;
+            b.SkillIdValue = 2; b.Timeline = ScriptableObject.CreateInstance<SkillTimelineAsset>(); b.Timeline.TimelineIdValue = 12;
         }
         [TearDown] public void Cleanup()
         { UnityEngine.Object.DestroyImmediate(table); UnityEngine.Object.DestroyImmediate(a.Timeline); UnityEngine.Object.DestroyImmediate(b.Timeline); UnityEngine.Object.DestroyImmediate(a); UnityEngine.Object.DestroyImmediate(b); }

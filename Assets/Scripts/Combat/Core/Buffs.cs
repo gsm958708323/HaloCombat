@@ -29,6 +29,10 @@ namespace Combat.Core
         public int MutexGroup;
         public Modifier[] Modifiers = Array.Empty<Modifier>();
         public TagId[] GrantedTags = Array.Empty<TagId>();
+        public bool ClearOnHurted;
+        public bool ClearOnKnockdown;
+        public bool ClearOnDeath;
+        public bool ClearOnManualStop;
         public IEffect[] OnApply = Array.Empty<IEffect>();
         public IEffect[] OnStack = Array.Empty<IEffect>();
         public IEffect[] OnPeriod = Array.Empty<IEffect>();
@@ -199,6 +203,20 @@ namespace Combat.Core
             {
                 var inst = _snapshot[i];
                 Dispatch(inst.Spec.OnHurted, attacker, Self, inst.Stacks);
+                if (inst.Spec.ClearOnHurted) RemoveInstance(inst.InstanceId);
+            }
+        }
+
+        public void ClearForStop(DirectorStopReason reason)
+        {
+            for (int i = _list.Count - 1; i >= 0; i--)
+            {
+                var spec = _list[i].Spec;
+                bool clear = (reason == DirectorStopReason.Hit && spec.ClearOnHurted)
+                    || (reason == DirectorStopReason.Knockdown && spec.ClearOnKnockdown)
+                    || (reason == DirectorStopReason.Dead && spec.ClearOnDeath)
+                    || (reason == DirectorStopReason.Manual && spec.ClearOnManualStop);
+                if (clear) RemoveAt(i, true);
             }
         }
 

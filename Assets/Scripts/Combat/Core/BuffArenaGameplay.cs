@@ -29,7 +29,7 @@ namespace Combat.Core
 
         // The player's key map is code-owned (see BuffArenaSession.ApplyInput): it has to agree
         // with the Gameplay action map, which only exists in code anyway. These tokens are the
-        // other half of that contract - each must equal the InputToken authored on its skill asset.
+        // These values are the input source tokens used by ComboEntryAsset.InputAction.
         public static readonly InputToken Fire1 = new InputToken("Fire1");
         public static readonly InputToken Fire2 = new InputToken("Fire2");
         public static readonly InputToken Fire3 = new InputToken("Fire3");
@@ -113,7 +113,6 @@ namespace Combat.Core
         public TimelineId Timeline;
         public InputToken Input;
         public int AmmoCost;
-        public string AnimatorState;
         // Teleport bullet: while a tracked projectile exists the skill resolves to
         // WarpSkillId instead of casting itself again.
         public bool RequiresTrackedProjectile;
@@ -136,7 +135,6 @@ namespace Combat.Core
         public MotorConfig Motor = MotorConfig.SeasonOneDefaults();
         public readonly BuffArenaSkillCatalog Skills = new BuffArenaSkillCatalog();
         public readonly BuffArenaBuffCatalog Buffs = new BuffArenaBuffCatalog();
-        public int PlayerAmmoCapacity = 60;
         public int MaxEnemies = 10;
         public float SpawnPeriod = 10f;
         public float EnemyCleanupDelay = 5f;

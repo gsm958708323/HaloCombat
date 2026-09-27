@@ -17,6 +17,12 @@ namespace Combat.Config
         public ModOp ModOp = ModOp.Add;
         public float ModValue;
         public int GrantedTag;
+        public ModifierAsset[] Modifiers = Array.Empty<ModifierAsset>();
+        public int[] GrantedTags = Array.Empty<int>();
+        public bool ClearOnHurted;
+        public bool ClearOnKnockdown;
+        public bool ClearOnDeath;
+        public bool ClearOnManualStop;
         public EffectAsset[] OnApply;
         public EffectAsset[] OnStack;
         public EffectAsset[] OnPeriod;
@@ -33,12 +39,12 @@ namespace Combat.Config
                 MaxStacks = MaxStacks,
                 Stack = Stack,
                 MutexGroup = MutexGroup,
-                Modifiers = ModValue != 0f
-                    ? new[] { new Modifier { Attr = ModAttr, Op = ModOp, Value = ModValue } }
-                    : Array.Empty<Modifier>(),
-                GrantedTags = GrantedTag != 0
-                    ? new[] { new TagId(GrantedTag) }
-                    : Array.Empty<TagId>(),
+                Modifiers = BakeModifiers(),
+                GrantedTags = BakeTags(),
+                ClearOnHurted = ClearOnHurted,
+                ClearOnKnockdown = ClearOnKnockdown,
+                ClearOnDeath = ClearOnDeath,
+                ClearOnManualStop = ClearOnManualStop,
                 OnApply = BakeList(OnApply),
                 OnStack = BakeList(OnStack),
                 OnPeriod = BakeList(OnPeriod),
@@ -46,6 +52,23 @@ namespace Combat.Config
                 OnHurted = BakeList(OnHurted),
                 OnOwnerCast = BakeList(OnOwnerCast)
             };
+        }
+
+        Modifier[] BakeModifiers()
+        {
+            var list = new System.Collections.Generic.List<Modifier>();
+            if (ModValue != 0f) list.Add(new Modifier { Attr = ModAttr, Op = ModOp, Value = ModValue });
+            foreach (var item in Modifiers ?? Array.Empty<ModifierAsset>())
+                if (item != null) list.Add(new Modifier { Attr = item.Attr, Op = item.Op, Value = item.Value });
+            return list.ToArray();
+        }
+
+        TagId[] BakeTags()
+        {
+            var list = new System.Collections.Generic.List<TagId>();
+            if (GrantedTag != 0) list.Add(new TagId(GrantedTag));
+            foreach (var tag in GrantedTags ?? Array.Empty<int>()) if (tag != 0) list.Add(new TagId(tag));
+            return list.ToArray();
         }
 
         public void ClearCache()
@@ -75,5 +98,13 @@ namespace Combat.Config
         }
 
         void OnValidate() => ClearCache();
+    }
+
+    [Serializable]
+    public sealed class ModifierAsset
+    {
+        public AttrId Attr;
+        public ModOp Op;
+        public float Value;
     }
 }

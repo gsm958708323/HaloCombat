@@ -90,7 +90,6 @@ namespace Combat.Config
         {
             var data = new BuffArenaData
             {
-                PlayerAmmoCapacity = Rules.PlayerAmmoCapacity,
                 MaxEnemies = Rules.MaxEnemies,
                 SpawnPeriod = Rules.SpawnPeriod,
                 EnemyCleanupDelay = Rules.EnemyCleanupDelay,
@@ -149,6 +148,19 @@ namespace Combat.Config
                             return true;
                 }
             }
+            foreach (var projectile in data.Projectiles.All)
+                if (HasNull(projectile.OnHit) || HasNull(projectile.OnExpire) || HasNull(projectile.OnObstacle) || HasNull(projectile.OnOwnerHit)) return true;
+            foreach (var aoe in data.Aoes.All)
+                if (HasNull(aoe.OnPulse) || HasNull(aoe.OnEnter) || HasNull(aoe.OnExit) || HasNull(aoe.OnStay) || HasNull(aoe.OnExpire)) return true;
+            foreach (var buff in data.Buffs.All)
+                if (HasNull(buff.OnApply) || HasNull(buff.OnStack) || HasNull(buff.OnPeriod) || HasNull(buff.OnExpire) || HasNull(buff.OnHurted) || HasNull(buff.OnOwnerCast)) return true;
+            return false;
+        }
+
+        static bool HasNull(IEffect[] effects)
+        {
+            if (effects == null) return false;
+            for (int i = 0; i < effects.Length; i++) if (effects[i] == null) return true;
             return false;
         }
 
@@ -211,7 +223,7 @@ namespace Combat.Config
                 return false;
             }
 
-            if (data.PlayerAmmoCapacity <= 0 || data.MaxEnemies <= 0 ||
+            if (playerDef.AmmoCapacity <= 0 || data.MaxEnemies <= 0 ||
                 data.SpawnPeriod <= 0f || data.EnemyCleanupDelay <= 0f || data.BarrelSelfDamagePeriod <= 0f)
             {
                 error = "runtime settings contain a non-positive value";

@@ -153,6 +153,10 @@ namespace Combat.Config
                 { error = path + "[" + i + "] ApplyDuration.Spec is null"; return false; }
                 if (effect is ApplyDurationAsset durationEffect && !buffs.Contains(durationEffect.Spec))
                 { error = path + "[" + i + "] ApplyDuration.Spec is outside Arena manifest"; return false; }
+                if (effect is SpawnSummonAsset summon && summon.Summon == null)
+                { error = path + "[" + i + "] SpawnSummon.Summon is null"; return false; }
+                if (effect is AfterDamageAsset afterDamage && !ValidateEffects(afterDamage.Effects, path + "[" + i + "] AfterDamage", projectiles, aoes, buffs, out error))
+                    return false;
             }
             error = null;
             return true;
@@ -167,6 +171,7 @@ namespace Combat.Config
             if (profile.Knockback != null) effects.Add(profile.Knockback);
             if (profile.Launch != null) effects.Add(profile.Launch);
             if (profile.IFrame != null) effects.Add(profile.IFrame);
+            if (profile.Effects != null) effects.AddRange(profile.Effects);
             return ValidateEffects(effects.ToArray(), path + " -> HitProfile", projectiles, aoes, buffs, out error);
         }
 

@@ -88,7 +88,7 @@ namespace Combat.Unity.Game
         /// 把本帧采样转成移动 / 瞄准意图和技能输入令牌。
         /// 同帧按 Roll、Fire4、Monkey、Homing、Fire5、Fire3、Fire2、Fire1 排序，最多保留前三项。
         /// 不同帧按 FIFO 排队；Fire1Held 独立保存，不占队列容量。
-        /// 这里的每个令牌都必须等于目标技能资产上署名的 InputToken，对不上时技能永远不会被找到，
+        /// 这里的每个令牌都必须等于 ComboTableAsset.Entry.InputAction，对不上时技能永远不会被找到，
         /// 而且是静默的。玩家已死 / 无 Actor / 已 Dispose 时整帧丢弃输入。
         /// </summary>
         public void ApplyInput(in BuffArenaInputFrame input)
@@ -244,7 +244,6 @@ namespace Combat.Unity.Game
             attr.SetBase(AttrId.MoveSpeed, def.MoveSpeed);
             attr.SetBase(AttrId.ActionSpeed, def.ActionSpeed);
             attr.SetBase(AttrId.CritRate, def.CritRate);
-            player.GetComp<AmmoComp>().Set(_data.PlayerAmmoCapacity, _data.PlayerAmmoCapacity);
         }
 
         /// <summary>敌人属性 = 定义值 + index 递增成长；这里同样抽随机数，抽数顺序不能改。</summary>

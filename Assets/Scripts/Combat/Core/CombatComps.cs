@@ -308,6 +308,7 @@ namespace Combat.Core
         SkillAnimationMode _currentAnimationMode = SkillAnimationMode.Attack;
         int _castSerial;
         public CastId CurrentCastId { get; private set; }
+        public CastId LastCastId { get; private set; }
 
         public SkillNodeId CurrentSkill => _currentSkill;
         public SkillNodeId ComboSourceSkill => _comboSourceSkill;
@@ -342,6 +343,7 @@ namespace Combat.Core
             _loco = null;
             _cooldownUntil.Clear();
             _castSerial = 0;
+            LastCastId = default;
         }
 
         /// <summary>按显式时间轴播放（跳过技能目录的冷却/前置检查，仍受死亡/眩晕/倒地/沉默守卫）。</summary>
@@ -364,6 +366,7 @@ namespace Combat.Core
             if (Self.TryGetComp<BuffComp>(out var comboBuffs))
                 comboBuffs.RemoveByTag(CommonTags.ComboConfirm);
             CurrentCastId = new CastId(Self.Id, ++_castSerial);
+            LastCastId = CurrentCastId;
             _currentAnimationMode = animationMode;
             _controls = _tags != null ? _tags.Acquire(so.ControlTags) : default;
             _player.Play(so);
@@ -406,6 +409,7 @@ namespace Combat.Core
         /// <summary>立即停表并清空当前技能；reason 只用于调用方区分上下文。</summary>
         public void Stop(DirectorStopReason reason)
         {
+            if (Self != null && reason != DirectorStopReason.Detach && Self.TryGetComp<BuffComp>(out var buffs)) buffs.ClearForStop(reason);
             _player.Stop();
             _controls.Release();
             _controls = default;
