@@ -17,6 +17,7 @@ MonoBehaviour:
   TeamId: 1
   BodyRadius: 0.25
   AmmoCapacity: 60
+  ComboTable: {fileID: 11400000, guid: 4c7a4e9a8b7445c3a18f0a5c3b2c0d11, type: 2}
   MaxHp: 100000
   MaxHpPerIndex: 0
   Atk: 50

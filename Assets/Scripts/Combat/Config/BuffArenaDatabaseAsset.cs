@@ -65,7 +65,14 @@ namespace Combat.Config
                 return null;
             }
 
-            var data = BakeCore();
+            BuffArenaData data;
+            try { data = BakeCore(); }
+            catch (InvalidOperationException ex)
+            {
+                LastContentError = ex.Message;
+                Debug.LogError("BuffArenaDatabase: " + ex.Message, this);
+                return null;
+            }
             if (data == null) return null;
 
             if (!ValidateReferences(data, out string error))
@@ -246,7 +253,12 @@ namespace Combat.Config
             if (Actors == null) return Array.Empty<BuffArenaActorDef>();
             var result = new BuffArenaActorDef[Actors.Length];
             for (int i = 0; i < Actors.Length; i++)
+            {
                 result[i] = Actors[i] != null ? Actors[i].Bake() : null;
+                if (result[i] != null && result[i].BlueprintId == BuffArenaIds.PlayerBlueprint)
+                    result[i].Combo = Actors[i].ComboTable != null
+                        ? Actors[i].ComboTable.Bake(Skills) : ComboTableAsset.GenerateStarts(Skills);
+            }
             return result;
         }
 

@@ -91,6 +91,7 @@
     <Compile Include="Assets\Scripts\Combat\Config\DispelAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\SkillTimelineAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\CueLibraryAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\ComboTableAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\HitStunAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\BuffArenaActorDefAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\SpawnBarrelAsset.cs" />

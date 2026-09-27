@@ -165,8 +165,7 @@ namespace Combat.Core
     }
 
     /// <summary>
-    /// 玩家“输入 → 技能”的执行器：读 InputBuffer，经 FindByInput 把 token 映射到技能，再交给 SkillDirector 播放。
-    /// 契约：token 必须与技能资产上的 InputToken 一致，否则该次输入会被静默丢弃（不报错）。
+    /// 玩家“输入 → 技能”的执行器：读 InputBuffer，经 ComboComp 按当前技能和标签解析，再交给 SkillDirector 播放。
     /// </summary>
     public sealed class BuffArenaPlayerComp : Comp
     {
@@ -176,6 +175,7 @@ namespace Combat.Core
         AmmoComp _ammo;
         ProjectileTrackerComp _tracker;
         LocomotionComp _loco;
+        ComboComp _combo;
 
         public override bool WantsTick => true;
 
@@ -188,6 +188,7 @@ namespace Combat.Core
             Self.TryGetComp(out _ammo);
             Self.TryGetComp(out _tracker);
             Self.TryGetComp(out _loco);
+            Self.TryGetComp(out _combo);
         }
 
         protected override void OnDetach()
@@ -197,36 +198,37 @@ namespace Combat.Core
             _ammo = null;
             _tracker = null;
             _loco = null;
+            _combo = null;
         }
 
         /// <summary>
         /// 每帧判定顺序（顺序即语义，不要重排）：
         /// 1) 缺组件或导演不允许施法 → 保留队列并返回；
-        /// 2) 时间轴正在播 → 保留缓冲，不引入取消当前技能的机制；
-        /// 3) 消费一个排队 token；队列为空才使用 Held 普攻，本步最多尝试一次；
-        /// 4) FindByInput 匹配不到技能 → 本次输入作废；
+        /// 2) 时间轴正在播 → 只允许 Cancel 窗口中匹配的 ComboEntry 接续；
+        /// 3) 读取一个排队 token；队列为空且导演空闲才使用 Held 普攻，本步最多尝试一次；
+        /// 4) ComboEntry 匹配不到技能 → 保留输入等待过期或打断；
         /// 5) 传送弹特例：需要追踪弹且弹还在飞时改为传送到弹的位置，成功即结束；
         /// 6) 弹药不足：付不出 AmmoCost 就播 FallbackSkill（用回退自己的时间轴）后结束；
         /// 7) Play 失败且本来要耗弹时把弹药退回去，避免“技能没播成却扣了弹”。
         /// </summary>
         public override void Tick(float dt)
         {
-            if (_input == null || _director == null || _loco == null ||
-                !_director.CanStartSkill || _director.IsPlaying) return;
-            InputToken token;
-            if (_input.TryPeek(out token)) _input.Consume();
-            else if (_input.PrimaryHeld) token = BuffArenaIds.Fire1;
-            else return;
-
-            BuffArenaSkill skill = FindByInput(token);
-            if (skill == null) return;
+            if (_input == null || _director == null || _loco == null || _combo == null || !_director.CanStartSkill) return;
+            bool queued = _input.TryPeek(out var token);
+            if (!queued)
+            {
+                if (!_input.PrimaryHeld || _director.IsPlaying) return;
+                token = BuffArenaIds.Fire1;
+            }
+            if (!_combo.TryResolveCurrent(token, out var resolved)) return;
+            if (!_data.TryGetSkill(resolved.ToSkill, out var skill)) return;
 
             // Data-driven teleport bullet: the skill warps instead of firing while one of
             // its tracked projectiles is still airborne.
             if (skill.RequiresTrackedProjectile && _tracker != null && _tracker.HasProjectile &&
                 skill.WarpSkillId.IsValid)
             {
-                if (TryTeleport()) return;
+                if (TryTeleport()) { if (queued) _combo.ConsumeInput(); return; }
             }
 
             if (skill.AmmoCost > 0 && (_ammo == null || !_ammo.TryConsume(skill.AmmoCost)))
@@ -234,12 +236,13 @@ namespace Combat.Core
                 // The fallback is SO data (SK_2001 -> Reload). Play it on its own timeline,
                 // so no second skill/timeline id pair has to be hard-coded here.
                 if (skill.FallbackSkill.IsValid && _data.TryGetSkill(skill.FallbackSkill, out var fallback))
-                    _director.Play(fallback.Id, fallback.Timeline);
+                    if (_director.Play(fallback.Id, fallback.Timeline) && queued) _combo.ConsumeInput();
                 return;
             }
 
-            if (!_director.Play(skill.Id, skill.Timeline) && skill.AmmoCost > 0)
-                _ammo.Refill(skill.AmmoCost);
+            bool played = _director.Play(skill.Id, skill.Timeline);
+            if (!played && skill.AmmoCost > 0 && _ammo != null) _ammo.Refill(skill.AmmoCost);
+            if (played && queued) _combo.ConsumeInput();
         }
 
         /// <summary>
@@ -272,15 +275,7 @@ namespace Combat.Core
             return true;
         }
 
-        /// <summary>
-        /// 按 token 线性扫描技能表；技能表是个位数规模，不值得建索引。找不到返回 null，由调用方决定怎么处理已消耗的输入。
-        /// </summary>
-        BuffArenaSkill FindByInput(InputToken token)
-        {
-            for (int i = 0; i < _data.Skills.Count; i++)
-                if (_data.Skills[i].Input == token) return _data.Skills[i];
-            return null;
-        }
+
     }
 
     /// <summary>
@@ -668,6 +663,7 @@ namespace Combat.Core
             {
                 actor.AddComp(new InputBufferComp());
                 actor.AddComp(new ProjectileTrackerComp());
+                actor.AddComp(new ComboComp(def.Combo ?? throw new InvalidOperationException("Player requires a combo table")));
                 actor.AddComp(new BuffArenaPlayerComp(_data));
             }
             else if (def.BlueprintId == BuffArenaIds.EnemyBlueprint)

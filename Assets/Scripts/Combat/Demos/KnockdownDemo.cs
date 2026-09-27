@@ -59,9 +59,9 @@ namespace Combat.Demos
             input.Push(InputToken.Attack);
             world.Deliver(new IEffect[] { new KnockdownEffect { Duration = 0.8f } }, target, attacker, 10f);
             bool playerAttack = fsm.TryEnter(ActivityId.Attack, new ActivityEnterArgs { Reason = "DownedAttack" });
-            trace.Check("玩家倒地停止技能并保留输入", fsm.Current == ActivityId.Knockdown && tags.Has(CommonTags.Downed) &&
-                !attacker.GetComp<SkillDirectorComp>().IsPlaying && input.HasBuffered && !playerAttack,
-                "倒地、技能停止、输入保留、Attack被拒绝",
+            trace.Check("玩家倒地停止技能并清空输入", fsm.Current == ActivityId.Knockdown && tags.Has(CommonTags.Downed) &&
+                !attacker.GetComp<SkillDirectorComp>().IsPlaying && !input.HasBuffered && !playerAttack,
+                "倒地、技能停止、输入清空、Attack被拒绝",
                 $"Activity={fsm.Current} Downed={tags.Has(CommonTags.Downed)} playing={attacker.GetComp<SkillDirectorComp>().IsPlaying} buffered={input.HasBuffered} TryAttack={playerAttack}",
                 () => DemoTrace.Snapshot(attacker));
             trace.AdvanceFor("推进玩家倒地计时", 0.05f, 16, () => DemoTrace.Snapshot(attacker));

@@ -85,7 +85,7 @@ Hitstop 只推进 wall time，暂停逻辑帧。实体用 `EntityId(index, gener
 - Timeline Clip：`CancelTag` / `Move` / `Hitbox` / `IFrame`
 - Timeline Payload：Cue、生成弹体 / AoE / 召唤物
 - 活动机：`Root` / `Attack` / `Hit` / `Knockdown` / `Dead`，各自带位移与朝向策略
-- 玩家：季节 1/2 由 `PlayerCombatDriver` 消费输入缓冲走 Combo / 闪避；Arena 由 `BuffArenaPlayerComp` 消费 `InputBufferComp`（三条 FIFO、角色时间窗口 `0.8s`）
+- 玩家：季节 1/2 与 Arena 共用 `ComboComp` 解析输入；Arena 的玩家 Actor 引用 `ComboTableAsset`，技能 SO 提供默认起手。成功施放后消费三条 FIFO 中的一条，窗口为角色时间 `0.8s`；受击、倒地、死亡清空输入并重置技能。
 - AI：感知写黑板，行为树只编排移动和 `PlaySkill`，不直接结算。约定 AI 不得 `Director.Stop`，树按 Actor 克隆
 - Arena 敌人的树是**单个 `WanderShooter` 叶子**（游走 + 朝目标 + 定时施法），没有 selector / sequence；`BtFactory` 那套完整代码树服务于季节 1/2
 

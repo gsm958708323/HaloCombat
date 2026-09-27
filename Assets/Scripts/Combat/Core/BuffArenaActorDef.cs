@@ -12,6 +12,7 @@ namespace Combat.Core
         public int TeamId;
         public float BodyRadius = .25f;
         public int AmmoCapacity;
+        public ComboTableSO Combo;
 
         // The player takes HP from this blueprint. MaxHpPerIndex is used for enemy scaling.
         public float MaxHp = 100f;

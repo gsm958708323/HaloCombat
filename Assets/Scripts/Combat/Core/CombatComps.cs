@@ -233,7 +233,7 @@ namespace Combat.Core
         }
     }
 
-    /// <summary>派生组件：从输入缓冲 peek 一个 token 去查表，命中后才 Consume——失败不消耗输入，允许后续逻辑继续使用同一个 token。</summary>
+    /// <summary>派生组件：只读取输入查表，调用方在成功施放后调用 ConsumeInput；失败不会丢失输入。</summary>
     public sealed class ComboComp : Comp
     {
         readonly ComboTableSO _table;
@@ -266,12 +266,19 @@ namespace Combat.Core
             result = default;
             if (_input == null || !_input.TryPeek(out var token))
                 return false;
-            var current = _director != null ? _director.CurrentSkill : SkillNodeId.None;
-            if (!_table.TryResolve(current, token, _tags, out result))
-                return false;
-            _input.Consume();
-            return true;
+            return TryResolveCurrent(token, out result);
         }
+
+        public bool TryResolveCurrent(in InputToken token, out ComboResolveResult result)
+        {
+            result = default;
+            if (_director != null && (!_director.CanStartSkill ||
+                (_director.IsPlaying && !_tags.Has(CommonTags.Cancel)))) return false;
+            var current = _director != null ? _director.CurrentSkill : SkillNodeId.None;
+            return _table.TryResolve(current, token, _tags, out result);
+        }
+
+        public void ConsumeInput() => _input?.Consume();
     }
 
     /// <summary>
@@ -487,10 +494,10 @@ namespace Combat.Core
 
             if (!_combo.TryResolve(out var resolved))
                 return;
-            if (_director.UsesSkillCatalog)
-                _director.Play(resolved.ToSkill);
-            else
-                _director.Play(resolved.ToSkill, resolved.Timeline);
+            bool comboPlayed = _director.UsesSkillCatalog
+                ? _director.Play(resolved.ToSkill)
+                : _director.Play(resolved.ToSkill, resolved.Timeline);
+            if (comboPlayed) _combo.ConsumeInput();
         }
     }
 }

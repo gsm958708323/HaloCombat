@@ -612,14 +612,14 @@ namespace Combat.Demos
             int stacks = sBuff.StacksOf(CombatIds.Burn);
             trace.Check("G2 Ground AoE 将 Burn 叠到上限", stacks == 3, "Ground AoE Burn层数=3", $"Burn层数={stacks}", () => DemoTrace.Snapshot(stake));
 
-            // 3. 受击停止技能但保留输入；清理测试输入后单独验证恢复活动。
+            // 3. 受击停止技能并清空输入，恢复后从起手开始。
             input.Push(InputToken.Attack);
             trace.AdvanceUntil("准备可被中断的技能", () => pDir.IsPlaying, 0.02f, 3,
                 () => $"skill={pDir.CurrentSkill} {DemoTrace.Snapshot(player)}");
             input.Push(InputToken.Attack);
             pFsm.TryEnter(ActivityId.Hit, new ActivityEnterArgs { Reason = "P1Hit", HitDuration = 0.25f });
-            trace.Check("受击中断停止技能并保留输入", !pDir.IsPlaying && input.HasBuffered && pFsm.Current == ActivityId.Hit,
-                "技能停止、输入保留、Activity=Hit", $"playing={pDir.IsPlaying} buffered={input.HasBuffered} Activity={pFsm.Current}",
+            trace.Check("受击中断停止技能并清空输入", !pDir.IsPlaying && !input.HasBuffered && pFsm.Current == ActivityId.Hit,
+                "技能停止、输入清空、Activity=Hit", $"playing={pDir.IsPlaying} buffered={input.HasBuffered} Activity={pFsm.Current}",
                 () => DemoTrace.Snapshot(player));
             input.Clear();
             trace.AdvanceUntil("受击恢复 Root", () => pFsm.Current == ActivityId.Root, 0.05f, 8,

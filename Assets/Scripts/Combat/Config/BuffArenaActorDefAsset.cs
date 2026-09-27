@@ -14,6 +14,7 @@ namespace Combat.Config
         public int TeamId;
         public float BodyRadius = .25f;
         public int AmmoCapacity;
+        public ComboTableAsset ComboTable;
 
         public float MaxHp = 100f;
         public float MaxHpPerIndex;
@@ -42,6 +43,7 @@ namespace Combat.Config
                 TeamId = TeamId,
                 BodyRadius = BodyRadius,
                 AmmoCapacity = AmmoCapacity,
+                Combo = ComboTable != null ? ComboTable.Bake() : null,
                 MaxHp = MaxHp,
                 MaxHpPerIndex = MaxHpPerIndex,
                 Atk = Atk,

@@ -127,6 +127,8 @@ namespace Combat.Core
         {
             _timer = args.HitDuration > 0f ? args.HitDuration : 0.35f;
             ctx.Director?.Stop(DirectorStopReason.Hit);
+            ctx.Input?.Clear();
+            ctx.Loco?.ClearPendingMotion();
             ctx.Loco?.ClearClipSteer();
             ctx.Loco?.ClearPendingSkill();
             if (!isRefresh)
@@ -211,6 +213,8 @@ namespace Combat.Core
         {
             _timer = args.HitDuration > 0f ? args.HitDuration : 0.80f;
             ctx.Director?.Stop(DirectorStopReason.Knockdown);
+            ctx.Input?.Clear();
+            ctx.Loco?.ClearPendingMotion();
             ctx.Loco?.ClearClipSteer();
             ctx.Loco?.ClearPendingSkill();
             if (!refresh)

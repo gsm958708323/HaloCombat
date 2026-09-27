@@ -16,6 +16,32 @@ namespace Combat.Tests
             Assert.IsTrue(_session.World.TryGetActor(_session.LocalPlayerId, out var player));
             return player;
         }
+        [UnityTest] public IEnumerator AuthoredComboWaitsForCancelThenReplacesAndHardHitResets()
+        {
+            var actor = Player(); var table = _session.Data.RequireActor(BuffArenaIds.PlayerBlueprint).Combo;
+            Assert.IsNotNull(table); Assert.AreEqual(8, table.Entries.Length);
+            var entries = new System.Collections.Generic.List<ComboEntry>(table.Entries);
+            entries.Add(new ComboEntry { PreSkills = new[] { new SkillNodeId(2008) },
+                Input = BuffArenaIds.Fire1, RequiredTags = new[] { CommonTags.Cancel.Value },
+                Priority = 10, ToSkill = new SkillNodeId(2001), Timeline = new TimelineId(3001) });
+            table.Entries = entries.ToArray();
+            _session.ApplyInput(new BuffArenaInputFrame { Fire5Pressed = true }); _session.PumpLogic(Step);
+            Assert.AreEqual(2008, PlayerDirector().CurrentSkill.Value);
+            _session.ApplyInput(new BuffArenaInputFrame { Fire1Pressed = true }); _session.PumpLogic(Step);
+            Assert.AreEqual(2008, PlayerDirector().CurrentSkill.Value);
+            Assert.AreEqual(1, actor.GetComp<InputBufferComp>().Count);
+            var cancel = actor.GetComp<TagComp>().Acquire(CommonTags.Cancel);
+            _session.ApplyInput(default); _session.PumpLogic(Step);
+            Assert.AreEqual(2001, PlayerDirector().CurrentSkill.Value);
+            Assert.AreEqual(0, actor.GetComp<InputBufferComp>().Count); cancel.Release();
+            actor.GetComp<InputBufferComp>().Push(BuffArenaIds.Fire5);
+            actor.GetComp<InputBufferComp>().PrimaryHeld = true;
+            actor.GetComp<StateMachineComp>().TryEnter(ActivityId.Hit, default);
+            Assert.AreEqual(SkillNodeId.None, PlayerDirector().CurrentSkill);
+            Assert.AreEqual(0, actor.GetComp<InputBufferComp>().Count);
+            Assert.IsFalse(actor.GetComp<InputBufferComp>().PrimaryHeld);
+            yield return null;
+        }
 
         [UnityTest] public IEnumerator PressPriorityAndHeldPrimaryDoNotLoseSkillCommands()
         {

@@ -10,11 +10,13 @@ namespace Combat.Tests
         TimelineLibrary _timelines;
         SkillCatalog _skills;
         Actor _actor;
+        readonly ComboTableSO _comboTable = new ComboTableSO();
         sealed class Factory : IActorFactory
         {
             readonly TimelineLibrary _timelines;
             readonly SkillCatalog _skills;
-            public Factory(TimelineLibrary timelines, SkillCatalog skills) { _timelines = timelines; _skills = skills; }
+            readonly ComboTableSO _combo;
+            public Factory(TimelineLibrary timelines, SkillCatalog skills, ComboTableSO combo) { _timelines = timelines; _skills = skills; _combo = combo; }
             public Actor Create(in ActorSpawnSpec spec)
             {
                 var a = new Actor();
@@ -26,6 +28,7 @@ namespace Combat.Tests
                 a.AddComp(attr); a.AddComp(new HealthComp()); a.AddComp(new StateMachineComp());
                 a.AddComp(new LocomotionComp()); a.AddComp(new InputBufferComp()); a.AddComp(new HitboxComp());
                 a.AddComp(new SkillDirectorComp(_timelines, _skills)); a.AddComp(new BuffComp());
+                a.AddComp(new ComboComp(_combo));
                 return a;
             }
             public void Release(Actor actor) => actor.ResetForPool();
@@ -41,7 +44,7 @@ namespace Combat.Tests
                 Cooldown = .4f, CanUseInAir = true });
             var projectiles = new ProjectileCatalog();
             projectiles.Register(new ProjectileDefinition { SpecId = 9001, Speed = 2f, Lifetime = 10f });
-            _world = new CombatWorld(new Factory(_timelines, _skills), new WorldInstall {
+            _world = new CombatWorld(new Factory(_timelines, _skills, _comboTable), new WorldInstall {
                 Projectiles = projectiles, Random = new FixedRandom(1f) });
             _actor = Spawn("unit", 0f);
         }
@@ -62,6 +65,41 @@ namespace Combat.Tests
             foreach (var expected in new[] { InputToken.Skill2, InputToken.Skill2, InputToken.Skill3 })
             { Assert.IsTrue(q.TryPeek(out var token)); Assert.AreEqual(expected, token); Assert.IsTrue(q.Consume()); }
             Assert.IsFalse(q.Consume());
+        }
+        [Test] public void ComboResolutionWaitsForCancelAndNeverConsumesOnItsOwn()
+        {
+            var table = new ComboTableSO { Entries = new[] { new ComboEntry {
+                PreSkills = new[] { new SkillNodeId(9001) }, Input = InputToken.Attack,
+                RequiredTags = Array.Empty<int>(), ToSkill = new SkillNodeId(9002), Timeline = new TimelineId(9002) } } };
+            _comboTable.Entries = table.Entries;
+            var combo = _actor.GetComp<ComboComp>();
+            var director = _actor.GetComp<SkillDirectorComp>();
+            director.Play(new SkillNodeId(9001));
+            var input = _actor.GetComp<InputBufferComp>(); input.Push(InputToken.Attack);
+            Assert.IsFalse(combo.TryResolve(out _)); Assert.AreEqual(1, input.Count);
+            var tags = _actor.GetComp<TagComp>(); var cancel = tags.Acquire(CommonTags.Cancel);
+            Assert.IsTrue(combo.TryResolve(out var result)); Assert.AreEqual(1, input.Count);
+            var block = tags.Acquire(CommonTags.BlockSkill);
+            Assert.IsFalse(director.Play(result.ToSkill, result.Timeline)); Assert.AreEqual(1, input.Count);
+            block.Release();
+            _actor.Time.RequestHitstop(3); Step(3);
+            Assert.IsFalse(combo.TryResolve(out _)); Assert.AreEqual(1, input.Count);
+            Step(1); Assert.IsTrue(combo.TryResolve(out result));
+            input.Push(InputToken.Skill1);
+            Assert.IsTrue(director.Play(result.ToSkill, result.Timeline)); combo.ConsumeInput();
+            Assert.AreEqual(1, input.Count); cancel.Release();
+        }
+        [TestCase(ActivityId.Hit)] [TestCase(ActivityId.Knockdown)] [TestCase(ActivityId.Dead)]
+        public void HardInterruptClearsComboAndPreservesExternalLease(ActivityId activity)
+        {
+            var d = _actor.GetComp<SkillDirectorComp>(); d.Play(new SkillNodeId(9002), new TimelineId(9002));
+            var q = _actor.GetComp<InputBufferComp>(); q.Push(InputToken.Attack); q.PrimaryHeld = true;
+            var tags = _actor.GetComp<TagComp>(); var lease = tags.Acquire(CommonTags.BlockRotate);
+            _actor.GetComp<HitboxComp>().Open(Array.Empty<IEffect>(), 1f, SimVec3.Zero);
+            _actor.GetComp<StateMachineComp>().TryEnter(activity, default);
+            Assert.IsFalse(d.IsPlaying); Assert.AreEqual(SkillNodeId.None, d.CurrentSkill);
+            Assert.AreEqual(0, q.Count); Assert.IsFalse(q.PrimaryHeld);
+            Assert.IsTrue(tags.Has(CommonTags.BlockRotate)); lease.Release();
         }
         [Test] public void QueueExpiryAndBuffDurationPauseWithActor()
         {
@@ -128,7 +166,7 @@ namespace Combat.Tests
             Near(hp, attrs.GetFinal(AttrId.Hp));
             Step(1); Near(hp - 10f, attrs.GetFinal(AttrId.Hp));
         }
-        [Test] public void HitRefreshDoesNotMultiplyLeasesOrDiscardQueue()
+        [Test] public void HitRefreshDoesNotMultiplyLeasesAndClearsQueue()
         {
             var director = _actor.GetComp<SkillDirectorComp>();
             director.Play(new SkillNodeId(9002), new TimelineId(9002));
@@ -137,9 +175,9 @@ namespace Combat.Tests
             sm.TryEnter(ActivityId.Hit, new ActivityEnterArgs { HitDuration = .1f });
             sm.TryEnter(ActivityId.Hit, new ActivityEnterArgs { HitDuration = .1f });
             Assert.AreEqual(1, _actor.GetComp<TagComp>().Stack(CommonTags.BlockMove));
-            Assert.IsFalse(director.IsPlaying); Assert.AreEqual(1, q.Count);
+            Assert.IsFalse(director.IsPlaying); Assert.AreEqual(0, q.Count);
             Step(6); Assert.IsFalse(_actor.GetComp<TagComp>().Has(CommonTags.BlockMove));
-            Assert.AreEqual(1, q.Count);
+            Assert.AreEqual(0, q.Count);
         }
         [Test] public void HitMotionIsDeferredDuringFreezeAndAppliedAfterResume()
         {
