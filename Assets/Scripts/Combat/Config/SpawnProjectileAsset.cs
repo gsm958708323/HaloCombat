@@ -1,3 +1,4 @@
+using System;
 using Combat.Core;
 using UnityEngine;
 
@@ -12,8 +13,12 @@ namespace Combat.Config
     [CreateAssetMenu(menuName = "Combat/Effects/SpawnProjectile")]
     public sealed class SpawnProjectileAsset : EffectAsset
     {
-        public int SpecId;
+        public ProjectileDefAsset Projectile;
         // SpecId 是唯一可变字段，实例本身无状态；不在此处查找目录，找不到时静默不发弹。
-        protected override IEffect BakeNew() => new SpawnProjectileEffect(SpecId);
+        protected override IEffect BakeNew()
+        {
+            if (Projectile == null) throw new InvalidOperationException(name + ": Projectile is required.");
+            return new SpawnProjectileEffect(Projectile.SpecId);
+        }
     }
 }

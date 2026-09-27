@@ -15,18 +15,18 @@ namespace Combat.Tests
             a = ScriptableObject.CreateInstance<BuffArenaSkillAsset>();
             b = ScriptableObject.CreateInstance<BuffArenaSkillAsset>();
             table = ScriptableObject.CreateInstance<ComboTableAsset>();
-            a.SkillIdValue = 1; a.TimelineIdValue = 11; a.InputToken = "Fire1";
-            b.SkillIdValue = 2; b.TimelineIdValue = 12; b.InputToken = "Fire2";
+            a.SkillIdValue = 1; a.Timeline = ScriptableObject.CreateInstance<SkillTimelineAsset>(); a.Timeline.TimelineIdValue = 11; a.InputToken = "Fire1";
+            b.SkillIdValue = 2; b.Timeline = ScriptableObject.CreateInstance<SkillTimelineAsset>(); b.Timeline.TimelineIdValue = 12; b.InputToken = "Fire2";
         }
         [TearDown] public void Cleanup()
-        { UnityEngine.Object.DestroyImmediate(table); UnityEngine.Object.DestroyImmediate(a); UnityEngine.Object.DestroyImmediate(b); }
+        { UnityEngine.Object.DestroyImmediate(table); UnityEngine.Object.DestroyImmediate(a.Timeline); UnityEngine.Object.DestroyImmediate(b.Timeline); UnityEngine.Object.DestroyImmediate(a); UnityEngine.Object.DestroyImmediate(b); }
         ComboEntryAsset Link(int priority = 10) => new ComboEntryAsset {
             PreSkillAssets = new[] { a }, InputAction = "Fire1", RequiredTags = new[] { CommonTags.Cancel.Value }, Priority = priority, Skill = b };
-        [Test] public void ExplicitLinksMergeWithGeneratedStartsAndUseTargetTimeline()
+        [Test] public void ExplicitLinksAndStartsUseTargetTimeline()
         {
-            table.Entries = new[] { Link() };
+            table.Entries = new[] { Link(), new ComboEntryAsset { Skill = a, InputAction = "Fire1" } };
             var baked = table.Bake(new[] { a, b });
-            Assert.AreEqual(3, baked.Entries.Length);
+            Assert.AreEqual(2, baked.Entries.Length);
             var tags = new TagComp();
             Assert.IsTrue(baked.TryResolve(SkillNodeId.None, new InputToken("Fire1"), tags, out var start));
             Assert.AreEqual(1, start.ToSkill.Value);
@@ -35,7 +35,7 @@ namespace Combat.Tests
             Assert.IsTrue(baked.TryResolve(new SkillNodeId(1), new InputToken("Fire1"), tags, out var next));
             Assert.AreEqual(2, next.ToSkill.Value); Assert.AreEqual(12, next.Timeline.Value);
         }
-        [Test] public void ExplicitStartOverridesGeneratedStart()
+        [Test] public void ExplicitStartIsRequiredAndUsed()
         {
             table.Entries = new[] { new ComboEntryAsset { Skill = b, InputAction = "Fire1" } };
             var baked = table.Bake(new[] { a, b });
@@ -74,9 +74,9 @@ namespace Combat.Tests
             table.Entries = new[] { entry };
             var baked = table.Bake(new[] { a, b });
             var tags = new TagComp();
-            Assert.IsFalse(baked.TryResolve(new SkillNodeId(1), InputToken.Attack, tags, out _));
+            Assert.IsFalse(baked.TryResolve(new SkillNodeId(1), new InputToken("Fire1"), tags, out _));
             tags.Add(CommonTags.Invincible, 1, default);
-            Assert.IsTrue(baked.TryResolve(new SkillNodeId(1), InputToken.Attack, tags, out var result));
+            Assert.IsTrue(baked.TryResolve(new SkillNodeId(1), new InputToken("Fire1"), tags, out var result));
             Assert.AreEqual(2, result.ToSkill.Value);
         }
     }

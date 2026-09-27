@@ -8,41 +8,26 @@ namespace Combat.Config
     /// Buff Arena 的唯一内容作者：运行时数据库完全由本资产烘焙而来，没有任何代码回退
     /// （对照 CodeCombatContent 那套纯代码内容）。因此内容缺项或交叉引用断裂时必须让会话启动失败，
     /// 而不是悄悄退回默认值——默认值会把“内容没配好”伪装成“游戏本来就这样”。
-    /// 内容资产位于 Assets/Combat/Config/Generated，Bake() 是唯一出口。
+    /// 内容资产位于 Assets/Combat/Config/Authored/Arena，Bake() 是唯一出口。
     /// </summary>
     [CreateAssetMenu(menuName = "Combat/Buff Arena Database")]
     public sealed class BuffArenaDatabaseAsset : ScriptableObject
     {
-        public int PlayerAmmoCapacity = 60;
-        public int MaxEnemies = 10;
-        public float SpawnPeriod = 10f;
-        public float EnemyCleanupDelay = 5f;
-        public float BarrelSelfDamagePeriod = 5f;
-        public int Seed = 1;
-        public CharacterMotorAsset Motor;
-
-        [Header("Presentation")]
-        [Tooltip("Framing used when the Arena scene has to build its own camera rig at runtime.")]
-        public float CameraDistance = 2.5f;
-        public float CameraHeight = 2.5f;
-        public float CameraBaseFov = 60f;
-
-        [Header("Content")]
-        [Tooltip("Every definition the Arena runs on. Authored here; the runtime has no code fallback.")]
-        public ProjectileDefAsset[] Projectiles;
-        [Tooltip("AoE definitions registered by SpecId.")]
-        public AoeDefAsset[] Aoes;
-        [Tooltip("Registered in order; ids come from each asset.")]
-        public SkillTimelineAsset[] Timelines;
-        public BuffArenaSkillAsset[] Skills;
-        public BuffArenaActorDefAsset[] Actors;
-        public CueLibraryAsset Cues;
+        public ArenaRulesAsset Rules;
+        public ArenaPresentationAsset Presentation;
+        public ArenaContentManifestAsset Manifest;
 
         /// <summary>
         /// 最近一次 Bake() 返回 null 的原因，好让启动方说清“哪里不对”，而不是悄悄换一套内容顶上。
         /// Bake() 开头会清空它，所以只有失败的那次调用留有值。
         /// </summary>
         public string LastContentError { get; private set; }
+
+        ProjectileDefAsset[] ProjectilesSource => Manifest != null ? Manifest.Projectiles : null;
+        AoeDefAsset[] AoesSource => Manifest != null ? Manifest.Aoes : null;
+        SkillTimelineAsset[] TimelinesSource => Manifest != null ? Manifest.Timelines : null;
+        BuffArenaSkillAsset[] SkillsSource => Manifest != null ? Manifest.Skills : null;
+        BuffArenaActorDefAsset[] ActorsSource => Manifest != null ? Manifest.Actors : null;
 
         const string IncompleteReason =
             "the authored content is incomplete: projectiles, aoes, timelines, skills, actors "
@@ -59,6 +44,17 @@ namespace Combat.Config
         public BuffArenaData Bake()
         {
             LastContentError = null;
+            ClearAuthoringCaches();
+            if (Manifest == null)
+            {
+                LastContentError = "ArenaContentManifest is required.";
+                return null;
+            }
+            if (!Manifest.ValidateContent(out var manifestError))
+            {
+                LastContentError = manifestError;
+                return null;
+            }
             if (!HasCompleteContent())
             {
                 LastContentError = IncompleteReason;
@@ -86,39 +82,37 @@ namespace Combat.Config
         }
 
         /// <summary>
-        /// 逐项把定义资产 Bake() 并注册进运行时目录（时间轴、弹体、AoE、Cue、技能、Actor），
-        /// 最后做 null 洞检查。Motor 缺席时退回 SeasonOneDefaults()，但 HasCompleteContent
-        /// 已在入口拦掉这种情况，这里只是防御。检测到 payload 空洞即返回 null——
+        /// 逐项把定义资产 Bake() 并注册进运行时目录（时间轴、弹体、AoE、Buff、Cue、技能、Actor），
+        /// 最后做 null 洞检查。Rules、Presentation 和 Manifest 缺席时由入口直接拒绝；检测到 payload 空洞即返回 null——
         /// 带着空洞开服等于放出“有施法动作、什么也不生成”的技能。
         /// </summary>
         BuffArenaData BakeCore()
         {
             var data = new BuffArenaData
             {
-                PlayerAmmoCapacity = PlayerAmmoCapacity,
-                MaxEnemies = MaxEnemies,
-                SpawnPeriod = SpawnPeriod,
-                EnemyCleanupDelay = EnemyCleanupDelay,
-                BarrelSelfDamagePeriod = BarrelSelfDamagePeriod,
-                Seed = Seed,
-                Motor = Motor != null ? Motor.Bake() : MotorConfig.SeasonOneDefaults()
+                PlayerAmmoCapacity = Rules.PlayerAmmoCapacity,
+                MaxEnemies = Rules.MaxEnemies,
+                SpawnPeriod = Rules.SpawnPeriod,
+                EnemyCleanupDelay = Rules.EnemyCleanupDelay,
+                BarrelSelfDamagePeriod = Rules.BarrelSelfDamagePeriod,
+                Seed = Rules.Seed,
+                Motor = Rules.Motor.Bake()
             };
 
-            for (int i = 0; i < Timelines.Length; i++)
-                data.Timelines.Register(Timelines[i].Bake());
-            data.Projectiles.Register(Projectiles[0].Bake());
-            for (int i = 1; i < Projectiles.Length; i++)
-                data.Projectiles.Register(Projectiles[i].Bake());
-            data.Aoes.Register(Aoes[0].Bake());
-            for (int i = 1; i < Aoes.Length; i++)
-                data.Aoes.Register(Aoes[i].Bake());
-            if (Cues != null)
-                data.Cues = Cues.Bake();
-            for (int i = 0; i < Skills.Length; i++)
-                data.Skills.Add(Skills[i].Bake());
+            var timelines = TimelinesSource;
+            var projectiles = ProjectilesSource;
+            var aoes = AoesSource;
+            var skills = SkillsSource;
+            for (int i = 0; i < timelines.Length; i++) data.Timelines.Register(timelines[i].Bake());
+            for (int i = 0; i < projectiles.Length; i++) data.Projectiles.Register(projectiles[i].Bake());
+            for (int i = 0; i < aoes.Length; i++) data.Aoes.Register(aoes[i].Bake());
+            var buffs = Manifest.Buffs ?? Array.Empty<DurationSpecAsset>();
+            for (int i = 0; i < buffs.Length; i++) data.Buffs.Register(buffs[i].Bake());
+            data.Cues = Manifest.Cues.Bake();
+            for (int i = 0; i < skills.Length; i++) data.Skills.Register(skills[i].Bake());
             var actorDefs = BakeActors();
             for (int i = 0; i < actorDefs.Length; i++)
-                if (actorDefs[i] != null) data.Actors.Add(actorDefs[i]);
+                if (actorDefs[i] != null) data.Actors.Register(actorDefs[i]);
             if (HasCastlessPayload(data))
             {
                 LastContentError = "authored timelines hold payload slots whose effect failed to bake";
@@ -172,9 +166,9 @@ namespace Combat.Config
             for (int i = 0; i < requiredBlueprints.Length; i++)
             {
                 bool found = false;
-                for (int k = 0; k < data.Actors.Count; k++)
+                foreach (var actor in data.Actors.All)
                 {
-                    if (!string.Equals(data.Actors[k].BlueprintId, requiredBlueprints[i], StringComparison.Ordinal))
+                    if (!string.Equals(actor.BlueprintId, requiredBlueprints[i], StringComparison.Ordinal))
                         continue;
                     found = true;
                     break;
@@ -184,9 +178,8 @@ namespace Combat.Config
                 return false;
             }
 
-            for (int i = 0; i < data.Skills.Count; i++)
+            foreach (var skill in data.Skills.All)
             {
-                var skill = data.Skills[i];
                 if (!data.Timelines.TryGet(skill.Timeline, out _))
                 {
                     error = "skill " + skill.Id.Value + " points at missing timeline " + skill.Timeline.Value;
@@ -197,14 +190,19 @@ namespace Combat.Config
                     error = "skill " + skill.Id.Value + " falls back to missing skill " + skill.FallbackSkill.Value;
                     return false;
                 }
+                if (skill.WarpSkillId.IsValid && !data.TryGetSkill(skill.WarpSkillId, out _))
+                {
+                    error = "skill " + skill.Id.Value + " warps to missing skill " + skill.WarpSkillId.Value;
+                    return false;
+                }
             }
 
             BuffArenaActorDef playerDef = null;
-            for (int i = 0; i < data.Actors.Count; i++)
+            foreach (var actor in data.Actors.All)
             {
-                if (!string.Equals(data.Actors[i].BlueprintId, BuffArenaIds.PlayerBlueprint, StringComparison.Ordinal))
+                if (!string.Equals(actor.BlueprintId, BuffArenaIds.PlayerBlueprint, StringComparison.Ordinal))
                     continue;
-                playerDef = data.Actors[i];
+                playerDef = actor;
                 break;
             }
             if (playerDef == null || playerDef.MaxHp <= 0f)
@@ -227,10 +225,10 @@ namespace Combat.Config
         /// <summary>运行期需要的每个定义是否齐备：数组非空且不含 null 元素，并且 Motor 已赋值。</summary>
         public bool HasCompleteContent()
         {
-            if (!HasEntries(Projectiles) || !HasEntries(Aoes) || !HasEntries(Timelines) ||
-                !HasEntries(Skills) || !HasEntries(Actors))
+            if (!HasEntries(ProjectilesSource) || !HasEntries(AoesSource) || !HasEntries(TimelinesSource) ||
+                !HasEntries(SkillsSource) || !HasEntries(ActorsSource))
                 return false;
-            return Motor != null;
+            return Rules != null && Rules.Motor != null && Presentation != null && Manifest != null && Manifest.Cues != null;
         }
 
         static bool HasEntries<T>(T[] items) where T : UnityEngine.Object
@@ -239,6 +237,18 @@ namespace Combat.Config
             for (int i = 0; i < items.Length; i++)
                 if (items[i] == null) return false;
             return true;
+        }
+
+        void ClearAuthoringCaches()
+        {
+            var timelines = TimelinesSource;
+            if (timelines != null) for (int i = 0; i < timelines.Length; i++) timelines[i]?.ClearCache();
+            var projectiles = ProjectilesSource;
+            if (projectiles != null) for (int i = 0; i < projectiles.Length; i++) projectiles[i]?.ClearCache();
+            var aoes = AoesSource;
+            if (aoes != null) for (int i = 0; i < aoes.Length; i++) aoes[i]?.ClearCache();
+            var buffs = Manifest != null ? Manifest.Buffs : null;
+            if (buffs != null) for (int i = 0; i < buffs.Length; i++) buffs[i]?.ClearCache();
         }
 
         /// <summary>
@@ -250,14 +260,16 @@ namespace Combat.Config
         /// </summary>
         BuffArenaActorDef[] BakeActors()
         {
-            if (Actors == null) return Array.Empty<BuffArenaActorDef>();
-            var result = new BuffArenaActorDef[Actors.Length];
-            for (int i = 0; i < Actors.Length; i++)
+            var actors = ActorsSource;
+            if (actors == null) return Array.Empty<BuffArenaActorDef>();
+            var result = new BuffArenaActorDef[actors.Length];
+            for (int i = 0; i < actors.Length; i++)
             {
-                result[i] = Actors[i] != null ? Actors[i].Bake() : null;
+                result[i] = actors[i] != null ? actors[i].Bake() : null;
                 if (result[i] != null && result[i].BlueprintId == BuffArenaIds.PlayerBlueprint)
-                    result[i].Combo = Actors[i].ComboTable != null
-                        ? Actors[i].ComboTable.Bake(Skills) : ComboTableAsset.GenerateStarts(Skills);
+                    result[i].Combo = actors[i].ComboTable != null
+                        ? actors[i].ComboTable.Bake(SkillsSource)
+                        : throw new InvalidOperationException("Player actor has no explicit ComboTable.");
             }
             return result;
         }
@@ -267,7 +279,9 @@ namespace Combat.Config
             // Surface the obvious authoring mistakes in the Inspector instead of at play time.
             // 只报最明显的槽位错误（缺 Motor）：完整校验依赖多资产交叉引用，交给 Bake() 去做，
             // 免得每次 Inspector 改动都跑一遍又慢又吵的检查。
-            if (Motor == null) Debug.LogError("BuffArenaDatabase: no motor asset assigned.", this);
+            if (Rules == null || Rules.Motor == null) Debug.LogError("BuffArenaDatabase: Rules/Motor is not assigned.", this);
+            if (Presentation == null) Debug.LogError("BuffArenaDatabase: Presentation is not assigned.", this);
+            if (Manifest == null || Manifest.Cues == null) Debug.LogError("BuffArenaDatabase: Manifest/Cues is not assigned.", this);
         }
     }
 }

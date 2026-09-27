@@ -305,7 +305,7 @@ void Press(Func<BuffArenaInputFrame, BuffArenaInputFrame> configure) {
 1. `read_console` 0 error（编译先过，否则后面结论都不可信）。
 2. 跑 MonoScript 审计（§1.1）—— 尤其是新增了 `ScriptableObject` 类之后。
 3. 进一次 Play（或重载域）让资产重新烘焙 —— Arena 的内容值与空弹回退技能都只在启动时读一次。（玩家按键表写死在 `BuffArenaSession.ApplyInput`，改键不用动资产。）
-4. 检查 `Bake()` 是否通过：引用校验（技能 → 时间轴、空弹回退 → 技能、必需 blueprint）失败时场景启动即抛异常并带上 `LastContentError`。
+4. 检查 `Bake()` 是否通过：Manifest 校验技能 → Timeline/Warp/Fallback、Combo → Skill、Timeline/Projectile/AoE/Buff → Effect 的强类型引用、时间区间和 null 槽位；失败时场景启动即抛异常并带上 `LastContentError`。
 5. EditMode + PlayMode 测试全绿（测试会强制域重载，等价于"从磁盘重来一次"）。
 6. CLI `regress`：退出码 0、`ALL S1+S2 REGRESSION PASSED`、stderr 为空。（Arena 没有 CLI 用例；`buffarena` 命令已移除。）
 7. `git status` 复核改动面：确认没有把 `ProjectSettings/EditorSettings.asset` 之类的框架副作用一起带走。

@@ -12,24 +12,20 @@ namespace Combat.Config
         public KnockbackAsset Knockback;
         public LaunchAsset Launch;
         public IFrameAsset IFrame;
-        IEffect[] _baked;
 
         public IEffect[] Bake()
         {
-            if (_baked != null) return _baked;
             var list = new List<IEffect>(4);
             if (Damage) list.Add(Damage.Bake());
             if (Stun) list.Add(Stun.Bake());
             if (Knockback) list.Add(Knockback.Bake());
             if (Launch) list.Add(Launch.Bake());
             if (IFrame) list.Add(IFrame.Bake());
-            _baked = list.ToArray();
-            return _baked;
+            return list.ToArray();
         }
 
         public void ClearCache()
         {
-            _baked = null;
             if (Damage) Damage.ClearCache();
             if (Stun) Stun.ClearCache();
             if (Knockback) Knockback.ClearCache();

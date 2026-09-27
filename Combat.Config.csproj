@@ -65,14 +65,17 @@
     <Analyzer Include="D:\Work\UnityInstall\6000.0.32f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Scripts\Combat\Config\ArenaPresentationAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\AoeDefAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\ProjectileDefAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\ArenaContentManifestAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\LaunchAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\CharacterMotorAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\BarrelExplosionAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\SpawnAoeAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\PullToPointAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\HitProfileAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\ArenaRulesAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\RefillAmmoAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\SpawnSummonAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\PlayBuffArenaCueAsset.cs" />

@@ -48,7 +48,7 @@ namespace Combat.Unity.Game
             {
                 throw new InvalidOperationException(
                     "Buff Arena content is unusable: " + Database.LastContentError
-                    + ". Author the assets under Assets/Combat/Config/Generated; there is no code fallback.");
+                    + ". Author the assets under Assets/Combat/Config/Authored/Arena; there is no code fallback.");
             }
             var navigation = MapVisuals.Build();
             var hub = new PresentHub(new UnityPresentFactory(Views, null, PresentRoot, VfxRoot));
@@ -57,7 +57,7 @@ namespace Combat.Unity.Game
             if (cuePrefabs.Count == 0)
                 throw new InvalidOperationException(
                     "Buff Arena has no visual cue prefab bound. Assign a Prefab and tick Visual Enabled on the "
-                    + "cue entries of " + (Database.Cues != null ? Database.Cues.name : "(no cue asset assigned)")
+                    + "cue entries of " + (Database.Manifest != null && Database.Manifest.Cues != null ? Database.Manifest.Cues.name : "(no cue asset assigned)")
                     + ".");
             hub.Cues.SetPool(new UnityVfxPool(VfxRoot, cuePrefabs, hub.ResolveAnchorPosition));
             hub.Floaters.SetPool(new UnityFloaterPool(FloaterRoot, Camera.main));
@@ -141,9 +141,9 @@ namespace Combat.Unity.Game
                 var camera = go.AddComponent<Camera>();
                 Rig = go.AddComponent<CameraRig>();
                 Rig.Cam = camera;
-                Rig.Distance = Database.CameraDistance;
-                Rig.Height = Database.CameraHeight;
-                Rig.BaseFov = Database.CameraBaseFov;
+                Rig.Distance = Database.Presentation.CameraDistance;
+                Rig.Height = Database.Presentation.CameraHeight;
+                Rig.BaseFov = Database.Presentation.CameraBaseFov;
             }
             if (Hud == null)
             {
@@ -170,7 +170,7 @@ namespace Combat.Unity.Game
         Dictionary<string, GameObject> BuildCueMap()
         {
             var map = new Dictionary<string, GameObject>();
-            var cues = Database != null ? Database.Cues : null;
+            var cues = Database != null && Database.Manifest != null ? Database.Manifest.Cues : null;
             if (cues == null || cues.Entries == null) return map;
             for (int i = 0; i < cues.Entries.Length; i++)
             {

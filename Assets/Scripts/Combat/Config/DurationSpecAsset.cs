@@ -23,12 +23,9 @@ namespace Combat.Config
         public EffectAsset[] OnExpire;
         public EffectAsset[] OnHurted;
         public EffectAsset[] OnOwnerCast;
-        DurationSpec _baked;
-
         public DurationSpec Bake()
         {
-            if (_baked != null) return _baked;
-            _baked = new DurationSpec
+            return new DurationSpec
             {
                 BuffId = BuffId,
                 Duration = Duration,
@@ -49,12 +46,10 @@ namespace Combat.Config
                 OnHurted = BakeList(OnHurted),
                 OnOwnerCast = BakeList(OnOwnerCast)
             };
-            return _baked;
         }
 
         public void ClearCache()
         {
-            _baked = null;
             ClearList(OnApply);
             ClearList(OnStack);
             ClearList(OnPeriod);

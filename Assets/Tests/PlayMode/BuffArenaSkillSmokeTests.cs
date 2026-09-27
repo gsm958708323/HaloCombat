@@ -475,8 +475,8 @@ namespace Combat.Tests
 
         static BuffArenaSkill FindSkillByToken(BuffArenaData data, InputToken token)
         {
-            for (int i = 0; i < data.Skills.Count; i++)
-                if (data.Skills[i].Input == token) return data.Skills[i];
+            foreach (var skill in data.Skills.All)
+                if (skill.Input == token) return skill;
             return null;
         }
 

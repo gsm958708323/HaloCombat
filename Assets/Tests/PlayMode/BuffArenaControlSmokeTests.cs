@@ -19,7 +19,7 @@ namespace Combat.Tests
         [UnityTest] public IEnumerator AuthoredComboWaitsForCancelThenReplacesAndHardHitResets()
         {
             var actor = Player(); var table = _session.Data.RequireActor(BuffArenaIds.PlayerBlueprint).Combo;
-            Assert.IsNotNull(table); Assert.AreEqual(8, table.Entries.Length);
+            Assert.IsNotNull(table); Assert.AreEqual(12, table.Entries.Length);
             var entries = new System.Collections.Generic.List<ComboEntry>(table.Entries);
             entries.Add(new ComboEntry { PreSkills = new[] { new SkillNodeId(2008) },
                 Input = BuffArenaIds.Fire1, RequiredTags = new[] { CommonTags.Cancel.Value },

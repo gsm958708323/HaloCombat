@@ -6,7 +6,7 @@ namespace Combat.Core
     /// <summary>
     /// Buff Arena 的固定 id 与归属边界。归代码的只有三类：蓝图名（player/enemy/barrel）、敌人 AI 的技能与时间轴、
     /// 以及木桶爆炸发布的两个 cue；它们必须和 BuffArenaActorFactory / WanderShooter 逐字对上。
-    /// 玩家的技能、时间轴、弹道、AoE、cue 全部由 SO 授权（见下方注释的 Generated 目录），不在这里重复声明。
+    /// 玩家的技能、时间轴、弹道、AoE、cue 全部由 Arena Manifest 授权，不在这里重复声明。
     /// </summary>
     public static class BuffArenaIds
     {
@@ -17,7 +17,7 @@ namespace Combat.Core
         public const string BarrelBlueprint = "buff_barrel";
 
         // Player skills, timelines, projectiles, AoEs and cues are SO-authored; their ids
-        // live in Assets/Combat/Config/Generated. Only the enemy AI tree is code-owned, so
+        // live in Assets/Combat/Config/Authored/Arena. Only the enemy AI tree is code-owned, so
         // its two ids stay here, plus the two cue ids the barrel explosion publishes.
         public const int SkillEnemyValue = 2010;
         public const int TimelineEnemyValue = 3010;
@@ -134,34 +134,81 @@ namespace Combat.Core
         public AoeCatalog Aoes = new AoeCatalog();
         public CueLibrary Cues = new CueLibrary();
         public MotorConfig Motor = MotorConfig.SeasonOneDefaults();
-        public readonly List<BuffArenaSkill> Skills = new List<BuffArenaSkill>(9);
+        public readonly BuffArenaSkillCatalog Skills = new BuffArenaSkillCatalog();
+        public readonly BuffArenaBuffCatalog Buffs = new BuffArenaBuffCatalog();
         public int PlayerAmmoCapacity = 60;
         public int MaxEnemies = 10;
         public float SpawnPeriod = 10f;
         public float EnemyCleanupDelay = 5f;
         public float BarrelSelfDamagePeriod = 5f;
         public int Seed = 1;
-        public readonly List<BuffArenaActorDef> Actors = new List<BuffArenaActorDef>(4);
+        public readonly BuffArenaActorCatalog Actors = new BuffArenaActorCatalog();
 
         public BuffArenaActorDef RequireActor(string blueprintId)
         {
-            for (int i = 0; i < Actors.Count; i++)
-                if (string.Equals(Actors[i].BlueprintId, blueprintId, StringComparison.Ordinal))
-                    return Actors[i];
+            if (Actors.TryGet(blueprintId, out var actor)) return actor;
             throw new InvalidOperationException("Missing Buff Arena actor definition " + blueprintId);
         }
 
         public bool TryGetSkill(SkillNodeId id, out BuffArenaSkill skill)
         {
-            for (int i = 0; i < Skills.Count; i++)
-            {
-                if (Skills[i].Id != id) continue;
-                skill = Skills[i];
-                return true;
-            }
-            skill = null;
-            return false;
+            return Skills.TryGet(id, out skill);
         }
+    }
+
+    public sealed class BuffArenaBuffCatalog
+    {
+        readonly Dictionary<int, DurationSpec> _map = new Dictionary<int, DurationSpec>(16);
+        public int Count => _map.Count;
+        public IEnumerable<DurationSpec> All => _map.Values;
+        public void Register(DurationSpec buff)
+        {
+            if (buff == null || buff.BuffId == 0) throw new ArgumentException("Invalid Buff Arena buff definition.");
+            if (_map.ContainsKey(buff.BuffId)) throw new InvalidOperationException("Duplicate Buff Arena buff " + buff.BuffId);
+            _map.Add(buff.BuffId, buff);
+        }
+        public bool TryGet(int id, out DurationSpec buff) => _map.TryGetValue(id, out buff);
+    }
+
+    public sealed class BuffArenaSkillCatalog
+    {
+        readonly Dictionary<int, BuffArenaSkill> _map = new Dictionary<int, BuffArenaSkill>(16);
+        public int Count => _map.Count;
+        public IEnumerable<BuffArenaSkill> All => _map.Values;
+
+        public void Register(BuffArenaSkill skill)
+        {
+            if (skill == null || !skill.Id.IsValid)
+                throw new ArgumentException("Invalid Buff Arena skill definition.");
+            if (_map.ContainsKey(skill.Id.Value))
+                throw new InvalidOperationException("Duplicate Buff Arena skill " + skill.Id.Value);
+            _map.Add(skill.Id.Value, skill);
+        }
+
+        public bool TryGet(SkillNodeId id, out BuffArenaSkill skill)
+            => _map.TryGetValue(id.Value, out skill);
+
+    }
+
+    public sealed class BuffArenaActorCatalog
+    {
+        readonly Dictionary<string, BuffArenaActorDef> _map =
+            new Dictionary<string, BuffArenaActorDef>(StringComparer.Ordinal);
+        public int Count => _map.Count;
+        public IEnumerable<BuffArenaActorDef> All => _map.Values;
+
+        public void Register(BuffArenaActorDef actor)
+        {
+            if (actor == null || string.IsNullOrEmpty(actor.BlueprintId))
+                throw new ArgumentException("Invalid Buff Arena actor definition.");
+            if (_map.ContainsKey(actor.BlueprintId))
+                throw new InvalidOperationException("Duplicate Buff Arena actor " + actor.BlueprintId);
+            _map.Add(actor.BlueprintId, actor);
+        }
+
+        public bool TryGet(string blueprintId, out BuffArenaActorDef actor)
+            => _map.TryGetValue(blueprintId ?? string.Empty, out actor);
+
     }
 
     /// <summary>

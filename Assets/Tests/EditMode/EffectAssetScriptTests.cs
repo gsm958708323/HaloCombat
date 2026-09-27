@@ -12,12 +12,12 @@ namespace Combat.Tests
     /// the file's primary class. A ScriptableObject class without one is created happily in
     /// memory, but serialises as m_Script: 0 and comes back null after the next domain reload —
     /// which is exactly how the Arena ended up with timelines whose payloads baked to null
-    /// effects and dealt no damage. Keep every effect class in a file of its own.
+    /// effects and dealt no damage. Keep every authoring class in a same-named file.
     /// </summary>
     public sealed class EffectAssetScriptTests
     {
         [Test]
-        public void EveryEffectAssetClassCanBeSerialised()
+        public void EveryConfigScriptableObjectCanBeSerialised()
         {
             var offenders = new List<string>();
             int scanned = 0;
@@ -38,16 +38,17 @@ namespace Combat.Tests
                 for (int i = 0; i < types.Length; i++)
                 {
                     var type = types[i];
-                    if (type.IsAbstract || !typeof(EffectAsset).IsAssignableFrom(type)) continue;
+                    if (type.IsAbstract || !typeof(ScriptableObject).IsAssignableFrom(type)) continue;
+                    if (type.Namespace != "Combat.Config") continue;
                     scanned++;
                     if (!CanBeSerialised(type)) offenders.Add(type.Name + " (" + name + ")");
                 }
             }
 
-            Assert.Greater(scanned, 0, "No EffectAsset class was found, so this guard is not running.");
+            Assert.Greater(scanned, 0, "No Combat.Config ScriptableObject class was found, so this guard is not running.");
             Assert.IsEmpty(
                 offenders,
-                "These EffectAsset classes have no MonoScript, so an asset using one lands on disk "
+                "These config ScriptableObject classes have no MonoScript, so an asset using one lands on disk "
                     + "with m_Script: 0 and bakes to a null effect after a domain reload. Move each "
                     + "class into its own .cs file named after it: " + string.Join(", ", offenders));
         }

@@ -35,12 +35,9 @@ namespace Combat.Config
         public EffectAsset[] OnExpire;
         public EffectAsset[] OnObstacle;
         public EffectAsset[] OnOwnerHit;
-        ProjectileDefinition _baked;
-
         public ProjectileDefinition Bake()
         {
-            if (_baked != null) return _baked;
-            _baked = new ProjectileDefinition
+            return new ProjectileDefinition
             {
                 SpecId = SpecId,
                 Speed = Speed,
@@ -61,7 +58,7 @@ namespace Combat.Config
                 SameTargetDelay = SameTargetDelay,
                 RemoveOnObstacle = RemoveOnObstacle,
                 Flying = Flying,
-                GroundPhaseAt = GroundPhaseAt ?? Array.Empty<float>(),
+                GroundPhaseAt = GroundPhaseAt == null ? Array.Empty<float>() : (float[])GroundPhaseAt.Clone(),
                 TrackOwner = TrackOwner,
                 HitOwnerOnReturn = HitOwnerOnReturn,
                 ViewBlueprintId = ViewBlueprintId,
@@ -70,12 +67,10 @@ namespace Combat.Config
                 OnObstacle = BakeFx(OnObstacle),
                 OnOwnerHit = BakeFx(OnOwnerHit)
             };
-            return _baked;
         }
 
         public void ClearCache()
         {
-            _baked = null;
             ClearFx(OnHit);
             ClearFx(OnExpire);
             ClearFx(OnObstacle);

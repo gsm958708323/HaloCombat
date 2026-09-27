@@ -28,12 +28,9 @@ namespace Combat.Config
         public EffectAsset[] OnExit;
         public EffectAsset[] OnStay;
         public EffectAsset[] OnExpire;
-        AoeDefinition _baked;
-
         public AoeDefinition Bake()
         {
-            if (_baked != null) return _baked;
-            _baked = new AoeDefinition
+            return new AoeDefinition
             {
                 SpecId = SpecId,
                 Radius = Radius,
@@ -57,12 +54,10 @@ namespace Combat.Config
                 OnStay = ProjectileDefAsset.BakeFx(OnStay),
                 OnExpire = ProjectileDefAsset.BakeFx(OnExpire)
             };
-            return _baked;
         }
 
         public void ClearCache()
         {
-            _baked = null;
             ProjectileDefAsset.ClearFx(OnPulse);
             ProjectileDefAsset.ClearFx(OnEnter);
             ProjectileDefAsset.ClearFx(OnExit);

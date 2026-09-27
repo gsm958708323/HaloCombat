@@ -21,7 +21,6 @@ namespace Combat.Config
         public ComboTableSO Bake(BuffArenaSkillAsset[] skills)
         {
             var explicitTable = Bake();
-            var combined = new System.Collections.Generic.List<ComboEntry>(explicitTable.Entries);
             foreach (var entry in Entries ?? Array.Empty<ComboEntryAsset>())
             {
                 if (Array.IndexOf(skills, entry.Skill) < 0)
@@ -30,10 +29,7 @@ namespace Combat.Config
                     if (Array.IndexOf(skills, pre) < 0)
                         throw new InvalidOperationException("Combo prerequisite is outside the database.");
             }
-            foreach (var start in GenerateStarts(skills).Entries)
-                if (!combined.Exists(e => e.Input == start.Input && e.PreSkills.Length == 0 && e.RequiredTags.Length == 0))
-                    combined.Add(start);
-            return new ComboTableSO { Entries = combined.ToArray() };
+            return explicitTable;
         }
         public ComboTableSO Bake()
         {
@@ -53,7 +49,7 @@ namespace Combat.Config
                 }
                 if (string.IsNullOrEmpty(entry.InputAction)) throw new InvalidOperationException("Combo entry " + i + " has no input.");
                 result[i] = new ComboEntry { PreSkills = pre, Input = new InputToken(entry.InputAction),
-                    RequiredTags = entry.RequiredTags ?? Array.Empty<int>(), Priority = entry.Priority,
+                    RequiredTags = entry.RequiredTags == null ? Array.Empty<int>() : (int[])entry.RequiredTags.Clone(), Priority = entry.Priority,
                     ToSkill = target.Id, Timeline = target.Timeline };
             }
             for (int i = 0; i < result.Length; i++)
@@ -65,17 +61,5 @@ namespace Combat.Config
         }
         static bool Same<T>(T[] a, T[] b)
             => new System.Collections.Generic.HashSet<T>(a).SetEquals(b);
-        public static ComboTableSO GenerateStarts(BuffArenaSkillAsset[] skills)
-        {
-            var entries = new System.Collections.Generic.List<ComboEntry>();
-            if (skills != null) foreach (var asset in skills)
-            {
-                if (asset == null || string.IsNullOrEmpty(asset.InputToken)) continue;
-                var skill = asset.Bake();
-                entries.Add(new ComboEntry { PreSkills = Array.Empty<SkillNodeId>(), Input = skill.Input,
-                    RequiredTags = Array.Empty<int>(), Priority = 0, ToSkill = skill.Id, Timeline = skill.Timeline });
-            }
-            return new ComboTableSO { Entries = entries.ToArray() };
-        }
     }
 }

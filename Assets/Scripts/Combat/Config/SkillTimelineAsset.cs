@@ -14,11 +14,8 @@ namespace Combat.Config
         public bool ScaleWithActionSpeed;
         public TimelineClipAsset[] Clips;
         public TimelinePayloadAsset[] Payloads;
-        TimelineSO _baked;
-
         public TimelineSO Bake()
         {
-            if (_baked != null) return _baked;
             var clipAssets = Clips ?? Array.Empty<TimelineClipAsset>();
             var clips = new TimelineClip[clipAssets.Length];
             for (int i = 0; i < clipAssets.Length; i++)
@@ -51,7 +48,7 @@ namespace Combat.Config
                 payloads[i] = new TimelinePayload { Time = p.Time, Effects = BakeEffects(p.Effects) };
             }
 
-            _baked = new TimelineSO
+            return new TimelineSO
             {
                 Id = new TimelineId(TimelineIdValue),
                 Duration = Duration,
@@ -61,12 +58,10 @@ namespace Combat.Config
                 Clips = clips,
                 Payloads = payloads
             };
-            return _baked;
         }
 
         public void ClearCache()
         {
-            _baked = null;
             if (Clips != null)
                 for (int i = 0; i < Clips.Length; i++)
                     if (Clips[i] != null && Clips[i].HitProfile) Clips[i].HitProfile.ClearCache();

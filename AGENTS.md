@@ -49,6 +49,10 @@
 - 表现层只读取核心组件和事件，不回写 HP、位姿、技能状态或 Tag。不要擅自拆分已有程序集边界或引入新的架构层。
 - 表现按 `PresentHub -> PresentActor -> PresentComp` 组织，每个组件只负责一类行为，可直接使用 Unity API，不改造成引擎无关层。命名空间前缀与程序集名保持一致；`Game` / `Presentation` 保持 `Combat.Unity` 内逻辑分区，不另建 asmdef。
 - `Combat.Config` 将 SO `Bake()` 为运行时定义；Arena 使用 SO 内容，CLI 使用独立代码表。Arena 内容无效时启动失败，不添加代码回退。每个 ScriptableObject 类型放入同名 `.cs` 文件。
+- Arena SO 入口固定为 `BuffArenaDatabaseAsset -> ArenaRulesAsset / ArenaPresentationAsset / ArenaContentManifestAsset`。Rules 只放对局规则，Presentation 只放相机，Manifest 列 Actors、Skills、Combos、Timelines、Projectiles、Aoes、Buffs、Cues。
+- SO 之间的编辑期关系使用强类型资产引用；`SkillIdValue`、`TimelineIdValue`、`SpecId`、`BuffId` 只是稳定运行时身份。禁止让策划手填跨资产 ID 作为唯一引用，也禁止用数组下标作为身份。
+- `Bake()` 每次生成完整运行时快照和类型明确的 Catalog/Dictionary，不保存 ScriptableObject 引用或跨次 Bake 缓存。Bake 必须检查 null、非零/重复 ID、引用是否在当前 Manifest、Timeline/Effect 时间范围和递归 Effect 引用，并在错误中包含资产、字段和数组下标。
+- 作者资产放在 `Assets/Combat/Config/Authored/Arena` 及其分类目录；`Generated` 不作为手工维护 Arena 内容目录。迁移资产必须保留 Unity GUID；带人工 Prefab 绑定的 Cue 不得删除重建。
 - AI 行为树负责移动和施法编排，不直接结算或调用 `Director.Stop`，树按 Actor 克隆。
 
 ## 变更与验证
