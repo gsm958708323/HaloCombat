@@ -31,6 +31,7 @@ namespace Combat.Config
         public bool TrackOwner;
         public bool HitOwnerOnReturn;
         public string ViewBlueprintId;
+        [Tooltip("弹体命中后按数组顺序执行。若 AfterDamage 依赖实际扣血，须先放 DamageEffect；直接放 ApplyDuration 会施加给受击目标。")]
         public EffectAsset[] OnHit;
         public EffectAsset[] OnExpire;
         public EffectAsset[] OnObstacle;

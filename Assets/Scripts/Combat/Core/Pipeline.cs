@@ -36,6 +36,7 @@ namespace Combat.Core
         public CastId CastId;
         public SkillNodeId Skill;
         public int HitIndex;
+        // Result of the most recent DamageEffect in this delivery, never inherited by a new bag.
         public bool DamageApplied;
     }
 
@@ -78,6 +79,7 @@ namespace Combat.Core
     {
         public void Run(ref EffectContext ctx, IEffect[] effects)
         {
+            ctx.DamageApplied = false;
             if (effects == null) return;
             for (int i = 0; i < effects.Length; i++)
                 effects[i]?.Apply(ref ctx);

@@ -162,7 +162,7 @@ namespace Combat.Core
     }
 
     /// <summary>
-    /// 输入意图 token（字符串值语义，Ordinal 比较）。契约：它必须与技能资产上的 InputToken 字段逐字相等——
+    /// 输入意图 token（字符串值语义，Ordinal 比较）。Arena 中它必须与 ComboEntryAsset.InputAction 逐字相等——
     /// BuffArenaSession.ApplyInput 把按键映射到 token，BuffArenaData.Skills 的 Input 再与之匹配。
     /// 输入必须匹配 ComboEntry 的 Input；不匹配时保留队列直到过期或硬打断。
     /// </summary>

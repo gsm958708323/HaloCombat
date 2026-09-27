@@ -13,7 +13,6 @@ MonoBehaviour:
   m_Name: SK_2002
   m_EditorClassIdentifier: 
   SkillIdValue: 2002
-  InputToken: Roll
   Timeline: {fileID: 11400000, guid: 79980486285031046b46446ba643810f, type: 2}
   AmmoCost: 0
   AnimatorState: Roll

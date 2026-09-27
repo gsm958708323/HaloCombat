@@ -13,7 +13,6 @@ MonoBehaviour:
   m_Name: SK_2004
   m_EditorClassIdentifier: 
   SkillIdValue: 2004
-  InputToken: Homing
   Timeline: {fileID: 11400000, guid: bde46b534d4f7ce4aa9908cacd8ef4b1, type: 2}
   AmmoCost: 2
   AnimatorState: Fire

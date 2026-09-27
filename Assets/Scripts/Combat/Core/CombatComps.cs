@@ -409,6 +409,8 @@ namespace Combat.Core
         /// <summary>立即停表并清空当前技能；reason 只用于调用方区分上下文。</summary>
         public void Stop(DirectorStopReason reason)
         {
+            // Natural completion keeps the cast eligible for delayed hits; interruptions do not.
+            if (reason != DirectorStopReason.Finished) LastCastId = default;
             if (Self != null && reason != DirectorStopReason.Detach && Self.TryGetComp<BuffComp>(out var buffs)) buffs.ClearForStop(reason);
             _player.Stop();
             _controls.Release();

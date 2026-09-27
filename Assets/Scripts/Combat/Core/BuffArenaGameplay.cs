@@ -111,7 +111,6 @@ namespace Combat.Core
     {
         public SkillNodeId Id;
         public TimelineId Timeline;
-        public InputToken Input;
         public int AmmoCost;
         // Teleport bullet: while a tracked projectile exists the skill resolves to
         // WarpSkillId instead of casting itself again.

@@ -112,4 +112,3 @@ MonoBehaviour:
   CritChance: 0.05
   DirectDamage: 1
   FireOnHurted: 0
-  ConfirmTagValue: 0

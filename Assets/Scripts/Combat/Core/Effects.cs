@@ -270,7 +270,6 @@ namespace Combat.Core
         public int SourceHitstopFrames;
         public int TargetHitstopFrames;
         public HitFeedbackLevel FeedbackLevel;
-        public TagId ConfirmTag;
 
         static HitFeedbackLevel ResolveFeedback(SkillNodeId skill, HitFeedbackLevel configured)
         {
@@ -295,6 +294,7 @@ namespace Combat.Core
         /// </summary>
         public void Apply(ref EffectContext ctx)
         {
+            ctx.DamageApplied = false;
             var target = ctx.Target;
             var source = ctx.Source;
             if (target == null || ctx.World == null) return;
@@ -353,11 +353,12 @@ namespace Combat.Core
                 raw -= absorb;
             }
 
-            float hp = dstAttr.GetBase(AttrId.Hp);
+            float hpBefore = dstAttr.GetBase(AttrId.Hp);
+            float hp = hpBefore;
             hp -= raw;
             if (hp < 0f) hp = 0f;
             dstAttr.SetBase(AttrId.Hp, hp);
-            ctx.DamageApplied = raw > 0f;
+            ctx.DamageApplied = hp < hpBefore;
 
             bool kill = hp <= 0f;
             var feedback = raw > 0f ? ResolveFeedback(ctx.Skill, FeedbackLevel) : HitFeedbackLevel.None;
@@ -389,20 +390,6 @@ namespace Combat.Core
             if (FireOnHurted && target.TryGetComp<BuffComp>(out var buffs))
                 buffs.DispatchOnHurted(source);
 
-            if (raw > 0f && ConfirmTag.Value != 0 && source != null && source != target &&
-                source.TryGetComp<TeamComp>(out var sourceTeam) && target.TryGetComp<TeamComp>(out var targetTeam) &&
-                sourceTeam.IsHostileTo(targetTeam) && source.TryGetComp<SkillDirectorComp>(out var director) &&
-                director.LastCastId == ctx.CastId && source.TryGetComp<BuffComp>(out var sourceBuffs))
-            {
-                sourceBuffs.Apply(new DurationSpec
-                {
-                    BuffId = -ConfirmTag.Value,
-                    Duration = 0f,
-                    Stack = StackPolicy.RejectIfExists,
-                    MaxStacks = 1,
-                    GrantedTags = new[] { ConfirmTag }
-                }, source);
-            }
         }
     }
 

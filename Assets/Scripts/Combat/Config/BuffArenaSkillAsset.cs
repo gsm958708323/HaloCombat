@@ -8,18 +8,14 @@ namespace Combat.Config
     public sealed class BuffArenaSkillAsset : ScriptableObject
     {
         public int SkillIdValue;
-        [HideInInspector, Obsolete("Use ComboEntryAsset.InputAction for player input.")]
-        public string InputToken = "";
         public SkillTimelineAsset Timeline;
         public int AmmoCost;
-        // Teleport bullet: the skill switches to its warp timeline once a projectile is
-        // already airborne, so the flag has to be data too.
+        [Tooltip("勾选后，只有该技能已有追踪弹飞行时才进入 Warp Skill/传送分支；未勾选时 Warp Skill 不参与判定。")]
         public bool RequiresTrackedProjectile;
+        [Tooltip("追踪弹仍在飞行时的传送分支引用。当前运行时用它作为传送分支配置闸门，实际位置由 TryTeleport 处理，不播放此技能的 Timeline。")]
         public BuffArenaSkillAsset WarpSkill;
-        // Skill cast instead while a tracked projectile is alive (teleport bullet warp).
+        [Tooltip("当前技能无法支付 Ammo Cost 时播放的替代技能；使用被引用技能自己的 Timeline，None 表示没有缺弹回退。")]
         public BuffArenaSkillAsset FallbackSkill;
-        // Skill played instead when this one cannot pay its AmmoCost (0 = none). The
-        // referenced skill's own timeline is used.
 
         public BuffArenaSkill Bake()
         {
@@ -29,7 +25,6 @@ namespace Combat.Config
             {
                 Id = new SkillNodeId(SkillIdValue),
                 Timeline = new TimelineId(Timeline.TimelineIdValue),
-                Input = new InputToken(InputToken ?? string.Empty),
                 AmmoCost = AmmoCost,
                 RequiresTrackedProjectile = RequiresTrackedProjectile,
                 WarpSkillId = new SkillNodeId(WarpSkill != null ? WarpSkill.SkillIdValue : 0),

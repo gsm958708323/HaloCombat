@@ -37,7 +37,6 @@ MonoBehaviour:
   CritChance: 0.05
   DirectDamage: 1
   FireOnHurted: 0
-  ConfirmTagValue: 0
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0

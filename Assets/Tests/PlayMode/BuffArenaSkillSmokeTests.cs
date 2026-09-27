@@ -428,8 +428,8 @@ namespace Combat.Tests
         }
 
         /// <summary>
-        /// Every key in BuffArenaSession.ApplyInput has to cast the skill declaring the token it
-        /// pushes. The key map is code-owned; the token -> skill half is authored on SK_*.asset.
+        /// Every key in BuffArenaSession.ApplyInput has to cast its explicit combo starter.
+        /// The key map is code-owned; token -> skill is authored on ComboEntryAsset.
         /// The CLI demo that used to cover roll / homing / monkey is gone, so this is their guard.
         /// </summary>
         [UnityTest]
@@ -453,7 +453,7 @@ namespace Combat.Tests
             var expected = FindSkillByToken(data, new InputToken(token));
             Assert.IsNotNull(
                 expected,
-                "No skill asset declares InputToken '" + token + "', so the bound key would do nothing.");
+                "No combo starter declares InputAction '" + token + "', so the bound key would do nothing.");
 
             RefillPlayerAmmo();
             WaitForDirectorIdle();
@@ -475,8 +475,9 @@ namespace Combat.Tests
 
         static BuffArenaSkill FindSkillByToken(BuffArenaData data, InputToken token)
         {
-            foreach (var skill in data.Skills.All)
-                if (skill.Input == token) return skill;
+            var combo = data.RequireActor(BuffArenaIds.PlayerBlueprint).Combo;
+            if (combo != null && combo.TryResolve(SkillNodeId.None, token, new TagComp(), out var entry) &&
+                data.TryGetSkill(entry.ToSkill, out var skill)) return skill;
             return null;
         }
 

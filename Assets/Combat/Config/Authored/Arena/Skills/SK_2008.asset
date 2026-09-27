@@ -13,7 +13,6 @@ MonoBehaviour:
   m_Name: SK_2008
   m_EditorClassIdentifier: 
   SkillIdValue: 2008
-  InputToken: Fire5
   Timeline: {fileID: 11400000, guid: 5ee3f5e25a641ea45a8f8ed8d514fdcf, type: 2}
   AmmoCost: 0
   AnimatorState: Fire

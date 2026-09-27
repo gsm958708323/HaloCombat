@@ -20,7 +20,6 @@ namespace Combat.Config
         public float CritChance = -1f;
         public bool DirectDamage = true;
         public bool FireOnHurted = true;
-        public int ConfirmTagValue;
 
         protected override IEffect BakeNew() => new DamageEffect
         {
@@ -36,8 +35,7 @@ namespace Combat.Config
             CritMul = CritMul,
             CritChance = CritChance,
             DirectDamage = DirectDamage,
-            FireOnHurted = FireOnHurted,
-            ConfirmTag = new TagId(ConfirmTagValue)
+            FireOnHurted = FireOnHurted
         };
     }
 }

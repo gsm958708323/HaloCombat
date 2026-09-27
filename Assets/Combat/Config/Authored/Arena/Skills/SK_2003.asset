@@ -13,7 +13,6 @@ MonoBehaviour:
   m_Name: SK_2003
   m_EditorClassIdentifier: 
   SkillIdValue: 2003
-  InputToken: Monkey
   Timeline: {fileID: 11400000, guid: b86019a3cb98f2f4b834c5136325dd5a, type: 2}
   AmmoCost: 3
   AnimatorState: Fire
