@@ -158,7 +158,6 @@ namespace Combat.Core
         }
     }
 
-    /// <summary>派生条目：输入、前置技能、必需标签三者同时满足才算命中，Priority 更大者优先。</summary>
     [Serializable]
     public struct ComboEntry
     {
@@ -272,10 +271,19 @@ namespace Combat.Core
         public bool TryResolveCurrent(in InputToken token, out ComboResolveResult result)
         {
             result = default;
-            if (_director != null && (!_director.CanStartSkill ||
-                (_director.IsPlaying && !_tags.Has(CommonTags.Cancel)))) return false;
-            var current = _director != null ? _director.CurrentSkill : SkillNodeId.None;
-            return _table.TryResolve(current, token, _tags, out result);
+            if (_director == null || !_director.CanStartSkill) return false;
+            var current = _director != null ? _director.ComboSourceSkill : SkillNodeId.None;
+            if (_director != null && _director.IsPlaying)
+                current = _director.CurrentSkill;
+            if (_director.IsPlaying && !_tags.Has(CommonTags.Cancel))
+                return false;
+            if (_table.TryResolve(current, token, _tags, out result)) return true;
+            if (!_director.IsPlaying)
+            {
+                current = SkillNodeId.None;
+                return _table.TryResolve(current, token, _tags, out result);
+            }
+            return false;
         }
 
         public void ConsumeInput() => _input?.Consume();
@@ -296,9 +304,13 @@ namespace Combat.Core
         TagComp _tags;
         LocomotionComp _loco;
         SkillNodeId _currentSkill = SkillNodeId.None;
+        SkillNodeId _comboSourceSkill = SkillNodeId.None;
         SkillAnimationMode _currentAnimationMode = SkillAnimationMode.Attack;
+        int _castSerial;
+        public CastId CurrentCastId { get; private set; }
 
         public SkillNodeId CurrentSkill => _currentSkill;
+        public SkillNodeId ComboSourceSkill => _comboSourceSkill;
         public SkillAnimationMode CurrentAnimationMode => _currentAnimationMode;
         public float CurrentTime => _player.Time;
         public float CurrentDuration => _player.Duration;
@@ -329,6 +341,7 @@ namespace Combat.Core
             _tags = null;
             _loco = null;
             _cooldownUntil.Clear();
+            _castSerial = 0;
         }
 
         /// <summary>按显式时间轴播放（跳过技能目录的冷却/前置检查，仍受死亡/眩晕/倒地/沉默守卫）。</summary>
@@ -347,6 +360,10 @@ namespace Combat.Core
 
             if (!_fsm.TryEnter(ActivityId.Attack, new ActivityEnterArgs { Reason = "PlaySkill" })) return false;
             _currentSkill = skill;
+            _comboSourceSkill = skill;
+            if (Self.TryGetComp<BuffComp>(out var comboBuffs))
+                comboBuffs.RemoveByTag(CommonTags.ComboConfirm);
+            CurrentCastId = new CastId(Self.Id, ++_castSerial);
             _currentAnimationMode = animationMode;
             _controls = _tags != null ? _tags.Acquire(so.ControlTags) : default;
             _player.Play(so);
@@ -393,6 +410,8 @@ namespace Combat.Core
             _controls.Release();
             _controls = default;
             _currentSkill = SkillNodeId.None;
+            _comboSourceSkill = SkillNodeId.None;
+            CurrentCastId = default;
             _currentAnimationMode = SkillAnimationMode.Attack;
         }
 
@@ -418,6 +437,7 @@ namespace Combat.Core
             _controls.Release();
             _controls = default;
             _currentSkill = SkillNodeId.None;
+            CurrentCastId = default;
             _currentAnimationMode = SkillAnimationMode.Attack;
             _fsm.NotifyActivityFinished(ActivityId.Attack, "TimelineFinished");
         }

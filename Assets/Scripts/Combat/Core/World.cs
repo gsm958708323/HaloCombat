@@ -142,7 +142,7 @@ namespace Combat.Core
             float snapshotAtk,
             SimVec3? point = null,
             SimVec3? dir = null,
-            int buffStacks = 0)
+            int buffStacks = 0, CastId castId = default, SkillNodeId skill = default, int hitIndex = 0)
         {
             if (effects == null || effects.Length == 0) return;
             var ctx = new EffectContext
@@ -153,6 +153,14 @@ namespace Combat.Core
                 SnapshotAtk = snapshotAtk,
                 BuffStacks = buffStacks
             };
+            if (!castId.IsValid && source != null && source.TryGetComp<SkillDirectorComp>(out var director))
+            {
+                castId = director.CurrentCastId;
+                skill = director.CurrentSkill;
+            }
+            ctx.CastId = castId;
+            ctx.Skill = skill;
+            ctx.HitIndex = hitIndex;
             if (point.HasValue) { ctx.Point = point.Value; ctx.HasPoint = true; }
             if (dir.HasValue) { ctx.Dir = dir.Value; ctx.HasDir = true; }
             _pipeline.Run(ref ctx, effects);
@@ -261,7 +269,8 @@ namespace Combat.Core
                 if (!TryGetActor(intent.TargetId, out var dst) || dst == null)
                     return;
                 SimVec3? pt = intent.HasPoint ? intent.Point : (SimVec3?)null;
-                Deliver(intent.Effects, src, dst, intent.SnapshotAtk, pt, null, intent.BuffStacks);
+                Deliver(intent.Effects, src, dst, intent.SnapshotAtk, pt, null, intent.BuffStacks,
+                    intent.CastId, intent.Skill, intent.HitIndex);
             });
 
             actors = _registry.CopyActiveActors();

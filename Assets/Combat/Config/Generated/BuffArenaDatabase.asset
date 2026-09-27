@@ -29,6 +29,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: f288e2179da85e546b686fa99aae11f0, type: 2}
   - {fileID: 11400000, guid: 1c80883fddf54fd418b2674757d10563, type: 2}
   - {fileID: 11400000, guid: e0d0dccff9eb42548a8128cb7bbd1eaa, type: 2}
+  - {fileID: 11400000, guid: 4e4e8a0f0b6d4b8c9e7f6a5d4c3b2a10, type: 2}
   Aoes:
   - {fileID: 11400000, guid: 5f804e2aec4288a4e8d279d67979ebfb, type: 2}
   - {fileID: 11400000, guid: c926c81c4ef6eb6429415cb41063e8ab, type: 2}
@@ -46,6 +47,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b86019a3cb98f2f4b834c5136325dd5a, type: 2}
   - {fileID: 11400000, guid: a75f58821979bba44b318b386307b11d, type: 2}
   - {fileID: 11400000, guid: 79980486285031046b46446ba643810f, type: 2}
+  - {fileID: 11400000, guid: 2c2faf4f4e9a4a08a0b9c8d7e6f5a403, type: 2}
+  - {fileID: 11400000, guid: 3d3fb05f5fae4b19b1cad9e8f7a6b504, type: 2}
   Skills:
   - {fileID: 11400000, guid: 7c0ceeca49ab01c43a9ccb2e2ca7db5d, type: 2}
   - {fileID: 11400000, guid: 11fa4edaaa4258d4b849a0cba66abd7b, type: 2}
@@ -58,6 +61,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 1fe56a0b7eeb6954687c6fbfd7409a98, type: 2}
   - {fileID: 11400000, guid: 498eb0bcaf5a5a74b8094b52b56221d8, type: 2}
   - {fileID: 11400000, guid: 59a45c71414aa2f48a504be1d37e3342, type: 2}
+  - {fileID: 11400000, guid: 0a0e8f2e2c7848f6a3a7a6a5d2e1c901, type: 2}
+  - {fileID: 11400000, guid: 1b1f9f3f3d8949f7b4b8c7d6e5f4a302, type: 2}
   Actors:
   - {fileID: 11400000, guid: 28a65263a32b682479cf894fa265f9eb, type: 2}
   - {fileID: 11400000, guid: 2fbafe46917ad944594f073e7cc45d91, type: 2}

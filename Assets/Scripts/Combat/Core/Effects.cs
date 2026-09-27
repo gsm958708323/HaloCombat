@@ -109,7 +109,11 @@ namespace Combat.Core
         public readonly float Yaw;
         public readonly float SnapshotAtk;
         public readonly EntityId Target;
-        public SpawnProjectileIntent(EntityId owner, int specId, SimVec3 origin, float yaw, float snapshotAtk, EntityId target = default)
+        public readonly CastId CastId;
+        public readonly SkillNodeId Skill;
+        public readonly int HitIndex;
+        public SpawnProjectileIntent(EntityId owner, int specId, SimVec3 origin, float yaw, float snapshotAtk,
+            EntityId target = default, CastId castId = default, SkillNodeId skill = default, int hitIndex = 0)
         {
             Owner = owner;
             SpecId = specId;
@@ -117,6 +121,9 @@ namespace Combat.Core
             Yaw = yaw;
             SnapshotAtk = snapshotAtk;
             Target = target;
+            CastId = castId;
+            Skill = skill;
+            HitIndex = hitIndex;
         }
     }
 
@@ -139,7 +146,7 @@ namespace Combat.Core
                 atk = attr.GetFinal(AttrId.Atk);
             ctx.World.Intents.Post(new SpawnProjectileIntent(
                 ctx.Source.Id, _specId, tf.Position, tf.YawDegrees, atk,
-                ctx.Target != null ? ctx.Target.Id : EntityId.Invalid));
+                ctx.Target != null ? ctx.Target.Id : EntityId.Invalid, ctx.CastId, ctx.Skill, ctx.HitIndex));
         }
     }
 
@@ -201,7 +208,7 @@ namespace Combat.Core
 
             var body = aoe.GetComp<AoeComp>();
             body.Setup(def, ctx.Source != null ? ctx.Source.Id : EntityId.Invalid, snap,
-                ctx.World.Time.LogicFrame, _radiusOverride, _durationOverride);
+                ctx.World.Time.LogicFrame, _radiusOverride, _durationOverride, ctx.CastId, ctx.Skill);
 
             if (def.CueId != 0)
                 ctx.World.Events.Publish(new EvCue(def.CueId, body.OwnerId, "AoeSpawn"));
@@ -262,6 +269,14 @@ namespace Combat.Core
         public bool FireOnHurted = true;
         public int SourceHitstopFrames;
         public int TargetHitstopFrames;
+        public HitFeedbackLevel FeedbackLevel;
+        public TagId ConfirmTag;
+
+        static HitFeedbackLevel ResolveFeedback(SkillNodeId skill, HitFeedbackLevel configured)
+        {
+            if (configured != HitFeedbackLevel.None) return configured;
+            return HitFeedbackRules.ForSkill(skill);
+        }
 
         /// <summary>
         /// 伤害结算顺序（固定，不可重排）：
@@ -344,17 +359,21 @@ namespace Combat.Core
             dstAttr.SetBase(AttrId.Hp, hp);
 
             bool kill = hp <= 0f;
+            var feedback = raw > 0f ? ResolveFeedback(ctx.Skill, FeedbackLevel) : HitFeedbackLevel.None;
+            int sourceFrames = SourceHitstopFrames > 0 ? SourceHitstopFrames : HitFeedbackRules.SourceFrames(feedback);
+            int targetFrames = Math.Max(TargetHitstopFrames, HitFeedbackRules.TargetFrames(feedback, ctx.HitIndex));
             ctx.World.Events.Publish(new EvDamage(
                 source != null ? source.Id : EntityId.Invalid,
-                target.Id, raw + absorb, crit, absorb, kill));
+                target.Id, raw + absorb, crit, absorb, kill,
+                ctx.CastId, ctx.Skill, feedback, ctx.HitIndex));
 
-            if (raw + absorb > 0f && (SourceHitstopFrames > 0 || TargetHitstopFrames > 0))
+            if (raw > 0f && (sourceFrames > 0 || targetFrames > 0))
             {
-                source?.Time.RequestHitstop(SourceHitstopFrames);
-                target.Time.RequestHitstop(TargetHitstopFrames);
+                source?.Time.RequestHitstop(sourceFrames);
+                target.Time.RequestHitstop(targetFrames);
                 ctx.World.Events.Publish(new EvHitstop(
                     source != null ? source.Id : EntityId.Invalid, target.Id,
-                    SourceHitstopFrames, TargetHitstopFrames));
+                    sourceFrames, targetFrames));
             }
 
             if (kill && target.TryGetComp<StateMachineComp>(out var fsm))
@@ -368,6 +387,20 @@ namespace Combat.Core
 
             if (FireOnHurted && target.TryGetComp<BuffComp>(out var buffs))
                 buffs.DispatchOnHurted(source);
+
+            if (raw > 0f && ConfirmTag.Value != 0 && source != null && source != target &&
+                source.TryGetComp<TeamComp>(out var sourceTeam) && target.TryGetComp<TeamComp>(out var targetTeam) &&
+                sourceTeam.IsHostileTo(targetTeam) && source.TryGetComp<BuffComp>(out var sourceBuffs))
+            {
+                sourceBuffs.Apply(new DurationSpec
+                {
+                    BuffId = -ConfirmTag.Value,
+                    Duration = 0f,
+                    Stack = StackPolicy.RejectIfExists,
+                    MaxStacks = 1,
+                    GrantedTags = new[] { ConfirmTag }
+                }, source);
+            }
         }
     }
 

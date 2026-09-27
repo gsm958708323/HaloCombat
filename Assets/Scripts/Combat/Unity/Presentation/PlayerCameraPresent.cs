@@ -37,6 +37,22 @@ namespace Combat.Unity.Presentation
             Focus = f;
         }
 
+        public void NotifyHit(HitFeedbackLevel level)
+        {
+            var f = Focus;
+            float value;
+            switch (level)
+            {
+                case HitFeedbackLevel.Finisher: value = .8f; break;
+                case HitFeedbackLevel.Heavy: value = .55f; break;
+                case HitFeedbackLevel.ComboConfirm: value = .35f; break;
+                case HitFeedbackLevel.Light: value = .2f; break;
+                default: value = 0f; break;
+            }
+            f.Impulse = System.Math.Max(f.Impulse, value);
+            Focus = f;
+        }
+
         protected override void OnAttach() => Self.TryGet(out _pose);
 
         protected override void OnDetach()

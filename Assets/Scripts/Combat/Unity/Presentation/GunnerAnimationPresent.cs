@@ -15,6 +15,7 @@ namespace Combat.Unity.Presentation
         bool _dead;
         bool _casting;
         bool _hitstop;
+        HitFeedbackLevel _feedback;
         float _speed;
 
         public override void SyncLogic(CombatWorld world)
@@ -58,9 +59,10 @@ namespace Combat.Unity.Presentation
             _state = _speed > .01f ? MoveState(actor) : "Stand";
         }
 
-        public void NotifyHurt()
+        public void NotifyHurt(HitFeedbackLevel feedback = HitFeedbackLevel.Light)
         {
             if (!_dead) _state = "Hurt0";
+            _feedback = feedback;
         }
 
         public override void LateTick(float dt)

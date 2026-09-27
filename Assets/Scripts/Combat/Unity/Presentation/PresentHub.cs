@@ -231,6 +231,12 @@ namespace Combat.Unity.Presentation
         void OnDamage(EvDamage e)
         {
             _floaters.OnDamage(e);
+            if (e.Feedback != HitFeedbackLevel.None && TryGet(e.Source, out var sourceView) &&
+                sourceView.TryGet<PlayerCameraPresent>(out var camera))
+                camera.NotifyHit(e.Feedback);
+            if (e.Amount > e.ShieldAbsorb && TryGet(e.Target, out var targetView) &&
+                targetView.TryGet<GunnerAnimationPresent>(out var targetAnimation))
+                targetAnimation.NotifyHurt(e.Feedback);
             if (
                 e.Target == _local
                 && TryGet(_local, out var p)
@@ -262,7 +268,7 @@ namespace Combat.Unity.Presentation
         void OnHurt(EvHurt e)
         {
             if (TryGet(e.Target, out var actor) && actor.TryGet<GunnerAnimationPresent>(out var animation))
-                animation.NotifyHurt();
+                animation.NotifyHurt(e.Feedback);
         }
 
         void Copy()

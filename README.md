@@ -4,30 +4,25 @@
 
 当前基于 Unity 6（`6000.0.32f1`）+ URP，命令行目标框架为 `net8.0`。
 
-## 设计取舍
+本文介绍项目现状、运行方式和验证入口。AI 修改约束见 [AGENTS.md](AGENTS.md)，玩家技能配置与行为详解见 [玩家技能实现详解](docs/玩家技能实现详解.md)。
 
-- 逻辑与 Unity 解耦：`Combat.Core` 零引擎引用，Demo 与回归不依赖场景。
-- 结算路径唯一：效果只走 `IEffect.Apply(ref EffectContext)` 和 `World.Deliver`。
-- 数据 Bake 进运行时：编辑器 ScriptableObject 在启动时烘焙成纯 C# 目录，运行时不再读 SO。
-- 表现只订阅事件：视图层不改血量、位姿或技能状态。
+## 当前实现概览
 
-冻结约定：
-
-- 骨架：`Actor` / `Comp` / `World` / `Time` / `EventBus` / `IntentQueue` / `Pool`
-- 技能：Combo 边表 + `Play(skill, timeline)`
-- 输入：`InputBuffer` 三条 FIFO，窗口为角色时间 `0.8s`；仅普攻支持按住连射
-- 位姿：`Request*` → `Locomotion.Integrate`
-- 朝向：yaw `0` 朝 `+Z`（Unity 前向），正角朝 `+X`，`ForwardFromYaw(yaw)` 等价于 `Quaternion.Euler(0, yaw, 0) * Vector3.forward`；局部偏移同坐标系（`+Z` 前、`+X` 右）。旧 2D 极角约定（`0 = +X`）作废，换算为 `90 - yaw`
-- 血量：只通过 `AttributeSet.SetBase(Hp)` 修改
-- 分层：命名空间前缀 == 所属程序集名；`Game` / `Presentation` 是 `Combat.Unity` 内的逻辑分区，不拆 asmdef
-- 内容来源唯一：Arena 只认 `BuffArenaDatabaseAsset` 烘焙出的资产（内容数值是 SO 数据），CLI 只认代码表；两者各自独立，没有生成器，也没有比对
-- 玩家按键表留在代码：`BuffArenaSession.ApplyInput` 把 8 个动作硬编码成技能 token，token 必须与各 `SK_*.asset` 上的 `InputToken` 相等。输入映射不进 SO
-- 一个 ScriptableObject 类 = 一个同名 `.cs` 文件：Unity 只给与文件名同名的类铸 MonoScript，否则落盘成 `m_Script: 0`、域重载后变 null
-- Arena 的 AI 结构与节奏留在代码：敌人树固定为单个 `WanderShooter` 叶子，开火 / 游走区间与 `AcquireRadius` 是代码常量；AI 编排属逻辑，不纳入 SO 配置
+- `Combat.Core` 零 Unity 引用；Demo 和回归可脱离场景运行。
+- 效果通过 `IEffect.Apply(ref EffectContext)` 进入 `EffectPipeline`，伤害由 `World.Deliver` 统一送入 `DamageEffect`。
+- 编辑器 ScriptableObject 在启动时 `Bake()` 成纯 C# 运行时目录，运行时不直接读取 SO。
+- 表现层读取核心组件并订阅事件，不修改血量、位姿或技能状态。
+- 当前输入缓冲为三条 FIFO，角色时间窗口默认 `0.8s`；只有普攻支持按住连射。
+- 当前位移链路为 `Request*` → `Locomotion.Integrate`；yaw `0` 朝 Unity 的 `+Z`，局部偏移 `+Z` 为前、`+X` 为右。
+- 当前 `Combat.Unity.Game` 与 `Combat.Unity.Presentation` 是 `Combat.Unity` 程序集中的逻辑分区；它们不是独立程序集。
+- Arena 与 CLI 使用独立内容源：Arena 使用 `BuffArenaDatabaseAsset` 烘焙资产，CLI 使用代码表，二者没有自动比对。
+- 玩家按键映射目前留在 `BuffArenaSession.ApplyInput`；技能资产保存 `InputToken`，两者需要保持一致。
+- Unity 资源脚本目前按“一种 ScriptableObject 类型对应一个同名 `.cs` 文件”组织，以保证 MonoScript 能正确落盘。
+- Arena 敌人当前使用代码中的 `WanderShooter` 叶子和节奏参数，未纳入 SO 配置。
 
 ## 分层与程序集
 
-**命名空间前缀 = 所属程序集名，无例外。** 模块 ≠ 程序集：`Combat.Unity.Game` / `Combat.Unity.Presentation` 是 `Combat.Unity` 程序集内的**逻辑分区**（同程序集内没有编译期隔离），不是独立程序集。
+当前命名空间前缀通常与所属程序集名一致。模块 ≠ 程序集：`Combat.Unity.Game` / `Combat.Unity.Presentation` 是 `Combat.Unity` 程序集内的**逻辑分区**（同程序集内没有编译期隔离），不是独立程序集。
 
 | 命名空间 | 程序集 |
 | --- | --- |
@@ -55,7 +50,7 @@
 - **组件可以直接写 Unity 逻辑**（`GameObject` / `Transform` / `Animator` / `ParticleSystem`……）——这是有意设计，不是技术债。
 - **数据来源是 `Combat.Core` 的 comp**：在 `SyncLogic(world)` 里经 `Self.TryLogic(world, out var actor)` 取到 `Actor`，再用 `actor.TryGetComp<T>()` 读取逻辑状态。表现层不回写逻辑状态。
 
-因此：只有 `Combat.Core` 与 `Combat.Demos` 受零引擎约束（asmdef `noEngineReferences: true`，编译器强制）。把表现层改成引擎无关层、或为 `Game` / `Presentation` 新建独立 asmdef，都已明确否决。
+`Combat.Core` 与 `Combat.Demos` 的 asmdef 设置了 `noEngineReferences: true`，由编译器检查零引擎引用。表现层直接使用 Unity API，`Game` / `Presentation` 共用 `Combat.Unity` 程序集。
 
 源码位置：
 
@@ -66,7 +61,7 @@
 
 ## 战斗核
 
-`CombatWorld` 持有时间、实体表、意图队列、事件总线、效果管线，以及弹体 / AoE / 命中服务。一帧顺序固定：
+`CombatWorld` 持有时间、实体表、意图队列、事件总线、效果管线，以及弹体 / AoE / 命中服务。当前实现的 Tick 顺序如下；这是代码现状，不是不可调整的框架规则：
 
 1. Actor 组件 Tick
 2. 命中前位移积分
@@ -85,8 +80,9 @@ Hitstop 只推进 wall time，暂停逻辑帧。实体用 `EntityId(index, gener
 - Timeline Clip：`CancelTag` / `Move` / `Hitbox` / `IFrame`
 - Timeline Payload：Cue、生成弹体 / AoE / 召唤物
 - 活动机：`Root` / `Attack` / `Hit` / `Knockdown` / `Dead`，各自带位移与朝向策略
-- 玩家：季节 1/2 与 Arena 共用 `ComboComp` 解析输入；Arena 的玩家 Actor 引用 `ComboTableAsset`，技能 SO 提供默认起手。成功施放后消费三条 FIFO 中的一条，窗口为角色时间 `0.8s`；受击、倒地、死亡清空输入并重置技能。
-- AI：感知写黑板，行为树只编排移动和 `PlaySkill`，不直接结算。约定 AI 不得 `Director.Stop`，树按 Actor 克隆
+- 连招由 `ComboEntry` 边表解析，使用 `PreSkills`、`RequiredTags` 和优先级；`ComboStateComp` 已删除，命中资格由 `ComboConfirm` Tag/Buff 表达，播放期间的 Cancel 由代码自动检查。
+- 玩家：季节 1/2 与 Arena 共用 `ComboComp` 解析输入；Arena 的玩家 Actor 引用 `ComboTableAsset`，技能 SO 提供默认起手。成功施放后消费三条 FIFO 中的一条，窗口为角色时间 `0.8s`；受击、倒地、死亡清空输入、停止当前时间轴并重置技能。
+- AI：感知写黑板，行为树当前只编排移动和 `PlaySkill`，不直接结算；Arena 的 AI 当前不调用 `Director.Stop`，树按 Actor 克隆
 - Arena 敌人的树是**单个 `WanderShooter` 叶子**（游走 + 朝目标 + 定时施法），没有 selector / sequence；`BtFactory` 那套完整代码树服务于季节 1/2
 
 ### 效果与状态
@@ -97,11 +93,18 @@ Hitstop 只推进 wall time，暂停逻辑帧。实体用 `EntityId(index, gener
 - Tag：可叠层计数，用于 Grounded、Cancel、Casting、Stunned、Invincible、Downed、Dead 等
 - Buff：叠层、互斥、周期、驱散；Aura 用地板 occupancy 的 Enter / Exit 驱动
 
+### 实现状态与限制
+
+- `BuffComp.Inst` 已保存 `EntityId SourceId`，执行效果时通过 World 临时解析来源；旧文档中“长期保存 Actor”的迁移项已过时。但按来源驱散仍使用整数 key，该路径尚未完全迁移到完整实体身份。
+- `EffectContext` 当前包含多个通用字段；具体 Effect 的专属配置由 Effect/资产持有。
+- `Actor.TryGetComp<T>()` 支持接口查询，供通用结算边界策略使用。
+- 播轴期间，`ComboComp` 使用当前技能并自动检查 Cancel；自然结束后使用 `ComboSourceSkill` 尝试后续边，无合法边才尝试起手。成功施法清理确认 Buff。上述已实现行为不代表整个连招迁移验收已经完成。
+
 ## 内容管线
 
 两条路径，互不依赖：
 
-**Arena（运行时，SO 是唯一真源）** —— `BuffArenaDatabaseAsset.Bake()` → `BuffArenaData`。内容不可用时**启动直接失败**（抛异常并带上 `LastContentError`），没有代码回退。资产在 `Assets/Combat/Config/Generated`：
+**Arena（当前运行时内容路径）** —— `BuffArenaDatabaseAsset.Bake()` → `BuffArenaData`。当前内容不可用时启动会失败（抛异常并带上 `LastContentError`），实现没有代码回退。资产在 `Assets/Combat/Config/Generated`：
 
 | 目录 / 文件 | 内容 |
 | --- | --- |

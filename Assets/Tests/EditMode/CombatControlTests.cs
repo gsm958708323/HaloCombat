@@ -230,6 +230,14 @@ namespace Combat.Tests
             _world.Deliver(new IEffect[] { effect }, _actor, target, 0f); Step(1);
             Assert.IsFalse(target.Time.IsStopped);
         }
+        [Test] public void FeedbackLevelsProvideTieredHitstopDefaults()
+        {
+            Assert.AreEqual(2, HitFeedbackRules.TargetFrames(HitFeedbackLevel.Light));
+            Assert.AreEqual(3, HitFeedbackRules.TargetFrames(HitFeedbackLevel.ComboConfirm, 2));
+            Assert.AreEqual(1, HitFeedbackRules.SourceFrames(HitFeedbackLevel.ComboConfirm));
+            Assert.AreEqual(4, HitFeedbackRules.TargetFrames(HitFeedbackLevel.Finisher));
+            Assert.AreEqual(0, HitFeedbackRules.TargetFrames(HitFeedbackLevel.None));
+        }
         [Test] public void ResetForPoolClearsTimeAndOldLeasesCannotReleaseNewOnes()
         {
             var tags = _actor.GetComp<TagComp>(); var old = tags.Acquire(CommonTags.BlockRotate);

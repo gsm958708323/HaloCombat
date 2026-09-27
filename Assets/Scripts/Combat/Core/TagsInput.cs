@@ -14,11 +14,18 @@ namespace Combat.Core
     public sealed class TagComp : Comp
     {
         readonly Dictionary<int, int> _stacks = new Dictionary<int, int>(16);
+        readonly Dictionary<string, int> _sourced = new Dictionary<string, int>(16);
         readonly Dictionary<int, int> _leased = new Dictionary<int, int>(16);
         readonly Dictionary<long, TagId[]> _leases = new Dictionary<long, TagId[]>();
         long _nextLease;
         public bool Has(TagId tag) => Stack(tag) > 0;
-        int Raw(TagId tag) => Count(_stacks, tag) + Count(_leased, tag);
+        int Raw(TagId tag)
+        {
+            int total = Count(_stacks, tag) + Count(_leased, tag);
+            foreach (var pair in _sourced)
+                if (pair.Key.StartsWith(tag.Value + ":", StringComparison.Ordinal)) total += pair.Value;
+            return total;
+        }
         public int Stack(TagId tag)
         {
             int n = Raw(tag);
@@ -32,19 +39,26 @@ namespace Combat.Core
         }
         static int Count(Dictionary<int, int> map, TagId tag)
             => map.TryGetValue(tag.Value, out var n) ? n : 0;
+        static int Count(Dictionary<string, int> map, string key)
+            => map.TryGetValue(key, out var n) ? n : 0;
         static void Change(Dictionary<int, int> map, TagId tag, int delta)
         {
             int n = Count(map, tag) + delta;
             if (n <= 0) map.Remove(tag.Value); else map[tag.Value] = n;
         }
+        static void Change(Dictionary<string, int> map, string key, int delta)
+        {
+            int n = map.TryGetValue(key, out var old) ? old + delta : delta;
+            if (n <= 0) map.Remove(key); else map[key] = n;
+        }
         public void Add(TagId tag, int stacks, TagSource source)
         {
-            if (stacks > 0) Change(_stacks, tag, stacks);
+            if (stacks > 0) Change(_sourced, SourceKey(tag, source), stacks);
         }
         public void Remove(TagId tag, int stacks, TagSource source)
         {
-            int remove = Math.Min(Math.Max(0, stacks), Count(_stacks, tag));
-            if (remove > 0) Change(_stacks, tag, -remove);
+            int remove = Math.Min(Math.Max(0, stacks), Count(_sourced, SourceKey(tag, source)));
+            if (remove > 0) Change(_sourced, SourceKey(tag, source), -remove);
         }
         public TagLease Acquire(params TagId[] tags)
         {
@@ -60,7 +74,8 @@ namespace Combat.Core
             _leases.Remove(lease.Id);
             foreach (var tag in tags) Change(_leased, tag, -1);
         }
-        public void ClearAll() { _stacks.Clear(); _leased.Clear(); _leases.Clear(); }
+        public void ClearAll() { _stacks.Clear(); _sourced.Clear(); _leased.Clear(); _leases.Clear(); }
+        static string SourceKey(TagId tag, TagSource source) => tag.Value + ":" + (source.Reason ?? string.Empty);
         protected override void OnDetach() => ClearAll();
     }
 

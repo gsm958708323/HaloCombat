@@ -126,6 +126,9 @@ namespace Combat.Core
         public EntityId OwnerId { get; private set; }
         public float SnapshotAtk { get; private set; }
         public ProjectileDefinition Def { get; private set; }
+        public CastId CastId { get; private set; }
+        public SkillNodeId Skill { get; private set; }
+        public int HitIndex { get; private set; }
         public IProjectileMotion Motion { get; private set; }
         public float FireYaw { get; private set; }
         public SimVec3 CurrentVelocity { get; private set; }
@@ -136,12 +139,16 @@ namespace Combat.Core
         public EntityId HomingTarget { get; set; }
 
         /// <summary>初始化/复用实体时重置全部字段（含命中集合与冷却），防止对象池复用残留上一次的命中记录导致新子弹打不中。</summary>
-        public void Setup(ProjectileDefinition def, EntityId owner, float snapshotAtk, EntityId homingTarget = default)
+        public void Setup(ProjectileDefinition def, EntityId owner, float snapshotAtk, EntityId homingTarget = default,
+            CastId castId = default, SkillNodeId skill = default, int hitIndex = 0)
         {
             Def = def;
             Motion = ProjectileMotions.Resolve(def.Motion);
             OwnerId = owner;
             SnapshotAtk = snapshotAtk;
+            CastId = castId;
+            Skill = skill;
+            HitIndex = hitIndex;
             FireYaw = 0f;
             CurrentVelocity = SimVec3.Zero;
             GroundY = 0f;
@@ -208,6 +215,9 @@ namespace Combat.Core
             _hits.Clear();
             _cooldowns.Clear();
             Def = null;
+            CastId = default;
+            Skill = default;
+            HitIndex = 0;
             Motion = null;
             Exhausted = true;
             CurrentVelocity = SimVec3.Zero;
@@ -225,6 +235,8 @@ namespace Combat.Core
         public EntityId OwnerId { get; private set; }
         public float SnapshotAtk { get; private set; }
         public AoeDefinition Def { get; private set; }
+        public CastId CastId { get; private set; }
+        public SkillNodeId Skill { get; private set; }
         public float Radius { get; private set; }
         public float BaseRadius { get; private set; }
         public float Duration { get; private set; }
@@ -260,11 +272,13 @@ namespace Combat.Core
 
         /// <summary>初始化/重置：覆盖值大于 0 才采用，否则回落到定义值；BaseRadius 记住初始半径，供吸收时按比例放大。</summary>
         public void Setup(AoeDefinition def, EntityId owner, float snapshotAtk, int bornFrame,
-            float radiusOverride = 0f, float durationOverride = 0f)
+            float radiusOverride = 0f, float durationOverride = 0f, CastId castId = default, SkillNodeId skill = default)
         {
             Def = def;
             OwnerId = owner;
             SnapshotAtk = snapshotAtk;
+            CastId = castId;
+            Skill = skill;
             Age = 0f;
             PulseAcc = 0f;
             BornFrame = bornFrame;
@@ -282,6 +296,8 @@ namespace Combat.Core
         {
             _inside?.Clear();
             Def = null;
+            CastId = default;
+            Skill = default;
             Radius = 0f;
             BaseRadius = 0f;
             Duration = 0f;
@@ -307,14 +323,15 @@ namespace Combat.Core
             {
                 var target = buffer[i];
                 if (target == null || !target.IsActive) continue;
-                DeliverBag(world, def.OnPulse, owner, target, body.SnapshotAtk, tf.Position);
+                DeliverBag(world, def.OnPulse, owner, target, body.SnapshotAtk, tf.Position, body.CastId, body.Skill);
             }
         }
 
-        public static void DeliverBag(CombatWorld world, IEffect[] bag, Actor owner, Actor target, float snapshotAtk, SimVec3 point)
+        public static void DeliverBag(CombatWorld world, IEffect[] bag, Actor owner, Actor target, float snapshotAtk,
+            SimVec3 point, CastId castId = default, SkillNodeId skill = default)
         {
             if (bag == null || bag.Length == 0) return;
-            world.Deliver(bag, owner, target, snapshotAtk, point, null, 0);
+            world.Deliver(bag, owner, target, snapshotAtk, point, null, 0, castId, skill);
         }
     }
 
@@ -361,7 +378,7 @@ namespace Combat.Core
                 if (!def.SnapshotAtk && owner != null && owner.TryGetComp<AttributeSet>(out var attr))
                     snap = attr.GetFinal(AttrId.Atk);
                 var projectile = proj.GetComp<ProjectileComp>();
-                projectile.Setup(def, intent.Owner, snap, intent.Target);
+                projectile.Setup(def, intent.Owner, snap, intent.Target, intent.CastId, intent.Skill, intent.HitIndex);
                 projectile.SetGroundY(tf.Position.Y);
                 projectile.SetMotion(intent.Yaw, SimVec3.Zero);
                 if (def.TrackOwner && owner != null && owner.TryGetComp<ProjectileTrackerComp>(out var tracker))
@@ -442,7 +459,8 @@ namespace Combat.Core
                     if (dx * dx + dz * dz <= rr * rr)
                     {
                         body.Exhausted = true;
-                        _world.Deliver(def.OnOwnerHit, owner, owner, body.SnapshotAtk, tf.Position, null, 0);
+                        _world.Deliver(def.OnOwnerHit, owner, owner, body.SnapshotAtk, tf.Position, null, 0,
+                            body.CastId, body.Skill, body.HitIndex);
                         _world.RequestDespawn(a.Id);
                         a.SetActive(false);
                         continue;
@@ -461,7 +479,8 @@ namespace Combat.Core
                     if (victim == null || !body.TryRecord(victim.Id, def.SameTargetDelay)) continue;
                     float snap = def.SnapshotAtk ? body.SnapshotAtk : (owner != null && owner.TryGetComp<AttributeSet>(out var at) ? at.GetFinal(AttrId.Atk) : body.SnapshotAtk);
                     var vpos = victim.TryGetComp<TransformComp>(out var vtf) ? vtf.Position : tf.Position;
-                    _world.Intents.Post(new ApplyEffectsIntent(def.OnHit, body.OwnerId, victim.Id, snap, 0, vpos, true));
+                    _world.Intents.Post(new ApplyEffectsIntent(def.OnHit, body.OwnerId, victim.Id, snap, 0, vpos,
+                        true, body.CastId, body.Skill, body.HitCount + 1));
                     body.HitCount++;
                     if (def.MaxHits > 0 && body.HitCount >= def.MaxHits)
                     {
@@ -483,7 +502,8 @@ namespace Combat.Core
             if (effects != null && effects.Length > 0)
             {
                 var tf = proj.GetComp<TransformComp>();
-                _world.Deliver(effects, owner, null, body.SnapshotAtk, tf.Position, null, 0);
+                _world.Deliver(effects, owner, null, body.SnapshotAtk, tf.Position, null, 0,
+                    body.CastId, body.Skill, body.HitIndex);
             }
 
             _world.RequestDespawn(proj.Id);
@@ -572,7 +592,8 @@ namespace Combat.Core
                         var target = _buffer[k];
                         if (target == null || !target.IsActive) continue;
                         if (entered != null && entered.Contains(HitboxComp.Pack(target.Id))) continue;
-                        AoePulse.DeliverBag(_world, def.OnPulse, owner, target, body.SnapshotAtk, tf.Position);
+                        AoePulse.DeliverBag(_world, def.OnPulse, owner, target, body.SnapshotAtk, tf.Position,
+                            body.CastId, body.Skill);
                     }
                 }
 
@@ -582,7 +603,8 @@ namespace Combat.Core
                     {
                         var target = _buffer[k];
                         if (target == null || !target.IsActive) continue;
-                        AoePulse.DeliverBag(_world, def.OnStay, a, target, body.SnapshotAtk, tf.Position);
+                        AoePulse.DeliverBag(_world, def.OnStay, a, target, body.SnapshotAtk, tf.Position,
+                            body.CastId, body.Skill);
                     }
                 }
 
@@ -633,7 +655,8 @@ namespace Combat.Core
                 if (inside.Add(p))
                 {
                     entered.Add(p);
-                    AoePulse.DeliverBag(_world, body.Def.OnEnter, aoe, t, body.SnapshotAtk, point);
+                    AoePulse.DeliverBag(_world, body.Def.OnEnter, aoe, t, body.SnapshotAtk, point,
+                        body.CastId, body.Skill);
                 }
             }
 
@@ -646,7 +669,8 @@ namespace Combat.Core
                 inside.Remove(p);
                 var ent = HitboxComp.Unpack(p);
                 if (_world.TryGetActor(ent, out var leaver) && leaver != null)
-                    AoePulse.DeliverBag(_world, body.Def.OnExit, aoe, leaver, body.SnapshotAtk, point);
+                    AoePulse.DeliverBag(_world, body.Def.OnExit, aoe, leaver, body.SnapshotAtk, point,
+                        body.CastId, body.Skill);
             }
 
             return entered;
@@ -662,7 +686,8 @@ namespace Combat.Core
                 {
                     var ent = HitboxComp.Unpack(p);
                     if (_world.TryGetActor(ent, out var t) && t != null)
-                        AoePulse.DeliverBag(_world, body.Def.OnExit, aoe, t, body.SnapshotAtk, tf.Position);
+                        AoePulse.DeliverBag(_world, body.Def.OnExit, aoe, t, body.SnapshotAtk, tf.Position,
+                            body.CastId, body.Skill);
                 }
 
                 body.Inside.Clear();
@@ -671,7 +696,8 @@ namespace Combat.Core
             if (body.Def != null && body.Def.OnExpire != null && body.Def.OnExpire.Length > 0)
             {
                 var tf = aoe.GetComp<TransformComp>();
-                _world.Deliver(body.Def.OnExpire, owner, null, body.SnapshotAtk, tf.Position, null, 0);
+                _world.Deliver(body.Def.OnExpire, owner, null, body.SnapshotAtk, tf.Position, null, 0,
+                    body.CastId, body.Skill);
             }
 
             _world.RequestDespawn(aoe.Id);

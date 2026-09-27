@@ -14,6 +14,8 @@ namespace Combat.Unity.Presentation
         public override bool WantsLateTick => true;
         public float Flash { get; private set; }
         public float Rumble { get; private set; }
+        public float HitImpulse { get; private set; }
+        public HitFeedbackLevel LastFeedback { get; private set; }
         public bool GhostOn { get; private set; }
         public int GhostHandle { get; private set; }
         readonly LoopVfxController _ghost;
@@ -27,12 +29,15 @@ namespace Combat.Unity.Presentation
                 return;
             Flash = 1f;
             Rumble = 0.35f;
+            LastFeedback = e.Feedback;
+            HitImpulse = Mathf.Max(HitImpulse, ImpulseFor(e.Feedback));
         }
 
         public void OnImmune(in EvImmune e)
         {
             Flash = 0.35f;
             Rumble = 0.12f;
+            LastFeedback = HitFeedbackLevel.Light;
         }
 
         public override void SyncLogic(CombatWorld world)
@@ -67,6 +72,11 @@ namespace Combat.Unity.Presentation
                 if (Rumble < 0f)
                     Rumble = 0f;
             }
+            if (HitImpulse > 0f)
+            {
+                HitImpulse -= dt * 3.5f;
+                if (HitImpulse < 0f) HitImpulse = 0f;
+            }
         }
 
         void SyncGhost()
@@ -100,6 +110,20 @@ namespace Combat.Unity.Presentation
             _ghost.Release();
             Flash = 0f;
             Rumble = 0f;
+            HitImpulse = 0f;
+            LastFeedback = HitFeedbackLevel.None;
+        }
+
+        static float ImpulseFor(HitFeedbackLevel level)
+        {
+            switch (level)
+            {
+                case HitFeedbackLevel.ComboConfirm: return .65f;
+                case HitFeedbackLevel.Heavy: return .9f;
+                case HitFeedbackLevel.Finisher: return 1.2f;
+                case HitFeedbackLevel.Light: return .35f;
+                default: return 0f;
+            }
         }
     }
 }

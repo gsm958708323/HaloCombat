@@ -236,13 +236,19 @@ namespace Combat.Core
                 // The fallback is SO data (SK_2001 -> Reload). Play it on its own timeline,
                 // so no second skill/timeline id pair has to be hard-coded here.
                 if (skill.FallbackSkill.IsValid && _data.TryGetSkill(skill.FallbackSkill, out var fallback))
-                    if (_director.Play(fallback.Id, fallback.Timeline) && queued) _combo.ConsumeInput();
+                    if (_director.Play(fallback.Id, fallback.Timeline))
+                    {
+                        if (queued) _combo.ConsumeInput();
+                    }
                 return;
             }
 
             bool played = _director.Play(skill.Id, skill.Timeline);
             if (!played && skill.AmmoCost > 0 && _ammo != null) _ammo.Refill(skill.AmmoCost);
-            if (played && queued) _combo.ConsumeInput();
+            if (played)
+            {
+                if (queued) _combo.ConsumeInput();
+            }
         }
 
         /// <summary>
@@ -474,7 +480,7 @@ namespace Combat.Core
         {
             if (ctx.World == null || ctx.Target == null) return;
             if (ctx.Target.TryGetComp<AttributeSet>(out var attr) && attr.GetBase(AttrId.Hp) > 0f)
-                ctx.World.Events.Publish(new EvHurt(ctx.Target.Id));
+                ctx.World.Events.Publish(new EvHurt(ctx.Target.Id, HitFeedbackRules.ForSkill(ctx.Skill)));
         }
     }
 

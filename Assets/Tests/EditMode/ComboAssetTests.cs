@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Combat.Config;
 using Combat.Core;
 using NUnit.Framework;
@@ -61,5 +61,24 @@ namespace Combat.Tests
             Assert.IsTrue(table.Bake().TryResolve(new SkillNodeId(1), new InputToken("Fire1"), tags, out var next));
             Assert.AreEqual(2, next.ToSkill.Value);
         }
+
+        [Test] public void RequiredTagsAreTheOnlyAdditionalComboCondition()
+        {
+            var entry = new ComboEntryAsset
+            {
+                PreSkillAssets = new[] { a },
+                InputAction = "Fire1",
+                RequiredTags = new[] { CommonTags.Invincible.Value },
+                Skill = b
+            };
+            table.Entries = new[] { entry };
+            var baked = table.Bake(new[] { a, b });
+            var tags = new TagComp();
+            Assert.IsFalse(baked.TryResolve(new SkillNodeId(1), InputToken.Attack, tags, out _));
+            tags.Add(CommonTags.Invincible, 1, default);
+            Assert.IsTrue(baked.TryResolve(new SkillNodeId(1), InputToken.Attack, tags, out var result));
+            Assert.AreEqual(2, result.ToSkill.Value);
+        }
     }
 }
+

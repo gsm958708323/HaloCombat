@@ -14,11 +14,13 @@ namespace Combat.Config
         public bool ScaleByBuffStacks;
         public int SourceHitstopFrames;
         public int TargetHitstopFrames;
+        public HitFeedbackLevel FeedbackLevel;
         public float CritMul = 2f;
         // -1 keeps the source actor's CritRate; >= 0 pins the roll for this effect.
         public float CritChance = -1f;
         public bool DirectDamage = true;
         public bool FireOnHurted = true;
+        public int ConfirmTagValue;
 
         protected override IEffect BakeNew() => new DamageEffect
         {
@@ -30,10 +32,12 @@ namespace Combat.Config
             ScaleByBuffStacks = ScaleByBuffStacks,
             SourceHitstopFrames = SourceHitstopFrames,
             TargetHitstopFrames = TargetHitstopFrames,
+            FeedbackLevel = FeedbackLevel,
             CritMul = CritMul,
             CritChance = CritChance,
             DirectDamage = DirectDamage,
-            FireOnHurted = FireOnHurted
+            FireOnHurted = FireOnHurted,
+            ConfirmTag = new TagId(ConfirmTagValue)
         };
     }
 }
