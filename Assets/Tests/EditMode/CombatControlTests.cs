@@ -35,6 +35,7 @@ namespace Combat.Tests
         }
         [SetUp] public void Setup()
         {
+            _comboTable.Entries = Array.Empty<ComboEntry>();
             _timelines = new TimelineLibrary(); _skills = new SkillCatalog();
             _timelines.Register(new TimelineSO { Id = new TimelineId(9001), Duration = .1f });
             _timelines.Register(new TimelineSO { Id = new TimelineId(9002), Duration = .3f,
@@ -230,6 +231,190 @@ namespace Combat.Tests
             _world.Deliver(new IEffect[] { effect }, _actor, target, 0f); Step(1);
             Assert.IsFalse(target.Time.IsStopped);
         }
+        [Test] public void HostileHitGrantsComboConfirmIndependentOfDamageAndComboCheckConsumesOnlyItsLease()
+        {
+            var target = Spawn("enemy", 10f);
+            var director = _actor.GetComp<SkillDirectorComp>();
+            Assert.IsTrue(director.Play(new SkillNodeId(9001)));
+            var tags = _actor.GetComp<TagComp>();
+            var external = tags.Acquire(CommonTags.ComboConfirm);
+
+            target.GetComp<AttributeSet>().SetBase(AttrId.Shield, 100f);
+            _world.Deliver(new IEffect[] { new DamageEffect { Flat = 0f, CanCrit = false } }, _actor, target, 0f);
+            Assert.AreEqual(2, tags.Stack(CommonTags.ComboConfirm));
+            director.Stop(DirectorStopReason.Finished);
+
+            var input = _actor.GetComp<InputBufferComp>();
+            input.Push(InputToken.Attack);
+            Assert.IsFalse(_actor.GetComp<ComboComp>().TryResolve(out _));
+            Assert.AreEqual(1, tags.Stack(CommonTags.ComboConfirm));
+            Assert.AreEqual(1, input.Count);
+            external.Release();
+        }
+
+        [Test] public void ComboConfirmRejectsFriendlyAndStaleCastButAcceptsInvulnerableHostileHit()
+        {
+            var hostile = Spawn("enemy", 10f);
+            var friendly = Spawn("unit", 20f);
+            var director = _actor.GetComp<SkillDirectorComp>();
+            Assert.IsTrue(director.Play(new SkillNodeId(9001)));
+            var cast = director.CurrentCastId;
+            var tags = _actor.GetComp<TagComp>();
+            _world.Deliver(new IEffect[] { new DamageEffect() }, _actor, friendly, 0f, castId: cast);
+            Assert.IsFalse(tags.Has(CommonTags.ComboConfirm));
+
+            director.Stop(DirectorStopReason.Finished);
+            Assert.IsTrue(director.Play(new SkillNodeId(9001), new TimelineId(9001)));
+            _world.Deliver(new IEffect[] { new DamageEffect { Coeff = 0f } }, _actor, hostile, 0f, castId: cast);
+            Assert.IsFalse(tags.Has(CommonTags.ComboConfirm));
+            hostile.GetComp<TagComp>().Add(CommonTags.Invincible, 1, TagSource.Effect("test"));
+            _world.Deliver(new IEffect[] { new DamageEffect() }, _actor, hostile, 0f, castId: director.CurrentCastId);
+            Assert.IsTrue(tags.Has(CommonTags.ComboConfirm));
+        }
+        [TestCase("damage", true)] [TestCase("shield", false)] [TestCase("zero", false)]
+        [TestCase("invincible", false)] [TestCase("iframe", false)]
+        public void HitConfirmationDoesNotDependOnHpButAfterDamageStillDoes(string mode, bool hpLoss)
+        {
+            var target = Spawn("enemy", 10f);
+            var d = _actor.GetComp<SkillDirectorComp>(); d.Play(new SkillNodeId(9001));
+            var attr = target.GetComp<AttributeSet>(); float hp = attr.GetBase(AttrId.Hp);
+            if (mode == "shield") attr.SetBase(AttrId.Shield, 100f);
+            if (mode == "invincible") target.GetComp<TagComp>().Acquire(CommonTags.Invincible);
+            if (mode == "iframe") target.GetComp<HealthComp>().BeginIFrame(1f);
+            int afterDamage = 0;
+            var bag = new IEffect[] {
+                new DamageEffect { Coeff = 0f, Flat = mode == "zero" ? 0f : 10f, FireOnHurted = false },
+                new AfterDamageEffect { Effects = new IEffect[] { new CallbackEffect(() => afterDamage++) } }
+            };
+            _world.Deliver(bag, _actor, target, 0f, castId: d.CurrentCastId);
+            _world.Deliver(bag, _actor, target, 0f, castId: d.CurrentCastId);
+            Assert.AreEqual(1, _actor.GetComp<TagComp>().Stack(CommonTags.ComboConfirm));
+            Near(hpLoss ? hp - 20f : hp, attr.GetBase(AttrId.Hp));
+            Assert.AreEqual(hpLoss ? 2 : 0, afterDamage);
+            Assert.AreEqual(0, _actor.GetComp<BuffComp>().Count);
+        }
+
+        [Test] public void NonHitDeliveryAndInvalidSourceOrCastDoNotConfirm()
+        {
+            var target = Spawn("enemy", 10f);
+            var d = _actor.GetComp<SkillDirectorComp>(); d.Play(new SkillNodeId(9001));
+            _world.Deliver(new IEffect[] { new CallbackEffect(() => { }) }, _actor, target, 0f);
+            var tags = _actor.GetComp<TagComp>(); Assert.IsFalse(tags.Has(CommonTags.ComboConfirm));
+            var ctx = new EffectContext { World = _world, Source = _actor, Target = target };
+            var damage = new DamageEffect { Coeff = 0f, FireOnHurted = false };
+            damage.Apply(ref ctx);
+            Assert.IsFalse(tags.Has(CommonTags.ComboConfirm));
+            ctx.CastId = d.CurrentCastId; ctx.Source = null; damage.Apply(ref ctx);
+            Assert.IsFalse(tags.Has(CommonTags.ComboConfirm));
+            ctx.Source = _actor; ctx.Target = null; damage.Apply(ref ctx);
+            Assert.IsFalse(tags.Has(CommonTags.ComboConfirm));
+        }
+
+        [TestCase(true)] [TestCase(false)]
+        public void ComboCheckConsumesConfirmForBothMatchResultsButPreservesInput(bool matches)
+        {
+            var target = Spawn("enemy", 10f);
+            var d = _actor.GetComp<SkillDirectorComp>(); d.Play(new SkillNodeId(9001));
+            _world.Deliver(new IEffect[] { new DamageEffect { Coeff = 0f } }, _actor, target, 0f);
+            _comboTable.Entries = new[] { new ComboEntry {
+                PreSkills = new[] { new SkillNodeId(9001) }, Input = InputToken.Attack,
+                RequiredTags = matches ? new[] { CommonTags.ComboConfirm.Value } : new[] { CommonTags.ComboConfirm.Value, 99999 },
+                ToSkill = new SkillNodeId(9001), Timeline = new TimelineId(9001) } };
+            var tags = _actor.GetComp<TagComp>(); tags.Acquire(CommonTags.Cancel);
+            var input = _actor.GetComp<InputBufferComp>(); input.Push(InputToken.Attack);
+            Assert.AreEqual(matches, _actor.GetComp<ComboComp>().TryResolve(out var result));
+            Assert.IsFalse(tags.Has(CommonTags.ComboConfirm)); Assert.AreEqual(1, input.Count);
+            if (matches)
+            {
+                Assert.IsFalse(d.Play(result.ToSkill), "Cooldown rejects the selected skill.");
+                Assert.IsFalse(tags.Has(CommonTags.ComboConfirm), "Rejected casts must not restore confirmation.");
+                Assert.AreEqual(1, input.Count);
+            }
+        }
+
+        [Test] public void NaturalEndPreservesConfirmUntilAllComboCandidatesAndFallbackAreChecked()
+        {
+            var d = _actor.GetComp<SkillDirectorComp>(); d.Play(new SkillNodeId(9001));
+            var target = Spawn("enemy", 10f);
+            _world.Deliver(new IEffect[] { new DamageEffect { Coeff = 0f } }, _actor, target, 0f);
+            Step(6);
+            Assert.IsFalse(d.IsPlaying);
+            Assert.AreEqual(new SkillNodeId(9001), d.ComboSourceSkill);
+            var tags = _actor.GetComp<TagComp>(); Assert.IsTrue(tags.Has(CommonTags.ComboConfirm));
+            _comboTable.Entries = new[] {
+                new ComboEntry { PreSkills = new[] { new SkillNodeId(9001) }, Input = InputToken.Attack,
+                    RequiredTags = new[] { 99999 }, ToSkill = new SkillNodeId(9001) },
+                new ComboEntry { Input = InputToken.Attack, RequiredTags = new[] { CommonTags.ComboConfirm.Value },
+                    Priority = 1, ToSkill = new SkillNodeId(9001) },
+                new ComboEntry { Input = InputToken.Attack, RequiredTags = new[] { CommonTags.ComboConfirm.Value },
+                    Priority = 2, ToSkill = new SkillNodeId(9002) }
+            };
+            Assert.IsTrue(_actor.GetComp<ComboComp>().TryResolveCurrent(InputToken.Attack, out var result));
+            Assert.AreEqual(new SkillNodeId(9002), result.ToSkill);
+            Assert.IsFalse(tags.Has(CommonTags.ComboConfirm));
+        }
+
+        [Test] public void WaitingForInputOrCancelDoesNotRunAComboCheck()
+        {
+            var d = _actor.GetComp<SkillDirectorComp>(); d.Play(new SkillNodeId(9001));
+            var target = Spawn("enemy", 10f);
+            var bag = new IEffect[] { new DamageEffect { Coeff = 0f } };
+            _world.Deliver(bag, _actor, target, 0f);
+            var combo = _actor.GetComp<ComboComp>(); var tags = _actor.GetComp<TagComp>();
+            Assert.IsFalse(combo.TryResolve(out _)); Assert.IsTrue(tags.Has(CommonTags.ComboConfirm));
+            _actor.GetComp<InputBufferComp>().Push(InputToken.Attack);
+            Assert.IsFalse(combo.TryResolve(out _)); Assert.IsTrue(tags.Has(CommonTags.ComboConfirm));
+            tags.Acquire(CommonTags.Cancel);
+            Assert.IsFalse(combo.TryResolve(out _)); Assert.IsFalse(tags.Has(CommonTags.ComboConfirm));
+            _world.Deliver(bag, _actor, target, 0f); // A later hit grants fresh confirmation.
+            Assert.AreEqual(1, tags.Stack(CommonTags.ComboConfirm));
+        }
+
+        [TestCase(ActivityId.Hit)] [TestCase(ActivityId.Knockdown)] [TestCase(ActivityId.Dead)]
+        public void HardInterruptClearsConfirmAndInvalidatesDelayedHits(ActivityId activity)
+        {
+            var d = _actor.GetComp<SkillDirectorComp>(); d.Play(new SkillNodeId(9001));
+            var cast = d.CurrentCastId; var target = Spawn("enemy", 10f);
+            var bag = new IEffect[] { new DamageEffect { Coeff = 0f } };
+            _world.Deliver(bag, _actor, target, 0f, castId: cast);
+            var tags = _actor.GetComp<TagComp>(); var external = tags.Acquire(CommonTags.ComboConfirm);
+            _actor.GetComp<StateMachineComp>().TryEnter(activity, default);
+            Assert.AreEqual(1, tags.Stack(CommonTags.ComboConfirm));
+            _world.Deliver(bag, _actor, target, 0f, castId: cast);
+            Assert.AreEqual(1, tags.Stack(CommonTags.ComboConfirm));
+            external.Release(); Assert.IsFalse(tags.Has(CommonTags.ComboConfirm));
+        }
+
+        [Test] public void ManualStopAndDespawnReleaseConfirm()
+        {
+            var d = _actor.GetComp<SkillDirectorComp>(); d.Play(new SkillNodeId(9001));
+            var target = Spawn("enemy", 10f); var tags = _actor.GetComp<TagComp>();
+            var bag = new IEffect[] { new DamageEffect { Coeff = 0f } };
+            _world.Deliver(bag, _actor, target, 0f);
+            d.Stop(DirectorStopReason.Manual); Assert.IsFalse(tags.Has(CommonTags.ComboConfirm));
+            d.Play(new SkillNodeId(9001), new TimelineId(9001));
+            _world.Deliver(bag, _actor, target, 0f); Assert.IsTrue(tags.Has(CommonTags.ComboConfirm));
+            _world.RequestDespawn(_actor.Id); Step(1);
+            Assert.IsFalse(tags.Has(CommonTags.ComboConfirm)); Assert.IsFalse(d.LastCastId.IsValid);
+        }
+
+        [TestCase(false)] [TestCase(true)]
+        public void ImmuneProjectileContactConfirmsOnlyLatestCastAndPreservesPassThrough(bool stale)
+        {
+            var d = _actor.GetComp<SkillDirectorComp>(); d.Play(new SkillNodeId(9001));
+            var cast = d.CurrentCastId;
+            if (stale) d.Play(new SkillNodeId(9001), new TimelineId(9001));
+            var target = Spawn("enemy", 0f); target.GetComp<TransformComp>().Position = new SimVec3(0f, 0f, .4f);
+            target.GetComp<HealthComp>().BeginIFrame(1f);
+            _world.Intents.Post(new SpawnProjectileIntent(_actor.Id, 9001, SimVec3.Zero, 0f, 0f, castId: cast));
+            Step(1);
+            Assert.AreEqual(!stale, _actor.GetComp<TagComp>().Has(CommonTags.ComboConfirm));
+            Near(100f, target.GetComp<AttributeSet>().GetBase(AttrId.Hp));
+            ProjectileComp body = null;
+            foreach (var actor in _world.RegistryActive()) if (actor.TryGetComp<ProjectileComp>(out var p)) body = p;
+            Assert.IsNotNull(body); Assert.AreEqual(0, body.HitCount); Assert.IsFalse(body.Exhausted);
+        }
+
         [Test] public void FeedbackLevelsProvideTieredHitstopDefaults()
         {
             Assert.AreEqual(2, HitFeedbackRules.TargetFrames(HitFeedbackLevel.Light));

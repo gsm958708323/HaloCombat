@@ -59,6 +59,5 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 0f4d1e5cea979d240a0407a59b7c899e, type: 2}
   Combos:
   - {fileID: 11400000, guid: 4c7a4e9a8b7445c3a18f0a5c3b2c0d11, type: 2}
-  Buffs:
-  - {fileID: -710000000000000003, guid: 304936e0d5691574a8ff9ebb70d92e52, type: 2}
+  Buffs: []
   Cues: {fileID: 11400000, guid: f18a00c4ce1abfd4782694728abafa89, type: 2}

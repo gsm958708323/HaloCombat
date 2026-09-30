@@ -299,6 +299,10 @@ namespace Combat.Core
             var source = ctx.Source;
             if (target == null || ctx.World == null) return;
 
+            // Contact confirms the cast even when immunity, shields or zero damage prevent HP loss.
+            if (source != null && source.TryGetComp<SkillDirectorComp>(out var director))
+                director.GrantComboConfirm(target, ctx.CastId);
+
             var tags = target.GetComp<TagComp>();
             if (tags.Has(CommonTags.Invincible) ||
                 (target.TryGetComp<HealthComp>(out var hc) && hc.InIFrame))

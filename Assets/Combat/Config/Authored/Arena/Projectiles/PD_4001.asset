@@ -25,71 +25,6 @@ MonoBehaviour:
   CritChance: 0.05
   DirectDamage: 1
   FireOnHurted: 0
---- !u!114 &-710000000000000001
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ebb44cb86505a1341a4a6121f1a1b883, type: 3}
-  m_Name: AfterDamage_ComboConfirm
-  m_EditorClassIdentifier:
-  Effects:
-  - {fileID: -710000000000000002}
-  ToSource: 1
-  RequireHostile: 1
-  RequireLatestCast: 1
---- !u!114 &-710000000000000002
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9c6521dbe98486f49ab84539b596f279, type: 3}
-  m_Name: ApplyDuration_ComboConfirm
-  m_EditorClassIdentifier:
-  Spec: {fileID: -710000000000000003}
-  Stacks: 1
---- !u!114 &-710000000000000003
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e825522116ab3dd4bb0f4715092b0674, type: 3}
-  m_Name: Duration_ComboConfirm
-  m_EditorClassIdentifier:
-  BuffId: -1017
-  Duration: 0
-  TickInterval: 0
-  MaxStacks: 1
-  Stack: 3
-  MutexGroup: 0
-  ModAttr: 0
-  ModOp: 0
-  ModValue: 0
-  GrantedTag: 0
-  Modifiers: []
-  GrantedTags: f9030000
-  ClearOnHurted: 1
-  ClearOnKnockdown: 1
-  ClearOnDeath: 1
-  ClearOnManualStop: 1
-  OnApply: []
-  OnStack: []
-  OnPeriod: []
-  OnExpire: []
-  OnHurted: []
-  OnOwnerCast: []
 --- !u!114 &-5491124378155377862
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -147,7 +82,6 @@ MonoBehaviour:
   OnHit:
   - {fileID: -6205427197676631706}
   - {fileID: 4951826857517312727}
-  - {fileID: -710000000000000001}
   - {fileID: -5491124378155377862}
   OnExpire:
   - {fileID: 3340609781034099045}

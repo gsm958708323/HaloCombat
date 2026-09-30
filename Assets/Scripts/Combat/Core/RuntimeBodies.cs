@@ -471,11 +471,15 @@ namespace Combat.Core
                 for (int k = 0; k < n; k++)
                 {
                     var victim = _buffer[k];
-                    // Pass through instead of consuming a hit: matches the source
-                    // BulletState.CanHit early-out for immuneTime > 0.
+                    // Immune contact still confirms the cast, but preserves the existing pass-through
+                    // behavior: no damage/secondary effects and no projectile hit-budget consumption.
                     if (victim != null && victim.TryGetComp<HealthComp>(out var victimHealth) &&
                         victimHealth.IsInvulnerable)
+                    {
+                        if (owner != null && owner.TryGetComp<SkillDirectorComp>(out var director))
+                            director.GrantComboConfirm(victim, body.CastId);
                         continue;
+                    }
                     if (victim == null || !body.TryRecord(victim.Id, def.SameTargetDelay)) continue;
                     float snap = def.SnapshotAtk ? body.SnapshotAtk : (owner != null && owner.TryGetComp<AttributeSet>(out var at) ? at.GetFinal(AttrId.Atk) : body.SnapshotAtk);
                     var vpos = victim.TryGetComp<TransformComp>(out var vtf) ? vtf.Position : tf.Position;

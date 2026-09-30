@@ -232,7 +232,7 @@ namespace Combat.Core
         }
     }
 
-    /// <summary>派生组件：只读取输入查表，调用方在成功施放后调用 ConsumeInput；失败不会丢失输入。</summary>
+    /// <summary>派生组件：查表后消费自身命中确认；输入仅由调用方在成功施放后 ConsumeInput。</summary>
     public sealed class ComboComp : Comp
     {
         readonly ComboTableSO _table;
@@ -272,18 +272,19 @@ namespace Combat.Core
         {
             result = default;
             if (_director == null || !_director.CanStartSkill) return false;
-            var current = _director != null ? _director.ComboSourceSkill : SkillNodeId.None;
-            if (_director != null && _director.IsPlaying)
+            var current = _director.ComboSourceSkill;
+            if (_director.IsPlaying)
                 current = _director.CurrentSkill;
             if (_director.IsPlaying && !_tags.Has(CommonTags.Cancel))
                 return false;
-            if (_table.TryResolve(current, token, _tags, out result)) return true;
-            if (!_director.IsPlaying)
+            bool resolved = _table.TryResolve(current, token, _tags, out result);
+            if (!resolved && !_director.IsPlaying)
             {
                 current = SkillNodeId.None;
-                return _table.TryResolve(current, token, _tags, out result);
+                resolved = _table.TryResolve(current, token, _tags, out result);
             }
-            return false;
+            _director.ConsumeComboConfirm();
+            return resolved;
         }
 
         public void ConsumeInput() => _input?.Consume();
@@ -318,6 +319,7 @@ namespace Combat.Core
         public bool UsesSkillCatalog => _skills != null;
         public bool IsPlaying => _player.IsPlaying;
         TagLease _controls;
+        TagLease _comboConfirm;
         public bool CanStartSkill => !Self.World.IsActorStopped(Self) && (_tags == null || !_tags.Has(CommonTags.BlockSkill));
         public string AnimatorState => _player.Current != null ? _player.Current.AnimatorState : string.Empty;
         public override bool WantsTick => true;
@@ -363,8 +365,7 @@ namespace Combat.Core
             if (!_fsm.TryEnter(ActivityId.Attack, new ActivityEnterArgs { Reason = "PlaySkill" })) return false;
             _currentSkill = skill;
             _comboSourceSkill = skill;
-            if (Self.TryGetComp<BuffComp>(out var comboBuffs))
-                comboBuffs.RemoveByTag(CommonTags.ComboConfirm);
+            ConsumeComboConfirm();
             CurrentCastId = new CastId(Self.Id, ++_castSerial);
             LastCastId = CurrentCastId;
             _currentAnimationMode = animationMode;
@@ -411,6 +412,7 @@ namespace Combat.Core
         {
             // Natural completion keeps the cast eligible for delayed hits; interruptions do not.
             if (reason != DirectorStopReason.Finished) LastCastId = default;
+            if (reason != DirectorStopReason.Finished) ConsumeComboConfirm();
             if (Self != null && reason != DirectorStopReason.Detach && Self.TryGetComp<BuffComp>(out var buffs)) buffs.ClearForStop(reason);
             _player.Stop();
             _controls.Release();
@@ -419,6 +421,23 @@ namespace Combat.Core
             _comboSourceSkill = SkillNodeId.None;
             CurrentCastId = default;
             _currentAnimationMode = SkillAnimationMode.Attack;
+        }
+
+        /// <summary>最近有效施法命中敌人时持有一份确认 Lease，与伤害数值和 Buff 无关。</summary>
+        public void GrantComboConfirm(Actor target, CastId castId)
+        {
+            if (!castId.IsValid || castId != LastCastId || _tags == null || _comboConfirm.Id != 0) return;
+            if (Self == null || !Self.IsActive || target == null || !target.IsActive || target.World != Self.World ||
+                !Self.TryGetComp<TeamComp>(out var sourceTeam) || !target.TryGetComp<TeamComp>(out var targetTeam) ||
+                !sourceTeam.IsHostileTo(targetTeam)) return;
+            _comboConfirm = _tags.Acquire(CommonTags.ComboConfirm);
+        }
+
+        /// <summary>完整连招边表判断后释放自己的确认；不影响外部同名 Tag。</summary>
+        public void ConsumeComboConfirm()
+        {
+            _comboConfirm.Release();
+            _comboConfirm = default;
         }
 
         /// <summary>按 ScaleWithActionSpeed 把 ActionSpeed 折进 dt（下限 0.1，防止 0 速度把时间轴卡死），再交给自己的播放器。</summary>

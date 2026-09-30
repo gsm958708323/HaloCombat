@@ -103,6 +103,10 @@ namespace Combat.Core
         public static readonly TagId Silence = new TagId(1008);
         public static readonly TagId Invincible = new TagId(1009);
         public static readonly TagId Downed = new TagId(1010);
+        /// <summary>
+        /// 最近一次连招判断尚未消费的命中资格
+        /// </summary>
+        /// <returns></returns>
         public static readonly TagId ComboConfirm = new TagId(1017);
     }
 

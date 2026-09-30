@@ -80,7 +80,7 @@ Hitstop 只推进 wall time，暂停逻辑帧。实体用 `EntityId(index, gener
 - Timeline Clip：`CancelTag` / `Move` / `Hitbox` / `IFrame`
 - Timeline Payload：Cue、生成弹体 / AoE / 召唤物
 - 活动机：`Root` / `Attack` / `Hit` / `Knockdown` / `Dead`，各自带位移与朝向策略
-- 连招由 `ComboEntry` 边表解析，使用 `PreSkills`、`RequiredTags` 和优先级；`ComboStateComp` 已删除，命中资格由 `ComboConfirm` Tag/Buff 表达，播放期间的 Cancel 由代码自动检查。起手边必须显式配置，`InputToken` 不会隐式生成连招边。
+- 连招由 `ComboEntry` 边表解析，使用 `PreSkills`、`RequiredTags` 和优先级；`ComboStateComp` 已删除，命中敌对目标时由代码直接授予 `ComboConfirm` Tag，每次连招判断后消费，播放期间的 Cancel 由代码自动检查。起手边必须显式配置，`InputToken` 不会隐式生成连招边。
 - 玩家：季节 1/2 与 Arena 共用 `ComboComp` 解析输入；Arena 的玩家 Actor 引用 `ComboTableAsset`，每个起手和分支都在表中显式声明。成功施放后消费三条 FIFO 中的一条，窗口为角色时间 `0.8s`；受击、倒地、死亡清空输入、停止当前时间轴并重置技能。
 - AI：感知写黑板，行为树当前只编排移动和 `PlaySkill`，不直接结算；Arena 的 AI 当前不调用 `Director.Stop`，树按 Actor 克隆
 - Arena 敌人的树是**单个 `WanderShooter` 叶子**（游走 + 朝目标 + 定时施法），没有 selector / sequence；`BtFactory` 那套完整代码树服务于季节 1/2
@@ -98,7 +98,7 @@ Hitstop 只推进 wall time，暂停逻辑帧。实体用 `EntityId(index, gener
 - `BuffComp.Inst` 已保存 `EntityId SourceId`，执行效果时通过 World 临时解析来源；旧文档中“长期保存 Actor”的迁移项已过时。但按来源驱散仍使用整数 key，该路径尚未完全迁移到完整实体身份。
 - `EffectContext` 当前包含多个通用字段；具体 Effect 的专属配置由 Effect/资产持有。
 - `Actor.TryGetComp<T>()` 支持接口查询，供通用结算边界策略使用。
-- 播轴期间，`ComboComp` 使用当前技能并自动检查 Cancel；自然结束后使用 `ComboSourceSkill` 尝试后续边，无合法边才尝试起手。成功施法清理确认 Buff。上述已实现行为不代表整个连招迁移验收已经完成。
+- 播轴期间，`ComboComp` 使用当前技能并自动检查 Cancel；自然结束后使用 `ComboSourceSkill` 尝试后续边，无合法边才尝试起手。`ComboConfirm` 由最近一次有效施法持有独立 Tag Lease，并在一次连招判断结束后释放。上述已实现行为不代表整个连招迁移验收已经完成。
 
 ## 内容管线
 
