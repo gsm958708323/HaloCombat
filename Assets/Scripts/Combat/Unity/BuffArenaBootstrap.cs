@@ -28,6 +28,9 @@ namespace Combat.Unity.Game
         public Transform FloaterRoot;
         public BuffArenaHudView Hud;
 
+        [Tooltip("训练模式：只生成一个不会移动、不会还手、血量极大的木桩敌人，放在玩家正前方，方便测试技能。")]
+        public bool TrainingDummy;
+
         BuffArenaData _data;
         BuffArenaSession _session;
         BuffArenaInputSource _input;
@@ -61,7 +64,8 @@ namespace Combat.Unity.Game
                     + ".");
             hub.Cues.SetPool(new UnityVfxPool(VfxRoot, cuePrefabs, hub.ResolveAnchorPosition));
             hub.Floaters.SetPool(new UnityFloaterPool(FloaterRoot, Camera.main));
-            _session = new BuffArenaSession(_data, hub, navigation);
+            _session = new BuffArenaSession(_data, hub, navigation,
+                TrainingDummy ? BuffArenaIds.DummyBlueprint : null);
             _input = new BuffArenaInputSource(Actions, Camera.main);
             _session.Start();
         }

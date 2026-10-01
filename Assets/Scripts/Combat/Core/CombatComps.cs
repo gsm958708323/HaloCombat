@@ -410,9 +410,10 @@ namespace Combat.Core
         /// <summary>立即停表并清空当前技能；reason 只用于调用方区分上下文。</summary>
         public void Stop(DirectorStopReason reason)
         {
-            // Natural completion keeps the cast eligible for delayed hits; interruptions do not.
-            if (reason != DirectorStopReason.Finished) LastCastId = default;
-            if (reason != DirectorStopReason.Finished) ConsumeComboConfirm();
+            // 任何结束都清掉延迟命中资格与确认：自然结束走 FlushTimeline，规则与这里一致。
+            // 因此"播轴期间命中、播完后接招"不再成立，连招必须在前置技能的时间轴里开取消窗。
+            LastCastId = default;
+            ConsumeComboConfirm();
             if (Self != null && reason != DirectorStopReason.Detach && Self.TryGetComp<BuffComp>(out var buffs)) buffs.ClearForStop(reason);
             _player.Stop();
             _controls.Release();
@@ -454,6 +455,8 @@ namespace Combat.Core
         /// <summary>
         /// 由外部（状态机/结束帧）调用：只有播放器确认「整段到期且所有 clip 已关闭」时才返回 true，
         /// 此时才复位当前技能并通知状态机 Attack 结束；否则直接返回，避免提前打断收尾。
+        /// 自然结束与 Stop 走同一条清理规则：延迟命中资格与确认一并清掉，
+        /// 确认的有效期因此严格限制在播轴期间，接招依赖时间轴里的取消窗。
         /// </summary>
         public void FlushTimeline()
         {
@@ -462,6 +465,8 @@ namespace Combat.Core
             _controls.Release();
             _controls = default;
             _currentSkill = SkillNodeId.None;
+            LastCastId = default;
+            ConsumeComboConfirm();
             CurrentCastId = default;
             _currentAnimationMode = SkillAnimationMode.Attack;
             _fsm.NotifyActivityFinished(ActivityId.Attack, "TimelineFinished");

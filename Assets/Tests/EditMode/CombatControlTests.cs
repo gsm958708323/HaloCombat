@@ -332,25 +332,28 @@ namespace Combat.Tests
             }
         }
 
-        [Test] public void NaturalEndPreservesConfirmUntilAllComboCandidatesAndFallbackAreChecked()
+        [Test] public void NaturalEndClearsConfirmButKeepsCastHistoryForConfirmFreeEdges()
         {
             var d = _actor.GetComp<SkillDirectorComp>(); d.Play(new SkillNodeId(9001));
             var target = Spawn("enemy", 10f);
             _world.Deliver(new IEffect[] { new DamageEffect { Coeff = 0f } }, _actor, target, 0f);
+            var tags = _actor.GetComp<TagComp>(); Assert.IsTrue(tags.Has(CommonTags.ComboConfirm));
             Step(6);
             Assert.IsFalse(d.IsPlaying);
+            // 施法历史保留（后续边仍以它做前置），但自然结束与硬打断一样清掉确认与延迟命中资格：
+            // 确认窗口严格限制在播轴期间，接招必须在播轴内靠时间轴的取消窗完成。
             Assert.AreEqual(new SkillNodeId(9001), d.ComboSourceSkill);
-            var tags = _actor.GetComp<TagComp>(); Assert.IsTrue(tags.Has(CommonTags.ComboConfirm));
+            Assert.IsFalse(d.LastCastId.IsValid);
+            Assert.IsFalse(tags.Has(CommonTags.ComboConfirm));
             _comboTable.Entries = new[] {
                 new ComboEntry { PreSkills = new[] { new SkillNodeId(9001) }, Input = InputToken.Attack,
-                    RequiredTags = new[] { 99999 }, ToSkill = new SkillNodeId(9001) },
-                new ComboEntry { Input = InputToken.Attack, RequiredTags = new[] { CommonTags.ComboConfirm.Value },
-                    Priority = 1, ToSkill = new SkillNodeId(9001) },
-                new ComboEntry { Input = InputToken.Attack, RequiredTags = new[] { CommonTags.ComboConfirm.Value },
-                    Priority = 2, ToSkill = new SkillNodeId(9002) }
+                    RequiredTags = new[] { CommonTags.ComboConfirm.Value }, Priority = 2, ToSkill = new SkillNodeId(9002) },
+                new ComboEntry { PreSkills = new[] { new SkillNodeId(9001) }, Input = InputToken.Attack,
+                    ToSkill = new SkillNodeId(9003) }
             };
+            // 依赖 ComboConfirm 的边匹配不上，只有不依赖确认的后续边能接手。
             Assert.IsTrue(_actor.GetComp<ComboComp>().TryResolveCurrent(InputToken.Attack, out var result));
-            Assert.AreEqual(new SkillNodeId(9002), result.ToSkill);
+            Assert.AreEqual(new SkillNodeId(9003), result.ToSkill);
             Assert.IsFalse(tags.Has(CommonTags.ComboConfirm));
         }
 
@@ -431,6 +434,23 @@ namespace Combat.Tests
             var lease = tags.Acquire(CommonTags.BlockRotate); old.Release();
             Assert.AreEqual(1, tags.Stack(CommonTags.BlockRotate)); lease.Release();
         }
+        [TestCase(4f)]
+        [TestCase(-4f)]
+        [TestCase(0f)]
+        public void AoeAbsorptionAccumulatesHorizontalImpulseWithoutVerticalDrift(float verticalSpeed)
+        {
+            var body = new AoeComp();
+            body.Setup(new AoeDefinition { Radius = .25f }, _actor.Id, 0f, 0);
+            for (int i = 0; i < 10; i++)
+                body.RegisterAbsorption(new SimVec3(2f, verticalSpeed, 3f), .05f, .05f);
+            Assert.AreEqual(10, body.AbsorbedProjectileCount);
+            Near(1f, body.CurrentVelocity.X);
+            Near(0f, body.CurrentVelocity.Y);
+            Near(1.5f, body.CurrentVelocity.Z);
+            Near(1.5f, body.VisualScale);
+            Near(.375f, body.Radius);
+        }
+
         [TestCase(ProjectileMotionKind.Linear)]
         [TestCase(ProjectileMotionKind.ImmediateHoming)]
         [TestCase(ProjectileMotionKind.Accelerate)]

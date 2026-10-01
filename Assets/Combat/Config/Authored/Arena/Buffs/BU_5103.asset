@@ -1,0 +1,106 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e825522116ab3dd4bb0f4715092b0674, type: 3}
+  m_Name: BU_5103
+  m_EditorClassIdentifier: 
+  BuffId: 5103
+  Duration: 2
+  TickInterval: 0.4
+  MaxStacks: 1
+  Stack: 0
+  MutexGroup: 0
+  ModAttr: 3
+  ModOp: 0
+  ModValue: 0
+  GrantedTag: 0
+  Modifiers: []
+  GrantedTags: []
+  ClearOnHurted: 0
+  ClearOnKnockdown: 0
+  ClearOnDeath: 0
+  ClearOnManualStop: 0
+  OnApply:
+  - {fileID: -7238988812455870187}
+  OnStack: []
+  OnPeriod:
+  - {fileID: -3754003267139642443}
+  OnExpire:
+  - {fileID: -3840472654504456429}
+  OnHurted: []
+  OnOwnerCast: []
+--- !u!114 &-3754003267139642443
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3bee7a708f9c80649a169ceea18a443e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Coeff: 0.05
+  Flat: 0
+  IgnoreDef: 0
+  CanCrit: 0
+  UseSnapshotAtk: 1
+  ScaleByBuffStacks: 0
+  SourceHitstopFrames: 0
+  TargetHitstopFrames: 0
+  FeedbackLevel: 0
+  CritMul: 2
+  CritChance: -1
+  DirectDamage: 1
+  FireOnHurted: 0
+--- !u!114 &-7238988812455870187
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a3674ad07407ebf4ab8901433fb55c3e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  CueId: 4209
+  AnchorKey: Body
+  InstanceKey: buff_5103
+  TargetIsVictim: 1
+  AtCuePoint: 0
+  Loop: 1
+  Stop: 0
+  StacksAsTier: 0
+  MaxTier: 3
+--- !u!114 &-3840472654504456429
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a3674ad07407ebf4ab8901433fb55c3e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  CueId: 4209
+  AnchorKey: Body
+  InstanceKey: buff_5103
+  TargetIsVictim: 1
+  AtCuePoint: 0
+  Loop: 0
+  Stop: 1
+  StacksAsTier: 0
+  MaxTier: 3

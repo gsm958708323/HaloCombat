@@ -19,6 +19,10 @@ namespace Combat.Unity.Game
         readonly GridMovementConstraint _map;
         readonly LogicTicker _ticker = new LogicTicker();
         readonly int _enemyTeamId;
+        /// <summary>非 null 时进入训练模式：只放一只木桩，不参与周期刷怪。</summary>
+        readonly string _trainingDummy;
+        /// <summary>本局刷怪使用的蓝图：训练模式是木桩，否则是普通敌人。</summary>
+        readonly string _enemyBlueprint;
         readonly List<DeadEnemy> _deadEnemies = new List<DeadEnemy>(16);
         Action<EvEntityDead> _dead;
         bool _firstSpawn = true;
@@ -50,12 +54,19 @@ namespace Combat.Unity.Game
         public int EnemyCount { get; private set; }
         public GridMovementConstraint Map => _map;
 
-        public BuffArenaSession(BuffArenaData data, PresentHub hub, GridMovementConstraint map)
+        /// <param name="trainingDummyBlueprint">
+        /// 传入木桩蓝图时进入训练模式：首帧在玩家正前方放一只不移动、不还手、血量极大的木桩，
+        /// 之后不再刷怪。传 null 走正常刷怪。
+        /// </param>
+        public BuffArenaSession(BuffArenaData data, PresentHub hub, GridMovementConstraint map,
+            string trainingDummyBlueprint = null)
         {
             _data = data ?? throw new ArgumentNullException(nameof(data));
             Hub = hub ?? throw new ArgumentNullException(nameof(hub));
             _map = map ?? throw new ArgumentNullException(nameof(map));
-            _enemyTeamId = _data.RequireActor(BuffArenaIds.EnemyBlueprint).TeamId;
+            _trainingDummy = string.IsNullOrEmpty(trainingDummyBlueprint) ? null : trainingDummyBlueprint;
+            _enemyBlueprint = _trainingDummy ?? BuffArenaIds.EnemyBlueprint;
+            _enemyTeamId = _data.RequireActor(_enemyBlueprint).TeamId;
             // 世界只装配一次：弹体 / AoE 目录与 Cue 来自烘焙数据，Arena 没有召唤物。
             World = new CombatWorld(
                 new BuffArenaActorFactory(_data),
@@ -165,12 +176,24 @@ namespace Combat.Unity.Game
             World.Tick(step);
             ProcessDeadEnemies();
 
-            _spawnTimer += step;
-            if (_firstSpawn || _spawnTimer >= _data.SpawnPeriod)
+            if (_trainingDummy != null)
             {
-                _firstSpawn = false;
-                _spawnTimer = 0f;
-                SpawnToLimit();
+                // 训练模式不参与周期刷怪：只在首帧放一只木桩，之后场上就它一个目标。
+                if (_firstSpawn)
+                {
+                    _firstSpawn = false;
+                    SpawnTrainingDummy();
+                }
+            }
+            else
+            {
+                _spawnTimer += step;
+                if (_firstSpawn || _spawnTimer >= _data.SpawnPeriod)
+                {
+                    _firstSpawn = false;
+                    _spawnTimer = 0f;
+                    SpawnToLimit();
+                }
             }
 
             CountEnemies();
@@ -213,7 +236,7 @@ namespace Combat.Unity.Game
         /// </summary>
         bool SpawnEnemy()
         {
-            var def = _data.RequireActor(BuffArenaIds.EnemyBlueprint);
+            var def = _data.RequireActor(_enemyBlueprint);
             if (!_map.TryGetRandomPosition(World.Random, def.BodyRadius, false, out var position))
                 return false;
             int index = _spawned++;
@@ -228,6 +251,51 @@ namespace Combat.Unity.Game
             if (enemy.TryGetComp<BehaviorTreeComp>(out var ai))
                 ai.Board.Target = LocalPlayerId;
             World.PublishSpawn(id, def.BlueprintId, def.ViewBlueprintId);
+            return true;
+        }
+
+        /// <summary>木桩与玩家的间距：放在正前方，进场景就能直接开火。</summary>
+        const float TrainingDummyDistance = 4f;
+
+        /// <summary>
+        /// 训练模式专用：在玩家正前方放一只木桩并立即发布。正前方落不下（不可走 / 越界）时
+        /// 退回随机可站点，保证一定放得出来。木桩不带行为树，所以既不会移动也不会还手。
+        /// </summary>
+        void SpawnTrainingDummy()
+        {
+            var def = _data.RequireActor(_trainingDummy);
+            if (!TryGetTrainingDummyPosition(def.BodyRadius, out var position) &&
+                !_map.TryGetRandomPosition(World.Random, def.BodyRadius, false, out position))
+                return;
+            var id = World.SpawnActor(new ActorSpawnSpec(def.BlueprintId), publishSpawn: false);
+            if (!World.TryGetActor(id, out var dummy) || dummy == null)
+                return;
+            var tf = dummy.GetComp<TransformComp>();
+            tf.Position = position;
+            // 面朝玩家，方便判断受击与位移方向。
+            if (World.TryGetActor(LocalPlayerId, out var player) && player != null &&
+                player.TryGetComp<TransformComp>(out var playerTf))
+                tf.YawDegrees = LocomotionComp.YawFromStick(
+                    new SimVec3(playerTf.Position.X - position.X, 0f, playerTf.Position.Z - position.Z));
+            ConfigureEnemy(dummy, 0);
+            World.PublishSpawn(id, def.BlueprintId, def.ViewBlueprintId);
+        }
+
+        /// <summary>玩家正前方 TrainingDummyDistance 处；该点放不下就返回 false，由调用方退回随机站位。</summary>
+        bool TryGetTrainingDummyPosition(float radius, out SimVec3 position)
+        {
+            position = default;
+            if (!World.TryGetActor(LocalPlayerId, out var player) || player == null ||
+                !player.TryGetComp<TransformComp>(out var tf))
+                return false;
+            var forward = LocomotionComp.ForwardFromYaw(tf.YawDegrees);
+            var candidate = new SimVec3(
+                tf.Position.X + forward.X * TrainingDummyDistance,
+                tf.Position.Y,
+                tf.Position.Z + forward.Z * TrainingDummyDistance);
+            if (!_map.CanPlace(candidate, radius, false))
+                return false;
+            position = candidate;
             return true;
         }
 
@@ -249,7 +317,7 @@ namespace Combat.Unity.Game
         /// <summary>敌人属性 = 定义值 + index 递增成长；这里同样抽随机数，抽数顺序不能改。</summary>
         void ConfigureEnemy(Actor enemy, int index)
         {
-            var def = _data.RequireActor(BuffArenaIds.EnemyBlueprint);
+            var def = _data.RequireActor(_enemyBlueprint);
             var attr = enemy.GetComp<AttributeSet>();
             float maxHp = def.MaxHp + index * def.MaxHpPerIndex;
             attr.SetBase(AttrId.MaxHp, maxHp);

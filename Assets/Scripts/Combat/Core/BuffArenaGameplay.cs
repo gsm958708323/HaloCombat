@@ -15,6 +15,8 @@ namespace Combat.Core
         public const string PlayerBlueprint = "buff_player";
         public const string EnemyBlueprint = "buff_enemy";
         public const string BarrelBlueprint = "buff_barrel";
+        /// <summary>训练木桩：不挂行为树的静止靶子，只在 BuffArenaSession 的训练模式下生成。</summary>
+        public const string DummyBlueprint = "buff_dummy";
 
         // Player skills, timelines, projectiles, AoEs and cues are SO-authored; their ids
         // live in Assets/Combat/Config/Authored/Arena. Only the enemy AI tree is code-owned, so
@@ -491,9 +493,11 @@ namespace Combat.Core
         readonly bool _atCuePoint;
         readonly bool _loop;
         readonly bool _stop;
+        readonly bool _stacksAsTier;
+        readonly int _maxTier;
 
         public PlayBuffArenaCueEffect(int cueId, string anchor = "", string key = "", bool target = false,
-            bool point = false, bool loop = false, bool stop = false)
+            bool point = false, bool loop = false, bool stop = false, bool stacksAsTier = false, int maxTier = 3)
         {
             _cueId = cueId;
             _anchorKey = anchor ?? string.Empty;
@@ -502,6 +506,8 @@ namespace Combat.Core
             _atCuePoint = point;
             _loop = loop;
             _stop = stop;
+            _stacksAsTier = stacksAsTier;
+            _maxTier = maxTier;
         }
 
         public void Apply(ref EffectContext ctx)
@@ -509,9 +515,31 @@ namespace Combat.Core
             if (ctx.World == null) return;
             var source = ctx.Source != null ? ctx.Source.Id : EntityId.Invalid;
             var target = _targetIsVictim && ctx.Target != null ? ctx.Target.Id : EntityId.Invalid;
-            ctx.World.Events.Publish(new EvCue(_cueId, source, "BuffArena", target, ctx.Point,
-                _atCuePoint && ctx.HasPoint, _anchorKey, _instanceKey, _loop, _stop));
+
+            if (!_stacksAsTier)
+            {
+                Publish(ctx, source, target, _instanceKey, _loop, _stop);
+                return;
+            }
+
+            // 层数分级：把 BuffStacks 拼进 InstanceKey，让每一层各挂一份同特效实例，
+            // 叠层时粒子密度递增，从而在视觉上区分层数。
+            int cap = _maxTier < 1 ? 1 : _maxTier;
+            if (_stop)
+            {
+                for (int tier = 1; tier <= cap; tier++)
+                    Publish(ctx, source, target, _instanceKey + "_" + tier, false, true);
+                return;
+            }
+
+            int n = ctx.BuffStacks < 1 ? 1 : ctx.BuffStacks;
+            if (n > cap) n = cap;
+            Publish(ctx, source, target, _instanceKey + "_" + n, _loop, false);
         }
+
+        void Publish(in EffectContext ctx, EntityId source, EntityId target, string key, bool loop, bool stop)
+            => ctx.World.Events.Publish(new EvCue(_cueId, source, "BuffArena", target, ctx.Point,
+                _atCuePoint && ctx.HasPoint, _anchorKey, key, loop, stop));
     }
 
     /// <summary>
@@ -678,6 +706,10 @@ namespace Combat.Core
                     var barrel = Combatant(_data.RequireActor(BuffArenaIds.BarrelBlueprint), false);
                     barrel.AddComp(new BarrelComp(_data.BarrelSelfDamagePeriod));
                     return barrel;
+                case BuffArenaIds.DummyBlueprint:
+                    // 木桩走同一套 Combatant 装配，但不进 EnemyBlueprint 分支，所以不会挂行为树：
+                    // 没有 BT 就没有移动意图与施法，天然是一只不还手的静止靶子。
+                    return Combatant(_data.RequireActor(BuffArenaIds.DummyBlueprint), false);
                 default:
                     return RuntimeActor(null, 0);
             }

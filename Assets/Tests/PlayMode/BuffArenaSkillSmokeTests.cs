@@ -350,6 +350,69 @@ namespace Combat.Tests
         }
 
         [UnityTest]
+        public IEnumerator Monkey_AbsorbsShotsWithoutGainingHeight()
+        {
+            var data = _bootstrap.Database.Bake();
+            Assert.IsNotNull(data, _bootstrap.Database.LastContentError);
+            var world = new CombatWorld(new BuffArenaActorFactory(data), new WorldInstall
+            {
+                Projectiles = data.Projectiles, Aoes = data.Aoes,
+                Movement = new FreeMovementConstraint(), Motor = data.Motor,
+                Cues = data.Cues, Random = new FixedRandom(0f)
+            });
+            var present = new Combat.Unity.Presentation.UnityPresentFactory(
+                _bootstrap.Views, null, null, null).Create(
+                    "buff_aoe_monkey_view");
+            try
+            {
+                var ownerId = world.SpawnActor(new ActorSpawnSpec(BuffArenaIds.PlayerBlueprint));
+                Assert.IsTrue(world.TryGetActor(ownerId, out var owner));
+                owner.GetComp<TransformComp>().Position = new SimVec3(-10f, 0f, 0f);
+                const float height = .35f;
+                world.Deliver(new IEffect[] { new SpawnAoeEffect(4102) }, owner, null, 0f,
+                    new SimVec3(0f, height, 0f));
+                Actor monkey = null;
+                foreach (var actor in world.RegistryActive())
+                    if (actor.TryGetComp<AoeComp>(out var aoe) && aoe.Def.SpecId == 4102) monkey = actor;
+                Assert.IsNotNull(monkey);
+                var body = monkey.GetComp<AoeComp>();
+                var tf = monkey.GetComp<TransformComp>();
+                present.Bind(monkey.Id, "buff_aoe_monkey_view");
+                world.Tick(Step);
+                for (int i = 0; i < 10; i++)
+                {
+                    // Alternate normal shots and rising bombs through the actual projectile service.
+                    int spec = i % 2 == 0 ? 4001 : BombProjectileSpec;
+                    Assert.IsTrue(data.Projectiles.TryGet(spec, out var projectile));
+                    var origin = new SimVec3(tf.Position.X, height,
+                        tf.Position.Z - projectile.SpawnForward);
+                    world.Intents.Post(new SpawnProjectileIntent(ownerId, spec, origin, 0f, 0f));
+                    world.Tick(Step);
+                    Assert.AreEqual(i + 1, body.AbsorbedProjectileCount);
+                    for (int tick = 0; tick < 10; tick++)
+                    {
+                        world.Tick(Step);
+                        present.SyncLogic(world);
+                        present.LateTick(Step);
+                        Assert.That(tf.Position.Y, Is.EqualTo(height).Within(.0001f));
+                        Assert.That(body.CurrentVelocity.Y, Is.EqualTo(0f).Within(.0001f));
+                        Assert.IsTrue(present.TryGet<Combat.Unity.Presentation.ActorViewPresent>(out var view));
+                        Assert.That(view.View.transform.position.y, Is.EqualTo(height).Within(.0001f));
+                        Assert.That(view.View.transform.localScale.x, Is.EqualTo(body.VisualScale).Within(.0001f));
+                    }
+                }
+                Assert.Greater(tf.Position.Z, 0f, "Absorption must still push the ball forward.");
+                Assert.That(body.Radius, Is.EqualTo(.375f).Within(.0001f));
+            }
+            finally
+            {
+                present.Release();
+                world.Shutdown();
+            }
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator Fire4_SpawnsProjectile()
         {
             int peak = PressAndWatch<ProjectileComp>(f => { f.Fire4Pressed = true; return f; });

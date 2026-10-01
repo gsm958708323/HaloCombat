@@ -68,6 +68,7 @@
     <Compile Include="Assets\Tests\PlayMode\BuffArenaMapGenerationTests.cs" />
     <Compile Include="Assets\Tests\PlayMode\BuffArenaSkillSmokeTests.cs" />
     <Compile Include="Assets\Tests\PlayMode\BuffArenaControlSmokeTests.cs" />
+    <Compile Include="Assets\Tests\PlayMode\BuffArenaRenderUtilityTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Tests\PlayMode\Combat.PlayModeTests.asmdef" />

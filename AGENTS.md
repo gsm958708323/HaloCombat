@@ -27,7 +27,7 @@
 - 不得恢复 `ComboStateComp`、`ComboStage`、`RequiredStage`、`RequireHitConfirmed` 或独立连招阶段状态。命中资格用普通 `ComboConfirm` Tag/Buff 表达；Cancel 由代码自动检查，不在每条边重复配置。
 - `PreSkills` 支持多个来源；空前置表示起手。播轴期间匹配当前技能且必须满足 Cancel，不能用起手回退绕过；自然结束后先用最近成功施法历史匹配后续边，无合法边再尝试起手。起手不自动要求 Cancel，仍检查显式 `RequiredTags`。
 - 输入采用缓冲预输入；只有匹配且成功施法才消费，失败不消费。`ComboComp` 不维护命中计数、阶段或计时窗口，也不订阅伤害事件；施法历史归 `SkillDirectorComp`，`CurrentSkill` 仍表示正在播放的技能。
-- 确认 Tag 保留至下一次成功施法，失败不清除，硬打断和重置清除；自然结束不清除。不恢复独立连招计时器；重复命中不叠层，旧施法的伤害不得授予新施法资格。
+- 确认 Tag 与延迟命中资格（`LastCastId`）的有效期严格限制在播轴期间：任何结束都清除，包括时间轴自然结束（`FlushTimeline`）与受击、倒地、死亡、手动中止、卸载（`Stop`）；一次完整边表判断或一次成功施法也会消费确认。因此「播轴期间命中、播完后接招」不再成立，连招必须在播轴期间通过取消窗完成。不恢复独立连招计时器；重复命中不叠层，旧施法的伤害不得授予新施法资格。
 - 受击、倒地、死亡、手动中止和卸载清理输入、当前技能、待处理技能及临时位移请求；自然结束保留最近一次成功施法历史。
 - 新技能优先新增配置（ComboEntry、Timeline、Effect、Projectile/AoE 定义），不要为旧技能增加专用分支。
 
@@ -39,7 +39,7 @@
 - Timeline 中的 `Clip` 与 `Payload` 职责必须分开：`Clip` 是带 `[Start, End)` 区间的持续行为，由 `ClipKind`（当前为 `CancelTag`、`Move`、`Hitbox`、`IFrame`）对应的 handler 管理 `Open`、区间内 `Tick` 和 `Close` 生命周期；它表达取消窗、位移、持续判定或持续资格，不直接承载任意一次性效果包。Clip 被打断时也必须执行 `Close`，按原来源释放 Tag、Hitbox 或移动控制，不能留下状态。
 - `Payload` 是单个 `Time` 的离散触发点；时间轴推进到该时间时只投递一次其 `IEffect[]`，数组下标决定同一时间点的投递顺序。它用于 Cue、生成投射物/AoE/召唤物及其他一次性效果，不拥有持续区间和 `Open/Close` 生命周期；需要持续生效的逻辑必须建模为 Clip 或独立运行时实体/Buff。
 - Clip 与 Payload 都属于 Timeline 的只读运行时定义，按时间轴实例播放；不得把表现层 `AnimationClip` 当作战斗 Clip，也不得让表现回写 Clip/Payload、HP、位姿、技能状态或 Tag。新增 `ClipKind` 必须同时实现对应 handler、打断清理和配置校验；Payload 的 Effect 顺序和失败语义遵循统一 `EffectPipeline`，不得绕过 `CombatWorld.Deliver`。
-- CancelClip取消窗口如果没有配置，默认在timeline结束后可连招，但不能中间打断。连招之间会默认检查CancelTag，不需要在Combo中多余配置
+- 连招边要生效，前置技能的时间轴必须配置 `CancelTag` 取消窗：播轴期间只有取消窗打开时 `ComboComp` 才进入边表匹配，窗口未开时输入只排队、不消费、不匹配。没有取消窗的技能播完即清确认，接不上任何后续边。连招匹配默认检查 `Cancel`，不需要在 `ComboEntry` 里额外配置。
 - 统一伤害边界为 `CombatWorld.Deliver -> EffectPipeline -> DamageEffect`；新增跨实体逻辑优先 Intent，但保留服务内部已有直接 `World.Deliver`。
 - 属性、生命、伤害和 Buff 修改由专职属性组件承担，不混入 `SkillDirectorComp` 或状态组件；HP 通过 `AttributeSet.SetBase(AttrId.Hp)` 修改。
 - Attack 期间普通移动和 Timeline 位移可以并存；Root/Jump 的普通移动由移动组件负责，技能代码不得直接写 Transform。

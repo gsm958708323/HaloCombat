@@ -76,10 +76,26 @@ MonoBehaviour:
   - {fileID: -1751242815648122086}
   - {fileID: -1794429452454050473}
   - {fileID: 305285119840110524}
+  - {fileID: -2980140334057393191}
   OnExpire: []
   OnObstacle: []
   OnOwnerHit:
   - {fileID: 2470014847244952081}
+--- !u!114 &-2980140334057393191
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c6521dbe98486f49ab84539b596f279, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Spec: {fileID: 11400000, guid: 920f213a78da4ff0b8dcef3b6600ad9d, type: 2}
+  Stacks: 1
+  Target: 0
 --- !u!114 &305285119840110524
 MonoBehaviour:
   m_ObjectHideFlags: 0

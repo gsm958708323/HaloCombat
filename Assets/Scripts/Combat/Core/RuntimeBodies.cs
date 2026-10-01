@@ -250,13 +250,15 @@ namespace Combat.Core
 
         public void SetVisualScale(float scale) => VisualScale = scale > 0f ? scale : 1f;
 
-        /// <summary>吸收一颗子弹：累计冲量、按 radiusScale 放大视觉与碰撞半径。碰撞半径一起放大是源工程行为，不是纯表现。</summary>
+        /// <summary>吸收一颗子弹：只累计水平冲量，按 radiusScale 放大视觉与碰撞半径。</summary>
         public void RegisterAbsorption(in SimVec3 velocity, float force, float radiusScale)
         {
             AbsorbedProjectileCount++;
             CurrentVelocity = new SimVec3(
                 CurrentVelocity.X + velocity.X * force,
-                CurrentVelocity.Y + velocity.Y * force,
+                // Absorption moves on the arena plane; a bouncing projectile must not
+                // turn its transient vertical velocity into permanent AoE lift.
+                0f,
                 CurrentVelocity.Z + velocity.Z * force);
             SetVisualScale(1f + AbsorbedProjectileCount * radiusScale);
             // Source SpaceMonkeyBallHit grows the *collision* radius with every

@@ -38,21 +38,35 @@ namespace Combat.Core
         }
     }
 
-    /// <summary>给目标挂一条带时长的 Buff；层数与刷新规则由 BuffComp.Apply 决定，本效果只负责把来源一起传下去。</summary>
+    /// <summary>ApplyDuration 的目标归属：Context 用 ctx.Target，Self 用 ctx.Source。</summary>
+    public enum DurationTarget : byte
+    {
+        Context = 0,
+        Self = 1
+    }
+
+    /// <summary>
+    /// 给目标挂一条带时长的 Buff；层数与刷新规则由 BuffComp.Apply 决定，本效果只负责把来源一起传下去。
+    /// 接收者由 DurationTarget 决定：Context 用 ctx.Target，Self 用 ctx.Source（玩家没有行为树，
+    /// Timeline payload 的 ctx.Target 恒为 null，自增益只能走 Self）。
+    /// </summary>
     public sealed class ApplyDurationEffect : IEffect
     {
         readonly DurationSpec _spec;
         readonly int _stacks;
-        public ApplyDurationEffect(DurationSpec spec, int stacks = 1)
+        readonly DurationTarget _target;
+        public ApplyDurationEffect(DurationSpec spec, int stacks = 1, DurationTarget target = DurationTarget.Context)
         {
             _spec = spec;
             _stacks = stacks;
+            _target = target;
         }
 
         public void Apply(ref EffectContext ctx)
         {
-            if (ctx.Target == null) return;
-            ctx.Target.GetComp<BuffComp>().Apply(_spec, ctx.Source, _stacks);
+            var target = _target == DurationTarget.Self ? ctx.Source : ctx.Target;
+            if (target == null) return;
+            target.GetComp<BuffComp>().Apply(_spec, ctx.Source, _stacks);
         }
     }
 

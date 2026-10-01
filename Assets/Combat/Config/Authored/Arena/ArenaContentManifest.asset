@@ -26,6 +26,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: fdd95ea71ea1b324b92e6acab536c995, type: 2}
   - {fileID: 11400000, guid: 076e21c1524e439488dfa24ee56113f5, type: 2}
   - {fileID: 11400000, guid: 8680d5ebe677a1b48944d1d406d01320, type: 2}
+  - {fileID: 11400000, guid: a6aacd1758a74378b3f7c11f2dc978ea, type: 2}
   Timelines:
   - {fileID: 11400000, guid: 79b83eff601d8a44f8f180497fa22671, type: 2}
   - {fileID: 11400000, guid: f4a05ded3078a0f419701d5c132ddc93, type: 2}
@@ -57,7 +58,12 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 28a65263a32b682479cf894fa265f9eb, type: 2}
   - {fileID: 11400000, guid: 2fbafe46917ad944594f073e7cc45d91, type: 2}
   - {fileID: 11400000, guid: 0f4d1e5cea979d240a0407a59b7c899e, type: 2}
+  - {fileID: 11400000, guid: ae8acfdc65504ae485e2e70c86c571e4, type: 2}
   Combos:
   - {fileID: 11400000, guid: 4c7a4e9a8b7445c3a18f0a5c3b2c0d11, type: 2}
-  Buffs: []
+  Buffs:
+  - {fileID: 11400000, guid: cdd8d548c23446d280e33934f5429062, type: 2}
+  - {fileID: 11400000, guid: 920f213a78da4ff0b8dcef3b6600ad9d, type: 2}
+  - {fileID: 11400000, guid: f0d2952604bd48a3a5aede973564148e, type: 2}
+  - {fileID: 11400000, guid: 015992c47a7646b29ad4ecf9be769343, type: 2}
   Cues: {fileID: 11400000, guid: f18a00c4ce1abfd4782694728abafa89, type: 2}

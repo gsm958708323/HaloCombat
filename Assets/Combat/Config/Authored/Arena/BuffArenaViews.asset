@@ -93,6 +93,14 @@ MonoBehaviour:
     KeepAliveOnDead: 0
     ModelYawOffsetDeg: 0
     SpinDegPerSec: 0
+  - BlueprintId: buff_aoe_burn_view
+    Prefab: {fileID: 1117001781089768, guid: 8b47f39d91e61384889cff33839361dc, type: 3}
+    Kind: 2
+    Features: 1
+    Animation: 0
+    KeepAliveOnDead: 0
+    ModelYawOffsetDeg: 0
+    SpinDegPerSec: 0
   - BlueprintId: buff_aoe_blackhole_view
     Prefab: {fileID: 1714681308540598, guid: 5cbc537826220e04592d5a41a0dd985f, type: 3}
     Kind: 2

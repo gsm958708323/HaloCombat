@@ -22,8 +22,12 @@ namespace Combat.Unity.Presentation
             public string AnchorKey;
             public string InstanceKey;
             public bool Loop;
+            public int AnchorMissFrames;
         }
         readonly Func<EntityId, string, SimVec3?> _anchorResolver;
+
+        /// <summary>锚点连续解析失败超过这么多帧才回收，避免 view 尚未建立时误杀。</summary>
+        const int AnchorMissGraceFrames = 30;
 
         public UnityVfxPool(Transform root, Dictionary<string, GameObject> prefabs,
             Func<EntityId, string, SimVec3?> anchorResolver = null)
@@ -42,13 +46,18 @@ namespace Combat.Unity.Presentation
         {
             if (cue.Stop)
             {
-                Stop(cue.InstanceKey, cue.Source);
+                Stop(cue.InstanceKey, AnchorOf(cue));
                 return true;
             }
 
-            EntityId anchorId = cue.Target.IsValid ? cue.Target : cue.Source;
-            return Spawn(d, pos, anchorId, cue.AnchorKey, cue.InstanceKey, cue.Loop, cue.HasPoint);
+            return Spawn(d, pos, AnchorOf(cue), cue.AnchorKey, cue.InstanceKey, cue.Loop, cue.HasPoint);
         }
+
+        /// <summary>
+        /// 锚点解析与 CueDirector.OnCue 保持一致：优先取目标，缺省回落施法者。
+        /// 生成与停播必须用同一个算法，否则「施法者 ≠ 持有者」的 loop（例如玩家给敌人挂的 debuff）会挂得上却停不掉。
+        /// </summary>
+        static EntityId AnchorOf(in EvCue cue) => cue.Target.IsValid ? cue.Target : cue.Source;
 
         bool Spawn(in CueDef d, SimVec3 pos, EntityId anchorId, string anchorKey,
             string instanceKey, bool loop, bool fixedPoint)
@@ -114,7 +123,18 @@ namespace Combat.Unity.Presentation
                 {
                     var pos = _anchorResolver(live.AnchorId, live.AnchorKey);
                     if (pos.HasValue)
+                    {
                         live.Go.transform.position = new Vector3(pos.Value.X, pos.Value.Y, pos.Value.Z);
+                        live.AnchorMissFrames = 0;
+                    }
+                    else if (++live.AnchorMissFrames > AnchorMissGraceFrames)
+                    {
+                        // 持有者已卸载/回收：Buff 的静默清理不会派发 OnExpire，这里兜底回收，避免残留幽灵特效。
+                        RecycleAt(i);
+                        continue;
+                    }
+
+                    _live[i] = live;
                 }
                 if (!live.Loop && now >= live.End)
                     RecycleAt(i);

@@ -293,6 +293,7 @@ MonoBehaviour:
   VfxRoot: {fileID: 0}
   FloaterRoot: {fileID: 0}
   Hud: {fileID: 0}
+  TrainingDummy: 0
 --- !u!1 &70000020
 GameObject:
   m_ObjectHideFlags: 0

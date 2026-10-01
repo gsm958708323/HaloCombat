@@ -7,6 +7,9 @@ namespace Combat.Unity.Game
     {
         static readonly Dictionary<int, Material> Materials = new Dictionary<int, Material>(64);
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetMaterialCache() => Materials.Clear();
+
         public static void Normalize(GameObject root)
         {
             if (root == null) return;
@@ -30,7 +33,9 @@ namespace Combat.Unity.Game
             string shaderName = source.shader != null ? source.shader.name : string.Empty;
             if (shaderName.StartsWith("Universal Render Pipeline/")) return source;
             int key = source.GetInstanceID() * 2 + (particle ? 1 : 0);
-            if (Materials.TryGetValue(key, out var cached)) return cached;
+            // Native materials can be destroyed while the managed cache survives
+            // (for example after PlayMode tests with Domain Reload disabled).
+            if (Materials.TryGetValue(key, out var cached) && cached != null) return cached;
 
             Shader shader = particle
                 ? Shader.Find("Universal Render Pipeline/Particles/Unlit")

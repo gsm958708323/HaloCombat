@@ -16,8 +16,12 @@ namespace Combat.Config
         public bool AtCuePoint;
         public bool Loop;
         public bool Stop;
+        [Tooltip("勾选后把 Buff 层数拼进 InstanceKey，让每层各挂一份同特效实例，用粒子密度区分层数。")]
+        public bool StacksAsTier;
+        [Tooltip("层数分级的层数上限，应与 Buff 的 MaxStacks 一致。")]
+        public int MaxTier = 3;
 
         protected override IEffect BakeNew() => new PlayBuffArenaCueEffect(
-            CueId, AnchorKey, InstanceKey, TargetIsVictim, AtCuePoint, Loop, Stop);
+            CueId, AnchorKey, InstanceKey, TargetIsVictim, AtCuePoint, Loop, Stop, StacksAsTier, MaxTier);
     }
 }

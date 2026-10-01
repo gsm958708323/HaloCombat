@@ -98,7 +98,7 @@ Hitstop 只推进 wall time，暂停逻辑帧。实体用 `EntityId(index, gener
 - `BuffComp.Inst` 已保存 `EntityId SourceId`，执行效果时通过 World 临时解析来源；旧文档中“长期保存 Actor”的迁移项已过时。但按来源驱散仍使用整数 key，该路径尚未完全迁移到完整实体身份。
 - `EffectContext` 当前包含多个通用字段；具体 Effect 的专属配置由 Effect/资产持有。
 - `Actor.TryGetComp<T>()` 支持接口查询，供通用结算边界策略使用。
-- 播轴期间，`ComboComp` 使用当前技能并自动检查 Cancel；自然结束后使用 `ComboSourceSkill` 尝试后续边，无合法边才尝试起手。`ComboConfirm` 由最近一次有效施法持有独立 Tag Lease，并在一次连招判断结束后释放。上述已实现行为不代表整个连招迁移验收已经完成。
+- 播轴期间，`ComboComp` 使用当前技能并要求 `Cancel` 已开启（即时间轴的 `CancelTag` 取消窗处于打开状态），窗口未开时输入只排队不消费；自然结束后使用 `ComboSourceSkill` 尝试后续边，无合法边才尝试起手。`ComboConfirm` 由最近一次有效施法持有独立 Tag Lease，并在一次连招判断、一次成功施法或任何形式的结束（含自然结束）时释放。因此接招必须落在播轴期间的取消窗内。上述已实现行为不代表整个连招迁移验收已经完成。
 
 ## 内容管线
 

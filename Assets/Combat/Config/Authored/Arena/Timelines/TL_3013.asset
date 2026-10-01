@@ -49,7 +49,19 @@ MonoBehaviour:
   AnimatorState: Fire
   ControlTags: 
   ScaleWithActionSpeed: 0
-  Clips: []
+  Clips:
+  - Start: 0.25
+    End: 0.65
+    Kind: 1
+    MoveX: 0
+    MoveY: 0
+    MoveZ: 0
+    Steer: 0
+    HitRadius: 0
+    HitOffsetX: 0
+    HitOffsetY: 0
+    HitOffsetZ: 0
+    HitProfile: {fileID: 0}
   Payloads:
   - Time: 0.22
     Effects:
