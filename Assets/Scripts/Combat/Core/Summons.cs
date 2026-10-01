@@ -17,9 +17,12 @@ namespace Combat.Core
     public sealed class SummonCatalog
     {
         readonly Dictionary<int, SummonDefinition> _map = new Dictionary<int, SummonDefinition>(4);
+        public int Count => _map.Count;
+        public IEnumerable<SummonDefinition> All => _map.Values;
         public void Register(SummonDefinition def)
         {
             if (def == null || def.SpecId == 0) throw new ArgumentException("SummonDefinition");
+            if (_map.ContainsKey(def.SpecId)) throw new InvalidOperationException("Duplicate summon " + def.SpecId);
             _map[def.SpecId] = def;
         }
         public bool TryGet(int id, out SummonDefinition def) => _map.TryGetValue(id, out def);

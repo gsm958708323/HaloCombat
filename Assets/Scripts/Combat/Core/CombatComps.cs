@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace Combat.Core
 {
+    /// <summary>技能停止原因，只用于让调用方区分上下文（表现/日志），不参与结算。</summary>
     public enum DirectorStopReason : byte
     {
         Finished = 0,
@@ -14,8 +15,10 @@ namespace Combat.Core
         Knockdown = 6
     }
 
+    /// <summary>技能槽位：普通攻击 + 两个技能槽。</summary>
     public enum SkillSlot : byte { Normal = 0, Skill1 = 1, Skill2 = 2 }
 
+    /// <summary>阵营归属。运行时体（子弹/AoE）也带它，只为让伤害归属与敌我过滤正确；敌我判定就是 TeamId 不相等，没有阵营关系表。</summary>
     public sealed class TeamComp : Comp
     {
         public int TeamId { get; private set; }
@@ -24,6 +27,7 @@ namespace Combat.Core
         public bool IsHostileTo(TeamComp other) => other != null && TeamId != other.TeamId;
     }
 
+    /// <summary>无敌帧计时与「是否无敌」的持有者。Hp 本体存在 AttributeSet，这里不保存血量。</summary>
     public sealed class HealthComp : Comp
     {
         TagComp _tags;
@@ -31,9 +35,23 @@ namespace Combat.Core
         public override bool WantsTick => true;
         public bool InIFrame => _iframe > 0f;
 
+        // Source BulletState.CanHit skips any target with immuneTime > 0, so an
+        // invulnerable body is passed through without consuming the projectile.
+        /// <summary>无敌帧计时或 Invincible 标签任一为真即不可命中，供子弹与受击判定提前跳过。</summary>
+        public bool IsInvulnerable
+        {
+            get
+            {
+                if (_iframe > 0f) return true;
+                var tags = _tags;
+                return tags != null && tags.Has(CommonTags.Invincible);
+            }
+        }
+
         protected override void OnAttach() => _tags = Self.GetComp<TagComp>();
         protected override void OnDetach() { _iframe = 0f; _tags = null; }
 
+        /// <summary>延长无敌：与已有计时取较大者（不叠加），从无到有时加一层 Invincible 标签；计时归零才由 Tick 移除。</summary>
         public void BeginIFrame(float seconds)
         {
             if (seconds <= 0f || _tags == null) return;
@@ -52,6 +70,7 @@ namespace Combat.Core
         }
     }
 
+    /// <summary>攻击判定盒：开启期间由 HitDetectService 每帧查询；_recorded 保证一次开启内同一目标只结算一次，Open/Close 都会清空记录。</summary>
     public sealed class HitboxComp : Comp
     {
         readonly HashSet<long> _recorded = new HashSet<long>();
@@ -60,6 +79,7 @@ namespace Combat.Core
         public SimVec3 LocalOffset { get; private set; }
         public IEffect[] BakedOnHit { get; private set; } = Array.Empty<IEffect>();
 
+        /// <summary>开启判定：先 Close 清掉上一次记录，再烘焙效果包、半径（非正回落到 0.8）与本地偏移。</summary>
         public void Open(IEffect[] onHit, float radius, in SimVec3 localOffset)
         {
             Close();
@@ -79,12 +99,14 @@ namespace Combat.Core
             _recorded.Clear();
         }
 
+        /// <summary>把 EntityId 压成 long（Index 在高 32 位、Generation 在低 32 位），以便放进 HashSet 去重。</summary>
         public static long Pack(EntityId id)
             => ((long)id.Index << 32) | (uint)id.Generation;
 
         public static EntityId Unpack(long packed)
             => new EntityId((int)(packed >> 32), (int)(uint)packed);
 
+        /// <summary>本次开启内首次记录该目标返回 true；未开启、非法 Id 或已记录返回 false。</summary>
         public bool TryRecord(EntityId id)
         {
             if (!IsOpen || !id.IsValid) return false;
@@ -94,6 +116,7 @@ namespace Combat.Core
         protected override void OnDetach() => Close();
     }
 
+    /// <summary>技能装载表：槽位映射到技能与时间轴，重复装备同一槽位直接覆盖；EquipNormalG1G2Defaults 是 S1 默认配置。</summary>
     public sealed class LoadoutComp : Comp
     {
         struct Slot
@@ -146,6 +169,7 @@ namespace Combat.Core
         public TimelineId Timeline;
     }
 
+    /// <summary>派生结果（值类型），查表失败时调用方拿到 default。</summary>
     public readonly struct ComboResolveResult
     {
         public readonly SkillNodeId ToSkill;
@@ -159,6 +183,7 @@ namespace Combat.Core
         }
     }
 
+    /// <summary>派生表：TryResolve 取满足条件里优先级最高的条目；PreSkills 为空表示只接受「当前没有技能」的起手。</summary>
     public sealed class ComboTableSO
     {
         public ComboEntry[] Entries = Array.Empty<ComboEntry>();
@@ -207,6 +232,7 @@ namespace Combat.Core
         }
     }
 
+    /// <summary>派生组件：查表后消费自身命中确认；输入仅由调用方在成功施放后 ConsumeInput。</summary>
     public sealed class ComboComp : Comp
     {
         readonly ComboTableSO _table;
@@ -233,35 +259,75 @@ namespace Combat.Core
             _director = null;
         }
 
+        /// <summary>尝试产出一条派生；当前技能取 director.CurrentSkill，没有 director 时按 None 处理。</summary>
         public bool TryResolve(out ComboResolveResult result)
         {
             result = default;
             if (_input == null || !_input.TryPeek(out var token))
                 return false;
-            var current = _director != null ? _director.CurrentSkill : SkillNodeId.None;
-            if (!_table.TryResolve(current, token, _tags, out result))
-                return false;
-            _input.Consume();
-            return true;
+            return TryResolveCurrent(token, out result);
         }
+
+        public bool TryResolveCurrent(in InputToken token, out ComboResolveResult result)
+        {
+            result = default;
+            if (_director == null || !_director.CanStartSkill) return false;
+            var current = _director.ComboSourceSkill;
+            if (_director.IsPlaying)
+                current = _director.CurrentSkill;
+            if (_director.IsPlaying && !_tags.Has(CommonTags.Cancel))
+                return false;
+            bool resolved = _table.TryResolve(current, token, _tags, out result);
+            if (!resolved && !_director.IsPlaying)
+            {
+                current = SkillNodeId.None;
+                resolved = _table.TryResolve(current, token, _tags, out result);
+            }
+            _director.ConsumeComboConfirm();
+            return resolved;
+        }
+
+        public void ConsumeInput() => _input?.Consume();
     }
 
+    /// <summary>
+    /// 技能导演：持有一份每角色独立的 TimelinePlayer（严禁跨实体共享），负责播放守卫、冷却、空中/目标限制、时间轴推进与收尾通知。
+    /// Play(skill, timelineId) 只做通用守卫；Play(skill) 走技能目录，额外检查冷却、CanUseInAir 与 RequiresTarget。
+    /// Timeline control restrictions are leased tags, released on every stop path.
+    /// </summary>
     public sealed class SkillDirectorComp : Comp
     {
         readonly TimelineLibrary _library;
+        readonly SkillCatalog _skills;
         readonly TimelinePlayer _player = new TimelinePlayer();
+        readonly Dictionary<int, float> _cooldownUntil = new Dictionary<int, float>(8);
         StateMachineComp _fsm;
         TagComp _tags;
         LocomotionComp _loco;
         SkillNodeId _currentSkill = SkillNodeId.None;
+        SkillNodeId _comboSourceSkill = SkillNodeId.None;
+        SkillAnimationMode _currentAnimationMode = SkillAnimationMode.Attack;
+        int _castSerial;
+        public CastId CurrentCastId { get; private set; }
+        public CastId LastCastId { get; private set; }
 
         public SkillNodeId CurrentSkill => _currentSkill;
+        public SkillNodeId ComboSourceSkill => _comboSourceSkill;
+        public SkillAnimationMode CurrentAnimationMode => _currentAnimationMode;
+        public float CurrentTime => _player.Time;
+        public float CurrentDuration => _player.Duration;
+        public bool UsesSkillCatalog => _skills != null;
         public bool IsPlaying => _player.IsPlaying;
+        TagLease _controls;
+        TagLease _comboConfirm;
+        public bool CanStartSkill => !Self.World.IsActorStopped(Self) && (_tags == null || !_tags.Has(CommonTags.BlockSkill));
+        public string AnimatorState => _player.Current != null ? _player.Current.AnimatorState : string.Empty;
         public override bool WantsTick => true;
 
-        public SkillDirectorComp(TimelineLibrary library)
+        public SkillDirectorComp(TimelineLibrary library, SkillCatalog skills = null)
         {
             _library = library ?? throw new ArgumentNullException(nameof(library));
+            _skills = skills;
         }
 
         protected override void OnAttach()
@@ -277,49 +343,140 @@ namespace Combat.Core
             _fsm = null;
             _tags = null;
             _loco = null;
+            _cooldownUntil.Clear();
+            _castSerial = 0;
+            LastCastId = default;
         }
 
+        /// <summary>按显式时间轴播放（跳过技能目录的冷却/前置检查，仍受死亡/眩晕/倒地/沉默守卫）。</summary>
         public bool Play(SkillNodeId skill, TimelineId timelineId)
+            => PlayInternal(skill, timelineId, SkillAnimationMode.Attack);
+
+        /// <summary>播放核心：死亡/眩晕/倒地/沉默直接拒绝；时间轴缺失抛异常（属配置错误，不该静默失败）；播放前请求朝向吸附并中断上一段。</summary>
+        bool PlayInternal(SkillNodeId skill, TimelineId timelineId, SkillAnimationMode animationMode)
         {
-            if (_tags != null &&
-                (_tags.Has(CommonTags.Dead) || _tags.Has(CommonTags.Stunned) ||
-                 _tags.Has(CommonTags.Downed) || _tags.Has(CommonTags.Silence)))
-                return false;
+            if (!CanStartSkill) return false;
             if (!_library.TryGet(timelineId, out var so))
                 throw new InvalidOperationException("Missing timeline " + timelineId);
 
-            _loco?.RequestSnapYaw();
-            if (_player.IsPlaying)
-                _player.Stop();
+            if (_player.IsPlaying) Stop(DirectorStopReason.Replaced);
+            _loco?.SnapForCast();
 
+            if (!_fsm.TryEnter(ActivityId.Attack, new ActivityEnterArgs { Reason = "PlaySkill" })) return false;
             _currentSkill = skill;
+            _comboSourceSkill = skill;
+            ConsumeComboConfirm();
+            CurrentCastId = new CastId(Self.Id, ++_castSerial);
+            LastCastId = CurrentCastId;
+            _currentAnimationMode = animationMode;
+            _controls = _tags != null ? _tags.Acquire(so.ControlTags) : default;
             _player.Play(so);
-            _fsm.TryEnter(ActivityId.Attack, new ActivityEnterArgs { Reason = "PlaySkill" });
             if (Self.TryGetComp<BuffComp>(out var buffs))
                 buffs.DispatchOnOwnerCast();
             return true;
         }
 
-        public void Stop(DirectorStopReason reason)
+        /// <summary>走技能目录播放：先做冷却/空中/目标前置检查，成功后才写入冷却时间。</summary>
+        public bool Play(SkillNodeId skill)
         {
-            _player.Stop();
-            _currentSkill = SkillNodeId.None;
+            if (_skills == null)
+                throw new InvalidOperationException("Skill catalog is not installed");
+            var definition = _skills.Require(skill);
+            if (!CanPlay(definition))
+                return false;
+            if (!PlayInternal(skill, definition.Timeline, definition.AnimationMode))
+                return false;
+            if (definition.Cooldown > 0f && Self.World != null)
+                _cooldownUntil[skill.Value] = Self.Time.Time + definition.Cooldown;
+            return true;
         }
 
+        /// <summary>技能目录播放的前置条件：冷却未到、不限制空中时才能在空中用、RequiresTarget 时行为树必须有合法目标。</summary>
+        bool CanPlay(SkillDefinition definition)
+        {
+            if (definition == null)
+                return false;
+            if (Self.World != null && _cooldownUntil.TryGetValue(definition.Id.Value, out var readyAt) &&
+                Self.Time.Time < readyAt)
+                return false;
+            if (!definition.CanUseInAir && _tags != null && _tags.Has(CommonTags.Airborne))
+                return false;
+            if (definition.RequiresTarget && Self.TryGetComp<BehaviorTreeComp>(out var bt) &&
+                !CondHasTarget.IsTargetValid(new BtTick(Self, Self.World, bt.Board, Self.World != null ? Self.World.Time.Delta : 0f)))
+                return false;
+            return true;
+        }
+
+        /// <summary>立即停表并清空当前技能；reason 只用于调用方区分上下文。</summary>
+        public void Stop(DirectorStopReason reason)
+        {
+            // 任何结束都清掉延迟命中资格与确认：自然结束走 FlushTimeline，规则与这里一致。
+            // 因此"播轴期间命中、播完后接招"不再成立，连招必须在前置技能的时间轴里开取消窗。
+            LastCastId = default;
+            ConsumeComboConfirm();
+            if (Self != null && reason != DirectorStopReason.Detach && Self.TryGetComp<BuffComp>(out var buffs)) buffs.ClearForStop(reason);
+            _player.Stop();
+            _controls.Release();
+            _controls = default;
+            _currentSkill = SkillNodeId.None;
+            _comboSourceSkill = SkillNodeId.None;
+            CurrentCastId = default;
+            _currentAnimationMode = SkillAnimationMode.Attack;
+        }
+
+        /// <summary>最近有效施法命中敌人时持有一份确认 Lease，与伤害数值和 Buff 无关。</summary>
+        public void GrantComboConfirm(Actor target, CastId castId)
+        {
+            if (!castId.IsValid || castId != LastCastId || _tags == null || _comboConfirm.Id != 0) return;
+            if (Self == null || !Self.IsActive || target == null || !target.IsActive || target.World != Self.World ||
+                !Self.TryGetComp<TeamComp>(out var sourceTeam) || !target.TryGetComp<TeamComp>(out var targetTeam) ||
+                !sourceTeam.IsHostileTo(targetTeam)) return;
+            _comboConfirm = _tags.Acquire(CommonTags.ComboConfirm);
+        }
+
+        /// <summary>完整连招边表判断后释放自己的确认；不影响外部同名 Tag。</summary>
+        public void ConsumeComboConfirm()
+        {
+            _comboConfirm.Release();
+            _comboConfirm = default;
+        }
+
+        /// <summary>按 ScaleWithActionSpeed 把 ActionSpeed 折进 dt（下限 0.1，防止 0 速度把时间轴卡死），再交给自己的播放器。</summary>
         public override void Tick(float dt)
         {
             if (!_player.IsPlaying) return;
-            _player.Tick(dt, Self);
-            if (!_player.IsPlaying)
-            {
-                _currentSkill = SkillNodeId.None;
-                _fsm.NotifyActivityFinished(ActivityId.Attack, "TimelineFinished");
-            }
+            float scale = 1f;
+            if (_player.Current != null && _player.Current.ScaleWithActionSpeed &&
+                Self.TryGetComp<AttributeSet>(out var attr))
+                scale = Math.Max(.1f, attr.GetFinal(AttrId.ActionSpeed));
+            _player.Tick(dt * scale, Self);
+        }
+
+        /// <summary>
+        /// 由外部（状态机/结束帧）调用：只有播放器确认「整段到期且所有 clip 已关闭」时才返回 true，
+        /// 此时才复位当前技能并通知状态机 Attack 结束；否则直接返回，避免提前打断收尾。
+        /// 自然结束与 Stop 走同一条清理规则：延迟命中资格与确认一并清掉，
+        /// 确认的有效期因此严格限制在播轴期间，接招依赖时间轴里的取消窗。
+        /// </summary>
+        public void FlushTimeline()
+        {
+            if (Self.Time.IsStopped || !_player.FlushPendingCloses())
+                return;
+            _controls.Release();
+            _controls = default;
+            _currentSkill = SkillNodeId.None;
+            LastCastId = default;
+            ConsumeComboConfirm();
+            CurrentCastId = default;
+            _currentAnimationMode = SkillAnimationMode.Attack;
+            _fsm.NotifyActivityFinished(ActivityId.Attack, "TimelineFinished");
         }
     }
 
+    /// <summary>玩家操作驱动：按输入缓冲里的 token 依次处理跳跃、闪避、派生技能；死亡/眩晕/倒地一票否决。跳跃要求 Grounded，闪避被沉默拒绝且失败不消耗输入。</summary>
     public sealed class PlayerCombatDriverComp : Comp
     {
+        readonly PlayerCombatConfig _config;
         StateMachineComp _fsm;
         ComboComp _combo;
         SkillDirectorComp _director;
@@ -328,6 +485,11 @@ namespace Combat.Core
         TagComp _tags;
 
         public override bool WantsTick => true;
+
+        public PlayerCombatDriverComp(PlayerCombatConfig config = null)
+        {
+            _config = config;
+        }
 
         protected override void OnAttach()
         {
@@ -349,12 +511,13 @@ namespace Combat.Core
             _tags = null;
         }
 
+        /// <summary>每帧优先级：跳跃 → 闪避 → 派生；处理过的分支直接 return，避免同一 token 在一帧内被多条规则重复消费。</summary>
         public override void Tick(float dt)
         {
-            if (_tags.Has(CommonTags.Dead) || _tags.Has(CommonTags.Stunned) || _tags.Has(CommonTags.Downed))
-                return;
+            if (!_director.CanStartSkill) return;
 
-            if (_input.TryPeek(out var token) && token.Equals(InputToken.Jump))
+            var jumpInput = _config != null ? _config.JumpInput : InputToken.Jump;
+            if (_input.TryPeek(out var token) && token.Equals(jumpInput))
             {
                 if (_tags.Has(CommonTags.Grounded))
                 {
@@ -364,19 +527,27 @@ namespace Combat.Core
                 }
             }
 
-            if (_input.TryPeek(out token) && token.Equals(Season2Tokens.Dodge))
+            var dodgeInput = _config != null ? _config.DodgeInput : Season2Tokens.Dodge;
+            var dodgeSkill = _config != null ? _config.DodgeSkill : SkillNodeId.Dodge;
+            if (_input.TryPeek(out token) && token.Equals(dodgeInput))
             {
                 if (_tags.Has(CommonTags.Silence))
                     return;
 
-                if (_director.Play(SkillNodeId.Dodge, TimelineId.TL_Dodge))
+                var played = _config != null && !_config.HasDodge
+                    ? false
+                    : (_config != null ? _director.Play(dodgeSkill) : _director.Play(dodgeSkill, TimelineId.TL_Dodge));
+                if (played)
                     _input.Consume();
                 return;
             }
 
             if (!_combo.TryResolve(out var resolved))
                 return;
-            _director.Play(resolved.ToSkill, resolved.Timeline);
+            bool comboPlayed = _director.UsesSkillCatalog
+                ? _director.Play(resolved.ToSkill)
+                : _director.Play(resolved.ToSkill, resolved.Timeline);
+            if (comboPlayed) _combo.ConsumeInput();
         }
     }
 }

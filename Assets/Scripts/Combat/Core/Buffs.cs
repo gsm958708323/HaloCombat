@@ -29,6 +29,10 @@ namespace Combat.Core
         public int MutexGroup;
         public Modifier[] Modifiers = Array.Empty<Modifier>();
         public TagId[] GrantedTags = Array.Empty<TagId>();
+        public bool ClearOnHurted;
+        public bool ClearOnKnockdown;
+        public bool ClearOnDeath;
+        public bool ClearOnManualStop;
         public IEffect[] OnApply = Array.Empty<IEffect>();
         public IEffect[] OnStack = Array.Empty<IEffect>();
         public IEffect[] OnPeriod = Array.Empty<IEffect>();
@@ -47,12 +51,12 @@ namespace Combat.Core
             public int BuffId;
             public int MutexGroup;
             public int Stacks;
-            public int AppliedByPacked;
+            public EntityId SourceId;
             public int BornFrame;
             public float ExpireTime;
             public float PeriodAcc;
             public DurationSpec Spec;
-            public Actor Source;
+            public TagLease Tags;
         }
 
         readonly List<Inst> _list = new List<Inst>(8);
@@ -112,8 +116,8 @@ namespace Combat.Core
         public override void Tick(float dt)
         {
             if (Self.World == null) return;
-            int frame = Self.World.Time.Frame;
-            float now = Self.World.Time.Time;
+            int frame = Self.World.Time.LogicFrame;
+            float now = Self.Time.Time;
 
             for (int i = _list.Count - 1; i >= 0; i--)
             {
@@ -133,7 +137,7 @@ namespace Combat.Core
                 {
                     inst.PeriodAcc -= spec.TickInterval;
                     _list[i] = inst;
-                    Dispatch(spec.OnPeriod, inst.Source, Self, inst.Stacks);
+                    Dispatch(spec.OnPeriod, ResolveSource(inst.SourceId), Self, inst.Stacks);
                     if (i >= _list.Count || _list[i].InstanceId != inst.InstanceId)
                         break;
                     inst = _list[i];
@@ -165,7 +169,7 @@ namespace Combat.Core
                     case DispelMode.ByBuffId: hit = inst.BuffId == key; break;
                     case DispelMode.ByMutexGroup: hit = inst.MutexGroup != 0 && inst.MutexGroup == key; break;
                     case DispelMode.ByTag: hit = Grants(inst.Spec, tag); break;
-                    case DispelMode.BySource: hit = inst.AppliedByPacked == key; break;
+                    case DispelMode.BySource: hit = BuffKey(inst.SourceId) == key; break;
                 }
 
                 if (!hit) continue;
@@ -185,7 +189,7 @@ namespace Combat.Core
         public void DispatchOnHurted(Actor attacker)
         {
             if (Self.World == null) return;
-            int frame = Self.World.Time.Frame;
+            int frame = Self.World.Time.LogicFrame;
             _snapshot.Clear();
             for (int i = 0; i < _list.Count; i++)
             {
@@ -199,6 +203,20 @@ namespace Combat.Core
             {
                 var inst = _snapshot[i];
                 Dispatch(inst.Spec.OnHurted, attacker, Self, inst.Stacks);
+                if (inst.Spec.ClearOnHurted) RemoveInstance(inst.InstanceId);
+            }
+        }
+
+        public void ClearForStop(DirectorStopReason reason)
+        {
+            for (int i = _list.Count - 1; i >= 0; i--)
+            {
+                var spec = _list[i].Spec;
+                bool clear = (reason == DirectorStopReason.Hit && spec.ClearOnHurted)
+                    || (reason == DirectorStopReason.Knockdown && spec.ClearOnKnockdown)
+                    || (reason == DirectorStopReason.Dead && spec.ClearOnDeath)
+                    || (reason == DirectorStopReason.Manual && spec.ClearOnManualStop);
+                if (clear) RemoveAt(i, true);
             }
         }
 
@@ -235,7 +253,7 @@ namespace Combat.Core
             if (spec.Stack == StackPolicy.RefreshDuration)
             {
                 inst.ExpireTime = NextExpire(spec);
-                inst.Source = source ?? inst.Source;
+                if (source != null) inst.SourceId = source.Id;
                 _list[idx] = inst;
                 return true;
             }
@@ -248,14 +266,14 @@ namespace Combat.Core
                 if (n > cap) n = cap;
                 inst.Stacks = n;
                 inst.ExpireTime = NextExpire(spec);
-                inst.Source = source ?? inst.Source;
+                if (source != null) inst.SourceId = source.Id;
                 _list[idx] = inst;
                 if (n > old)
                 {
                     var bag = (spec.OnStack != null && spec.OnStack.Length > 0)
                         ? spec.OnStack
                         : spec.OnApply;
-                    Dispatch(bag, inst.Source, Self, inst.Stacks);
+                    Dispatch(bag, ResolveSource(inst.SourceId), Self, inst.Stacks);
                 }
 
                 return true;
@@ -275,12 +293,12 @@ namespace Combat.Core
                 BuffId = spec.BuffId,
                 MutexGroup = spec.MutexGroup,
                 Stacks = stacks,
-                AppliedByPacked = Pack(source),
-                BornFrame = Self.World != null ? Self.World.Time.Frame : 0,
+                SourceId = source != null ? source.Id : EntityId.Invalid,
+                BornFrame = Self.World != null ? Self.World.Time.LogicFrame : 0,
                 ExpireTime = NextExpire(spec),
                 PeriodAcc = 0f,
                 Spec = spec,
-                Source = source
+                Tags = _tags.Acquire(spec.GrantedTags)
             };
             _list.Add(inst);
             AttachModsAndTags(inst);
@@ -301,7 +319,7 @@ namespace Combat.Core
         {
             var inst = _list[idx];
             if (fireExpire)
-                Dispatch(inst.Spec.OnExpire, inst.Source, Self, inst.Stacks);
+                Dispatch(inst.Spec.OnExpire, ResolveSource(inst.SourceId), Self, inst.Stacks);
             _attr.RemoveBySource(inst.InstanceId);
             DetachTags(inst);
             _list.RemoveAt(idx);
@@ -320,18 +338,30 @@ namespace Combat.Core
                 }
             }
 
-            var tags = inst.Spec.GrantedTags;
-            if (tags == null || _tags == null) return;
-            for (int i = 0; i < tags.Length; i++)
-                _tags.Add(tags[i], 1, TagSource.Effect("Buff.Grant"));
         }
 
-        void DetachTags(in Inst inst)
+        void DetachTags(in Inst inst) => inst.Tags.Release();
+
+        Actor ResolveSource(EntityId id)
         {
-            var tags = inst.Spec.GrantedTags;
-            if (tags == null || _tags == null) return;
-            for (int i = 0; i < tags.Length; i++)
-                _tags.Remove(tags[i], 1, TagSource.Effect("Buff.Ungrant"));
+            if (Self.World == null || !id.IsValid || !Self.World.TryGetActor(id, out var source)) return null;
+            return source;
+        }
+
+        static int BuffKey(EntityId id) => unchecked((id.Index * 397) ^ id.Generation);
+
+        public int RemoveByTag(TagId tag)
+        {
+            int removed = 0;
+            for (int i = _list.Count - 1; i >= 0; i--)
+            {
+                var granted = _list[i].Spec.GrantedTags;
+                bool match = false;
+                for (int j = 0; j < granted.Length; j++) if (granted[j] == tag) { match = true; break; }
+                if (!match) continue;
+                RemoveAt(i, true); removed++;
+            }
+            return removed;
         }
 
         void Dispatch(IEffect[] bag, Actor source, Actor target, int stacks)
@@ -346,7 +376,7 @@ namespace Combat.Core
         float NextExpire(DurationSpec spec)
         {
             if (spec.Duration <= 0f) return float.PositiveInfinity;
-            float t = Self.World != null ? Self.World.Time.Time : 0f;
+            float t = Self.World != null ? Self.Time.Time : 0f;
             return t + spec.Duration;
         }
 
@@ -376,7 +406,7 @@ namespace Combat.Core
         public static int Pack(Actor a)
         {
             if (a == null || !a.Id.IsValid) return 0;
-            return unchecked(a.Id.Index * 397 ^ a.Id.Generation);
+            return BuffKey(a.Id);
         }
     }
 }

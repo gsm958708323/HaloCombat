@@ -28,11 +28,11 @@ namespace Combat.Demos
             trace.Check("移除 Cancel 后归零", !tags.Has(CommonTags.Cancel), "Cancel=false",
                 $"Cancel={tags.Has(CommonTags.Cancel)}", () => DemoTrace.Snapshot(actor));
 
-            // 输入缓冲默认窗口为 0.2 秒；推进 0.25 秒后应过期。
+            // 输入队列默认窗口为 0.8 秒角色时间；推进 0.85 秒后应过期。
             input.Push(InputToken.Attack);
             trace.Check("写入 Attack 输入", input.TryPeek(out _), "缓冲存在", $"存在={input.HasBuffered}",
                 () => $"token=Attack {DemoTrace.Snapshot(actor)}");
-            trace.AdvanceFor("推进输入有效窗口之外", 0.25f, 1,
+            trace.AdvanceFor("推进输入有效窗口之外", 0.85f, 1,
                 () => $"buffered={input.HasBuffered} {DemoTrace.Snapshot(actor)}");
             trace.Check("输入缓冲自动过期", !input.TryPeek(out _), "Attack 不可读取",
                 $"可读取={input.HasBuffered}", () => DemoTrace.Snapshot(actor));
@@ -229,7 +229,6 @@ namespace Combat.Demos
             // 监听 Cue 事件，确认 Timeline 的表现层 Payload 确实被触发。
             var events = new EventBus();
             var world = DemoWorld.Create(out _, out _, new FixedRandom(0f), events);
-            CombatCatalog.RegisterDefaults(world.Projectiles, world.Aoes, CombatCatalog.Burn(), world.Summons);
             int cues = 0;
             events.Subscribe<EvCue>(_ => cues++);
             var id = world.SpawnActor(new ActorSpawnSpec("fighter"));
@@ -341,7 +340,6 @@ namespace Combat.Demos
         {
             var events = new EventBus();
             var world = DemoWorld.Create(out _, out var time, new FixedRandom(0f), events);
-            CombatCatalog.RegisterDefaults(world.Projectiles, world.Aoes, CombatCatalog.Burn(), world.Summons);
             world.TryGetActor(world.SpawnActor(new ActorSpawnSpec("fighter")), out var player);
             world.TryGetActor(world.SpawnActor(new ActorSpawnSpec("stake")), out var stake);
             EntityId playerId = player.Id;
@@ -459,11 +457,10 @@ namespace Combat.Demos
             var events = new EventBus();
             var world = DemoWorld.Create(out _, out _, new FixedRandom(0f), events);
             var burn = CombatCatalog.Burn();
-            CombatCatalog.RegisterDefaults(world.Projectiles, world.Aoes, burn, world.Summons);
             world.TryGetActor(world.SpawnActor(new ActorSpawnSpec("fighter")), out var player);
             world.TryGetActor(world.SpawnActor(new ActorSpawnSpec("stake")), out var stake);
             player.GetComp<TransformComp>().Position = new SimVec3(0, 0, 0);
-            player.GetComp<TransformComp>().YawDegrees = 0f;
+            player.GetComp<TransformComp>().YawDegrees = LocomotionComp.YawFromStick(new SimVec3(1f, 0f, 0f));
             stake.GetComp<TransformComp>().Position = new SimVec3(2.5f, 0, 0);
             var pAttr = player.GetComp<AttributeSet>();
             var sBuff = stake.GetComp<BuffComp>();
@@ -577,7 +574,7 @@ namespace Combat.Demos
                 ns == SkillNodeId.G1 && nt == TimelineId.TL_G1;
 
             ptf.Position = new SimVec3(0, 0, 0);
-            ptf.YawDegrees = 0f;
+            ptf.YawDegrees = LocomotionComp.YawFromStick(new SimVec3(1f, 0f, 0f));
             stf.Position = new SimVec3(0.55f, 0, 0);
             void Step(float dt)
             {
@@ -615,7 +612,7 @@ namespace Combat.Demos
             int stacks = sBuff.StacksOf(CombatIds.Burn);
             trace.Check("G2 Ground AoE 将 Burn 叠到上限", stacks == 3, "Ground AoE Burn层数=3", $"Burn层数={stacks}", () => DemoTrace.Snapshot(stake));
 
-            // 3. 受击时停止技能并清空输入缓存，恢复后回到 Root。
+            // 3. 受击停止技能并清空输入，恢复后从起手开始。
             input.Push(InputToken.Attack);
             trace.AdvanceUntil("准备可被中断的技能", () => pDir.IsPlaying, 0.02f, 3,
                 () => $"skill={pDir.CurrentSkill} {DemoTrace.Snapshot(player)}");
@@ -624,6 +621,7 @@ namespace Combat.Demos
             trace.Check("受击中断停止技能并清空输入", !pDir.IsPlaying && !input.HasBuffered && pFsm.Current == ActivityId.Hit,
                 "技能停止、输入清空、Activity=Hit", $"playing={pDir.IsPlaying} buffered={input.HasBuffered} Activity={pFsm.Current}",
                 () => DemoTrace.Snapshot(player));
+            input.Clear();
             trace.AdvanceUntil("受击恢复 Root", () => pFsm.Current == ActivityId.Root, 0.05f, 8,
                 () => DemoTrace.Snapshot(player));
             trace.Check("受击结束后恢复 Root", pFsm.Current == ActivityId.Root, "Activity=Root", $"Activity={pFsm.Current}",

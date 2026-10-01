@@ -16,7 +16,7 @@
     <Configurations>Debug;Release</Configurations>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <RootNamespace>Combat.EditorTools</RootNamespace>
+    <RootNamespace>Combat.Editor</RootNamespace>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <AssemblyName>Combat.Editor</AssemblyName>
@@ -59,17 +59,15 @@
     <UnityVersion>6000.0.32f1</UnityVersion>
   </PropertyGroup>
   <ItemGroup>
-    <Analyzer Include="C:\Users\Halo\.vscode\extensions\visualstudiotoolsforunity.vstuc-1.3.1\Analyzers\Microsoft.Unity.Analyzers.dll" />
+    <Analyzer Include="C:\Users\Halo\.vscode\extensions\visualstudiotoolsforunity.vstuc-1.3.2\Analyzers\Microsoft.Unity.Analyzers.dll" />
     <Analyzer Include="D:\Work\UnityInstall\6000.0.32f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.SourceGenerators.dll" />
     <Analyzer Include="D:\Work\UnityInstall\6000.0.32f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.Properties.SourceGenerator.dll" />
     <Analyzer Include="D:\Work\UnityInstall\6000.0.32f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Editor\HaloCombat\HaloCombatDemoSceneBuilder.cs" />
+    <Compile Include="Assets\Editor\HaloCombat\TimelineClipAssetDrawer.cs" />
     <Compile Include="Assets\Editor\HaloCombat\FinalVerification.cs" />
-    <Compile Include="Assets\Editor\HaloCombat\TrainingCampSceneBuilder.cs" />
-    <Compile Include="Assets\Editor\HaloCombat\GenerateDefaultDatabase.cs" />
-    <Compile Include="Assets\Editor\HaloCombat\SeasonThreeSceneBuilder.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Editor\HaloCombat\Combat.Editor.asmdef" />
@@ -607,6 +605,10 @@
       <HintPath>Library\PackageCache\com.unity.visualscripting\Runtime\VisualScripting.Flow\Dependencies\NCalc\Unity.VisualScripting.Antlr3.Runtime.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>Library\PackageCache\com.unity.nuget.newtonsoft-json\Runtime\Newtonsoft.Json.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Unity.VisualScripting.TextureAssets">
       <HintPath>Library\PackageCache\com.unity.visualscripting\Editor\VisualScripting.Core\EditorAssetResources\Unity.VisualScripting.TextureAssets.dll</HintPath>
       <Private>False</Private>
@@ -1142,7 +1144,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="Combat.Core.csproj" />
-    <ProjectReference Include="Combat.Presentation.csproj" />
     <ProjectReference Include="Combat.Config.csproj" />
     <ProjectReference Include="Combat.Unity.csproj" />
     <ProjectReference Include="Combat.Demos.csproj" />

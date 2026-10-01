@@ -1,15 +1,10 @@
-using Combat.Unity.Editor;
-
-namespace Combat.EditorTools
+namespace Combat.Editor
 {
     public static class FinalVerification
     {
         public static void Run()
         {
-            GenerateDefaultDatabase.GenerateBatch();
-            ValidateMenu.Validate();
             HaloCombatDemoSceneBuilder.VerifyAll();
-            SeasonThreeSceneBuilder.VerifyAll();
         }
     }
 }

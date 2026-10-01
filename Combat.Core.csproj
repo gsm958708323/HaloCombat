@@ -59,18 +59,22 @@
     <UnityVersion>6000.0.32f1</UnityVersion>
   </PropertyGroup>
   <ItemGroup>
-    <Analyzer Include="C:\Users\Halo\.vscode\extensions\visualstudiotoolsforunity.vstuc-1.3.1\Analyzers\Microsoft.Unity.Analyzers.dll" />
+    <Analyzer Include="C:\Users\Halo\.vscode\extensions\visualstudiotoolsforunity.vstuc-1.3.2\Analyzers\Microsoft.Unity.Analyzers.dll" />
     <Analyzer Include="D:\Work\UnityInstall\6000.0.32f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.SourceGenerators.dll" />
     <Analyzer Include="D:\Work\UnityInstall\6000.0.32f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.Properties.SourceGenerator.dll" />
     <Analyzer Include="D:\Work\UnityInstall\6000.0.32f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\Combat\Core\MotorConfig.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\CombatGeom.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\ProjectileSteering.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Pipeline.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\CombatComps.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Motor.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\AfterDamageEffect.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\CombatValidator.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Summons.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\ArenaNavigation.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\BehaviorTree.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Attributes.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\BehaviorTreeComp.cs" />
@@ -79,14 +83,19 @@
     <Compile Include="Assets\Scripts\Combat\Core\Buffs.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Catalog.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Presentation.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\BuffArenaGameplay.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\TagsInput.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\BakedContent.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\BuffArenaActorDef.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Infrastructure.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\World.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\ProjectileMotion.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Timeline.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\ActorModel.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Logging.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\QueryRandom.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\FloaterAnchor.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\SpawnEntry.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Factory.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\RuntimeBodies.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Activity.cs" />
@@ -143,6 +152,10 @@
     </Reference>
     <Reference Include="Unity.VisualScripting.Antlr3.Runtime">
       <HintPath>Library\PackageCache\com.unity.visualscripting\Runtime\VisualScripting.Flow\Dependencies\NCalc\Unity.VisualScripting.Antlr3.Runtime.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>Library\PackageCache\com.unity.nuget.newtonsoft-json\Runtime\Newtonsoft.Json.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.VisualScripting.TextureAssets">

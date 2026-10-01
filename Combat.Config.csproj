@@ -59,40 +59,47 @@
     <UnityVersion>6000.0.32f1</UnityVersion>
   </PropertyGroup>
   <ItemGroup>
-    <Analyzer Include="C:\Users\Halo\.vscode\extensions\visualstudiotoolsforunity.vstuc-1.3.1\Analyzers\Microsoft.Unity.Analyzers.dll" />
+    <Analyzer Include="C:\Users\Halo\.vscode\extensions\visualstudiotoolsforunity.vstuc-1.3.2\Analyzers\Microsoft.Unity.Analyzers.dll" />
     <Analyzer Include="D:\Work\UnityInstall\6000.0.32f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.SourceGenerators.dll" />
     <Analyzer Include="D:\Work\UnityInstall\6000.0.32f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.Properties.SourceGenerator.dll" />
     <Analyzer Include="D:\Work\UnityInstall\6000.0.32f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Scripts\Combat\Config\ArenaPresentationAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\AoeDefAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\ProjectileDefAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\AfterDamageAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\SummonDefinitionAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\ArenaContentManifestAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\LaunchAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\CharacterMotorAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\BarrelExplosionAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\SpawnAoeAsset.cs" />
-    <Compile Include="Assets\Scripts\Combat\Config\EffectAssets.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\PullToPointAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\HitProfileAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\ArenaRulesAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\RefillAmmoAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\SpawnSummonAsset.cs" />
-    <Compile Include="Assets\Scripts\Combat\Config\SummonDefAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\PlayBuffArenaCueAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\KnockdownAsset.cs" />
-    <Compile Include="Assets\Scripts\Combat\Config\ActPlaySkillAsset.cs" />
-    <Compile Include="Assets\Scripts\Combat\Config\CombatDatabaseAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\BuffArenaDatabaseAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\DamageEffectAsset.cs" />
-    <Compile Include="Assets\Scripts\Combat\Config\BtSelectorAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\KnockbackAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\DefinitionAssets.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\BuffArenaSkillAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\HurtFeedbackAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\DurationSpecAsset.cs" />
-    <Compile Include="Assets\Scripts\Combat\Config\BtSequenceAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\SpawnProjectileAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\EffectAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\IFrameAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\ApplyDurationAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\DispelAsset.cs" />
-    <Compile Include="Assets\Scripts\Combat\Config\BtNodeAsset.cs" />
-    <Compile Include="Assets\Scripts\Combat\Config\BehaviorTreeAssets.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\SkillTimelineAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\CueLibraryAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\ComboTableAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\HitStunAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\BuffArenaActorDefAsset.cs" />
+    <Compile Include="Assets\Scripts\Combat\Config\SpawnBarrelAsset.cs" />
     <Compile Include="Assets\Scripts\Combat\Config\PlayCueAsset.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -621,6 +628,10 @@
     </Reference>
     <Reference Include="Unity.VisualScripting.Antlr3.Runtime">
       <HintPath>Library\PackageCache\com.unity.visualscripting\Runtime\VisualScripting.Flow\Dependencies\NCalc\Unity.VisualScripting.Antlr3.Runtime.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>Library\PackageCache\com.unity.nuget.newtonsoft-json\Runtime\Newtonsoft.Json.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.VisualScripting.TextureAssets">

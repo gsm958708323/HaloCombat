@@ -1,0 +1,79 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f8f69f5cdd449f2b8fb1cb2f6aa4f08, type: 3}
+  m_Name: Combo_BuffPlayer
+  m_EditorClassIdentifier: 
+  Entries:
+  - PreSkillAssets:
+    - {fileID: 11400000, guid: 7c0ceeca49ab01c43a9ccb2e2ca7db5d, type: 2}
+    InputAction: Fire1
+    RequiredTags: f9030000
+    Priority: 10
+    Skill: {fileID: 11400000, guid: 0a0e8f2e2c7848f6a3a7a6a5d2e1c901, type: 2}
+  - PreSkillAssets:
+    - {fileID: 11400000, guid: 0a0e8f2e2c7848f6a3a7a6a5d2e1c901, type: 2}
+    InputAction: Fire1
+    RequiredTags: f9030000
+    Priority: 10
+    Skill: {fileID: 11400000, guid: 1b1f9f3f3d8949f7b4b8c7d6e5f4a302, type: 2}
+  - PreSkillAssets:
+    - {fileID: 11400000, guid: 7c0ceeca49ab01c43a9ccb2e2ca7db5d, type: 2}
+    InputAction: Fire2
+    RequiredTags: f9030000
+    Priority: 5
+    Skill: {fileID: 11400000, guid: d258fc5bbbcd1934fbcab3b66f857149, type: 2}
+  - PreSkillAssets:
+    - {fileID: 11400000, guid: 0a0e8f2e2c7848f6a3a7a6a5d2e1c901, type: 2}
+    InputAction: Fire3
+    RequiredTags: f9030000
+    Priority: 5
+    Skill: {fileID: 11400000, guid: f4f3aac8069ecdb4da11b24274ecf822, type: 2}
+  - PreSkillAssets: []
+    InputAction: Fire1
+    RequiredTags: 
+    Priority: 0
+    Skill: {fileID: 11400000, guid: 7c0ceeca49ab01c43a9ccb2e2ca7db5d, type: 2}
+  - PreSkillAssets: []
+    InputAction: Roll
+    RequiredTags: 
+    Priority: 0
+    Skill: {fileID: 11400000, guid: 11fa4edaaa4258d4b849a0cba66abd7b, type: 2}
+  - PreSkillAssets: []
+    InputAction: Monkey
+    RequiredTags: 
+    Priority: 0
+    Skill: {fileID: 11400000, guid: 89315847c2f03c14a953d7a7ff68da9e, type: 2}
+  - PreSkillAssets: []
+    InputAction: Homing
+    RequiredTags: 
+    Priority: 0
+    Skill: {fileID: 11400000, guid: 7c017cac09a277d4480f0a78b41ac58a, type: 2}
+  - PreSkillAssets: []
+    InputAction: Fire2
+    RequiredTags: 
+    Priority: 0
+    Skill: {fileID: 11400000, guid: d258fc5bbbcd1934fbcab3b66f857149, type: 2}
+  - PreSkillAssets: []
+    InputAction: Fire4
+    RequiredTags: 
+    Priority: 0
+    Skill: {fileID: 11400000, guid: e304b429343b28a4fbace49e57dcbb3b, type: 2}
+  - PreSkillAssets: []
+    InputAction: Fire3
+    RequiredTags: 
+    Priority: 0
+    Skill: {fileID: 11400000, guid: f4f3aac8069ecdb4da11b24274ecf822, type: 2}
+  - PreSkillAssets: []
+    InputAction: Fire5
+    RequiredTags: 
+    Priority: 0
+    Skill: {fileID: 11400000, guid: 1fe56a0b7eeb6954687c6fbfd7409a98, type: 2}

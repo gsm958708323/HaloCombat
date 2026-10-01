@@ -1,6 +1,5 @@
 using System;
 using Combat.Core;
-using Combat.Presentation;
 
 namespace Combat.Demos
 {
@@ -19,6 +18,15 @@ namespace Combat.Demos
                 throw new Exception("clamp");
             var report = CombatValidator.Validate(new CodeCombatContent().Bake());
             if (report.HasError) throw new Exception(report.ToString());
+
+            var world = DemoWorld.Create(out _, out _);
+            var id = world.SpawnActor(new ActorSpawnSpec("fighter"));
+            world.TryGetActor(id, out var fighter);
+            fighter.GetComp<SkillDirectorComp>().Play(SkillNodeId.G1, TimelineId.TL_G1);
+            world.Tick(0.25f);
+            float move = fighter.GetComp<TransformComp>().Position.X;
+            if (move < 0.48f || move > 0.54f)
+                throw new Exception("timeline intersection move=" + move.ToString("F3"));
             Console.WriteLine("ClockDemo PASSED steps=" + total);
         }
     }

@@ -142,41 +142,38 @@ namespace Combat.Core
         public DamageEffect Damage = new DamageEffect { Coeff = 1f, CanCrit = true, UseSnapshotAtk = true };
         public HitStunEffect Stun = new HitStunEffect { Duration = 0.35f };
         public KnockbackEffect Knockback = new KnockbackEffect { Distance = 0.4f };
+        public LaunchEffect Launch;
         public IFrameEffect IFrame;
-        IEffect[] _baked;
-
         public IEffect[] Bake()
         {
-            if (_baked != null) return _baked;
             int n = 2;
             if (Knockback != null) n++;
+            if (Launch != null) n++;
             if (IFrame != null) n++;
             var bag = new IEffect[n];
             int i = 0;
             bag[i++] = Damage;
             bag[i++] = Stun;
             if (Knockback != null) bag[i++] = Knockback;
+            if (Launch != null) bag[i++] = Launch;
             if (IFrame != null) bag[i++] = IFrame;
-            _baked = bag;
-            return _baked;
+            return bag;
         }
 
-        public void ClearCache() => _baked = null;
+        public void ClearCache() { }
     }
 
     public sealed class DurationBake
     {
         public DurationSpec Source;
-        IEffect[] _period;
         public DurationBake(DurationSpec source) => Source = source;
 
         public DurationSpec Bake()
         {
-            if (_period == null) _period = Source.OnPeriod ?? Array.Empty<IEffect>();
-            Source.OnPeriod = _period;
+            Source.OnPeriod = Source.OnPeriod ?? Array.Empty<IEffect>();
             return Source;
         }
 
-        public void ClearCache() => _period = null;
+        public void ClearCache() { }
     }
 }

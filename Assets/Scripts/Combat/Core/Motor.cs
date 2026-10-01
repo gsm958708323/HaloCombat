@@ -5,12 +5,26 @@ namespace Combat.Core
     public sealed class TransformComp : Comp
     {
         public SimVec3 Position;
-        public float YawDegrees;
+
+        // Yaw convention (frozen): 0 faces +Z (Unity's forward) and a positive angle
+        // turns towards +X, so ForwardFromYaw(yaw) == Quaternion.Euler(0, yaw, 0) *
+        // Vector3.forward. The old 2D polar convention (0 = +X, counter-clockwise) is
+        // retired; converting an old angle is 90 - yaw.
+        // Actors still spawn facing +X (the old default yaw 0), which is why the spawn
+        // value is 90 instead of 0.
+        public float YawDegrees = SpawnFacingYaw;
+
+        public const float SpawnFacingYaw = 90f;
     }
 
     public sealed class LocomotionComp : Comp
     {
         public override bool WantsTick => false;
+
+        // The source UnitRotate leaves rotateSpeed at 0, so an ordered rotation
+        // resolves instantly. 3600 deg/s keeps mouse aiming visually instant while
+        // still covering the 0.1s payload delay used by the source skill timelines.
+        public const float AimTurnRateDegPerSec = 3600f;
 
         TransformComp _tf;
         StateMachineComp _fsm;
@@ -31,6 +45,8 @@ namespace Combat.Core
         float _airSteer;
         float _groundY;
         float _stickDeadzone;
+        float _aimYaw;
+        bool _hasAimYaw;
 
         public float Yaw => _tf != null ? _tf.YawDegrees : 0f;
         public bool IsGrounded => _grounded;
@@ -64,6 +80,12 @@ namespace Combat.Core
 
         public void RequestMoveIntent(float x, float z) => _moveIntent = new SimVec3(x, 0f, z);
 
+        public void RequestAimYaw(float yaw)
+        {
+            _aimYaw = yaw;
+            _hasAimYaw = true;
+        }
+
         public void RequestSkillDelta(float x, float y, float z)
         {
             _skillDelta.X += x;
@@ -82,6 +104,17 @@ namespace Combat.Core
 
         public void RequestSnapYaw()
         {
+            if (_tags.Has(CommonTags.BlockRotate) || Self.Time.IsStopped) return;
+            // A live mouse-aim request outranks the move stick: the source game
+            // orders the rotation from the cursor before it starts the skill
+            // timeline, so a cast must never snap the body back to the last
+            // movement direction.
+            if (_hasAimYaw)
+            {
+                _pendingYaw = _aimYaw;
+                _hasSnapYaw = true;
+                return;
+            }
             if (StickMag(_moveIntent) >= _stickDeadzone)
             {
                 _pendingYaw = YawFromStick(_moveIntent);
@@ -91,17 +124,43 @@ namespace Combat.Core
 
         public void RequestSnapYawDegrees(float yaw)
         {
+            if (_tags.Has(CommonTags.BlockRotate) || Self.Time.IsStopped) return;
             _pendingYaw = yaw;
             _hasSnapYaw = true;
         }
 
+        public void SnapForCast()
+        {
+            RequestSnapYaw();
+            if (_hasSnapYaw && !_tags.Has(CommonTags.BlockRotate)) _tf.YawDegrees = _pendingYaw;
+            _hasSnapYaw = false;
+        }
+
+        public void ClearPendingMotion()
+        {
+            ClearFrameRequests();
+            _teleport = null;
+            _hasSnapYaw = _hasAimYaw = false;
+            _moveIntent = SimVec3.Zero;
+            _verticalVel = 0f;
+        }
+
         public float FacingForSkillMove()
-            => _hasSnapYaw ? _pendingYaw : (_tf != null ? _tf.YawDegrees : 0f);
+            => _hasSnapYaw && !_tags.Has(CommonTags.BlockRotate) ? _pendingYaw : (_tf != null ? _tf.YawDegrees : 0f);
 
         public void ImpulseJump()
         {
-            if (!_grounded) return;
+            if (!_grounded || _tags.Has(CommonTags.BlockMove) || Self.World.IsActorStopped(Self)) return;
             _verticalVel = _jumpSpeed;
+            _grounded = false;
+            WriteGroundTags(false);
+        }
+
+        public void ImpulseLaunch(float verticalSpeed)
+        {
+            if (verticalSpeed <= 0f) return;
+            if (verticalSpeed > _verticalVel)
+                _verticalVel = verticalSpeed;
             _grounded = false;
             WriteGroundTags(false);
         }
@@ -112,6 +171,13 @@ namespace Combat.Core
 
         public void Integrate(float dt)
         {
+            IntegrateBeforeHitDetection(dt);
+            IntegrateAfterHitDetection(dt);
+        }
+
+        public void IntegrateBeforeHitDetection(float dt)
+        {
+            if (Self.Time.IsStopped) return;
             if (_tf == null || _fsm == null)
             {
                 ClearFrameRequests();
@@ -125,15 +191,14 @@ namespace Combat.Core
             }
 
             var policy = _fsm.Motor;
-            var loco = policy.Loco;
 
             if (_hasSnapYaw)
             {
-                _tf.YawDegrees = _pendingYaw;
+                if (!_tags.Has(CommonTags.BlockRotate)) _tf.YawDegrees = _pendingYaw;
                 _hasSnapYaw = false;
             }
 
-            float motorScale = MotorScale(loco);
+            float motorScale = MotorScale();
             var delta = SimVec3.Zero;
             if (motorScale > 0f)
             {
@@ -142,37 +207,62 @@ namespace Combat.Core
                 delta.Z += walk.Z;
             }
 
-            if (loco.UseSkill)
+            if (!_tags.Has(CommonTags.BlockSkillMotion))
             {
                 delta.X += _skillDelta.X;
                 delta.Y += _skillDelta.Y;
                 delta.Z += _skillDelta.Z;
             }
 
-            if (loco.UseHit)
+            ApplyFacing(policy.Facing, dt);
+
+            if (delta.X != 0f || delta.Y != 0f || delta.Z != 0f)
+            {
+                var target = _tf.Position + delta;
+                target = _worldResolve(target, false, out _);
+                _tf.Position = target;
+            }
+
+            _skillDelta = SimVec3.Zero;
+            _hasAimYaw = false;
+        }
+
+        public void IntegrateAfterHitDetection(float dt)
+        {
+            if (Self.Time.IsStopped) return;
+            if (_tf == null || _fsm == null)
+            {
+                _hitDelta = SimVec3.Zero;
+                return;
+            }
+
+            var delta = SimVec3.Zero;
+            if (!_tags.Has(CommonTags.BlockHitMotion))
             {
                 delta.X += _hitDelta.X;
                 delta.Y += _hitDelta.Y;
                 delta.Z += _hitDelta.Z;
             }
 
-            if (loco.ApplyGravity)
+            if (!_tags.Has(CommonTags.BlockGravity))
                 delta.Y += IntegrateGravity(dt);
             else if (_grounded)
                 _verticalVel = 0f;
 
-            ApplyFacing(policy.Facing);
-
             if (delta.X != 0f || delta.Y != 0f || delta.Z != 0f)
-                _tf.Position = _tf.Position + delta;
+            {
+                var target = _tf.Position + delta;
+                target = _worldResolve(target, false, out _);
+                _tf.Position = target;
+            }
 
-            ClearFrameRequests();
+            _hitDelta = SimVec3.Zero;
         }
 
-        float MotorScale(in LocoProfile loco)
+        float MotorScale()
         {
-            if (_grounded)
-                return _clipSteer > 0f ? _clipSteer : loco.MotorScale;
+            if (_tags.Has(CommonTags.BlockMove)) return 0f;
+            if (_grounded) return _clipSteer > 0f ? _clipSteer : 1f;
             return _airSteer;
         }
 
@@ -214,14 +304,24 @@ namespace Combat.Core
             return dy;
         }
 
-        void ApplyFacing(in FacingPolicy facing)
+        void ApplyFacing(in FacingPolicy facing, float dt)
         {
+            if (_tags.Has(CommonTags.BlockRotate)) return;
             bool stick = StickMag(_moveIntent) >= _stickDeadzone;
             float want = stick ? YawFromStick(_moveIntent) : _tf.YawDegrees;
+            // Mouse aim owns the facing whenever it is requested and the activity
+            // does not hard-lock rotation. The source PlayerController keeps
+            // calling OrderRotateTo every FixedUpdate while a skill timeline runs
+            // (SetCasterControlState(canRotate: true)), so an Attack must not gate
+            // aiming behind a Move clip's steer value.
+            if (_hasAimYaw && _grounded)
+            {
+                float turn = facing.TurnRate > 0f ? facing.TurnRate * dt : AimTurnRateDegPerSec * dt;
+                _tf.YawDegrees = MoveTowardsAngle(_tf.YawDegrees, _aimYaw, turn);
+                return;
+            }
             switch (facing.Mode)
             {
-                case FacingMode.Lock:
-                    return;
                 case FacingMode.FollowStickIfGrounded:
                     if (_grounded && stick) _tf.YawDegrees = want;
                     return;
@@ -257,16 +357,42 @@ namespace Combat.Core
             _hitDelta = SimVec3.Zero;
         }
 
+        SimVec3 _worldResolve(in SimVec3 target, bool flying, out bool obstructed)
+        {
+            if (Self == null || Self.World == null || _tf == null)
+            {
+                obstructed = false;
+                return target;
+            }
+            float radius = _attr != null ? Math.Max(0f, _attr.GetFinal(AttrId.MoveSpeed) * 0f) : 0f;
+            // Character radius is stored by HitboxComp in source-style actors;
+            // generic actors keep the zero-radius navigation path.
+            if (Self.TryGetComp<HitboxComp>(out var hitbox) && hitbox.Radius > 0f)
+                radius = hitbox.Radius;
+            else if (Self.TryGetComp<CharacterRadiusComp>(out var body))
+                radius = body.Radius;
+            return Self.World.Movement.Resolve(_tf.Position, target, radius, flying, false, out obstructed);
+        }
+
+        static float MoveTowardsAngle(float current, float target, float maxDelta)
+        {
+            float delta = target - current;
+            while (delta > 180f) delta -= 360f;
+            while (delta < -180f) delta += 360f;
+            if (Math.Abs(delta) <= maxDelta) return target;
+            return current + Math.Sign(delta) * maxDelta;
+        }
+
         public static float StickMag(in SimVec3 v)
             => (float)Math.Sqrt(v.X * v.X + v.Z * v.Z);
 
         public static float YawFromStick(in SimVec3 v)
-            => (float)(Math.Atan2(v.Z, v.X) * (180.0 / Math.PI));
+            => (float)(Math.Atan2(v.X, v.Z) * (180.0 / Math.PI));
 
         public static SimVec3 ForwardFromYaw(float yawDeg)
         {
             double r = yawDeg * Math.PI / 180.0;
-            return new SimVec3((float)Math.Cos(r), 0f, (float)Math.Sin(r));
+            return new SimVec3((float)Math.Sin(r), 0f, (float)Math.Cos(r));
         }
     }
 }
