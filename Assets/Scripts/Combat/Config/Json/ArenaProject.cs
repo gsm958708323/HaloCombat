@@ -18,8 +18,8 @@ namespace Combat.Config
                 if(entry.Key!="f6"&&entry.Key!="f7")throw new ContentValidationException("$.slots","Unknown slot.");
                 var pub=SkillPublicationJson.Read(entry.Value).Document;
                 if(pub.Project.Id!=project.Id)throw new ContentValidationException("$.slots."+entry.Key,"Publish this slot from the current formal project: "+project.Id);
-                if(SkillJsonCodec.Write(pub.Project.Runtime?.Motor)!=SkillJsonCodec.Write(project.Runtime?.Motor)||SkillJsonCodec.Write(pub.Project.Runtime?.Cues)!=SkillJsonCodec.Write(project.Runtime?.Cues))
-                    throw new ContentValidationException("$.slots."+entry.Key,"Motor/Cue version conflicts with formal content; publish formal content and both slots together.");
+                if(SkillJsonCodec.Write(pub.Project.Runtime?.Motor)!=SkillJsonCodec.Write(project.Runtime?.Motor)||SkillJsonCodec.Write(pub.Project.Runtime?.Cues)!=SkillJsonCodec.Write(project.Runtime?.Cues)||SkillJsonCodec.Write(pub.Project.Runtime?.Views)!=SkillJsonCodec.Write(project.Runtime?.Views))
+                    throw new ContentValidationException("$.slots."+entry.Key,"Motor/Cue/View version conflicts with formal content; publish formal content and both slots together.");
                 foreach(var value in pub.Project.Skills){Check("skill:"+value.Id,value,shared);Document.Skills=Document.Skills.Where(s=>s.Id!=value.Id).Concat(new[]{value}).ToArray();}
                 foreach(var value in pub.Project.Buffs){Check("buff:"+value.Id,value,shared);Document.Buffs=Document.Buffs.Where(b=>b.Id!=value.Id).Concat(new[]{value}).ToArray();}
                 foreach(var value in pub.Project.SummonBlueprints){Check("blueprint:"+value.Id,value,shared);Document.SummonBlueprints=Document.SummonBlueprints.Where(b=>b.Id!=value.Id).Concat(new[]{value}).ToArray();}

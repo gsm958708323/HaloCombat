@@ -12,6 +12,7 @@ namespace Combat.Config
             string path=graph.Path+".timeline";
             if(source.RuntimeId<=0)Fail(path+".runtimeId","Expected positive timeline identity.");
             Number(source.Duration,.001f,120,path+".duration");
+            if(source.Animation!=null&&(string.IsNullOrWhiteSpace(source.Animation)||source.Animation.Length>80))Fail(path+".animation","Expected a nonempty animation semantic key up to80 characters.");
             if(source.ControlTags==null||source.ControlTags.Length>6||source.ControlTags.Distinct().Count()!=source.ControlTags.Length||source.ControlTags.Any(tag=>tag<1011||tag>1016))Fail(path+".controlTags","Expected unique control tags1011..1016.");
             if(source.Clips==null||source.Payloads==null||source.Clips.Length>128||source.Payloads.Length>256)Fail(path,"Invalid timeline arrays.");
             var ids=new HashSet<string>();
@@ -32,7 +33,7 @@ namespace Combat.Config
                 Number(p.Time,0,source.Duration,q+".time");Number(p.RepeatInterval,0,120,q+".repeatInterval");
                 return new TimelinePayload{Time=p.Time,RepeatInterval=p.RepeatInterval,Effects=effects.Entries(p.Effects,q+".effects")};
             }).ToArray();
-            return new TimelineDefinition{Id=new TimelineId(source.RuntimeId),Duration=source.Duration,Clips=clips,Payloads=payloads,ControlTags=source.ControlTags.Select(tag=>new TagId(tag)).ToArray(),ScaleWithActionSpeed=source.ScaleWithActionSpeed};
+            return new TimelineDefinition{Id=new TimelineId(source.RuntimeId),Duration=source.Duration,Animation=source.Animation,Clips=clips,Payloads=payloads,ControlTags=source.ControlTags.Select(tag=>new TagId(tag)).ToArray(),ScaleWithActionSpeed=source.ScaleWithActionSpeed};
         }
         static void Identity(string id,HashSet<string> ids,string path){if(string.IsNullOrWhiteSpace(id)||!ids.Add(id))Fail(path,"Missing or duplicate clip/payload identity.");}
         internal static void Number(float value,float minimum,float maximum,string path)

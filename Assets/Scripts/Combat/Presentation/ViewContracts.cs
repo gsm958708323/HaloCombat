@@ -13,6 +13,12 @@ namespace Combat.Presentation
         public bool InHitstop;
         public float Alpha;
         public float ActionTime,ActionDuration,ActionRate;
+        public string Animation;
+        public long CastId;
+        public float ActorTime;
+        public SimVec3 MoveIntent;
+        public bool MoveBlocked;
+        public bool PresentationPaused;
     }
 
     public interface IActorView

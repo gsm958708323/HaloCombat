@@ -21,11 +21,13 @@ dotnet run --project Combat.csproj -- json Assets/StreamingAssets/Combat/project
 
 网页“连招输入与接续”可编辑正式Combo表，并在同一预览会话发送实际令牌；命中确认按完整Skill/CastId绑定，接触敌方无敌/护盾/0伤害仍可获得，取消窗与施放守卫生效，失败输入保留。ConfirmAttack示例用于G1命中后接G2，历史Arena十三技能的完整连段/数值仍继续迁移，见[确认连招验收](docs/验证/2026-11-15-confirmed-combos.md)。
 
-显式时间轴支持六种动作控制与动作速度缩放，角色/召唤/Buff的ActionSpeed只影响明确开启缩放的动作轴。控制通过独立租约释放，角色钟/冷却/Buff/已发弹体保持独立；受控位移射击示例在2倍速度下仍完成2米位移，见[时间轴控制验收](docs/验证/2026-11-15-timeline-controls.md)。原Animator/美术资源和全部旧技能仍在迁移。
+显式时间轴支持六种动作控制与动作速度缩放，角色/召唤/Buff的ActionSpeed只影响明确开启缩放的动作轴。控制通过独立租约释放，角色钟/冷却/Buff/已发弹体保持独立；受控位移射击示例在2倍速度下仍完成2米位移，见[时间轴控制验收](docs/验证/2026-11-15-timeline-controls.md)。
+
+正式Arena的男女原角色、枪械和CharacterAnimator已从历史资源恢复。`runtime.views`具名目录与`timeline.animation`连接网页JSON和真实Animator，动作相位跟随Timeline、循环/受击跟随ActorTime，支持独立顿帧、同技能重播和重开；缺失资源/状态拒绝替换旧局。编辑方式见[角色动画配置](docs/角色动画配置.md)，实际浏览器发布和Unity证据见[角色动画验收](docs/验证/2026-11-15-actor-animation.md)。
 
 `Assets/Scenes/Arena.unity`是可直接运行的JSON入口，也位于Build Settings首位。WASD/方向键移动，鼠标瞄准，按住左键/1重复主攻击；2/右键、3/中键、5/鼠标侧键、Space/Q/E走JSON的输入绑定。Esc暂停，HUD可重开/切换训练模式。F5明确重载，F6/F7使用同一正式玩家的消耗/冷却/状态守卫；槽必须从当前正式工程发布，其他工程的槽会报错并保留当前局。首次启动只读正式文件，避免未关联的旧调试槽阻止进入。
 
-当前Arena复用已迁移技能和内置模型；Fire1弹药主攻击/换弹、Fire4追踪弹重施放、Fire5木桶链爆，以及来源/目标独立顿帧和受伤反馈已经接入JSON。历史13技能其余内容、原资源/动画和角色成长值仍需迁移，不能将本入口称为旧玩法/美术完整复刻。验收边界见[JSON Arena记录](docs/验证/2026-11-15-json-arena.md)、[弹药与重施放](docs/验证/2026-11-15-ammo-and-recasts.md)、[可破坏物](docs/验证/2026-11-15-constructs.md)和[独立顿帧验收](docs/验证/2026-11-15-actor-feedback.md)。
+当前Arena使用已迁移技能、原角色Animator和部分内置物体模型；Fire1弹药主攻击/换弹、Fire4追踪弹重施放、Fire5木桶链爆，以及来源/目标独立顿帧和受伤反馈已经接入JSON。历史13技能其余内容、弹体/AoE/Cue/音频等剩余原资源和角色成长值仍需迁移，不能将本入口称为旧玩法/美术完整复刻。验收边界见[JSON Arena记录](docs/验证/2026-11-15-json-arena.md)、[弹药与重施放](docs/验证/2026-11-15-ammo-and-recasts.md)、[可破坏物](docs/验证/2026-11-15-constructs.md)和[独立顿帧验收](docs/验证/2026-11-15-actor-feedback.md)。
 
 ## 运行
 

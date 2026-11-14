@@ -3,11 +3,12 @@ export interface GraphNode { id: string; kind: string; runtimeId?: number; enabl
 export interface GraphEdge { id: string; source: string; sourcePort: string; target: string; targetPort: string; order: number }
 export interface TimelineClip {id:string;kind:'cancel'|'move'|'hitbox'|'iframe';start:number;end:number;moveX?:number;moveY?:number;moveZ?:number;steer?:number;hitRadius?:number;hitOffsetX?:number;hitOffsetY?:number;hitOffsetZ?:number;effects?:string[]}
 export interface TimelinePayload {id:string;time:number;repeatInterval?:number;effects:string[]}
-export interface AuthoredTimeline {runtimeId:number;duration:number;clips:TimelineClip[];payloads:TimelinePayload[];controlTags?:number[];scaleWithActionSpeed?:boolean}
+export interface AuthoredTimeline {runtimeId:number;duration:number;clips:TimelineClip[];payloads:TimelinePayload[];controlTags?:number[];scaleWithActionSpeed?:boolean;animation?:string}
 export interface RuntimeCombo {id:string;preSkills:string[];input:string;requiredTags:number[];priority:number;toSkill:string}
 export interface RuntimeActor {id:string;role:string;team:number;skillId?:string;dodgeSkill?:string;slots?:string[];view:string;[key:string]:unknown}
 export interface ArenaSettings {player:string;enemy:string;trainingTarget:string;seed:number;maxEnemies:number;spawnPeriod:number;cleanupDelay:number;halfWidth:number;halfDepth:number;spawnDistance:number;playerX:number;playerZ:number;playerYaw:number;cameraDistance:number;cameraHeight:number;cameraFov:number;cameraFocusHeight:number;bindings:{action:string;input:string}[];obstacles?:ObstacleView[]}
-export interface RuntimeContent {motor:{gravity:number;jumpSpeed:number;airSteer:number;groundY:number;stickDeadzone:number};combos:RuntimeCombo[];actors:RuntimeActor[];cues:{id:number;key:string;kind:string;resource?:string;sound?:string;lifetime:number}[];arena?:ArenaSettings}
+export interface RuntimeView {id:string;resource:string;scale:number;yawOffset:number;states:Record<string,string>}
+export interface RuntimeContent {motor:{gravity:number;jumpSpeed:number;airSteer:number;groundY:number;stickDeadzone:number};combos:RuntimeCombo[];actors:RuntimeActor[];cues:{id:number;key:string;kind:string;resource?:string;sound?:string;lifetime:number}[];views?:RuntimeView[];arena?:ArenaSettings}
 export interface Skill { id: string; runtimeId: number; name: string; category: string; nodes: GraphNode[]; edges: GraphEdge[];timeline?:AuthoredTimeline }
 export interface BuffModifier {attribute:string;operation:string;value:number;priority:number}
 export interface BuffDefinition {id:string;runtimeId:number;name:string;permanent:boolean;duration:number;interval:number;stack:string;maxStacks:number;mutexGroup:number;tags:number[];modifiers:BuffModifier[];nodes:GraphNode[];edges:GraphEdge[]}

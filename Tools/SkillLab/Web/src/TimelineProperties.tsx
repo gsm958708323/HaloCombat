@@ -12,6 +12,8 @@ export function TimelineProperties({skill,change}:{skill:Skill;change:(timeline:
     <p>时间轴决定区间与离散触发。引用图中的效果节点，列表顺序可重复；卡片位置不改变时序。</p>
     <label>总时长 (秒)<input aria-label="时间轴总时长" type="number" step=".01" min=".001" value={value.duration} onChange={event=>number(event.target.value,duration=>change({...value,duration}))}/></label>
     <small>Timeline ID {value.runtimeId}</small>
+    <label>动画语义键<input aria-label="时间轴动画语义" placeholder="如 Fire / Reload / Roll" value={value.animation??''} onChange={event=>change({...value,animation:event.target.value||undefined})}/></label>
+    <small>Unity 按视图目录解析状态，动作相位与时间轴同步。</small>
     <label>随动作速度缩放<input aria-label="时间轴动作速度缩放" type="checkbox" checked={value.scaleWithActionSpeed??false} onChange={event=>change({...value,scaleWithActionSpeed:event.target.checked})}/></label>
     <fieldset><legend>动作控制 · 持续到时间轴结束</legend>{controls.map(([tag,label])=><label key={tag}><span>{label}</span><input aria-label={label} type="checkbox" checked={value.controlTags?.includes(tag)??false} onChange={event=>change({...value,controlTags:[...(value.controlTags??[]).filter(id=>id!==tag),...(event.target.checked?[tag]:[])].sort((a,b)=>a-b)})}/></label>)}</fieldset>
     <h4>持续区间</h4>{value.clips.map((c,i)=><fieldset key={c.id}><legend>区间 {i+1}</legend>

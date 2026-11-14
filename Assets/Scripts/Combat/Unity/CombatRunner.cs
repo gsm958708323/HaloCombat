@@ -134,7 +134,7 @@ namespace Combat.Unity
             _clock = new SimulationClock(dt, 4);
             _world = candidate;
 
-            _views = new ViewRegistry(new UnityViewFactory(loaded.Content.Runtime.Actors));
+            _views = new ViewRegistry(new UnityViewFactory(loaded.Content.Runtime.Actors,definitions:loaded.Content.Runtime.Views));
             _overlay = new UnityHitstopOverlay();
             _router = new PresentationRouter(
                 _world,

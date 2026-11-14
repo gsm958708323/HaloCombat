@@ -49,7 +49,8 @@ namespace Combat.Tests
             Assert.Greater(damage,0);yield return null;
             var view=_runner.GetComponentsInChildren<UnityActorView>().First(v=>v.Id==_runner.Session.PlayerId);
             Assert.AreEqual(Player.GetComp<TransformComp>().Position.X,view.transform.position.x,.001f);
-            Assert.Less(view.transform.Find("Visual/GroundRing").localScale.y,.02f);Assert.Less(view.transform.Find("Visual/EnergyCore").localScale.x,.2f);LogAssert.NoUnexpectedReceived();
+            Assert.NotNull(view.Animation);Assert.AreEqual(1,view.GetComponentsInChildren<Animator>().Length);
+            Assert.Greater(view.GetComponentInChildren<SkinnedMeshRenderer>().bounds.size.y,.5f);LogAssert.NoUnexpectedReceived();
         }
         [UnityTest]
         public IEnumerator RestartDisposesActorsViewsEffectsAndOldEventSubscriptions()

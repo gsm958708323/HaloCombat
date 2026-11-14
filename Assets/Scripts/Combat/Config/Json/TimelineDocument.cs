@@ -6,6 +6,7 @@ namespace Combat.Config
     {
         public int RuntimeId {get;set;}
         public float Duration {get;set;}
+        [Newtonsoft.Json.JsonProperty(NullValueHandling=Newtonsoft.Json.NullValueHandling.Ignore)]public string Animation {get;set;}
         public int[] ControlTags {get;set;}=Array.Empty<int>();
         public bool ShouldSerializeControlTags()=>ControlTags==null||ControlTags.Length>0;
         [System.ComponentModel.DefaultValue(false),Newtonsoft.Json.JsonProperty(DefaultValueHandling=Newtonsoft.Json.DefaultValueHandling.Ignore)]public bool ScaleWithActionSpeed {get;set;}

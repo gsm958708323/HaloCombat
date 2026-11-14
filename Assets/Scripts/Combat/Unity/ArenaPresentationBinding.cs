@@ -25,7 +25,7 @@ namespace Combat.Unity
             {
                 var views=new GameObject("ActorViews").transform;views.SetParent(_root,false);
                 var vfx=new GameObject("Effects").transform;vfx.SetParent(_root,false);
-                _views=new ViewRegistry(new UnityViewFactory(content.Runtime.Actors,views));
+                _views=new ViewRegistry(new UnityViewFactory(content.Runtime.Actors,views,content.Runtime.Views));
                 _router=new PresentationRouter(session.World,_views,new UnityCuePlayer(content.Runtime.Data.Cues,vfx,session.World));
                 _router.Bind(session.World.Events);
                 var rules=session.Definition;
@@ -49,7 +49,7 @@ namespace Combat.Unity
         }
         public void Sample(float alpha)
         {
-            if(_disposed)return;_router.SampleLate(alpha);
+            if(_disposed)return;_router.SampleLate(alpha,_session.Paused);
             if(_session.World.TryGetActor(_session.PlayerId,out var player))
             {
                 var p=player.GetComp<TransformComp>().Position;var definition=_session.Definition;var target=new Vector3(p.X,p.Y+definition.CameraFocusHeight,p.Z);

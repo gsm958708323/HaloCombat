@@ -35,7 +35,7 @@ namespace Combat.Config
                 if (project.Id != document.Project.Id)
                     throw new ContentValidationException("$.slots." + slot.Key, "Slots must be published from the same project.");
                 if(SkillJsonCodec.Write(project.Runtime)!=SkillJsonCodec.Write(document.Project.Runtime))
-                    throw new ContentValidationException("$.slots."+slot.Key,"Conflicting runtime Motor/Cue versions; publish both slots again.");
+                    throw new ContentValidationException("$.slots."+slot.Key,"Conflicting runtime Motor/Cue/View versions; publish both slots again.");
                 foreach(var skill in closure.Skills)
                 {
                     if (skills.TryGetValue(skill.Id, out var other) && SkillJsonCodec.Write(skill) != SkillJsonCodec.Write(other))

@@ -32,7 +32,7 @@ namespace Combat.Presentation
         public void HandleCleanup(EvEntityCleanup e){if(_map.TryGetValue(e.Id.Index,out var view)&&view.Id==e.Id)ReleaseIndex(e.Id.Index);}
         public void HandleHurt(EvHurt e){if(_map.TryGetValue(e.Target.Index,out var view)&&view.Id==e.Target)view.OnHurt(e);}
 
-        public void SampleAll(CombatWorld world, float alpha, bool hitstop)
+        public void SampleAll(CombatWorld world, float alpha, bool hitstop,bool paused=false)
         {
             if (world == null) return;
             var actors = world.RegistryActive();
@@ -45,6 +45,7 @@ namespace Combat.Presentation
                 var tags = actor.TryGetComp<TagComp>(out var tagComp) ? tagComp : null;
                 var sm = actor.TryGetComp<StateMachineComp>(out var stateMachine) ? stateMachine : null;
                 var director = actor.TryGetComp<SkillDirectorComp>(out var skillDirector) ? skillDirector : null;
+                actor.TryGetComp<LocomotionComp>(out var locomotion);
                 bool stopped=hitstop||world.IsActorStopped(actor);
                 var sample = new PoseSample
                 {
@@ -56,6 +57,9 @@ namespace Combat.Presentation
                     Skill = director != null ? director.CurrentSkill : SkillNodeId.None,
                     InHitstop = stopped,
                     ActionTime=director!=null&&director.IsPlaying?director.TimelineTime:0,ActionDuration=director!=null&&director.IsPlaying?director.TimelineDuration:0,ActionRate=director?.ActionRate??1,
+                    Animation=director?.Animation,CastId=director!=null&&director.IsPlaying?director.CurrentOrigin.CastId:0,ActorTime=(float)actor.Time.Time,
+                    MoveIntent=locomotion?.MoveIntent??SimVec3.Zero,MoveBlocked=tags?.Has(CommonTags.BlockMove)??false,
+                    PresentationPaused=paused,
                     Alpha = stopped ? 1f : alpha
                 };
                 view.Sample(sample);

@@ -63,10 +63,10 @@ namespace Combat.Presentation
             if(_hitstop!=null)bus.Unsubscribe<EvHitstop>(_onHitstop);
         }
 
-        public void SampleLate(float alpha)
+        public void SampleLate(float alpha,bool paused=false)
         {
             bool hitstop = _world != null && _world.InHitstop;
-            _views?.SampleAll(_world, hitstop ? 1f : alpha, hitstop);
+            _views?.SampleAll(_world, hitstop ? 1f : alpha, hitstop,paused);
             _hitstop?.SetActive(hitstop);
             if (_debug != null && _debug.Enabled)
                 _debug.Refresh(_world);

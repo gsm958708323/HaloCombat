@@ -155,6 +155,7 @@ namespace Combat.Core
         readonly List<TagLease> _controls=new List<TagLease>();
         public float TimelineTime=>_player.Time;
         public float TimelineDuration=>_player.Definition?.Duration??0;
+        public string Animation=>IsPlaying?_player.Definition?.Animation:null;
         public float ActionRate=>IsPlaying&&_player.Definition.ScaleWithActionSpeed?Math.Max(.1f,Self.GetComp<AttributeSet>().GetFinal(AttrId.ActionSpeed)):1;
         public TagId[] ActiveControls=>IsPlaying?_player.Definition.ControlTags:Array.Empty<TagId>();
         public bool HasComboConfirmation=>_comboConfirm!=null;

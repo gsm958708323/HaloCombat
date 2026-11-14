@@ -189,3 +189,14 @@ test('real transformed project is exported for the C# compiler and HTTP validati
   const output=path.resolve(__dirname,'../../.local/verification');fs.mkdirSync(output,{recursive:true});fs.writeFileSync(path.join(output,'authoring-transformed.json'),JSON.stringify(p,null,2));
   assert.equal(p.skills.length,43);
 });
+
+
+test('merge keeps each imported actor bound to its own view and preserves action semantics',()=>{
+  const p=runtime(),before=JSON.stringify(p),next=mergeProjects(p,p,ids());
+  assert.equal(next.runtime.views.length,4);
+  const imported=next.runtime.actors.slice(p.runtime.actors.length).find(a=>a.role==='player'&&a.id!== 'fighter'&&a.view!=='fighter');
+  assert(imported);assert.notEqual(imported.view,'arena-player-view');
+  const view=next.runtime.views.find(v=>v.id===imported.view);assert.equal(view.resource,'Combat/Actors/FemaleGunner');assert.equal(view.states.Fire,'Base Layer.Fire');
+  assert.equal(next.skills.slice(p.skills.length).find(s=>s.name===p.skills.find(s=>s.id==='arena-reload-ammo').name).timeline.animation,'Reload');
+  assert.equal(JSON.stringify(p),before);
+});

@@ -10,6 +10,7 @@ namespace Combat.Config
         public BakedCombatData Data {get;internal set;}
         public IReadOnlyDictionary<string,RuntimeActorDefinition> Actors {get;internal set;}
         public ArenaDefinition Arena {get;internal set;}
+        public IReadOnlyDictionary<string,RuntimeViewDefinition> Views {get;internal set;}
         public IActorFactory CreateFactory(SkillCatalog skills)=>new RuntimeActorFactory(Data,skills,Actors);
     }
     internal static class RuntimeContentCompiler
@@ -18,6 +19,7 @@ namespace Combat.Config
         {
             var source=project.Runtime;if(source==null)return null;
             string path="$.runtime";
+            var views=RuntimeViewCompiler.Compile(source.Views,project);
             if(source.Motor==null||source.Actors==null||source.Combos==null||source.Cues==null)Fail(path,"Runtime arrays and motor are required.");
             if(source.Actors.Length>256||source.Combos.Length>1024||source.Cues.Length>512)Fail(path,"Runtime collection size is invalid.");
             var m=source.Motor;N(m.Gravity,-1000,-.01f,path+".motor.gravity");N(m.JumpSpeed,.01f,100,path+".motor.jumpSpeed");
@@ -50,7 +52,7 @@ namespace Combat.Config
                 N(actor.AcquireRadius,.001f,1000,p+".acquireRadius");N(actor.AttackRange,.001f,1000,p+".attackRange");N(actor.FollowRange,0,1000,p+".followRange");N(actor.LeashRange,0,1000,p+".leashRange");N(actor.PatrolRadius,0,1000,p+".patrolRadius");
                 if(actor.Team<0||actor.Team>30)Fail(p+".team","Expected team0..30.");
                 if(actor.Slots==null||actor.Slots.Length>3)Fail(p+".slots","Expected up to3 skill slots.");
-                if(string.IsNullOrWhiteSpace(actor.View)||Array.IndexOf(new[]{"fighter","stake","melee_ai","melee_guard","ranged_ai","summon"},actor.View)<0)Fail(p+".view","Unknown built-in view key.");
+                if(string.IsNullOrWhiteSpace(actor.View)||!RuntimeViewCompiler.Builtin(actor.View)&&!views.ContainsKey(actor.View))Fail(p+".view","Unknown view key.");
                 var definition=new RuntimeActorDefinition{Id=actor.Id,Role=actor.Role,View=actor.View,Team=actor.Team,Hp=actor.Hp,Attack=actor.Attack,Defense=actor.Defense,MoveSpeed=actor.MoveSpeed,
                     Shield=actor.Shield,CritRate=actor.CritRate,DamageDealt=actor.DamageDealt,DamageTaken=actor.DamageTaken,CollisionRadius=actor.CollisionRadius,Energy=actor.Energy,InitialEnergy=actor.Energy,Recovery=actor.Recovery,Ammo=actor.Ammo,InitialAmmo=actor.InitialAmmo??actor.Ammo,ActionSpeed=actor.ActionSpeed,
                     AcquireRadius=actor.AcquireRadius,AttackRange=actor.AttackRange,FollowRange=actor.FollowRange,LeashRange=actor.LeashRange,PatrolRadius=actor.PatrolRadius,
@@ -75,7 +77,7 @@ namespace Combat.Config
                     Skill=b.Skill,AcquireRadius=b.AcquireRadius,AttackRange=b.AttackRange,FollowRange=b.FollowRange,LeashRange=20,
                     Tree=skill.Mode==SkillCastMode.Instant?BtFactory.SummonMelee(skill.Id,skill.Timeline):SummonBehavior.Create(b.Skill,b.HoldDuration)});
             }
-            var result=new RuntimeContentSnapshot{Data=data,Actors=actors};
+            var result=new RuntimeContentSnapshot{Data=data,Actors=actors,Views=views};
             content.Runtime=result;result.Arena=ArenaCompiler.Compile(source.Arena,content,actors);return result;
         }
         static SkillDefinition Skill(CombatContentSnapshot content,string key,string path)

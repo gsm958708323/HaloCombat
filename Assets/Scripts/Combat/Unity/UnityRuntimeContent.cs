@@ -19,6 +19,7 @@ namespace Combat.Unity
             string path=System.IO.Path.GetFullPath(System.IO.Path.Combine(root,relativeFile));
             if(!path.StartsWith(root,StringComparison.OrdinalIgnoreCase))throw new ContentValidationException("contentFile","Content path leaves StreamingAssets.");
             var loaded=new RuntimeProjectLoader(path);
+            UnityActorResources.Validate(loaded.Content.Runtime);
             foreach(var cue in loaded.Project.Runtime.Cues)
             {
                 if(cue.Kind=="prefab"&&Resources.Load<GameObject>(cue.Resource)==null)throw new ContentValidationException(path+".runtime.cues["+cue.Id+"].resource","Missing Unity prefab resource: "+cue.Resource);

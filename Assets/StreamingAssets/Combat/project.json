@@ -246,7 +246,8 @@
               "fireball"
             ]
           }
-        ]
+        ],
+        "animation": "Fire"
       }
     },
     {
@@ -372,7 +373,8 @@
               "ground"
             ]
           }
-        ]
+        ],
+        "animation": "Fire"
       }
     },
     {
@@ -443,7 +445,8 @@
             "end": 0.4
           }
         ],
-        "payloads": []
+        "payloads": [],
+        "animation": "Roll"
       }
     },
     {
@@ -586,7 +589,8 @@
               "homing"
             ]
           }
-        ]
+        ],
+        "animation": "Fire"
       }
     },
     {
@@ -703,7 +707,8 @@
               "aura"
             ]
           }
-        ]
+        ],
+        "animation": "Fire"
       }
     },
     {
@@ -780,7 +785,8 @@
               "summon"
             ]
           }
-        ]
+        ],
+        "animation": "Fire"
       }
     },
     {
@@ -911,7 +917,8 @@
               "projectile"
             ]
           }
-        ]
+        ],
+        "animation": "Fire"
       }
     },
     {
@@ -980,7 +987,8 @@
               "refill"
             ]
           }
-        ]
+        ],
+        "animation": "Reload"
       }
     },
     {
@@ -1104,7 +1112,8 @@
               "projectile"
             ]
           }
-        ]
+        ],
+        "animation": "Fire"
       }
     },
     {
@@ -1387,7 +1396,8 @@
               "barrel"
             ]
           }
-        ]
+        ],
+        "animation": "Fire"
       }
     },
     {
@@ -1506,7 +1516,8 @@
               "shot"
             ]
           }
-        ]
+        ],
+        "animation": "Fire"
       }
     }
   ],
@@ -2035,7 +2046,7 @@
           "homing"
         ],
         "ai": "none",
-        "view": "fighter",
+        "view": "arena-player-view",
         "ammo": 60
       },
       {
@@ -2057,7 +2068,7 @@
         "followRange": 1.5,
         "leashRange": 100,
         "patrolRadius": 0,
-        "view": "ranged_ai"
+        "view": "arena-enemy-view"
       },
       {
         "id": "arena-target",
@@ -2165,6 +2176,58 @@
         }
       ],
       "obstacles": []
-    }
+    },
+    "views": [
+      {
+        "id": "arena-player-view",
+        "resource": "Combat/Actors/FemaleGunner",
+        "scale": 1,
+        "yawOffset": 0,
+        "states": {
+          "Stand": "Base Layer.Stand",
+          "MoveForward": "Base Layer.MoveForward",
+          "MoveBack": "Base Layer.MoveBack",
+          "MoveLeft": "Base Layer.MoveLeft",
+          "MoveRight": "Base Layer.MoveRight",
+          "JumpAir": "Base Layer.JumpAir",
+          "Hurt0": "Base Layer.Hurt0",
+          "Hurt1": "Base Layer.Hurt1",
+          "Dead": "Base Layer.Dead",
+          "Fire": "Base Layer.Fire",
+          "RapidFire": "Base Layer.RapidFire",
+          "Reload": "Base Layer.Reload",
+          "RollForward": "Base Layer.RollForward",
+          "RollBack": "Base Layer.RollBack",
+          "RollLeft": "Base Layer.RollLeft",
+          "RollRight": "Base Layer.RollRight",
+          "PowerUp": "Base Layer.PowerUp"
+        }
+      },
+      {
+        "id": "arena-enemy-view",
+        "resource": "Combat/Actors/MaleGunner",
+        "scale": 1,
+        "yawOffset": 0,
+        "states": {
+          "Stand": "Base Layer.Stand",
+          "MoveForward": "Base Layer.MoveForward",
+          "MoveBack": "Base Layer.MoveBack",
+          "MoveLeft": "Base Layer.MoveLeft",
+          "MoveRight": "Base Layer.MoveRight",
+          "JumpAir": "Base Layer.JumpAir",
+          "Hurt0": "Base Layer.Hurt0",
+          "Hurt1": "Base Layer.Hurt1",
+          "Dead": "Base Layer.Dead",
+          "Fire": "Base Layer.Fire",
+          "RapidFire": "Base Layer.RapidFire",
+          "Reload": "Base Layer.Reload",
+          "RollForward": "Base Layer.RollForward",
+          "RollBack": "Base Layer.RollBack",
+          "RollLeft": "Base Layer.RollLeft",
+          "RollRight": "Base Layer.RollRight",
+          "PowerUp": "Base Layer.PowerUp"
+        }
+      }
+    ]
   }
 }

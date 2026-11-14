@@ -1,4 +1,5 @@
 using Combat.Core;
+using Combat.Config;
 using Combat.Presentation;
 using UnityEngine;
 
@@ -10,6 +11,12 @@ namespace Combat.Unity
         string _blueprint;
         string _model;
         public void ConfigureModel(string model)=>_model=model;
+        RuntimeViewDefinition _definition;
+        GameObject _prefab;
+        Renderer[] _renderers;
+        MaterialPropertyBlock _feedbackBlock;
+        public UnityAnimatorDriver Animation {get;private set;}
+        public void ConfigurePrefab(RuntimeViewDefinition definition,GameObject prefab){_definition=definition;_prefab=prefab!=null?prefab:throw new ContentValidationException("$.runtime.views["+definition.Id+"].resource","Missing Unity prefab resource: "+definition.Resource);}
         bool _dead;
         Transform _visual;
         Transform _core;
@@ -27,6 +34,7 @@ namespace Combat.Unity
             Id = id;
             _blueprint = blueprintId ?? string.Empty;
             _dead = false;
+            _feedbackBlock=new MaterialPropertyBlock();
             Feedback.Reset();_poseTime=0;_feedbackWallTime=Time.realtimeSinceStartupAsDouble;
             gameObject.name = _blueprint + "_" + id.Index;
             BuildModel();
@@ -37,10 +45,26 @@ namespace Combat.Unity
             var p = sample.LogicPos;
             transform.position = new Vector3(p.X, p.Y, p.Z);
             transform.rotation = Quaternion.Euler(0f, 90f - sample.YawDeg, 0f);
-            if (_dead) transform.rotation *= Quaternion.Euler(0f, 0f, 80f);
+            if (_dead&&Animation==null) transform.rotation *= Quaternion.Euler(0f, 0f, 80f);
             if (_visual == null) return;
             if(!sample.InHitstop&&!_dead)_poseTime=sample.Skill.IsValid?sample.ActionTime:_poseTime+Time.unscaledDeltaTime;
             double now=Time.realtimeSinceStartupAsDouble;Feedback.AdvanceWall((float)(now-_feedbackWallTime));_feedbackWallTime=now;
+            if(Animation!=null)
+            {
+                Animation.Sample(sample);_visual.localPosition=new Vector3(0,0,Feedback.Impulse*.05f);
+                foreach(var renderer in _renderers)
+                {
+                    var materials=renderer.sharedMaterials;
+                    for(int i=0;i<materials.Length;i++)
+                    {
+                        var material=materials[i];if(material==null)continue;
+                        Color basis=material.HasProperty("_BaseColor")?material.GetColor("_BaseColor"):material.color;
+                        _feedbackBlock.Clear();var color=Color.Lerp(basis,Color.white,Feedback.Flash*.8f);
+                        _feedbackBlock.SetColor("_BaseColor",color);_feedbackBlock.SetColor("_Color",color);renderer.SetPropertyBlock(_feedbackBlock,i);
+                    }
+                }
+                return;
+            }
             float bob = _blueprint == "projectile" || _blueprint == "aoe"
                 ? Mathf.Sin(_poseTime * 7f + Id.Index) * 0.04f
                 : Mathf.Sin(_poseTime * 4f + Id.Index) * 0.025f;
@@ -53,6 +77,7 @@ namespace Combat.Unity
         public void OnDead(in EvEntityDead e)
         {
             _dead = true;
+            Animation?.Dead();
             Feedback.Reset();
             if (_ring != null) _ring.gameObject.SetActive(false);
         }
@@ -61,13 +86,20 @@ namespace Combat.Unity
         {
             if (this != null) Destroy(gameObject);
         }
-        public void OnHurt(in EvHurt e){if(!_dead){Feedback.Receive(e.Feedback);_feedbackWallTime=Time.realtimeSinceStartupAsDouble;}}
+        public void OnHurt(in EvHurt e){if(!_dead){Feedback.Receive(e.Feedback);Animation?.Hurt(e.Feedback);_feedbackWallTime=Time.realtimeSinceStartupAsDouble;}}
 
         void BuildModel()
         {
             for (int i = transform.childCount - 1; i >= 0; i--) Destroy(transform.GetChild(i).gameObject);
             _visual = new GameObject("Visual").transform;
             _visual.SetParent(transform, false);
+            if(_prefab!=null)
+            {
+                var instance=Instantiate(_prefab,_visual,false);instance.transform.localPosition=Vector3.zero;
+                instance.transform.localRotation=Quaternion.Euler(0,_definition.YawOffset,0);instance.transform.localScale*=_definition.Scale;
+                _renderers=instance.GetComponentsInChildren<Renderer>(true);
+                Animation=new UnityAnimatorDriver(instance.GetComponentInChildren<Animator>(true),_definition);return;
+            }
             string model=_model??_blueprint;
             Color main = Palette.Main(model);
             Color accent = Palette.Accent(model);
@@ -143,14 +175,16 @@ namespace Combat.Unity
     {
         readonly System.Collections.Generic.IReadOnlyDictionary<string,RuntimeActorDefinition> _actors;
         readonly Transform _root;
-        public UnityViewFactory(System.Collections.Generic.IReadOnlyDictionary<string,RuntimeActorDefinition> actors=null,Transform root=null){_actors=actors;_root=root;}
+        readonly System.Collections.Generic.IReadOnlyDictionary<string,RuntimeViewDefinition> _definitions;
+        public UnityViewFactory(System.Collections.Generic.IReadOnlyDictionary<string,RuntimeActorDefinition> actors=null,Transform root=null,System.Collections.Generic.IReadOnlyDictionary<string,RuntimeViewDefinition> definitions=null){_actors=actors;_root=root;_definitions=definitions;}
         public IActorView Create(string blueprintId)
         {
             var go = new GameObject("ActorView_" + blueprintId);
             if(_root!=null)go.transform.SetParent(_root,false);
             var view=go.AddComponent<UnityActorView>();
-            if(_actors!=null&&_actors.TryGetValue(blueprintId,out var definition))view.ConfigureModel(definition.View);
-            else view.ConfigureModel(blueprintId);
+            string key=_actors!=null&&_actors.TryGetValue(blueprintId,out var definition)?definition.View:blueprintId;
+            if(_definitions!=null&&_definitions.TryGetValue(key,out var resource))view.ConfigurePrefab(resource,Resources.Load<GameObject>(resource.Resource));
+            else view.ConfigureModel(key);
             return view;
         }
     }

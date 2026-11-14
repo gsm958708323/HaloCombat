@@ -53,6 +53,7 @@ namespace Combat.Core
 
         public TimelineId Id;
         public float Duration = 0.55f;
+        public string Animation;
         public TagId[] ControlTags=Array.Empty<TagId>();
         public bool ScaleWithActionSpeed;
         public TimelineClip[] Clips = Array.Empty<TimelineClip>();
