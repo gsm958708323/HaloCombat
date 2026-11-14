@@ -1,0 +1,5 @@
+.editor-heading { flex-wrap:wrap; }
+.editor-heading select { max-width:145px;font-size:10px; }
+.shared-timeline-binding label { display:grid;grid-template-columns:minmax(0,1fr);gap:5px; }
+.shared-timeline-binding select { width:100%;max-width:100%; }
+.shared-timeline-binding small { display:block;line-height:1.6; }

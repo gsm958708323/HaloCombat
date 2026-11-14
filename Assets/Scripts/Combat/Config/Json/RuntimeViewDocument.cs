@@ -41,7 +41,7 @@ namespace Combat.Config
             var views=new Dictionary<string,RuntimeViewDefinition>();
             if(sources==null)return new ReadOnlyDictionary<string,RuntimeViewDefinition>(views);
             if(sources.Length>128)Fail("$.runtime.views","View collection exceeds128.");
-            var actions=project.Skills.Select(s=>s.Timeline?.Animation).Where(a=>!string.IsNullOrEmpty(a)).Distinct();
+            var actions=project.Skills.Select(s=>s.Timeline?.Animation).Concat(project.Timelines.Select(t=>t.Timeline?.Animation)).Where(a=>!string.IsNullOrEmpty(a)).Distinct();
             foreach(var source in sources)
             {
                 string path="$.runtime.views["+source?.Id+"]";

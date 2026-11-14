@@ -34,17 +34,31 @@ namespace Combat.Config
             var keys = new HashSet<string>(); var numbers = new HashSet<int>();
             var skillIds=new Dictionary<string,SkillNodeId>();
             var timelineIds=new HashSet<int>();
+            foreach(var timeline in project.Timelines)
+            {
+                if(!timelineIds.Add(timeline.Timeline.RuntimeId))Fail("$.timelines["+timeline.Id+"].timeline.runtimeId","Duplicate timeline identity.");
+                content.Dependencies.Register(ContentDependencies.Timeline(timeline.Id));
+            }
             for (int i = 0; i < project.Skills.Length; i++)
             {
                 var skill = project.Skills[i]; var path = "$.skills[" + i + "]";
                 if (skill == null || string.IsNullOrWhiteSpace(skill.Id) || !keys.Add(skill.Id)) Fail(path + ".id", "Missing or duplicate skill id.");
                 if (skill.RuntimeId <= 0 || !numbers.Add(skill.RuntimeId)) Fail(path + ".runtimeId", "Expected unique positive id.");
-                if(!timelineIds.Add(skill.Timeline?.RuntimeId??skill.RuntimeId))Fail(path+".timeline.runtimeId","Duplicate timeline identity.");
+                if(skill.TimelineRef==null&&!timelineIds.Add(skill.Timeline?.RuntimeId??skill.RuntimeId))Fail(path+".timeline.runtimeId","Duplicate timeline identity.");
                 skillIds.Add(skill.Id,new SkillNodeId(skill.RuntimeId));content.Dependencies.Register(ContentDependencies.Skill(skill.Id));
             }
             SummonBlueprintCompiler.Compile(project.SummonBlueprints,skillIds,content.Blueprints);
             BuffCompiler.Register(project.Buffs,content);
             var projectileIds = new HashSet<int>(); var aoeIds = new HashSet<int>();var summonIds=new HashSet<int>();
+            var shared=new Dictionary<string,TimelineDefinition>();
+            foreach(var timeline in project.Timelines)
+            {
+                string path="$.timelines["+timeline.Id+"]";
+                var graph=new EffectGraphIndex(ContentDependencies.Timeline(timeline.Id),timeline.Nodes,timeline.Edges,path,true);
+                var compiler=new SkillEffectCompiler(graph,content,projectileIds,aoeIds,summonIds);
+                var definition=AuthoredTimelineCompiler.Compile(timeline.Timeline,graph,compiler);graph.CheckComplete();
+                shared.Add(timeline.Id,definition);content.Timelines.Register(definition);
+            }
             for(int i=0;i<project.Skills.Length;i++)
             {
                 var skill=project.Skills[i];string path="$.skills["+i+"]";
@@ -59,6 +73,8 @@ namespace Combat.Config
                 var compiler = new SkillEffectCompiler(graph, content, projectileIds, aoeIds,summonIds);
                 var effects = compiler.Outputs(cast, "cast", true);
                 var authored=skill.Timeline==null?null:AuthoredTimelineCompiler.Compile(skill.Timeline,graph,compiler);
+                if(skill.TimelineRef!=null)
+                {authored=shared[skill.TimelineRef];content.Dependencies.Add(graph.ContentKey,ContentDependencies.Timeline(skill.TimelineRef));}
                 if (authored==null&&effects.Length + compiler.Clips.Count + compiler.Followups.Count == 0) Fail(graph.NodePath(cast), "Cast needs an enabled delivery/effect.");
                 var definition = SkillCastCompiler.Compile(skill, cast, graph.NodePath(cast), effects, content.Timelines,compiler.Clips.ToArray(),compiler.Followups.ToArray(),authored,skillIds,content.Dependencies);
                 definition.AimRange=compiler.AimRange;

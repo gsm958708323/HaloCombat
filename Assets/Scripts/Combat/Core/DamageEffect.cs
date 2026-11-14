@@ -66,7 +66,9 @@ namespace Combat.Core
             attributes.SetBase(AttrId.Shield,Math.Max(0,attributes.GetBase(AttrId.Shield)-absorbed));
             attributes.SetBase(AttrId.Hp,hp-lost);
             bool killed=lost>0&&hp-lost<=0;
-            var result=new DamageResult(source?.Id??EntityId.Invalid,target.Id,ctx.Origin,ctx.World.NextDamageHitId(),Kind,basis,scaled,afterDefense,afterCritical,final,absorbed,lost,overkill,crit,killed,Feedback);
+            var feedback=Feedback;
+            if(feedback==HitFeedbackLevel.None&&ctx.World.TryGetActor(ctx.Origin.Caster,out var caster)&&caster.TryGetComp<SkillCastComp>(out var skills))feedback=skills.FeedbackFor(ctx.Origin.Skill);
+            var result=new DamageResult(source?.Id??EntityId.Invalid,target.Id,ctx.Origin,ctx.World.NextDamageHitId(),Kind,basis,scaled,afterDefense,afterCritical,final,absorbed,lost,overkill,crit,killed,feedback);
             ctx.Damage=result;
             ctx.World.Events.Publish(new EvDamage(result.Source,target.Id,absorbed+lost,crit,absorbed,killed,ctx.Origin,result));
             if(HitstopFrames>0&&absorbed+lost>0)

@@ -7,6 +7,7 @@ namespace Combat.Config
     {
         public string SelectedSkill {get;set;}
         public string SelectedBuff {get;set;}
+        [Newtonsoft.Json.JsonProperty(NullValueHandling=Newtonsoft.Json.NullValueHandling.Ignore)]public string SelectedTimeline {get;set;}
         public GraphViewportDocument[] Viewports {get;set;}=Array.Empty<GraphViewportDocument>();
     }
 

@@ -28,6 +28,7 @@ namespace Combat.Config
             var selected=SkillContentClosure.Select(project,content,skillId);
             foreach(var graph in selected.Skills)foreach(var node in graph.Nodes)node.Position=new NodePosition();
             foreach(var graph in selected.Buffs)foreach(var node in graph.Nodes)node.Position=new NodePosition();
+            foreach(var graph in selected.Timelines)foreach(var node in graph.Nodes)node.Position=new NodePosition();
             return new SkillPublicationDocument { Project = selected, SkillId = skillId, Revision = Revision(selected, skillId) };
         }
 

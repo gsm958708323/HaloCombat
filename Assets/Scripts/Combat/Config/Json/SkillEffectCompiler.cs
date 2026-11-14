@@ -17,7 +17,7 @@ namespace Combat.Config
         public float AimRange { get; private set; }
         public SkillEffectCompiler(EffectGraphIndex graph, CombatContentSnapshot content, HashSet<int> projectiles, HashSet<int> aoes,HashSet<int> summons)
         { _graph = graph; _content = content; _projectiles = projectiles; _aoes = aoes;_summons=summons;
-            string mode = graph.BuffGraph?null:graph.Root("target").Parameters.Value<string>("mode");
+            string mode = graph.EffectOnly?null:graph.Root("target").Parameters.Value<string>("mode");
             _requiresTarget = mode == "entity" || mode == "nearest" || mode == "random"; }
 
         public IEffect[] Outputs(SkillNodeDocument node, string port, bool allowSpatial = false)
@@ -104,8 +104,9 @@ namespace Combat.Config
                     effects.AddRange(Outputs(node,"next",allowSpatial));break;
                 case "hurt-feedback":
                     var hurt=new NodeParameters(node,path,"level","requireHpDamage");
-                    var level=(HitFeedbackLevel)Array.IndexOf(new[]{"none","light","confirm","heavy","finisher"},hurt.Choice("level","light","none","light","confirm","heavy","finisher"));
-                    effects.Add(new HurtFeedbackEffect(level,hurt.Boolean("requireHpDamage",true)));effects.AddRange(Outputs(node,"next",allowSpatial));break;
+                    string grade=hurt.Choice("level","light","none","light","confirm","heavy","finisher","damage");
+                    var level=grade=="damage"?HitFeedbackLevel.None:(HitFeedbackLevel)Array.IndexOf(new[]{"none","light","confirm","heavy","finisher"},grade);
+                    effects.Add(new HurtFeedbackEffect(level,hurt.Boolean("requireHpDamage",true),grade=="damage"));effects.AddRange(Outputs(node,"next",allowSpatial));break;
                 case "after-damage":
                     var after=new NodeParameters(node,path,"latestCastOnly");effects.Add(new AfterDamageEffect(Outputs(node,"apply"),after.Boolean("latestCastOnly",false)));
                     effects.AddRange(Outputs(node,"next",allowSpatial));break;

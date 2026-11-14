@@ -19,7 +19,7 @@ export function SkillNode({ data, selected }: NodeProps<EditorNode>) {
   useEffect(()=>update(data.id),[data.id,portKey,update]);
   if (!schema) return <div className="skill-node">未知节点：{data.kind}</div>;
   const routing=['ammoCost','fallbackSkill','recastProjectile','recastSkill','requiredProjectile'];
-  const fields=schema.fields.filter(field=>(!field.when||field.when(data.parameters))&&(!data.authoredTimeline||data.kind!=='cast'||['cost','cooldown',...routing].includes(field.key)));
+  const fields=schema.fields.filter(field=>(!field.when||field.when(data.parameters))&&(!data.authoredTimeline||data.kind!=='cast'||['cost','cooldown','hitFeedback',...routing].includes(field.key)));
   function control(field:Field){
     const options=field.key==='blueprint'?data.blueprints?.map(b=>[b.id,b.name??b.id] as [string,string]):field.key==='buff'?data.buffs?.map(b=>[b.id,b.name??b.id] as [string,string]):
       field.key==='fallbackSkill'||field.key==='recastSkill'?data.skills?.map(s=>[s.id,s.name] as [string,string]):undefined;

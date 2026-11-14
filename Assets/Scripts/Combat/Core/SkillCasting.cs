@@ -32,6 +32,7 @@ namespace Combat.Core
         public int AmmoCost;
         public SkillNodeId AmmoFallback,RecastSkill;
         public string RecastProjectile,RequiredProjectile;
+        public HitFeedbackLevel HitFeedback;
     }
 
     public sealed class SkillCatalog
@@ -94,6 +95,7 @@ namespace Combat.Core
         public float ChargeProgress => IsCharging ? _director.ChargeProgress : 0;
         public float CastPower => IsActive ? _director.CastPower : 1;
         public SkillCastComp(SkillCatalog catalog) => _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
+        public HitFeedbackLevel FeedbackFor(SkillNodeId skill)=>_catalog.TryGet(skill,out var definition)?definition.HitFeedback:HitFeedbackLevel.None;
         public void SetBasePower(float power)
         {if(!Finite(power)||power<=0)throw new ArgumentOutOfRangeException(nameof(power));_basePower=power;}
         protected override void OnAttach()

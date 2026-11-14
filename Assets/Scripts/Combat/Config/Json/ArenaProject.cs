@@ -22,6 +22,7 @@ namespace Combat.Config
                     throw new ContentValidationException("$.slots."+entry.Key,"Motor/Cue/View version conflicts with formal content; publish formal content and both slots together.");
                 foreach(var value in pub.Project.Skills){Check("skill:"+value.Id,value,shared);Document.Skills=Document.Skills.Where(s=>s.Id!=value.Id).Concat(new[]{value}).ToArray();}
                 foreach(var value in pub.Project.Buffs){Check("buff:"+value.Id,value,shared);Document.Buffs=Document.Buffs.Where(b=>b.Id!=value.Id).Concat(new[]{value}).ToArray();}
+                foreach(var value in pub.Project.Timelines){Check("timeline:"+value.Id,value,shared);Document.Timelines=Document.Timelines.Where(t=>t.Id!=value.Id).Concat(new[]{value}).ToArray();}
                 foreach(var value in pub.Project.SummonBlueprints){Check("blueprint:"+value.Id,value,shared);Document.SummonBlueprints=Document.SummonBlueprints.Where(b=>b.Id!=value.Id).Concat(new[]{value}).ToArray();}
                 roots.Add(entry.Key,pub.SkillId);
             }

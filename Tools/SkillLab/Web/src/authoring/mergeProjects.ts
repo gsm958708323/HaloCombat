@@ -1,6 +1,6 @@
 import { clone } from '../model';
 import type { GraphNode, Project } from '../model';
-import { allGraphs, copyGraph, definitionAllocator, numberAllocator,remapTimeline } from './contentEdits';
+import { actionNumbers,allGraphs, copyGraph, definitionAllocator, numberAllocator,remapTimeline } from './contentEdits';
 
 // Source references always stay within the imported set, including when a shared ID conflicts.
 export function mergeProjects(destination:Project,source:Project,newId:()=>string=()=>crypto.randomUUID()):Project {
@@ -9,7 +9,8 @@ export function mergeProjects(destination:Project,source:Project,newId:()=>strin
     for(const item of imported){let id=item.id;while(used.has(id))id=newId();used.add(id);result.set(item.id,id);}return result;
   }
   const skillIds=identityMap(source.skills,destination.skills),buffIds=identityMap(source.buffs??[],destination.buffs??[]),blueprintIds=identityMap(source.summonBlueprints??[],destination.summonBlueprints??[]);
-  const skillNumber=numberAllocator(destination.skills.flatMap(s=>[s.runtimeId,s.timeline?.runtimeId??0])),buffNumber=numberAllocator((destination.buffs??[]).map(b=>b.runtimeId),8000);
+  const timelineIds=identityMap(source.timelines??[],destination.timelines??[]);
+  const skillNumber=numberAllocator(actionNumbers(destination)),buffNumber=numberAllocator((destination.buffs??[]).map(b=>b.runtimeId),8000);
   const definitionNumber=definitionAllocator(destination);
   const references=(nodes:GraphNode[])=>nodes.map(node=>{
     if(node.kind==='cast')return {...node,parameters:{...node.parameters,...Object.fromEntries(['fallbackSkill','recastSkill'].filter(field=>typeof node.parameters[field]==='string'&&skillIds.has(String(node.parameters[field]))).map(field=>[field,skillIds.get(String(node.parameters[field]))!]))}};
@@ -18,12 +19,13 @@ export function mergeProjects(destination:Project,source:Project,newId:()=>strin
     return node;
   });
   const skills=source.skills.map(s=>{const graph=copyGraph(references(s.nodes),s.edges,definitionNumber,newId),runtimeId=skillNumber();
-    return {...clone(s),...graph,id:skillIds.get(s.id)!,runtimeId,timeline:s.timeline?remapTimeline(s.timeline,new Map(s.nodes.map((n,i)=>[n.id,graph.nodes[i].id])),runtimeId):undefined};});
+    return {...clone(s),...graph,id:skillIds.get(s.id)!,runtimeId,timelineRef:s.timelineRef?timelineIds.get(s.timelineRef):undefined,timeline:s.timeline?remapTimeline(s.timeline,new Map(s.nodes.map((n,i)=>[n.id,graph.nodes[i].id])),runtimeId):undefined};});
+  const timelines=(source.timelines??[]).map(t=>{const graph=copyGraph(references(t.nodes),t.edges,definitionNumber,newId);return {...clone(t),...graph,id:timelineIds.get(t.id)!,timeline:remapTimeline(t.timeline,new Map(t.nodes.map((n,i)=>[n.id,graph.nodes[i].id])),skillNumber())};});
   const buffs=(source.buffs??[]).map(b=>({...clone(b),...copyGraph(references(b.nodes),b.edges,definitionNumber,newId),id:buffIds.get(b.id)!,runtimeId:buffNumber()}));
   const blueprints=(source.summonBlueprints??[]).map(b=>({...clone(b),id:blueprintIds.get(b.id)!,skillId:skillIds.get(b.skillId)!}));
-  const viewports=source.editor?.viewports?.map(v=>({...v,id:(v.kind==='skill'?skillIds:buffIds).get(v.id)!}))??[];
+  const viewports=source.editor?.viewports?.map(v=>({...v,id:(v.kind==='skill'?skillIds:v.kind==='timeline'?timelineIds:buffIds).get(v.id)!}))??[];
   const runtime=source.runtime?mergeRuntime(destination,source,skillIds,newId):destination.runtime;
-  const result={...destination,runtime,skills:[...destination.skills,...skills],buffs:[...(destination.buffs??[]),...buffs],summonBlueprints:[...(destination.summonBlueprints??[]),...blueprints],editor:{...destination.editor,viewports:[...(destination.editor?.viewports??[]),...viewports]}};
+  const result={...destination,runtime,skills:[...destination.skills,...skills],timelines:[...(destination.timelines??[]),...timelines],buffs:[...(destination.buffs??[]),...buffs],summonBlueprints:[...(destination.summonBlueprints??[]),...blueprints],editor:{...destination.editor,viewports:[...(destination.editor?.viewports??[]),...viewports]}};
   if(allGraphs(result).some(({graph})=>graph.nodes.length>256))throw new Error('图节点数超过上限');
   return result;
 }

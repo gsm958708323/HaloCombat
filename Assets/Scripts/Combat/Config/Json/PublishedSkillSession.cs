@@ -21,6 +21,7 @@ namespace Combat.Config
             var skills = new Dictionary<string, SkillGraphDocument>();
             var blueprints=new Dictionary<string,SummonBlueprintDocument>();
             var buffs=new Dictionary<string,BuffDocument>();
+            var timelines=new Dictionary<string,SharedTimelineDocument>();
             var revisions = new List<string>();
             SkillProjectDocument project = null;
             foreach (var slot in slots.OrderBy(entry => entry.Key, StringComparer.Ordinal))
@@ -55,11 +56,18 @@ namespace Combat.Config
                         throw new ContentValidationException("$.slots."+slot.Key,"Conflicting Buff versions: "+buff.Id);
                     buffs[buff.Id]=buff;
                 }
+                foreach(var timeline in closure.Timelines)
+                {
+                    if(timelines.TryGetValue(timeline.Id,out var other)&&SkillJsonCodec.Write(timeline)!=SkillJsonCodec.Write(other))
+                        throw new ContentValidationException("$.slots."+slot.Key,"Conflicting timeline versions: "+timeline.Id);
+                    timelines[timeline.Id]=timeline;
+                }
                 revisions.Add(slot.Key + ":" + document.Revision);
             }
             project.Skills = skills.Values.ToArray();
             project.SummonBlueprints=blueprints.Values.ToArray();
             project.Buffs=buffs.Values.ToArray();
+            project.Timelines=timelines.Values.ToArray();
             var candidate = new SkillSimulation(project, CombatContentCompiler.Compile(project));
             var previous = Simulation;
             Simulation = candidate;

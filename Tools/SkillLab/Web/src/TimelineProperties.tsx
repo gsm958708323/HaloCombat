@@ -1,6 +1,6 @@
 import type { AuthoredTimeline,Skill,TimelineClip } from './model';
 
-export function TimelineProperties({skill,change}:{skill:Skill;change:(timeline:AuthoredTimeline)=>void}) {
+export function TimelineProperties({skill,change}:{skill:Pick<Skill,'nodes'|'timeline'>;change:(timeline:AuthoredTimeline)=>void}) {
   const value=skill.timeline;if(!value)return null;
   const controls:[[number,string],...Array<[number,string]>]=[[1011,'禁止走动/跳跃'],[1012,'禁止转向'],[1013,'禁止新施放'],[1014,'禁止技能增量位移'],[1015,'禁止受击位移'],[1016,'暂停重力']];
   const number=(text:string,set:(number:number)=>void)=>{if(text!=='')set(Number(text));};

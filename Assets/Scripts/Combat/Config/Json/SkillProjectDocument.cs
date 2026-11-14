@@ -11,6 +11,8 @@ namespace Combat.Config
         [JsonProperty(Required = Required.Always)] public string Id { get; set; }
         public string Name { get; set; }
         public SkillGraphDocument[] Skills { get; set; } = Array.Empty<SkillGraphDocument>();
+        public SharedTimelineDocument[] Timelines {get;set;}=Array.Empty<SharedTimelineDocument>();
+        public bool ShouldSerializeTimelines()=>Timelines==null||Timelines.Length>0;
         public SummonBlueprintDocument[] SummonBlueprints {get;set;}=Array.Empty<SummonBlueprintDocument>();
         public bool ShouldSerializeSummonBlueprints()=>SummonBlueprints==null||SummonBlueprints.Length>0;
         public BuffDocument[] Buffs {get;set;}=Array.Empty<BuffDocument>();
@@ -28,6 +30,15 @@ namespace Combat.Config
         public SkillNodeDocument[] Nodes { get; set; } = Array.Empty<SkillNodeDocument>();
         public SkillEdgeDocument[] Edges { get; set; } = Array.Empty<SkillEdgeDocument>();
         [JsonProperty(NullValueHandling=NullValueHandling.Ignore)] public TimelineDocument Timeline {get;set;}
+        [JsonProperty(NullValueHandling=NullValueHandling.Ignore)] public string TimelineRef {get;set;}
+    }
+    public sealed class SharedTimelineDocument
+    {
+        public string Id {get;set;}
+        public string Name {get;set;}
+        public SkillNodeDocument[] Nodes {get;set;}=Array.Empty<SkillNodeDocument>();
+        public SkillEdgeDocument[] Edges {get;set;}=Array.Empty<SkillEdgeDocument>();
+        public TimelineDocument Timeline {get;set;}=new TimelineDocument();
     }
     public sealed class SkillNodeDocument
     {

@@ -1,16 +1,17 @@
 import { clone } from '../model';
 import type { AuthoredTimeline,BuffDefinition, GraphEdge, GraphNode, GraphViewport, Project, Skill } from '../model';
 
-export type ContentKind = 'skill' | 'buff' | 'blueprint';
-export interface GraphKey { kind:'skill'|'buff';id:string }
-export type EditableGraph = Pick<Skill,'id'|'name'|'nodes'|'edges'|'timeline'>;
+export type ContentKind = 'skill' | 'buff' | 'blueprint'|'timeline';
+export interface GraphKey { kind:'skill'|'buff'|'timeline';id:string }
+export type EditableGraph = Pick<Skill,'id'|'name'|'nodes'|'edges'|'timeline'|'timelineRef'>;
 export interface ContentReference { kind:ContentKind|'actor'|'combo';id:string;name:string;nodeId?:string;field:string }
-export const contentLabel = { skill:'技能',buff:'Buff',blueprint:'召唤蓝图',actor:'角色',combo:'连招' };
-export const contentItems = (p:Project,kind:ContentKind) => kind==='skill'?p.skills:kind==='buff'?(p.buffs??[]):(p.summonBlueprints??[]);
-export const graphOf = (p:Project,key:GraphKey):EditableGraph|undefined => key.kind==='skill'?p.skills.find(s=>s.id===key.id):p.buffs?.find(b=>b.id===key.id);
-export const allGraphs = (p:Project) => [...p.skills.map(graph=>({kind:'skill' as const,graph})),...(p.buffs??[]).map(graph=>({kind:'buff' as const,graph}))];
+export const contentLabel = { skill:'技能',buff:'Buff',blueprint:'召唤蓝图',timeline:'共享时间轴',actor:'角色',combo:'连招' };
+export const contentItems = (p:Project,kind:ContentKind) => kind==='skill'?p.skills:kind==='buff'?(p.buffs??[]):kind==='timeline'?(p.timelines??[]):(p.summonBlueprints??[]);
+export const graphOf = (p:Project,key:GraphKey):EditableGraph|undefined => key.kind==='skill'?p.skills.find(s=>s.id===key.id):key.kind==='timeline'?p.timelines?.find(t=>t.id===key.id):p.buffs?.find(b=>b.id===key.id);
+export const allGraphs = (p:Project) => [...p.skills.map(graph=>({kind:'skill' as const,graph})),...(p.buffs??[]).map(graph=>({kind:'buff' as const,graph})),...(p.timelines??[]).map(graph=>({kind:'timeline' as const,graph}))];
 
 export function updateGraph(p:Project,key:GraphKey,change:(graph:EditableGraph)=>EditableGraph):Project {
+  if(key.kind==='timeline')return {...p,timelines:p.timelines?.map(t=>{if(t.id!==key.id)return t;const next=change(t);return {...t,...next,timeline:next.timeline??t.timeline};})};
   return key.kind==='skill'?{...p,skills:p.skills.map(s=>s.id===key.id?{...s,...change(s)}:s)}:
     {...p,buffs:p.buffs?.map(b=>b.id===key.id?{...b,...change(b)}:b)};
 }
@@ -19,6 +20,7 @@ function referenceField(node:GraphNode,kind:ContentKind) {
   return kind==='buff'&&(node.kind==='buff'||node.kind==='dispel')?'buff':kind==='blueprint'&&node.kind==='delivery'?'blueprint':null;
 }
 export function referencesTo(p:Project,kind:ContentKind,id:string):ContentReference[] {
+  if(kind==='timeline')return p.skills.filter(s=>s.timelineRef===id).map(s=>({kind:'skill',id:s.id,name:s.name,field:'timelineRef'}));
   if(kind==='skill')return [
     ...allGraphs(p).flatMap(({kind:owner,graph})=>graph.nodes.filter(n=>n.kind==='cast').flatMap(n=>['fallbackSkill','recastSkill'].filter(field=>n.parameters[field]===id).map(field=>({kind:owner,id:graph.id,name:graph.name,nodeId:n.id,field})))),
     ...(p.summonBlueprints??[]).filter(b=>b.skillId===id).map(b=>({kind:'blueprint' as const,id:b.id,name:b.name,field:'skillId'})),
@@ -30,14 +32,16 @@ export function referencesTo(p:Project,kind:ContentKind,id:string):ContentRefere
   }));
 }
 function rewriteReferences(p:Project,kind:ContentKind,from:string,to:string):Project {
+  if(kind==='timeline')return {...p,skills:p.skills.map(s=>s.timelineRef===from?{...s,timelineRef:to}:s)};
   if(kind==='skill')return {...p,skills:p.skills.map(s=>({...s,nodes:s.nodes.map(n=>n.kind==='cast'?{...n,parameters:{...n.parameters,...Object.fromEntries(['fallbackSkill','recastSkill'].filter(field=>n.parameters[field]===from).map(field=>[field,to]))}}:n)})),summonBlueprints:p.summonBlueprints?.map(b=>b.skillId===from?{...b,skillId:to}:b),runtime:p.runtime?{...p.runtime,
     actors:p.runtime.actors.map(a=>({...a,skillId:a.skillId===from?to:a.skillId,dodgeSkill:a.dodgeSkill===from?to:a.dodgeSkill,slots:a.slots?.map(id=>id===from?to:id)})),
     combos:p.runtime.combos.map(c=>({...c,toSkill:c.toSkill===from?to:c.toSkill,preSkills:c.preSkills.map(id=>id===from?to:id)}))}:undefined};
   const nodes=(items:GraphNode[])=>items.map(node=>{const field=referenceField(node,kind);return field&&node.parameters[field]===from?{...node,parameters:{...node.parameters,[field]:to}}:node;});
-  return {...p,skills:p.skills.map(s=>({...s,nodes:nodes(s.nodes)})),buffs:p.buffs?.map(b=>({...b,nodes:nodes(b.nodes)}))};
+  return {...p,skills:p.skills.map(s=>({...s,nodes:nodes(s.nodes)})),buffs:p.buffs?.map(b=>({...b,nodes:nodes(b.nodes)})),timelines:p.timelines?.map(t=>({...t,nodes:nodes(t.nodes)}))};
 }
 function mapContent(p:Project,kind:ContentKind,from:string,to:string):Project {
   return kind==='skill'?{...p,skills:p.skills.map(s=>s.id===from?{...s,id:to}:s)}:
+    kind==='timeline'?{...p,timelines:p.timelines?.map(t=>t.id===from?{...t,id:to}:t)}:
     kind==='buff'?{...p,buffs:p.buffs?.map(b=>b.id===from?{...b,id:to}:b)}:
     {...p,summonBlueprints:p.summonBlueprints?.map(b=>b.id===from?{...b,id:to}:b)};
 }
@@ -51,6 +55,7 @@ export function renameContent(p:Project,kind:ContentKind,id:string,input:string)
   if(kind!=='blueprint'&&p.editor)result={...result,editor:{...p.editor,
     selectedSkill:kind==='skill'&&p.editor.selectedSkill===id?next:p.editor.selectedSkill,
     selectedBuff:kind==='buff'&&p.editor.selectedBuff===id?next:p.editor.selectedBuff,
+    selectedTimeline:kind==='timeline'&&p.editor.selectedTimeline===id?next:p.editor.selectedTimeline,
     viewports:p.editor.viewports?.map(v=>v.kind===kind&&v.id===id?{...v,id:next}:v)}};
   return result;
 }
@@ -61,11 +66,13 @@ export function deleteContent(p:Project,kind:ContentKind,id:string,replacement='
   if(incoming.length&&(!replacement||replacement===id||!items.some(item=>item.id===replacement)))throw new Error('请先选择替代引用，或修改仍在使用此内容的项');
   let result=replacement?rewriteReferences(p,kind,id,replacement):p;
   result=kind==='skill'?{...result,skills:result.skills.filter(s=>s.id!==id)}:
+    kind==='timeline'?{...result,timelines:result.timelines?.filter(t=>t.id!==id)}:
     kind==='buff'?{...result,buffs:result.buffs?.filter(b=>b.id!==id)}:
     {...result,summonBlueprints:result.summonBlueprints?.filter(b=>b.id!==id)};
   if(p.editor)result={...result,editor:{...p.editor,
     selectedSkill:kind==='skill'&&p.editor.selectedSkill===id?(result.skills[0]?.id??''):p.editor.selectedSkill,
     selectedBuff:kind==='buff'&&p.editor.selectedBuff===id?'':p.editor.selectedBuff,
+    selectedTimeline:kind==='timeline'&&p.editor.selectedTimeline===id?undefined:p.editor.selectedTimeline,
     viewports:p.editor.viewports?.filter(v=>v.kind!==kind||v.id!==id)}};
   return result;
 }
@@ -74,6 +81,7 @@ export function numberAllocator(values:number[],floor=0) {
   return ()=>{if(value>=2147483647)throw new Error('运行时数字身份已耗尽');return ++value;};
 }
 export const definitionAllocator=(p:Project)=>numberAllocator(allGraphs(p).flatMap(({graph})=>graph.nodes.map(n=>n.runtimeId??0)),4000);
+export const actionNumbers=(p:Project)=>[...p.skills.flatMap(s=>[s.runtimeId,s.timeline?.runtimeId??0]),...(p.timelines??[]).map(t=>t.timeline.runtimeId)];
 export function copyGraph(nodes:GraphNode[],edges:GraphEdge[],definitionId:()=>number,newId:()=>string=()=>crypto.randomUUID()) {
   const ids=new Map(nodes.map(n=>[n.id,newId()]));
   return {nodes:nodes.map(n=>({...clone(n),id:ids.get(n.id)!,runtimeId:n.kind==='projectile'||n.kind==='delivery'||n.kind==='construct'?definitionId():n.runtimeId})),
@@ -84,8 +92,13 @@ export function duplicateContent(p:Project,kind:ContentKind,id:string,name?:stri
   const nextId=newId();const title=name??source.name+' 副本';
   if(kind==='blueprint')return {id:nextId,project:{...p,summonBlueprints:[...(p.summonBlueprints??[]),{...clone(p.summonBlueprints!.find(b=>b.id===id)!),id:nextId,name:title}]}};
   const graph=graphOf(p,{kind,id})!;const copied=copyGraph(graph.nodes,graph.edges,definitionAllocator(p),newId);
+  if(kind==='timeline'){
+    const source=p.timelines!.find(t=>t.id===id)!;const ids=new Map(source.nodes.map((n,i)=>[n.id,copied.nodes[i].id]));
+    const value={...clone(source),...copied,id:nextId,name:title,timeline:remapTimeline(source.timeline,ids,numberAllocator(actionNumbers(p))())};
+    return {id:nextId,project:{...p,timelines:[...(p.timelines??[]),value]}};
+  }
   if(kind==='skill'){
-    const number=numberAllocator(p.skills.flatMap(s=>[s.runtimeId,s.timeline?.runtimeId??0]))();
+    const number=numberAllocator(actionNumbers(p))();
     const source=p.skills.find(s=>s.id===id)!;const nodeIds=new Map(source.nodes.map((n,i)=>[n.id,copied.nodes[i].id]));
     const value={...clone(source),...copied,id:nextId,name:title,runtimeId:number,timeline:source.timeline?remapTimeline(source.timeline,nodeIds,number):undefined};
     return {id:nextId,project:{...p,skills:[...p.skills,value]}};
@@ -97,8 +110,8 @@ export function remapTimeline(source:AuthoredTimeline,ids:Map<string,string>,run
   const map=(values:string[]|undefined)=>values?.map(id=>{const next=ids.get(id);if(!next)throw new Error('时间轴效果入口不存在：'+id);return next;})??[];
   return {...clone(source),runtimeId,clips:source.clips.map(c=>({...clone(c),effects:map(c.effects)})),payloads:source.payloads.map(p=>({...clone(p),effects:map(p.effects)}))};
 }
-export function selectGraph(p:Project,skillId:string,buffId=''):Project {
-  return {...p,editor:{...p.editor,selectedSkill:p.skills.some(s=>s.id===skillId)?skillId:(p.skills[0]?.id??''),selectedBuff:p.buffs?.some(b=>b.id===buffId)?buffId:''}};
+export function selectGraph(p:Project,skillId:string,buffId='',timelineId=''):Project {
+  return {...p,editor:{...p.editor,selectedSkill:p.skills.some(s=>s.id===skillId)?skillId:(p.skills[0]?.id??''),selectedBuff:p.buffs?.some(b=>b.id===buffId)?buffId:'',selectedTimeline:p.timelines?.some(t=>t.id===timelineId)?timelineId:undefined}};
 }
 export function saveViewport(p:Project,key:GraphKey,viewport:{x:number;y:number;zoom:number}):Project {
   const value:GraphViewport={...key,...viewport};

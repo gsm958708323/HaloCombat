@@ -14,6 +14,7 @@ namespace Combat.Config
                 dependencies.Add(ContentDependencies.Skill(key),ContentDependencies.Skill(id));return number;
             }
             definition.AmmoCost=p.Integer("ammoCost",0,0,1000000);
+            definition.HitFeedback=(HitFeedbackLevel)System.Array.IndexOf(new[]{"none","light","confirm","heavy","finisher"},p.Choice("hitFeedback","none","none","light","confirm","heavy","finisher"));
             definition.AmmoFallback=Reference("fallbackSkill");definition.RecastSkill=Reference("recastSkill");
             definition.RecastProjectile=p.OptionalIdentity("recastProjectile");definition.RequiredProjectile=p.OptionalIdentity("requiredProjectile");
             if(definition.RecastSkill.IsValid!=(definition.RecastProjectile.Length>0))throw new ContentValidationException(path+".parameters.recastSkill","Recast skill and projectile key must be configured together.");

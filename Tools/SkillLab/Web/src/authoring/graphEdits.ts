@@ -13,6 +13,7 @@ export function pasteSelection(p:Project,key:GraphKey,clipboard:GraphClipboard,p
   const roots=new Set(['target','cast','buff-events','skill-events']);
   const includedRoots=new Set(graph.nodes.filter(n=>roots.has(n.kind)).map(n=>n.kind));
   const nodes=clipboard.nodes.filter(n=>{
+    if(key.kind==='timeline'&&roots.has(n.kind))return false;
     if(key.kind==='buff'&&['target','cast','skill-events'].includes(n.kind)||key.kind==='skill'&&n.kind==='buff-events')return false;
     if(!roots.has(n.kind))return true;if(includedRoots.has(n.kind))return false;includedRoots.add(n.kind);return true;
   });

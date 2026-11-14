@@ -26,6 +26,7 @@ export function usePreview(project: Project | null, selected: string, report: (m
     editor: undefined,
     skills: project.skills.map(s => ({ ...s, nodes: s.nodes.map(n => ({ ...n, position: undefined })) })),
     buffs: project.buffs?.map(b => ({ ...b, nodes: b.nodes.map(n => ({ ...n, position: undefined })) })),
+    timelines:project.timelines?.map(t=>({...t,nodes:t.nodes.map(n=>({...n,position:undefined}))})),
   }]);
   const semanticRef = useRef(semanticKey); semanticRef.current = semanticKey;
   const sessionKey = useRef('');

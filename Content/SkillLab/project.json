@@ -4561,6 +4561,98 @@
           "order": 0
         }
       ]
+    },
+    {
+      "id": "shared-shot-light",
+      "runtimeId": 2045,
+      "name": "共享动作轻弹",
+      "category": "共享动作",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 300,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 0,
+            "cooldown": 0,
+            "ammoCost": 1,
+            "hitFeedback": "confirm"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        }
+      ],
+      "timelineRef": "shared-impact-shot"
+    },
+    {
+      "id": "shared-shot-heavy",
+      "runtimeId": 2046,
+      "name": "共享动作重弹",
+      "category": "共享动作",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 300,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 0,
+            "cooldown": 0,
+            "ammoCost": 2,
+            "hitFeedback": "finisher"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        }
+      ],
+      "timelineRef": "shared-impact-shot"
     }
   ],
   "preview": {
@@ -4891,6 +4983,104 @@
         }
       ],
       "edges": []
+    }
+  ],
+  "timelines": [
+    {
+      "id": "shared-impact-shot",
+      "name": "可复用射击动作",
+      "nodes": [
+        {
+          "id": "projectile",
+          "kind": "projectile",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "speed": 10,
+            "range": 0,
+            "lifetime": 3,
+            "radius": 0.16,
+            "maxHits": 4,
+            "spawnForward": 0.45,
+            "sameTargetDelay": 0.15,
+            "passInvulnerable": true
+          },
+          "runtimeId": 6503
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 300,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 0,
+            "coefficient": 1.35,
+            "canCrit": true,
+            "critChance": 0.05,
+            "critMultiplier": 1.8,
+            "snapshotAttack": true,
+            "notifyHurt": false,
+            "sourceHitstopFrames": 2,
+            "targetHitstopFrames": 4
+          }
+        },
+        {
+          "id": "hurt",
+          "kind": "hurt-feedback",
+          "position": {
+            "x": 600,
+            "y": 80
+          },
+          "parameters": {
+            "level": "damage",
+            "requireHpDamage": true
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "projectile-hit-damage",
+          "source": "projectile",
+          "sourcePort": "hit",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "damage-next-hurt",
+          "source": "damage",
+          "sourcePort": "next",
+          "target": "hurt",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ],
+      "timeline": {
+        "runtimeId": 3045,
+        "duration": 0.65,
+        "clips": [
+          {
+            "id": "cancel",
+            "kind": "cancel",
+            "start": 0.25,
+            "end": 0.65,
+            "effects": []
+          }
+        ],
+        "payloads": [
+          {
+            "id": "shot",
+            "time": 0.22,
+            "effects": [
+              "projectile"
+            ]
+          }
+        ]
+      }
     }
   ]
 }

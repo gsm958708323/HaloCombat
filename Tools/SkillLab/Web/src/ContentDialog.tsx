@@ -5,7 +5,7 @@ import { contentItems, contentLabel, deleteContent, referencesTo, renameContent 
 import type { ContentKind, ContentReference } from './authoring/contentEdits';
 
 export interface ContentAction { kind:ContentKind;id:string;mode:'rename'|'delete' }
-interface Publication {slot:string;projectId:string;skills:string[];buffs:string[];blueprints:string[];error:string|null}
+interface Publication {slot:string;projectId:string;skills:string[];buffs:string[];blueprints:string[];timelines:string[];error:string|null}
 export function ContentDialog({project,action,close,edit,locate}:{project:Project;action:ContentAction;close:()=>void;edit:(change:(p:Project)=>Project)=>void;locate:(ref:ContentReference)=>void}) {
   const [id,setId]=useState(action.id);const [replacement,setReplacement]=useState('');const [error,setError]=useState('');
   const [slots,setSlots]=useState<Publication[]|null>(null);const [loadError,setLoadError]=useState('');
@@ -13,7 +13,7 @@ export function ContentDialog({project,action,close,edit,locate}:{project:Projec
   const references=referencesTo(project,action.kind,action.id).filter(r=>r.kind!==action.kind||r.id!==action.id);
   async function inspect(){try{setLoadError('');setSlots(await api<Publication[]>('/publications',undefined,'GET'));}catch(error){setLoadError(String(error));}}
   useEffect(()=>{void inspect();},[]);
-  const affected=slots?.filter(slot=>slot.projectId===project.id&&(action.kind==='skill'?slot.skills:action.kind==='buff'?slot.buffs:slot.blueprints).includes(action.id))??[];
+  const affected=slots?.filter(slot=>slot.projectId===project.id&&(action.kind==='skill'?slot.skills:action.kind==='buff'?slot.buffs:action.kind==='timeline'?slot.timelines:slot.blueprints).includes(action.id))??[];
   function submit(){
     try{edit(p=>action.mode==='rename'?renameContent(p,action.kind,action.id,id):deleteContent(p,action.kind,action.id,replacement));close();}
     catch(error){setError(String(error));}

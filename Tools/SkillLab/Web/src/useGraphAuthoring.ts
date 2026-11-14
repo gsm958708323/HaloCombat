@@ -50,7 +50,7 @@ export function useGraphAuthoring(document:ReturnType<typeof useProjectDocument>
     const ports=nodeOutputs(nodes.find(n=>n.id===id)!).map(([p])=>p);
     return {...g,nodes,edges:g.edges.filter(e=>e.source!==id||ports.includes(e.sourcePort))};
   }),[editGraph]);
-  const nodes=useMemo<EditorNode[]>(()=>graph?.nodes.map(n=>({id:n.id,type:'skill',position:n.position,measured:measurements[keyString+':'+n.id],selected:selectedNodes.includes(n.id),deletable:n.kind!=='buff-events',data:{...n,authoredTimeline:!!graph.timeline,
+  const nodes=useMemo<EditorNode[]>(()=>graph?.nodes.map(n=>({id:n.id,type:'skill',position:n.position,measured:measurements[keyString+':'+n.id],selected:selectedNodes.includes(n.id),deletable:n.kind!=='buff-events',data:{...n,authoredTimeline:!!graph.timeline||!!graph.timelineRef,
     counts:Object.fromEntries(nodeOutputs(n).map(([port])=>[port,graph.edges.filter(e=>e.source===n.id&&e.sourcePort===port).length])),
     blueprints:project?.summonBlueprints,buffs:project?.buffs,skills:project?.skills,change:parameter,changeKind,remove:(id)=>remove([id]),
     toggle:(id,enabled)=>editGraph(g=>({...g,nodes:g.nodes.map(v=>v.id===id?{...v,enabled}:v)}))}}))??[],[graph,project?.summonBlueprints,project?.buffs,project?.skills,selectedNodes,parameter,changeKind,remove,editGraph,measurements,keyString]);

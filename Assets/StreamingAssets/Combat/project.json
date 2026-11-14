@@ -869,6 +869,19 @@
             "x": 1200,
             "y": 320
           }
+        },
+        {
+          "id": "vulnerable",
+          "kind": "buff",
+          "position": {
+            "x": 1500,
+            "y": 80
+          },
+          "parameters": {
+            "buff": "arena-vulnerability",
+            "recipient": "target",
+            "stacks": 1
+          }
         }
       ],
       "edges": [
@@ -893,6 +906,14 @@
           "source": "damage",
           "sourcePort": "next",
           "target": "damage-hurt",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "damage-hurt-next-vulnerable",
+          "source": "damage-hurt",
+          "sourcePort": "next",
+          "target": "vulnerable",
           "targetPort": "execute",
           "order": 0
         }
@@ -1650,6 +1671,100 @@
           }
         ]
       }
+    },
+    {
+      "id": "arena-combo-second",
+      "runtimeId": 2012,
+      "name": "确认连段二段",
+      "category": "Arena 原技能",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "facing",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 300,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 0,
+            "cooldown": 0,
+            "ammoCost": 2,
+            "fallbackSkill": "arena-reload-ammo",
+            "hitFeedback": "confirm"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        }
+      ],
+      "timelineRef": "arena-confirmed-shot"
+    },
+    {
+      "id": "arena-combo-finisher",
+      "runtimeId": 2013,
+      "name": "确认连段终结",
+      "category": "Arena 原技能",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "facing",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 300,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 0,
+            "cooldown": 0,
+            "ammoCost": 3,
+            "fallbackSkill": "arena-reload-ammo",
+            "hitFeedback": "finisher"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        }
+      ],
+      "timelineRef": "arena-confirmed-shot"
     }
   ],
   "buffs": [
@@ -1729,6 +1844,38 @@
           "id": "events",
           "kind": "buff-events",
           "runtimeId": 0,
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {}
+        }
+      ],
+      "edges": []
+    },
+    {
+      "id": "arena-vulnerability",
+      "runtimeId": 5101,
+      "name": "易伤",
+      "permanent": false,
+      "duration": 4,
+      "interval": 0,
+      "stack": "refresh",
+      "maxStacks": 1,
+      "mutexGroup": 0,
+      "tags": [],
+      "modifiers": [
+        {
+          "attribute": "damageTaken",
+          "operation": "mul",
+          "value": 1.25,
+          "priority": 0
+        }
+      ],
+      "nodes": [
+        {
+          "id": "events",
+          "kind": "buff-events",
           "position": {
             "x": 0,
             "y": 80
@@ -1993,7 +2140,6 @@
           "homing",
           "aura",
           "summon-melee",
-          "arena-ammo-shot",
           "arena-reload-ammo",
           "arena-tracked-shot",
           "arena-projectile-warp"
@@ -2074,6 +2220,30 @@
         "requiredTags": [],
         "priority": 0,
         "toSkill": "arena-absorbing-orb"
+      },
+      {
+        "id": "arena-first-second",
+        "input": "ArenaPrimary",
+        "preSkills": [
+          "arena-ammo-shot"
+        ],
+        "requiredTags": [
+          1017
+        ],
+        "priority": 10,
+        "toSkill": "arena-combo-second"
+      },
+      {
+        "id": "arena-second-finisher",
+        "input": "ArenaPrimary",
+        "preSkills": [
+          "arena-combo-second"
+        ],
+        "requiredTags": [
+          1017
+        ],
+        "priority": 10,
+        "toSkill": "arena-combo-finisher"
       }
     ],
     "actors": [
@@ -2368,5 +2538,125 @@
         }
       }
     ]
-  }
+  },
+  "timelines": [
+    {
+      "id": "arena-confirmed-shot",
+      "name": "连段共享射击动作",
+      "nodes": [
+        {
+          "id": "projectile",
+          "kind": "projectile",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "speed": 10,
+            "range": 0,
+            "lifetime": 3,
+            "radius": 0.16,
+            "maxHits": 4,
+            "spawnForward": 0.45,
+            "sameTargetDelay": 0.15,
+            "passInvulnerable": true
+          },
+          "runtimeId": 4012
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 300,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 0,
+            "coefficient": 1.35,
+            "canCrit": true,
+            "critChance": 0.05,
+            "critMultiplier": 1.8,
+            "snapshotAttack": true,
+            "notifyHurt": false,
+            "sourceHitstopFrames": 2,
+            "targetHitstopFrames": 4
+          }
+        },
+        {
+          "id": "hurt",
+          "kind": "hurt-feedback",
+          "position": {
+            "x": 600,
+            "y": 80
+          },
+          "parameters": {
+            "level": "damage",
+            "requireHpDamage": true
+          }
+        },
+        {
+          "id": "vulnerable",
+          "kind": "buff",
+          "position": {
+            "x": 900,
+            "y": 80
+          },
+          "parameters": {
+            "buff": "arena-vulnerability",
+            "recipient": "target",
+            "stacks": 1
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "projectile-hit-damage",
+          "source": "projectile",
+          "sourcePort": "hit",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "damage-next-hurt",
+          "source": "damage",
+          "sourcePort": "next",
+          "target": "hurt",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hurt-next-vulnerable",
+          "source": "hurt",
+          "sourcePort": "next",
+          "target": "vulnerable",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ],
+      "timeline": {
+        "runtimeId": 3013,
+        "duration": 0.65,
+        "animation": "Fire",
+        "clips": [
+          {
+            "id": "cancel",
+            "kind": "cancel",
+            "start": 0.25,
+            "end": 0.65,
+            "effects": []
+          }
+        ],
+        "payloads": [
+          {
+            "id": "shot",
+            "time": 0.22,
+            "effects": [
+              "projectile"
+            ]
+          }
+        ]
+      }
+    }
+  ]
 }

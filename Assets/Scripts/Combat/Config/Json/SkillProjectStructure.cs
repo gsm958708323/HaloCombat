@@ -17,6 +17,7 @@ namespace Combat.Config
             var skills=Identities(project.Skills,s=>s.Id,"$.skills",512);
             var buffs=Identities(project.Buffs,b=>b.Id,"$.buffs",512);
             var blueprints=Identities(project.SummonBlueprints,b=>b.Id,"$.summonBlueprints",256);
+            var timelines=Identities(project.Timelines,t=>t.Id,"$.timelines",512);
             var skillNumbers=new HashSet<int>();var buffNumbers=new HashSet<int>();
             for(int i=0;i<project.Skills.Length;i++)
             {
@@ -25,6 +26,11 @@ namespace Combat.Config
                 Graph(skill.Nodes,skill.Edges,path,false,buffs,blueprints,checkRetainedReferences);
                 foreach(var node in skill.Nodes)if(node.Kind=="cast")foreach(string field in new[]{"fallbackSkill","recastSkill"})Reference(node,field,skills,path+".nodes["+node.Id+"]");
                 TimelineReferences(skill.Timeline,skill.Nodes,path+".timeline");
+                if(skill.TimelineRef!=null)
+                {
+                    if(skill.Timeline!=null)Fail(path+".timelineRef","Inline timeline and shared reference are mutually exclusive.");
+                    if(!timelines.Contains(skill.TimelineRef))Fail(path+".timelineRef","Unknown shared timeline reference.");
+                }
             }
             for(int i=0;i<project.Buffs.Length;i++)
             {
@@ -34,7 +40,15 @@ namespace Combat.Config
             }
             for(int i=0;i<project.SummonBlueprints.Length;i++)
                 if(!skills.Contains(project.SummonBlueprints[i].SkillId??""))Fail("$.summonBlueprints["+i+"].skillId","Unknown skill reference.");
-            Editor(project.Editor,skills,buffs);
+            foreach(var timeline in project.Timelines)
+            {
+                string path="$.timelines["+timeline.Id+"]";
+                if(timeline.Timeline==null)Fail(path+".timeline","Timeline is required.");
+                Graph(timeline.Nodes,timeline.Edges,path,true,buffs,blueprints,checkRetainedReferences);
+                if(timeline.Nodes.Any(n=>n.Kind=="buff-events"))Fail(path+".nodes","Shared timeline graph has no lifecycle root.");
+                TimelineReferences(timeline.Timeline,timeline.Nodes,path+".timeline");
+            }
+            Editor(project.Editor,skills,buffs,timelines);
             RuntimeReferences(project.Runtime,skills);
         }
         static void TimelineReferences(TimelineDocument timeline,SkillNodeDocument[] nodes,string path)
@@ -109,18 +123,19 @@ namespace Combat.Config
             if(!string.IsNullOrEmpty(id)&&!values.Contains(id))Fail(path+".parameters."+field,"Unknown shared reference: "+id);
         }
 
-        static void Editor(SkillEditorDocument editor,HashSet<string> skills,HashSet<string> buffs)
+        static void Editor(SkillEditorDocument editor,HashSet<string> skills,HashSet<string> buffs,HashSet<string> timelines)
         {
             if(editor==null)return;
             if(!string.IsNullOrEmpty(editor.SelectedSkill)&&!skills.Contains(editor.SelectedSkill))Fail("$.editor.selectedSkill","Unknown skill.");
             if(!string.IsNullOrEmpty(editor.SelectedBuff)&&!buffs.Contains(editor.SelectedBuff))Fail("$.editor.selectedBuff","Unknown Buff.");
+            if(!string.IsNullOrEmpty(editor.SelectedTimeline)&&!timelines.Contains(editor.SelectedTimeline))Fail("$.editor.selectedTimeline","Unknown timeline.");
             if(editor.Viewports==null||editor.Viewports.Length>1024)Fail("$.editor.viewports","Invalid viewport array.");
             var views=new HashSet<string>();
             foreach(var view in editor.Viewports)
             {
                 if(view==null)Fail("$.editor.viewports","Null viewport.");
                 string path="$.editor.viewports["+view.Kind+":"+view.Id+"]";
-                var ids=view.Kind=="skill"?skills:view.Kind=="buff"?buffs:null;
+                var ids=view.Kind=="skill"?skills:view.Kind=="buff"?buffs:view.Kind=="timeline"?timelines:null;
                 if(ids==null||!ids.Contains(view.Id??""))Fail(path,"Unknown graph identity.");
                 if(!views.Add(view.Kind+":"+view.Id))Fail(path,"Duplicate graph viewport.");
                 if(!Finite(view.X)||!Finite(view.Y)||!Finite(view.Zoom)||view.Zoom<.1f||view.Zoom>4)Fail(path,"Invalid viewport coordinates or zoom.");

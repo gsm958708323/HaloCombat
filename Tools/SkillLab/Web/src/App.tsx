@@ -16,11 +16,13 @@ import type { ContentAction } from './ContentDialog';
 import { GraphConnections } from './GraphConnections';
 import { useProjectDocument } from './useProjectDocument';
 import { useGraphAuthoring } from './useGraphAuthoring';
-import { copyGraph, definitionAllocator, duplicateContent, emptyProject, numberAllocator, selectGraph,remapTimeline } from './authoring/contentEdits';
+import { actionNumbers,contentLabel,copyGraph, definitionAllocator, duplicateContent, emptyProject, numberAllocator, selectGraph,remapTimeline } from './authoring/contentEdits';
 import type { ContentKind, ContentReference, GraphKey } from './authoring/contentEdits';
 import { mergeProjects } from './authoring/mergeProjects';
 import { TimelineProperties } from './TimelineProperties';
 import { RuntimeProperties } from './RuntimeProperties';
+import { SharedTimelineControls } from './SharedTimelineControls';
+import { newTimeline } from './authoring/timelineEdits';
 
 const nodeTypes={skill:SkillNode};
 function Workbench() {
@@ -35,13 +37,16 @@ function Workbench() {
   const fileInput=useRef<HTMLInputElement>(null);
   const skill=project?.skills.find(s=>s.id===project.editor?.selectedSkill)??project?.skills[0];
   const buff=project?.buffs?.find(b=>b.id===project.editor?.selectedBuff);
-  const key:GraphKey={kind:buff?'buff':'skill',id:buff?.id??skill?.id??''};
+  const timeline=project?.timelines?.find(t=>t.id===project.editor?.selectedTimeline);
+  const key:GraphKey={kind:timeline?'timeline':buff?'buff':'skill',id:timeline?.id??buff?.id??skill?.id??''};
   const graphEditor=useGraphAuthoring(editor,key,setMessage);const graph=graphEditor.graph;
   const preview=usePreview(project,skill?.id??'',setMessage);preview.skill.current=skill?.id??'';
   const mode=String(skill?.nodes.find(n=>n.kind==='cast'&&n.enabled!==false)?.parameters.mode??'instant');
   const castMode=({instant:'瞬发',channel:'引导',charge:'蓄力'} as Record<string,string>)[mode]??mode;
-  const transfers=[...new Set(skill?.nodes.filter(n=>n.enabled!==false&&(n.kind==='projectile'||n.kind==='delivery'||n.kind==='construct')).map(deliveryLabel))].join(' / ')||'效果';
-  function select(skillId:string,buffId=''){editor.endGroup();editor.edit(p=>selectGraph(p,skillId,buffId),false);setLibrary(false);}
+  const actionNodes=skill?.timelineRef?project?.timelines?.find(t=>t.id===skill.timelineRef)?.nodes:skill?.nodes;
+  const transfers=[...new Set(actionNodes?.filter(n=>n.enabled!==false&&(n.kind==='projectile'||n.kind==='delivery'||n.kind==='construct')).map(deliveryLabel))].join(' / ')||'效果';
+  function select(skillId:string,buffId='',timelineId=''){editor.endGroup();editor.edit(p=>selectGraph(p,skillId,buffId,timelineId),false);setLibrary(false);}
+  function newShared(){editor.endGroup();editor.edit(p=>newTimeline(p,skill?.id??'').project);}
   async function openCreate(){
     try{const available=examples.length?examples:(await api<Project>('/examples',undefined,'GET')).skills;setExamples(available);setTemplate(skill?'copy':available[0]?.id??'');setNewName('');}
     catch(error){setMessage(String(error));}
@@ -61,7 +66,7 @@ function Workbench() {
     try{
       if(template==='copy'&&skill){const p=editor.current.current!;const result=duplicateContent(p,'skill',skill.id,newName.trim());editor.endGroup();editor.edit(selectGraph(result.project,result.id));setNewName(null);return;}
       const source=await api<Project>('/templates/'+encodeURIComponent(template),undefined,'GET');const p=editor.current.current;if(!p)return;
-      const runtimeId=numberAllocator(p.skills.flatMap(s=>[s.runtimeId,s.timeline?.runtimeId??0]));const definitionId=definitionAllocator(p);
+      const runtimeId=numberAllocator(actionNumbers(p));const definitionId=definitionAllocator(p);
       const copy=(s:Skill,id:string,name=s.name):Skill=>{const copied=copyGraph(s.nodes,s.edges,definitionId),number=runtimeId();return {...clone(s),...copied,id,runtimeId:number,name,
         timeline:s.timeline?remapTimeline(s.timeline,new Map(s.nodes.map((n,i)=>[n.id,copied.nodes[i].id])),number):undefined};};
       const prototype=source.skills.find(s=>s.id===template)!;
@@ -69,8 +74,9 @@ function Workbench() {
       const blueprints=source.summonBlueprints?.filter(b=>!p.summonBlueprints?.some(v=>v.id===b.id)).map(clone)??[];
       const buffRuntime=numberAllocator((p.buffs??[]).map(b=>b.runtimeId),8000);
       const buffs=source.buffs?.filter(b=>!p.buffs?.some(v=>v.id===b.id)).map(b=>({...clone(b),runtimeId:buffRuntime(),...copyGraph(b.nodes,b.edges,definitionId)}))??[];
+      const timelines=source.timelines?.filter(t=>!p.timelines?.some(v=>v.id===t.id)).map(t=>{const graph=copyGraph(t.nodes,t.edges,definitionId);return {...clone(t),...graph,timeline:remapTimeline(t.timeline,new Map(t.nodes.map((n,i)=>[n.id,graph.nodes[i].id])),runtimeId())};})??[];
       const created=copy(prototype,crypto.randomUUID(),newName.trim());created.category='自定义';
-      const next=selectGraph({...p,skills:[...p.skills,...dependencies,created],summonBlueprints:[...(p.summonBlueprints??[]),...blueprints],buffs:[...(p.buffs??[]),...buffs]},created.id);
+      const next=selectGraph({...p,skills:[...p.skills,...dependencies,created],timelines:[...(p.timelines??[]),...timelines],summonBlueprints:[...(p.summonBlueprints??[]),...blueprints],buffs:[...(p.buffs??[]),...buffs]},created.id);
       await api('/document/validate',next);if(editor.current.current!==p)throw new Error('创建校验期间工程已更改，请重新创建');
       editor.endGroup();editor.edit(next);setNewName(null);setLibrary(false);setMessage('技能已创建；共享依赖复用工程现有版本');
     }catch(error){setMessage(String(error));}finally{setCreating(false);}
@@ -83,12 +89,12 @@ function Workbench() {
   }
   function duplicate(kind:ContentKind,id:string){
     try{const p=editor.current.current;if(!p)return;const result=duplicateContent(p,kind,id);editor.endGroup();
-      editor.edit(kind==='blueprint'?result.project:selectGraph(result.project,kind==='skill'?result.id:skill?.id??'',kind==='buff'?result.id:''));setMessage('已复制内容并分配新身份');}
+      editor.edit(kind==='blueprint'?result.project:selectGraph(result.project,kind==='skill'?result.id:skill?.id??'',kind==='buff'?result.id:'',kind==='timeline'?result.id:''));setMessage('已复制内容并分配新身份');}
     catch(error){setMessage(String(error));}
   }
   function locate(ref:ContentReference){
     if(ref.kind==='actor'||ref.kind==='combo'){setContentAction(null);requestAnimationFrame(()=>{const section=window.document.querySelector('.runtime-properties');section?.setAttribute('open','');section?.scrollIntoView({block:'center'});});return;}
-    setContentAction(null);select(ref.kind==='skill'?ref.id:skill?.id??'',ref.kind==='buff'?ref.id:'');
+    setContentAction(null);select(ref.kind==='skill'?ref.id:skill?.id??'',ref.kind==='buff'?ref.id:'',ref.kind==='timeline'?ref.id:'');
     if(ref.kind==='blueprint')requestAnimationFrame(()=>{const target=window.document.querySelector<HTMLElement>('[data-blueprint-id="'+CSS.escape(ref.id)+'"]');target?.closest('details')?.setAttribute('open','');target?.scrollIntoView({block:'center'});});
     else if(ref.nodeId)requestAnimationFrame(()=>void graphEditor.flow.fitView({nodes:[{id:ref.nodeId!}],padding:.3}));
   }
@@ -134,12 +140,14 @@ function Workbench() {
     <div className="workspace"><Preview key={project.id} preview={preview} project={project} update={editor.edit}/>
       <section className="editor-panel"><div className="editor-heading"><span>节点编辑</span><div className="popover-anchor"><button onClick={()=>setLibrary(!library)}>技能库 ▾</button>{library&&<SkillLibrary project={project} selected={skill?.id??''} select={id=>select(id)}/>}</div>
         <button onClick={()=>void openCreate()}><Plus size={12}/>新建</button><button onClick={()=>{if(buff)select(skill?.id??'');else if(project.buffs?.length)select(skill?.id??'',project.buffs[0].id);else newBuff();}}>{buff?'返回技能':'Buff定义'}</button>
+        <button onClick={()=>{if(timeline)select(skill?.id??'');else if(project.timelines?.length)select(skill?.id??'','',project.timelines[0].id);else newShared();}}>{timeline?'返回技能':'共享时间轴'}</button>
+        {timeline&&<><select aria-label="当前共享时间轴" value={timeline.id} onChange={e=>select(skill?.id??'','',e.target.value)}>{project.timelines?.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select><button onClick={newShared}>新建共享轴</button></>}
         {buff&&<><select className="buff-select" aria-label="当前Buff定义" value={buff.id} onChange={event=>select(skill?.id??'',event.target.value)}>{project.buffs?.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}</select><button onClick={newBuff}>新建Buff</button></>}
-        {graph&&<><label>{buff?'Buff名称':'技能名称'}<input aria-label={buff?'Buff名称':'技能名称'} value={graph.name??''} onChange={event=>graphEditor.editGraph(g=>({...g,name:event.target.value}))}/></label>
-          <button className="content-id" title={graph.id} onClick={()=>setContentAction({...key,mode:'rename'})}>ID {graph.id}</button><button onClick={()=>duplicate(key.kind,key.id)}>复制{buff?'Buff':'技能'}</button><button onClick={()=>setContentAction({...key,mode:'delete'})}>删除{buff?'Buff':'技能'}</button></>}
+        {graph&&<><label>{contentLabel[key.kind]}名称<input aria-label={contentLabel[key.kind]+'名称'} value={graph.name??''} onChange={event=>graphEditor.editGraph(g=>({...g,name:event.target.value}))}/></label>
+          <button className="content-id" title={graph.id} onClick={()=>setContentAction({...key,mode:'rename'})}>ID {graph.id}</button><button onClick={()=>duplicate(key.kind,key.id)}>复制{contentLabel[key.kind]}</button><button onClick={()=>setContentAction({...key,mode:'delete'})}>删除{contentLabel[key.kind]}</button></>}
         <span className="grow"/>{skill&&<><span className="badge">{castMode}</span><span className="badge">{transfers}</span></>}
       </div><div className="editor-body"><div className="graph-panel" tabIndex={0} aria-label="节点画布" onKeyDown={graphEditor.keyDown}>
-        <div className="canvas-toolbar"><div className="popover-anchor"><button disabled={!graph} onClick={()=>setAdding(!adding)}><Plus size={12}/>添加</button>{adding&&<div className="node-menu">{Object.entries(kinds).filter(([kind])=>kind!=='buff-events'&&(!buff||!['target','cast','skill-events'].includes(kind))).map(([kind,schema])=><button key={kind} onClick={()=>{graphEditor.add(kind);setAdding(false);}}>{schema.title}</button>)}</div>}</div>
+        <div className="canvas-toolbar"><div className="popover-anchor"><button disabled={!graph} onClick={()=>setAdding(!adding)}><Plus size={12}/>添加</button>{adding&&<div className="node-menu">{Object.entries(kinds).filter(([kind])=>kind!=='buff-events'&&(!(buff||timeline)||!['target','cast','skill-events'].includes(kind))).map(([kind,schema])=><button key={kind} onClick={()=>{graphEditor.add(kind);setAdding(false);}}>{schema.title}</button>)}</div>}</div>
           <button disabled={!graph} onClick={()=>void graphEditor.flow.fitView({padding:.15})}><Maximize size={12}/>适应</button><button disabled={!graph} onClick={graphEditor.layout}>自动排列</button>
           <button disabled={!graphEditor.selectedNodes.length} onClick={graphEditor.copy}>复制节点</button><button disabled={!graph||!graphEditor.canPaste} onClick={graphEditor.paste}>粘贴</button>
           <button aria-label="撤销" disabled={!editor.canUndo} onClick={editor.undo}><Undo2 size={13}/></button><button aria-label="重做" disabled={!editor.canRedo} onClick={editor.redo}><Redo2 size={13}/></button><span className="grow"/><small>{Math.round(graphEditor.zoom*100)}%</small>
@@ -151,10 +159,11 @@ function Workbench() {
           <Background variant={BackgroundVariant.Dots} gap={18} size={1} color="#48565d"/></ReactFlow>:
           <div className="empty-project"><Workflow size={34}/><h2>工程中暂无技能</h2><p>创建技能后编辑节点并运行预览。</p><button className="primary" onClick={()=>void openCreate()}>新建技能</button></div>}
         <small className="canvas-help">Shift 框选 · Ctrl C / V 复制粘贴 · Delete 删除 · Ctrl Z 撤销</small>
-      </div><aside className="properties">{buff?<><BuffProperties buff={buff} change={value=>editor.edit(p=>({...p,buffs:p.buffs?.map(b=>b.id===value.id?value:b)}))}/><small>当前预览技能：{skill?.name??'无'}</small></>:skill?<>
+      </div><aside className="properties">{timeline?<><h3>共享时间轴</h3><p>{project.skills.filter(s=>s.timelineRef===timeline.id).length} 个技能引用；修改后重新发布使用者。</p><TimelineProperties skill={timeline} change={value=>graphEditor.editGraph(g=>({...g,timeline:value}))}/><small>当前预览技能：{skill?.name??'无'}</small></>:buff?<><BuffProperties buff={buff} change={value=>editor.edit(p=>({...p,buffs:p.buffs?.map(b=>b.id===value.id?value:b)}))}/><small>当前预览技能：{skill?.name??'无'}</small></>:skill?<>
         <h3>▾ 技能属性</h3><p className="type-summary">{castMode} · {transfers}</p><label className="category-field">分类<input aria-label="技能分类" value={skill.category??''} onChange={event=>editor.edit(p=>({...p,skills:p.skills.map(s=>s.id===skill.id?{...s,category:event.target.value}:s)}))}/></label>
+        <SharedTimelineControls project={project} skill={skill} update={editor.edit} open={id=>select(skill.id,'',id)} report={setMessage}/>
         <TimelineProperties skill={skill} change={timeline=>graphEditor.editGraph(g=>({...g,timeline}))}/>
-        {skill.nodes.filter(n=>n.enabled!==false).map(node=><section key={node.id}><h4>{kinds[node.kind]?.title??node.kind}</h4>{kinds[node.kind]?.fields.filter(f=>(!f.when||f.when(node.parameters))&&(!skill.timeline||node.kind!=='cast'||['cost','cooldown'].includes(f.key))).map(f=><div className="property" key={f.key}><span>{f.label}</span><b>{f.key==='buff'?(project.buffs?.find(b=>b.id===node.parameters.buff)?.name??String(node.parameters.buff)):f.options?.find(([v])=>v===parameterValue(f,node.parameters))?.[1]??String(parameterValue(f,node.parameters))}{f.unit}</b></div>)}</section>)}
+        {skill.nodes.filter(n=>n.enabled!==false).map(node=><section key={node.id}><h4>{kinds[node.kind]?.title??node.kind}</h4>{kinds[node.kind]?.fields.filter(f=>(!f.when||f.when(node.parameters))&&(!(skill.timeline||skill.timelineRef)||node.kind!=='cast'||['cost','cooldown','ammoCost','fallbackSkill','hitFeedback'].includes(f.key))).map(f=><div className="property" key={f.key}><span>{f.label}</span><b>{f.key==='buff'?(project.buffs?.find(b=>b.id===node.parameters.buff)?.name??String(node.parameters.buff)):f.options?.find(([v])=>v===parameterValue(f,node.parameters))?.[1]??String(parameterValue(f,node.parameters))}{f.unit}</b></div>)}</section>)}
         <SummonBlueprints project={project} update={editor.edit} action={setContentAction} duplicate={id=>duplicate('blueprint',id)}/></>:<p>空工程可保存或导出。</p>}
         {graph&&<GraphConnections graph={graph} change={update=>{editor.endGroup();graphEditor.editGraph(update);}}/>}
         <RuntimeProperties project={project} update={editor.edit}/>

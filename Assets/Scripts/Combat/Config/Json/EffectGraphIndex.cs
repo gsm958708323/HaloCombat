@@ -9,16 +9,16 @@ namespace Combat.Config
         public readonly string ContentKey;
         public readonly SkillNodeDocument[] Nodes;
         public readonly SkillEdgeDocument[] Edges;
-        public readonly bool BuffGraph;
+        public readonly bool EffectOnly;
         public readonly string Path;
         readonly Dictionary<string, SkillNodeDocument> _nodes = new Dictionary<string, SkillNodeDocument>();
         readonly HashSet<string> _used = new HashSet<string>();
         readonly List<SkillNodeDocument> _entries=new List<SkillNodeDocument>();
         static readonly HashSet<string> Kinds=new HashSet<string>{"target","cast","projectile","split","damage","cue","delivery","buff","dispel","heal","buff-events","skill-events","after-damage","impact","refill-ammo","teleport-projectile","construct","construct-chain","hurt-feedback"};
         internal static bool KnownKind(string kind)=>kind!=null&&Kinds.Contains(kind);
-        public EffectGraphIndex(string contentKey,SkillNodeDocument[] nodes,SkillEdgeDocument[] edges, string path,bool buffGraph=false)
+        public EffectGraphIndex(string contentKey,SkillNodeDocument[] nodes,SkillEdgeDocument[] edges, string path,bool effectOnly=false)
         {
-            ContentKey=contentKey;Nodes=nodes;Edges=edges; Path=path;BuffGraph=buffGraph;
+            ContentKey=contentKey;Nodes=nodes;Edges=edges; Path=path;EffectOnly=effectOnly;
             if (nodes == null || edges == null) Fail(path, "Nodes and edges arrays are required.");
             if (nodes.Length > 256 || edges.Length > 1024) Fail(path, "Graph exceeds supported size.");
             foreach (var node in nodes)
@@ -27,7 +27,7 @@ namespace Combat.Config
                 if (_nodes.ContainsKey(node.Id)) Fail(NodePath(node), "Duplicate node id.");
                 if (!Kinds.Contains(node.Kind))
                     Fail(NodePath(node) + ".kind", "Unknown node kind: " + node.Kind);
-                if(buffGraph?(node.Kind=="target"||node.Kind=="cast"||node.Kind=="skill-events"):node.Kind=="buff-events")Fail(NodePath(node)+".kind","Root kind is invalid for this graph.");
+                if(effectOnly?(node.Kind=="target"||node.Kind=="cast"||node.Kind=="skill-events"):node.Kind=="buff-events")Fail(NodePath(node)+".kind","Root kind is invalid for this graph.");
                 if (node.Position == null || !Finite(node.Position.X) || !Finite(node.Position.Y)) Fail(NodePath(node), "Invalid position.");
                 _nodes.Add(node.Id, node);
             }
