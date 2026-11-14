@@ -82,7 +82,7 @@ namespace Combat.Core
         public void TickAll(float dt)
         {
             if (!IsActive) return;
-            for (int i = 0; i < _ticks.Count; i++)
+            for (int i = 0; i < _ticks.Count && IsActive; i++)
                 _ticks[i].Tick(dt);
         }
 
@@ -140,7 +140,6 @@ namespace Combat.Core
         readonly Queue<int> _free = new Queue<int>(32);
         readonly HashSet<EntityId> _pending = new HashSet<EntityId>();
         readonly List<EntityId> _despawnScratch = new List<EntityId>(16);
-        readonly List<Actor> _activeScratch = new List<Actor>(64);
 
         public int ActiveCount { get; private set; }
 
@@ -228,15 +227,17 @@ namespace Combat.Core
 
         public List<Actor> CopyActiveActors()
         {
-            _activeScratch.Clear();
+            // Callers may query/spawn/despawn while traversing a snapshot. A shared scratch
+            // list would invalidate that traversal when the nested query requests its copy.
+            var result = new List<Actor>(ActiveCount);
             for (int i = 1; i < _slots.Count; i++)
             {
                 var slot = _slots[i];
                 if (slot.Occupied && slot.Actor != null && slot.Actor.IsActive)
-                    _activeScratch.Add(slot.Actor);
+                    result.Add(slot.Actor);
             }
 
-            return _activeScratch;
+            return result;
         }
 
         public void ClearAll()
@@ -255,7 +256,6 @@ namespace Combat.Core
             _slots.Add(new Slot());
             _free.Clear();
             _pending.Clear();
-            _activeScratch.Clear();
             ActiveCount = 0;
         }
     }

@@ -1,0 +1,149 @@
+{
+  "formatVersion": 1,
+  "revision": "f0eded6ea67cc8f21282320f61d73a17e47859c39a7f980e99c6167836b68cb7",
+  "skillId": "26ee9dde-aa91-4359-82a1-35792221f82e",
+  "project": {
+    "formatVersion": 1,
+    "id": "halo-skill-lab",
+    "name": "HaloCombat 技能实验室",
+    "skills": [
+      {
+        "id": "26ee9dde-aa91-4359-82a1-35792221f82e",
+        "runtimeId": 2023,
+        "name": "护盾结算验证",
+        "category": "自定义",
+        "nodes": [
+          {
+            "id": "target",
+            "kind": "target",
+            "runtimeId": 0,
+            "enabled": true,
+            "position": {
+              "x": 0.0,
+              "y": 80.0
+            },
+            "parameters": {
+              "mode": "self",
+              "range": 20
+            }
+          },
+          {
+            "id": "cast",
+            "kind": "cast",
+            "runtimeId": 0,
+            "enabled": true,
+            "position": {
+              "x": 270.0,
+              "y": 80.0
+            },
+            "parameters": {
+              "mode": "instant",
+              "cost": 10,
+              "cooldown": 0.7,
+              "delay": 0.1,
+              "duration": 0.3,
+              "count": 1,
+              "interval": 0.1
+            }
+          },
+          {
+            "id": "delivery",
+            "kind": "delivery",
+            "runtimeId": 4023,
+            "enabled": true,
+            "position": {
+              "x": 540.0,
+              "y": 80.0
+            },
+            "parameters": {
+              "mode": "target",
+              "recipient": "target"
+            }
+          },
+          {
+            "id": "damage",
+            "kind": "impact",
+            "runtimeId": 0,
+            "enabled": true,
+            "position": {
+              "x": 810.0,
+              "y": 80.0
+            },
+            "parameters": {
+              "mode": "shield",
+              "recipient": "self",
+              "amount": 200
+            }
+          }
+        ],
+        "edges": [
+          {
+            "id": "target-cast",
+            "source": "target",
+            "sourcePort": "target",
+            "target": "cast",
+            "targetPort": "target",
+            "order": 0
+          },
+          {
+            "id": "cast-delivery",
+            "source": "cast",
+            "sourcePort": "cast",
+            "target": "delivery",
+            "targetPort": "execute",
+            "order": 0
+          },
+          {
+            "id": "hit-damage",
+            "source": "delivery",
+            "sourcePort": "apply",
+            "target": "damage",
+            "targetPort": "execute",
+            "order": 0
+          }
+        ]
+      }
+    ],
+    "preview": {
+      "seed": 1,
+      "energy": 100.0,
+      "initialEnergy": 50.0,
+      "recovery": 0.0,
+      "caster": {
+        "id": "caster",
+        "x": -6.0,
+        "z": 0.0,
+        "hp": 1000.0,
+        "atk": 80.0,
+        "def": 0.0,
+        "damageDealt": 2.0
+      },
+      "targets": [
+        {
+          "id": "target-1",
+          "x": 0.0,
+          "z": 0.0,
+          "hp": 1000.0,
+          "atk": 0.0,
+          "def": 20.0
+        },
+        {
+          "id": "target-2",
+          "x": 3.0,
+          "z": 0.0,
+          "hp": 1000.0,
+          "atk": 0.0,
+          "def": 0.0
+        },
+        {
+          "id": "target-3",
+          "x": 6.0,
+          "z": 0.0,
+          "hp": 1000.0,
+          "atk": 0.0,
+          "def": 0.0
+        }
+      ]
+    }
+  }
+}

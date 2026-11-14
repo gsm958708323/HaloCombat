@@ -1,0 +1,310 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Combat.Core;
+
+namespace Combat.Config
+{
+    // One simulation implementation is used by the local host and the Unity test scene.
+    public sealed class SkillSimulation : IDisposable
+    {
+        public const float Step = 0.02f;
+        readonly CombatContentSnapshot _content;
+        readonly Dictionary<long, string> _names = new Dictionary<long, string>();
+        readonly Dictionary<long, string> _kinds = new Dictionary<long, string>();
+        readonly List<SkillEventSnapshot> _events = new List<SkillEventSnapshot>();
+        readonly List<SkillTrailSnapshot> _trails = new List<SkillTrailSnapshot>();
+        readonly List<SkillAreaSnapshot> _areas = new List<SkillAreaSnapshot>();
+        readonly List<SkillRaySnapshot> _rays=new List<SkillRaySnapshot>();
+        readonly Dictionary<int,SkillSpatialSnapshot> _volumes = new Dictionary<int,SkillSpatialSnapshot>();
+        readonly Dictionary<string, EntityId> _sceneActors = new Dictionary<string, EntityId>();
+        readonly CombatWorld _world;
+        readonly EntityId _caster;
+        int _eventSequence, _steps, _casts, _spawned, _hits, _spawnedAreas,_spawnedSummons;
+        float _damage;
+        int _chains,_splits;
+        bool _disposed;
+        SimVec3 _movement;
+
+        public SkillSimulation(SkillProjectDocument project, CombatContentSnapshot content)
+        {
+            _content = content ?? throw new ArgumentNullException(nameof(content));
+            var preview = project?.Preview;
+            SkillSceneValidation.Validate(preview);
+            _world = new CombatWorld(new SkillSimulationFactory(content, preview), random: new SeededRandom(preview.Seed), cues: content.Cues,obstacles:SkillSceneValidation.Obstacles(preview),skillEvents:content.SkillEvents);
+            _world.ReplaceCatalogs(content.Projectiles, content.Aoes, content.Summons);
+            _world.Events.Subscribe<EvEntitySpawn>(OnSpawn);
+            _world.Events.Subscribe<EvDamage>(OnDamage);
+            _world.Events.Subscribe<EvSkillEvent>(e=>Record(e.Rejected?"skill-event-rejected":"skill-"+e.Kind.ToString().ToLowerInvariant(),Name(e.Source),Name(e.Target),e.Origin,e.Damage));
+            _world.Events.Subscribe<EvHeal>(e=>Record("heal",Name(e.Target),e.Amount.ToString("F1",System.Globalization.CultureInfo.InvariantCulture)));
+            _world.Events.Subscribe<EvShield>(e=>Record("shield",Name(e.Target),e.Amount.ToString("F1",System.Globalization.CultureInfo.InvariantCulture),e.Origin));
+            _world.Events.Subscribe<EvBuffLifecycle>(OnBuff);
+            _world.Events.Subscribe<EvSkillStarted>(e=>
+            {_casts++;_content.Skills.TryGet(e.Skill,out var skill);Record("cast",Name(e.Source),skill?.Name??e.Skill.ToString());});
+            _world.Events.Subscribe<EvSummonLifecycle>(e=>Record("summon-"+e.Kind.ToString().ToLowerInvariant(),Name(e.Owner),e.Detail??Name(e.Id)));
+            _world.Events.Subscribe<EvEntityCleanup>(OnCleanup);
+            _world.Events.Subscribe<EvAreaResolved>(OnArea);
+            _world.Events.Subscribe<EvSpatialVolume>(OnVolume);
+            _world.Events.Subscribe<EvRayResolved>(OnRay);
+            _world.Events.Subscribe<EvObstacleHit>(e=>Record("collision",Name(e.Source),e.Kind+" -> "+e.Obstacle));
+            _world.Events.Subscribe<EvProjectileEnded>(e=>Record("projectile-end",Name(e.Source),e.Reason.ToString()));
+            _world.Events.Subscribe<EvProjectileBehavior>(e=>
+            {
+                if(e.Kind=="chain")_chains++;if(e.Kind=="split")_splits++;
+                Record("projectile-"+e.Kind,Name(e.Source),e.Kind=="chain"||e.Kind=="returning"?Name(e.Target):
+                    e.Kind=="split"||e.Kind=="rejected"?e.Count+" queued / generation "+e.Generation:e.Kind+" / y="+e.Point.Y.ToString("F3",System.Globalization.CultureInfo.InvariantCulture),e.Origin);
+            });
+            _world.Events.Subscribe<EvAoeLifecycle>(e => Record("area-" + e.Kind.ToString().ToLowerInvariant(), Name(e.Source), Name(e.Target.IsValid ? e.Target : e.Id)));
+            _world.Events.Subscribe<EvSkillEnded>(OnSkillEnded);
+            _world.Events.Subscribe<EvSkillReleased>(e => Record("released", Name(e.Source), "Power " + e.Power.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+            _world.Events.Subscribe<EvCue>(e => Record("cue", Name(e.Source), e.CueId.ToString()));
+            _caster = Spawn("caster", preview.Caster);
+            foreach (var target in preview.Targets) Spawn("target", target);
+        }
+
+        EntityId Spawn(string blueprint, PreviewActorDocument initial)
+        {
+            var id = _world.SpawnActor(new ActorSpawnSpec(blueprint), false);
+            _world.TryGetActor(id, out var actor);
+            actor.GetComp<TransformComp>().Position = new SimVec3(initial.X, 0, initial.Z);
+            actor.GetComp<LocomotionComp>().CollisionRadius=initial.CollisionRadius;
+            var attr = actor.GetComp<AttributeSet>();
+            attr.SetBase(AttrId.MaxHp, initial.Hp); attr.SetBase(AttrId.Hp, initial.Hp);
+            attr.SetBase(AttrId.Atk, initial.Atk); attr.SetBase(AttrId.Def, initial.Def);
+            attr.SetBase(AttrId.Shield,initial.Shield);attr.SetBase(AttrId.DmgDealMul,initial.DamageDealt);attr.SetBase(AttrId.DmgTakenMul,initial.DamageTaken);
+            _names[HitboxComp.Pack(id)] = initial.Id;
+            _sceneActors.Add(initial.Id, id);
+            _world.PublishSpawn(id, blueprint);
+            return id;
+        }
+
+        public SkillCastResult Cast(string key, float x, float z)
+        {
+            EnsureAlive();
+            if (!SkillSceneValidation.Finite(x) || !SkillSceneValidation.Finite(z))
+                throw new ContentValidationException("$.aim", "Aim must be finite.");
+            var skill = _content.Skills.All.FirstOrDefault(s => s.Key == key)
+                ?? throw new ContentValidationException("$.skillId", "Unknown skill.");
+            if (!_world.TryGetActor(_caster, out var caster)) return new SkillCastResult(false, "Caster is unavailable.");
+            var origin = caster.GetComp<TransformComp>().Position;
+            var point = new SimVec3(x, 0, z);
+            float heading = LocomotionComp.YawFromStick(new SimVec3(point.X - origin.X, 0, point.Z - origin.Z));
+            var cast = caster.GetComp<SkillCastComp>();
+            bool accepted = cast.TryCast(skill.Id, new SkillAim(EntityId.Invalid, point, heading));
+            if(!accepted)Record("rejected",skill.Name,cast.LastRejection);
+            return new SkillCastResult(accepted, cast.LastRejection);
+        }
+
+        public void Release()
+        {
+            EnsureAlive();
+            if (_world.TryGetActor(_caster, out var caster)) caster.GetComp<SkillCastComp>().Release();
+        }
+
+        public void CancelInput()
+        {
+            EnsureAlive(); _movement = SimVec3.Zero;
+            if (_world.TryGetActor(_caster, out var caster)) caster.GetComp<SkillCastComp>().CancelHeld();
+        }
+
+        public void RequestHitstop(int frames)
+        {
+            EnsureAlive();
+            if (frames < 0 || frames > 1000) throw new ContentValidationException("$.frames", "Expected 0..1000 hitstop frames.");
+            _world.RequestHitstop(frames);
+        }
+        public void Remove(string id)
+        {
+            EnsureAlive();
+            if(!long.TryParse(id,out long packed))throw new ContentValidationException("$.entityId","Expected a runtime entity identity.");
+            var entity=HitboxComp.Unpack(packed);
+            if(!_world.TryGetActor(entity,out _))throw new ContentValidationException("$.entityId","Entity is no longer active.");
+            _world.RequestDespawn(entity);
+        }
+        public bool RemoveBuff(string actorId,int instanceId)
+        {
+            EnsureAlive();
+            if(!long.TryParse(actorId,out var packed)||!_world.TryGetActor(HitboxComp.Unpack(packed),out var actor)||!actor.TryGetComp<BuffComp>(out var buffs))
+                throw new ContentValidationException("$.actorId","Unknown buff owner identity.");
+            return buffs.RemoveInstance(instanceId);
+        }
+
+        public void Aim(float x, float z)
+        {
+            EnsureAlive();
+            if (!SkillSceneValidation.Finite(x) || !SkillSceneValidation.Finite(z)) throw new ContentValidationException("$.aim", "Aim must be finite.");
+            if (!_world.TryGetActor(_caster, out var caster)) return;
+            var origin = caster.GetComp<TransformComp>().Position;
+            caster.GetComp<SkillCastComp>().UpdateAim(new SkillAim(EntityId.Invalid, new SimVec3(x, 0, z),
+                LocomotionComp.YawFromStick(new SimVec3(x - origin.X, 0, z - origin.Z))));
+        }
+
+        public void Move(float x, float z)
+        {
+            EnsureAlive();
+            if (!SkillSceneValidation.Finite(x) || !SkillSceneValidation.Finite(z) || Math.Abs(x) > 1 || Math.Abs(z) > 1)
+                throw new ContentValidationException("$.move", "Expected finite stick values in [-1, 1].");
+            _movement = new SimVec3(x, 0, z);
+        }
+
+        public void Place(string id, float x, float z)
+        {
+            EnsureAlive();
+            if (!SkillSceneValidation.Finite(x) || !SkillSceneValidation.Finite(z)) throw new ContentValidationException("$.place", "Position must be finite.");
+            if (id == null || !_sceneActors.TryGetValue(id, out var entity) || !_world.TryGetActor(entity, out var actor))
+                throw new ContentValidationException("$.actorId", "Unknown scene actor.");
+            if(!actor.GetComp<LocomotionComp>().RequestTeleport(new SimVec3(x, 0, z)))throw new ContentValidationException("$.place","Actor destination overlaps an obstacle.");
+        }
+
+        public void Interrupt(bool death = false)
+        {
+            EnsureAlive(); _movement = SimVec3.Zero;
+            if (_world.TryGetActor(_caster, out var caster))
+                caster.GetComp<StateMachineComp>().TryEnter(death ? ActivityId.Dead : ActivityId.Hit,
+                    new ActivityEnterArgs { Reason = "SkillLabInput", HitDuration = .35f });
+        }
+
+        public void Advance(int steps)
+        {
+            EnsureAlive();
+            if (steps < 1 || steps > 500) throw new ContentValidationException("$.steps", "Expected 1..500.");
+            for (int i = 0; i < steps; i++)
+            {
+                if (_world.TryGetActor(_caster, out var caster)) caster.GetComp<LocomotionComp>().RequestMoveIntent(_movement.X, _movement.Z);
+                var previous=caster?.GetComp<TransformComp>().Position;
+                _steps++; _world.Tick(Step);
+                foreach (var actor in _world.RegistryActive())
+                    if (actor.TryGetComp<ProjectileComp>(out _))
+                    {
+                        var p = actor.GetComp<TransformComp>().Position;
+                        _trails.Add(new SkillTrailSnapshot { Entity = HitboxComp.Pack(actor.Id).ToString(), X = p.X, Z = p.Z, Step = _steps });
+                    }
+                if (_trails.Count > 4000) _trails.RemoveRange(0, _trails.Count - 4000);
+                if(previous.HasValue&&_world.TryGetActor(_caster,out caster))
+                {
+                    var position=caster.GetComp<TransformComp>().Position;
+                    if(SpatialGeometry.DistanceSquared(previous.Value,position)>.000001f)
+                        _trails.Add(new SkillTrailSnapshot {Entity=HitboxComp.Pack(caster.Id).ToString(),X=position.X,Z=position.Z,Step=_steps});
+                }
+                _areas.RemoveAll(area => _steps - area.Step > 25);
+                _rays.RemoveAll(ray=>_steps-ray.Step>25);
+            }
+        }
+
+        public SkillSimulationSnapshot Snapshot()
+        {
+            EnsureAlive();
+            var actors = _world.RegistryActive().Select(a =>
+            {
+                var p = a.GetComp<TransformComp>().Position;
+                a.TryGetComp<AttributeSet>(out var attr); a.TryGetComp<ProjectileComp>(out var projectile); a.TryGetComp<AoeComp>(out var area);
+                a.TryGetComp<SummonComp>(out var summon);string blueprint=summon?.Def?.BlueprintId;
+                _content.Blueprints.TryGet(blueprint,out var actorBlueprint);
+                var owner=projectile?.OwnerId??area?.OwnerId??summon?.OwnerId??EntityId.Invalid;
+                return new SkillActorSnapshot
+                {
+                    Id = HitboxComp.Pack(a.Id).ToString(), Name = Name(a.Id), Kind = _kinds[HitboxComp.Pack(a.Id)], X = p.X,Y=p.Y, Z = p.Z,
+                    Hp = attr?.GetBase(AttrId.Hp), MaxHp = attr?.GetFinal(AttrId.MaxHp), Radius = projectile?.Def?.HitRadius ?? area?.Def?.Radius ?? (a.TryGetComp<LocomotionComp>(out var locomotion)?locomotion.CollisionRadius:.4f),
+                    Remaining = projectile!=null?(float?)Math.Max(0,projectile.Def.Lifetime-projectile.Age):area?.Def != null ? (float?)Math.Max(0, area.Def.Duration - area.Age) : summon!=null&&summon.Lifetime>0?(float?)Math.Max(0,summon.Lifetime-summon.Age):null,
+                    Dead = a.TryGetComp<TagComp>(out var tags) && tags.Has(CommonTags.Dead),
+                    Owner=owner.IsValid?Name(owner):null,Blueprint=blueprint,Skill=projectile!=null?SkillName(projectile.Family.Origin):actorBlueprint?.SkillKey,Energy=a.TryGetComp<EnergyComp>(out var energy)?(float?)energy.Current:null,
+                    CastId=projectile?.Family.Origin.CastId??0,Generation=projectile?.Generation??0,ChainsLeft=projectile?.ChainsLeft??0,
+                    Distance=projectile!=null?(float?)projectile.Distance:null,Range=projectile!=null&&!double.IsInfinity(projectile.RangeLimit)?(float?)projectile.RangeLimit:null,
+                    Speed=projectile!=null?(float?)ProjectileKinematics.Speed(projectile):null,VerticalSpeed=projectile?.Def.Motion?.Bounce!=null?(float?)projectile.VerticalSpeed:null,
+                    Returning=projectile?.Returning??false,GroundBouncesLeft=projectile?.GroundBouncesLeft??0,WallBouncesLeft=projectile?.WallBouncesLeft??0,
+                    Buffs=a.TryGetComp<BuffComp>(out var buffs)?buffs.Snapshot().Select(b=>new SkillBuffSnapshot{InstanceId=b.InstanceId,Id=b.Key??b.BuffId.ToString(),Name=b.Name??b.Key??b.BuffId.ToString(),
+                        Source=Name(b.Source),Stacks=b.Stacks,Remaining=b.Remaining}).ToArray():Array.Empty<SkillBuffSnapshot>(),
+                    Tags=a.TryGetComp<TagComp>(out var tagValues)?tagValues.Snapshot():new Dictionary<int,int>(),Attributes=Attributes(attr)
+                };
+            }).ToArray();
+            _world.TryGetActor(_caster, out var caster);
+            var cast = caster?.GetComp<SkillCastComp>();
+            return new SkillSimulationSnapshot
+            {
+                Step = _steps, Time = _steps * Step, Actors = actors, Events = _events.ToArray(), Trails = _trails.ToArray(), Areas = _areas.ToArray(), Volumes=_volumes.Values.ToArray(),
+                Obstacles=_world.Collision.Obstacles.Select(o=>new SkillObstacleSnapshot{Id=o.Id,X=o.X,Z=o.Z,Width=o.Width,Depth=o.Depth}).ToArray(),Rays=_rays.ToArray(),
+                Energy = caster?.GetComp<EnergyComp>().Current ?? 0,
+                Channeling = cast?.IsChanneling ?? false,
+                Charging = cast?.IsCharging ?? false, ChargeProgress = cast?.ChargeProgress ?? 0, CastPower = cast?.CastPower ?? 1,
+                Cooldowns = _content.Skills.All.ToDictionary(s => s.Key, s => cast?.CooldownLeft(s.Id) ?? 0),
+                Statistics = new SkillStatistics { Damage = _damage, Hits = _hits, Casts = _casts, Projectiles = _spawned, Areas = _spawnedAreas,Summons=_spawnedSummons,Chains=_chains,Splits=_splits }
+            };
+        }
+
+        void OnSpawn(EvEntitySpawn e)
+        {
+            _kinds[HitboxComp.Pack(e.Id)]=e.BlueprintId;
+            if(e.BlueprintId=="projectile")_spawned++;if(e.BlueprintId=="aoe")_spawnedAreas++;
+            if(e.BlueprintId=="summon")
+            {
+                _spawnedSummons++;
+                if(_world.TryGetActor(e.Id,out var actor)&&actor.TryGetComp<SummonComp>(out var body)&&_content.Blueprints.TryGet(body.Def?.BlueprintId,out var blueprint))
+                    _names[HitboxComp.Pack(e.Id)]=(blueprint.Name??blueprint.Id)+"#"+e.Id.Index;
+            }
+            Record("spawn",Name(e.Id),e.BlueprintId);
+        }
+        void OnDamage(EvDamage e)
+        { if(e.Amount>0)_hits++; _damage += e.Amount; Record(e.IsCrit ? "critical" : "damage", Name(e.Source), e.Amount + " → " + Name(e.Target),e.Origin,e.Result); }
+        static Dictionary<string,float> Attributes(AttributeSet attr)
+        {
+            var result=new Dictionary<string,float>();if(attr==null)return result;
+            foreach(AttrId id in Enum.GetValues(typeof(AttrId)))result[id.ToString()]=attr.GetFinal(id);return result;
+        }
+        void OnBuff(EvBuffLifecycle e)
+        {
+            _content.Buffs.TryGet(e.BuffId,out var spec);
+            string text=(spec?.Name??e.BuffId.ToString())+" ×"+e.Stacks+" → "+Name(e.Owner);
+            if(e.Kind==BuffEventKind.Removed)text+=" / "+e.Reason;
+            Record("buff-"+e.Kind.ToString().ToLowerInvariant(),Name(e.Source),text);
+        }
+        void OnArea(EvAreaResolved e)
+        {
+            Record("area", Name(e.Source), e.TargetCount + " targets");
+            _areas.Add(new SkillAreaSnapshot { Sequence = _eventSequence, Step = _steps, X = e.Point.X, Z = e.Point.Z, Radius = e.Radius, Targets = e.TargetCount });
+            if (_areas.Count > 100) _areas.RemoveAt(0);
+        }
+        void OnVolume(EvSpatialVolume e)
+        {
+            if(e.Closed){_volumes.Remove(e.Sequence);Record("action-close",Name(e.Source),e.Shape.ToString());return;}
+            if(!_volumes.ContainsKey(e.Sequence))Record("action-open",Name(e.Source),e.Shape.ToString());
+            _volumes[e.Sequence]=new SkillSpatialSnapshot {Sequence=e.Sequence,Source=Name(e.Source),Shape=e.Shape.ToString().ToLowerInvariant(),
+                X=e.Origin.X,Z=e.Origin.Z,Yaw=e.Yaw,Length=e.Length,Width=e.Width,Angle=e.Angle};
+        }
+        void OnRay(EvRayResolved e)
+        {
+            Record("ray",Name(e.Source),e.Hits+" hits");
+            _rays.Add(new SkillRaySnapshot {Sequence=_eventSequence,Step=_steps,FromX=e.From.X,FromZ=e.From.Z,ToX=e.To.X,ToZ=e.To.Z,Width=e.Width,Hits=e.Hits});
+            if(_rays.Count>100)_rays.RemoveAt(0);
+        }
+        void OnSkillEnded(EvSkillEnded e)
+        {
+            Record(e.Reason == DirectorStopReason.Finished ? "completed" : "cancelled", Name(e.Source), e.Reason.ToString());
+            if (e.Source==_caster&&(e.Reason == DirectorStopReason.Hit || e.Reason == DirectorStopReason.Dead || e.Reason == DirectorStopReason.Knockdown))
+                _movement = SimVec3.Zero;
+        }
+        void OnCleanup(EvEntityCleanup e)
+        {
+            Record("cleanup", Name(e.Id), e.Reason);
+            _names.Remove(HitboxComp.Pack(e.Id)); _kinds.Remove(HitboxComp.Pack(e.Id));
+        }
+        string Name(EntityId id) => _names.TryGetValue(HitboxComp.Pack(id), out var name) ? name : id.ToString();
+        string SkillName(SkillOrigin origin)=>_content.Skills.TryGet(origin.Skill,out var skill)?skill.Key:null;
+        void Record(string kind, string source, string result,SkillOrigin origin=default,DamageResult damage=null)
+        {
+            _events.Add(new SkillEventSnapshot { Sequence = ++_eventSequence, Time = _steps * Step, Kind = kind, Source = source, Result = result,CastId=origin.CastId,Skill=SkillName(origin),
+                HitIndex=damage?.HitIndex??0,Damage=damage==null?null:new SkillDamageSnapshot {Kind=damage.Kind.ToString().ToLowerInvariant(),Target=Name(damage.Target),Base=damage.Base,Scaled=damage.Scaled,
+                    AfterDefense=damage.AfterDefense,AfterCritical=damage.AfterCritical,Final=damage.Final,Absorbed=damage.Absorbed,HpLost=damage.HpLost,Overkill=damage.Overkill,Killed=damage.Killed} });
+            if (_events.Count > 500) _events.RemoveAt(0);
+        }
+        void EnsureAlive() { if (_disposed) throw new ObjectDisposedException(nameof(SkillSimulation)); }
+        public void Dispose()
+        {
+            if (_disposed) return;
+            foreach (var actor in _world.RegistryActive())
+            { if (actor.TryGetComp<SkillDirectorComp>(out var director)) director.Stop(DirectorStopReason.Detach); _world.RequestDespawn(actor.Id); }
+            _world.Tick(0);
+            _events.Clear(); _trails.Clear(); _areas.Clear(); _rays.Clear(); _volumes.Clear(); _names.Clear(); _kinds.Clear(); _sceneActors.Clear();
+            _disposed = true;
+        }
+    }
+}

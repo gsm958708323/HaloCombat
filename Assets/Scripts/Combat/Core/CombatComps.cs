@@ -11,7 +11,12 @@ namespace Combat.Core
         Dead = 3,
         Manual = 4,
         Detach = 5,
-        Knockdown = 6
+        Knockdown = 6,
+        Released = 7,
+        EnergyDepleted = 8,
+        TargetLost = 9,
+        EarlyRelease = 10,
+        InputCancelled = 11
     }
 
     public enum SkillSlot : byte { Normal = 0, Skill1 = 1, Skill2 = 2 }
@@ -256,12 +261,17 @@ namespace Combat.Core
         SkillNodeId _currentSkill = SkillNodeId.None;
 
         public SkillNodeId CurrentSkill => _currentSkill;
+        public SkillOrigin CurrentOrigin { get; private set; }
         public bool IsPlaying => _player.IsPlaying;
+        public bool IsCharging => _player.IsCharging;
+        public float ChargeProgress => _player.ChargeProgress;
+        public float CastPower => _player.IsCharging ? _player.ChargePower : _player.Power;
         public override bool WantsTick => true;
 
         public SkillDirectorComp(TimelineLibrary library)
         {
             _library = library ?? throw new ArgumentNullException(nameof(library));
+            _player.Released += PublishChargeRelease;
         }
 
         protected override void OnAttach()
@@ -279,7 +289,9 @@ namespace Combat.Core
             _loco = null;
         }
 
-        public bool Play(SkillNodeId skill, TimelineId timelineId)
+        public bool Play(SkillNodeId skill, TimelineId timelineId, SkillAim aim = default,
+            Func<float, float> advanceBudget = null, Func<int, bool> payPulse = null, Func<SkillAim?> aimResolver = null,
+            ChargeDefinition charge = null,float power=1)
         {
             if (_tags != null &&
                 (_tags.Has(CommonTags.Dead) || _tags.Has(CommonTags.Stunned) ||
@@ -288,13 +300,16 @@ namespace Combat.Core
             if (!_library.TryGet(timelineId, out var so))
                 throw new InvalidOperationException("Missing timeline " + timelineId);
 
+            if (!_fsm.TryEnter(ActivityId.Attack, new ActivityEnterArgs { Reason = "PlaySkill" }))
+                return false;
+
             _loco?.RequestSnapYaw();
             if (_player.IsPlaying)
                 _player.Stop();
 
             _currentSkill = skill;
-            _player.Play(so);
-            _fsm.TryEnter(ActivityId.Attack, new ActivityEnterArgs { Reason = "PlaySkill" });
+            CurrentOrigin = new SkillOrigin(skill,Self.World.NextCastId(),caster:Self.Id);
+            _player.Play(so, aim, advanceBudget, payPulse, aimResolver, charge,power,CurrentOrigin);
             if (Self.TryGetComp<BuffComp>(out var buffs))
                 buffs.DispatchOnOwnerCast();
             return true;
@@ -302,18 +317,50 @@ namespace Combat.Core
 
         public void Stop(DirectorStopReason reason)
         {
+            var skill = _currentSkill;
+            bool wasPlaying = _player.IsPlaying;
             _player.Stop();
             _currentSkill = SkillNodeId.None;
+            _loco?.ClearClipSteer();
+            _loco?.ClearPendingSkill();
+            if (wasPlaying) Self.World?.Events.Publish(new EvSkillEnded(Self.Id, skill, reason,CurrentOrigin));
+            if (reason == DirectorStopReason.Released || reason == DirectorStopReason.Manual || reason == DirectorStopReason.InputCancelled)
+                _fsm?.NotifyActivityFinished(ActivityId.Attack, reason.ToString());
         }
 
         public override void Tick(float dt)
         {
             if (!_player.IsPlaying) return;
             _player.Tick(dt, Self);
+            FinishIfStopped();
+        }
+
+        public void ReleaseCharge()
+        {
+            if (!_player.IsCharging) return;
+            _player.ReleaseCharge();
+            FinishIfStopped();
+        }
+
+        void PublishChargeRelease(float power) => Self.World?.Events.Publish(new EvSkillReleased(Self.Id, _currentSkill, power));
+
+        void FinishIfStopped()
+        {
             if (!_player.IsPlaying)
             {
+                var skill = _currentSkill;
                 _currentSkill = SkillNodeId.None;
+                var aim=_player.LastAim;var origin=CurrentOrigin;float power=_player.Power;
+                var reason=_player.EndReason;
                 _fsm.NotifyActivityFinished(ActivityId.Attack, "TimelineFinished");
+                Self.World?.Events.Publish(new EvSkillEnded(Self.Id, skill, reason,origin));
+                if(reason==DirectorStopReason.Finished&&Self.World!=null)
+                {
+                    Self.World.TryGetActor(aim.Target,out var target);
+                    Self.World.DispatchSkillEvent(SkillEventKind.Completed,new EffectContext{World=Self.World,Source=Self,Target=target,
+                        SnapshotAtk=Self.TryGetComp<AttributeSet>(out var attr)?attr.GetFinal(AttrId.Atk):0,Power=power,Origin=origin,
+                        Point=aim.Point,HasPoint=aim.HasPoint,Dir=LocomotionComp.ForwardFromYaw(aim.Yaw),HasDir=aim.HasPoint});
+                }
             }
         }
     }

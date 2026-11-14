@@ -5,12 +5,15 @@ namespace Combat.Core
     public sealed class TagComp : Comp
     {
         readonly Dictionary<int, int> _stacks = new Dictionary<int, int>(16);
+        readonly Dictionary<int,int> _leasedStacks = new Dictionary<int,int>();
+        readonly Dictionary<int,(TagId Tag,int Count)> _leases = new Dictionary<int,(TagId,int)>();
+        int _nextLease;
 
         public bool Has(TagId tag)
-            => _stacks.TryGetValue(tag.Value, out var n) && n > 0;
+            => Stack(tag)>0;
 
         public int Stack(TagId tag)
-            => _stacks.TryGetValue(tag.Value, out var n) ? n : 0;
+            => (_stacks.TryGetValue(tag.Value, out var n) ? n : 0)+(_leasedStacks.TryGetValue(tag.Value,out var leases)?leases:0);
 
         public void Add(TagId tag, int stacks, TagSource source)
         {
@@ -32,9 +35,24 @@ namespace Combat.Core
             _ = source;
         }
 
-        public void ClearAll() => _stacks.Clear();
+        public TagLease Acquire(TagId tag,int count=1)
+        {
+            if(count<=0)throw new System.ArgumentOutOfRangeException(nameof(count));
+            int id=++_nextLease;_leases.Add(id,(tag,count));
+            _leasedStacks[tag.Value]=(_leasedStacks.TryGetValue(tag.Value,out int current)?current:0)+count;
+            return new TagLease(this,id);
+        }
+        internal void ReleaseLease(int id)
+        {
+            if(!_leases.TryGetValue(id,out var lease))return;_leases.Remove(id);
+            int left=_leasedStacks[lease.Tag.Value]-lease.Count;
+            if(left<=0)_leasedStacks.Remove(lease.Tag.Value);else _leasedStacks[lease.Tag.Value]=left;
+        }
+        public Dictionary<int,int> Snapshot()
+        {var values=new Dictionary<int,int>(_stacks);foreach(var item in _leasedStacks)values[item.Key]=(values.TryGetValue(item.Key,out int count)?count:0)+item.Value;return values;}
+        public void ClearAll(){_stacks.Clear();_leases.Clear();_leasedStacks.Clear();}
 
-        protected override void OnDetach() => _stacks.Clear();
+        protected override void OnDetach() => ClearAll();
     }
 
     public sealed class InputBufferComp : Comp

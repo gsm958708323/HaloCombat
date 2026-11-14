@@ -19,6 +19,9 @@ namespace Combat.Core
         public bool HasPoint;
         public SimVec3 Dir;
         public bool HasDir;
+        public SkillOrigin Origin;
+        public ProjectileHitContext ProjectileHit;
+        public DamageResult Damage;
     }
 
     public readonly struct ApplyEffectsIntent
@@ -30,6 +33,10 @@ namespace Combat.Core
         public readonly int BuffStacks;
         public readonly SimVec3 Point;
         public readonly bool HasPoint;
+        public readonly float Power;
+        public readonly SkillOrigin Origin;
+        public readonly SimVec3 Direction;
+        public readonly bool HasDirection;
 
         public ApplyEffectsIntent(
             IEffect[] effects,
@@ -38,7 +45,8 @@ namespace Combat.Core
             float snapshotAtk,
             int buffStacks = 0,
             SimVec3 point = default,
-            bool hasPoint = false)
+            bool hasPoint = false,
+            float power = 1,SkillOrigin origin=default,SimVec3 direction=default,bool hasDirection=false)
         {
             Effects = effects;
             SourceId = sourceId;
@@ -47,6 +55,8 @@ namespace Combat.Core
             BuffStacks = buffStacks;
             Point = point;
             HasPoint = hasPoint;
+            Power = power;
+            Origin=origin;Direction=direction;HasDirection=hasDirection;
         }
     }
 

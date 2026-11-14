@@ -1,0 +1,70 @@
+import { useRef, useState } from 'react';
+import { Play, Pause, SkipForward, RotateCcw, Crosshair } from 'lucide-react';
+import type { Project } from './model';
+import type { usePreview } from './usePreview';
+import { SceneResources } from './SceneResources';
+import { SpatialVolumes } from './SpatialVolumes';
+import { SceneObstacles } from './SceneObstacles';
+import { SceneActorProperties } from './SceneActorProperties';
+import { DamageInspector } from './DamageInspector';
+import './preview-input.css';
+import { api } from './model';
+
+export function Preview({ preview, project, update }: { preview: ReturnType<typeof usePreview>; project: Project; update: (p: Project) => void }) {
+  const [configuration,setConfiguration] = useState(false);
+  const [text,setText] = useState('');
+  const [error,setError] = useState('');
+  const [filter,setFilter] = useState('all');
+  const [instances,setInstances] = useState(false);
+  const [applying,setApplying] = useState(false);
+  async function applyConfiguration(){
+    setApplying(true);
+    try{const p=JSON.parse(text) as Project;await api('/validate',p);update(p);setError('');}
+    catch(e){setError(String(e));}
+    finally{setApplying(false);}
+  }
+  const moveKeys=useRef(new Set<string>());
+  function moveKey(key:string,down:boolean){
+    if(!['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(key))return;
+    if(down)moveKeys.current.add(key);else moveKeys.current.delete(key);
+    const has=(...keys:string[])=>keys.some(k=>moveKeys.current.has(k))?1:0;
+    void preview.move(has('d','arrowright')-has('a','arrowleft'),has('w','arrowup')-has('s','arrowdown'));
+  }
+  const state=preview.state;
+  const events=state?.events.filter(e=>filter==='all'||e.kind===filter).slice(-80).reverse()??[];
+  const number=(value:number)=>value.toLocaleString('zh-CN',{ maximumFractionDigits: 1 });
+  return <aside className="left-column" onKeyDown={e=>{if(e.target instanceof HTMLInputElement||e.target instanceof HTMLTextAreaElement||e.target instanceof HTMLSelectElement)return;moveKey(e.key.toLowerCase(),true);}} onKeyUp={e=>moveKey(e.key.toLowerCase(),false)}>
+    <section className="events-panel"><div className="panel-title"><div className="text-tabs"><button className={!instances?'active':''} onClick={()=>setInstances(false)}>事件记录</button><button className={instances?'active':''} onClick={()=>setInstances(true)}>运行实例</button></div><select aria-label="筛选事件" value={filter} onChange={e=>setFilter(e.target.value)}><option value="all">全部事件</option><option value="damage">伤害</option><option value="cast">施放</option><option value="spawn">生成</option><option value="rejected">拒绝</option></select><small>{state?.events.length??0} 条</small></div>
+      <div className="event-scroll"><DamageInspector events={state?.events??[]}/>{instances?<div className="instances">{state?.actors.map(a=><div key={a.id}><b>{a.name}</b><span>{a.kind}{a.remaining!=null?` · ${a.remaining.toFixed(2)}s`:a.dead?' · 已死亡':''}</span><small>{a.id}</small>{a.kind==="projectile"&&<div className="instance-owner">归属 {a.owner} · 技能 {a.skill} · Cast {a.castId} · 第{a.generation}代 · 剩余连锁 {a.chainsLeft} · 路径 {a.distance?.toFixed(2)}/{a.range?.toFixed(2)}m · 速度 {a.speed?.toFixed(2)} · 高度 {a.y?.toFixed(2)} · {a.returning?"返程":"出程"} · 地面/墙剩余 {a.groundBouncesLeft}/{a.wallBouncesLeft}</div>}{a.buffs?.map(buff=><div className="instance-buffs" key={buff.instanceId}>{buff.name} ×{buff.stacks} · {buff.remaining?.toFixed(2)??'永久'}s · 来源 {buff.source}<button aria-label={`移除${a.name}的${buff.name}`} onClick={()=>void preview.removeBuff(a.id,buff.instanceId)}>驱散</button></div>)}{a.hp!=null&&<div className="instance-owner">护盾 {a.attributes?.Shield?.toFixed(1)} · 高度 {a.y?.toFixed(2)} · 攻击 {a.attributes?.Atk?.toFixed(1)} · 防御 {a.attributes?.Def?.toFixed(1)} · 移速 {a.attributes?.MoveSpeed?.toFixed(1)} · Tag {Object.entries(a.tags??{}).map(([key,value])=>`${key}×${value}`).join(' / ')}</div>}{a.kind==='summon'&&<><div className="instance-owner">归属 {a.owner} · 技能 {a.skill} · 能量 {a.energy?.toFixed(1)}</div><button onClick={()=>void preview.remove(a.id)}>移除</button></>}</div>)}</div>:<table className="event-table"><thead><tr><th>时间</th><th>事件</th><th>来源</th><th>结果</th></tr></thead><tbody>{events.map(e=><tr key={e.sequence}><td>{e.time.toFixed(2)}s</td><td className={e.kind==='damage'?'gold':''}>{({cast:'施放',spawn:'生成',damage:'伤害',critical:'暴击',heal:'治疗',shield:'护盾','skill-hit':'技能命中','skill-critical':'技能暴击','skill-kill':'技能击杀','skill-completed':'技能完成','skill-wall':'技能撞墙','skill-range':'技能射程','skill-projectileend':'技能弹体结束','skill-event-rejected':'事件受限',cleanup:'回收',rejected:'拒绝',cue:'表现',completed:'完成',cancelled:'取消',released:'释放','action-open':'判定开启','action-close':'判定关闭',collision:'碰撞',ray:'射线','projectile-end':'弹体终结','projectile-chain':'连锁','projectile-split':'分裂','projectile-rejected':'派生受限','projectile-returning':'开始返回','projectile-ground-bounce':'地面反弹','projectile-wall-bounce':'撞墙反射','summon-spawned':'召唤生成','summon-expired':'召唤到期','summon-ownerremoved':'归属清理','summon-killed':'召唤死亡','summon-removed':'召唤移除','summon-rejected':'召唤受限','buff-applied':'Buff施加','buff-stacked':'Buff增层','buff-refreshed':'Buff刷新','buff-period':'Buff周期','buff-expired':'Buff到期','buff-hurt':'Buff受击','buff-cast':'Buff施法','buff-removed':'Buff移除','buff-rejected':'Buff拒绝',area:'范围结算','area-pulse':'区域脉冲','area-enter':'进入区域','area-exit':'离开区域','area-stay':'区域停留','area-expired':'区域到期','area-removed':'区域移除'} as Record<string,string>)[e.kind]??e.kind}</td><td>{e.source}</td><td>{e.result}</td></tr>)}</tbody></table>}</div>
+    </section>
+    <section className="preview-panel"><div className="panel-title"><b>运行预览</b><span className="grow"/><button className={!configuration?'active':''} onClick={()=>setConfiguration(false)}>测试场景</button><button className={configuration?'active':''} onClick={()=>{setConfiguration(true);setText(JSON.stringify(project,null,2));}}>配置</button></div>
+      {configuration?<div className="configuration"><div><button disabled={applying} onClick={()=>void applyConfiguration()}>{applying?'校验中…':'应用当前工程配置'}</button><button onClick={()=>void navigator.clipboard.writeText(text)}>复制</button></div><textarea aria-label="工程 JSON" spellCheck={false} value={text} onChange={e=>setText(e.target.value)}/>{error&&<p role="alert">{error}</p>}</div>:<>
+      <div className="preview-controls"><button className="primary" disabled={!preview.ready} onPointerDown={e=>{e.currentTarget.setPointerCapture(e.pointerId);void preview.cast();}} onPointerUp={()=>void preview.release()} onPointerCancel={()=>void preview.cancel()} onBlur={()=>void preview.cancel()} onKeyDown={e=>{if(!e.repeat&&(e.key===' '||e.key==='Enter')){e.preventDefault();void preview.cast();}}} onKeyUp={e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();void preview.release();}}}><Crosshair size={13}/>施放</button><button disabled={!preview.ready} onClick={()=>preview.setPlaying(!preview.playing)}>{preview.playing?<Pause size={12}/>:<Play size={12}/>} {preview.playing?'暂停':'播放'}</button><button disabled={!preview.ready||preview.playing} onClick={()=>void preview.step()}><SkipForward size={12}/>逐帧</button><button onClick={()=>void preview.reset()}><RotateCcw size={12}/>重置</button><button disabled={!preview.ready} onClick={()=>void preview.interrupt()}>打断</button></div>
+      <div className="preview-options"><label><input type="checkbox" disabled={!preview.ready} checked={preview.continuous} onChange={e=>preview.setContinuous(e.target.checked)}/>连续施放</label><select aria-label="播放速度" value={preview.speed} onChange={e=>preview.setSpeed(Number(e.target.value))}>{[.25,.5,1,2].map(n=><option key={n} value={n}>{n}×</option>)}</select><span>{state?.time.toFixed(2)??'0.00'} s</span></div>
+      <div className="preview-readiness" role="status">{preview.ready?'当前配置已应用':preview.error?'配置无效：'+preview.error:'正在校验并应用配置…'}</div>
+      <div className="preview-settings"><SceneResources project={project} update={update}/>
+      <SceneObstacles project={project} update={update}/>
+      <SceneActorProperties project={project} update={update}/></div>
+      {state?.charging&&<div className="charge-box"><div>蓄力 {Math.round(state.chargeProgress*100)}%<span>松开释放</span></div><progress aria-label="蓄力进度" max={1} value={state.chargeProgress}/></div>}
+      <div className="world-canvas"><div className="scene-actions"><button onClick={()=>update({...project,preview:{...project.preview,targets:[...project.preview.targets,{id:crypto.randomUUID().slice(0,8),x:Math.random()*10-2,z:Math.random()*8-4,hp:1000,atk:0,def:0}]}})}>+ 目标</button><span>按住施放引导 · 场景内 WASD 移动</span></div>
+        <svg viewBox="-10 -9 24 18" role="img" tabIndex={0} aria-label="真实 C# 战斗核的俯视运行预览" onKeyDown={e=>{if(e.key.startsWith('Arrow'))e.preventDefault();}} onBlur={()=>{moveKeys.current.clear();void preview.move(0,0);}} onPointerDown={e=>{e.currentTarget.focus();const matrix=e.currentTarget.getScreenCTM();if(!matrix)return;const point=e.currentTarget.createSVGPoint();point.x=e.clientX;point.y=e.clientY;const world=point.matrixTransform(matrix.inverse());preview.aim.current={x:world.x,z:-world.y};}}>
+          <defs><pattern id="grid" width="1" height="1" patternUnits="userSpaceOnUse"><path d="M1 0H0V1" fill="none" stroke="#314047" strokeWidth=".025"/></pattern></defs><rect x="-10" y="-9" width="24" height="18" fill="url(#grid)"/>
+          <SpatialVolumes volumes={state?.volumes??[]}/>
+          {state?.obstacles.map(obstacle=><g key={obstacle.id} aria-label={`障碍 ${obstacle.id}`}><rect x={obstacle.x-obstacle.width/2} y={-obstacle.z-obstacle.depth/2} width={obstacle.width} height={obstacle.depth} fill="#4b555a" stroke="#c0c7c9" strokeWidth=".06"/></g>)}
+          {state?.rays.map(ray=><line key={ray.sequence} x1={ray.fromX} y1={-ray.fromZ} x2={ray.toX} y2={-ray.toZ} stroke="#f6d797" strokeWidth={ray.width} strokeLinecap="round" opacity={Math.max(.1,1-(state.step-ray.step)/26)}/>)}
+          {state?.areas.map(a=><circle key={a.sequence} cx={a.x} cy={-a.z} r={a.radius} fill="#e3b573" fillOpacity=".08" stroke="#deb977" strokeWidth=".06" opacity={Math.max(.05,1-(state.step-a.step)/26)}/>)}
+          {state?.actors.filter(a=>a.kind==='aoe').map(a=><g key={a.id}><circle cx={a.x} cy={-a.z} r={a.radius} fill="#817ba3" fillOpacity=".15" stroke="#b1a4db" strokeWidth=".05"/><text x={a.x} y={-a.z-a.radius-.2} textAnchor="middle" fill="#c3b8df" fontSize=".25">{a.remaining?.toFixed(1)}s</text></g>)}
+          {state?.trails.filter((_,i)=>i%3===0).map((p,i)=><circle key={i} cx={p.x} cy={-p.z} r=".04" fill="#c8b174" opacity={Math.max(.06,1-(state.step-p.step)/70)}/>)}
+          {state?.actors.filter(a=>a.kind!=='aoe').map(a=><g key={a.id} opacity={a.dead?.4:1} transform={`translate(${a.x},${-a.z})`}>
+            {a.kind==="projectile"&&a.y>0&&<><ellipse rx={Math.max(.12,a.radius*1.4)} ry={Math.max(.05,a.radius*.6)} fill="#0008"/><line x1="0" x2="0" y1="0" y2={-a.y*.5} stroke="#b5c9c5" strokeWidth=".025"/><text x=".2" y={-a.y*.5} fill="#cfdfde" fontSize=".22">h {a.y.toFixed(2)}</text></>}<circle cy={a.kind==="projectile"?-Math.max(0,a.y??0)*.5:0} r={Math.max(.08,a.radius)} fill={a.kind==='caster'?'#3b746a':a.kind==='projectile'?'#e8d7a1':a.kind==='summon'?'#4c9568':'#95664b'} stroke={a.kind==='caster'?'#a5d5c7':'#e5c2a0'} strokeWidth=".05"/>
+            {a.kind!=='projectile'&&<><text y=".12" textAnchor="middle" fill="#fff" fontSize=".3">{a.kind==='caster'?'C':a.name.slice(-1)}</text><rect x="-.5" y="-.8" width="1" height=".06" fill="#39454a"/><rect x="-.5" y="-.8" width={Math.max(0,(a.hp??0)/(a.maxHp??1))} height=".06" fill="#d3bf92"/><text y=".85" textAnchor="middle" fill="#becad0" fontSize=".22">{a.hp?.toFixed(0)} / {a.maxHp?.toFixed(0)}</text>{a.buffs?.length>0&&<text y="1.1" textAnchor="middle" fill="#b1d3a6" fontSize=".2">{a.buffs.map(b=>`${b.name}×${b.stacks}`).join(' ' )}</text>}</>}
+          </g>)}
+          <path d={`M${preview.aim.current.x-.2},${-preview.aim.current.z}h.4m-.2,-.2v.4`} stroke="#b0c8cc" strokeWidth=".04"/>
+        </svg>
+        <div className="energy-box"><div><b>{state?.channeling?'引导中 · 能量':state?.charging?'蓄力中 · 能量':'能量'}</b><span>{state?.energy.toFixed(0)??project.preview.initialEnergy??project.preview.energy} / {project.preview.energy}</span></div><progress max={project.preview.energy} value={state?.energy??project.preview.initialEnergy??project.preview.energy}/><small>冷却 {Math.max(0,state?.cooldowns[preview.skill.current]??0).toFixed(2)} s · {state?.actors.filter(a=>a.kind==='projectile').length??0} 个投射物 · {state?.castPower.toFixed(2)??'1.00'}×</small></div><small className="scale-note">1 GRID = 1 m</small>
+      </div>
+      <div className="statistics">{[['总伤害',state?.statistics.damage??0],['有效命中',state?.statistics.hits??0],['技能施行',state?.statistics.casts??0],['投射物',state?.statistics.projectiles??0],['连锁触发',state?.statistics.chains??0],['分裂触发',state?.statistics.splits??0]].map(([label,value])=><div key={String(label)}><small>{label}</small><strong>{number(Number(value))}</strong></div>)}</div>
+      </>}
+    </section>
+  </aside>;
+}

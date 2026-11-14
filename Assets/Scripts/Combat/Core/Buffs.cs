@@ -3,380 +3,163 @@ using System.Collections.Generic;
 
 namespace Combat.Core
 {
-    public enum StackPolicy : byte
-    {
-        RefreshDuration = 0,
-        AddStack = 1,
-        Independent = 2,
-        RejectIfExists = 3
-    }
-
-    public enum DispelMode : byte
-    {
-        ByBuffId = 0,
-        ByMutexGroup = 1,
-        ByTag = 2,
-        BySource = 3
-    }
-
-    public sealed class DurationSpec
-    {
-        public int BuffId;
-        public float Duration = 3f;
-        public float TickInterval;
-        public int MaxStacks = 1;
-        public StackPolicy Stack = StackPolicy.RefreshDuration;
-        public int MutexGroup;
-        public Modifier[] Modifiers = Array.Empty<Modifier>();
-        public TagId[] GrantedTags = Array.Empty<TagId>();
-        public IEffect[] OnApply = Array.Empty<IEffect>();
-        public IEffect[] OnStack = Array.Empty<IEffect>();
-        public IEffect[] OnPeriod = Array.Empty<IEffect>();
-        public IEffect[] OnExpire = Array.Empty<IEffect>();
-        public IEffect[] OnHurted = Array.Empty<IEffect>();
-        public IEffect[] OnOwnerCast = Array.Empty<IEffect>();
-    }
-
     public sealed class BuffComp : Comp
     {
-        public override bool WantsTick => false;
-
-        struct Inst
+        sealed class Instance
         {
-            public int InstanceId;
-            public int BuffId;
-            public int MutexGroup;
-            public int Stacks;
-            public int AppliedByPacked;
-            public int BornFrame;
-            public float ExpireTime;
-            public float PeriodAcc;
+            public int Id,Stacks,BornFrame;
+            public EntityId Source;
+            public double Age,ExpiresAt,NextPeriod;
+            public float Attack,Power;
             public DurationSpec Spec;
-            public Actor Source;
+            public SkillOrigin Origin;
+            public readonly List<TagLease> Leases=new List<TagLease>();
         }
-
-        readonly List<Inst> _list = new List<Inst>(8);
-        readonly List<Inst> _snapshot = new List<Inst>(8);
-        int _nextLocal;
+        readonly List<Instance> _list=new List<Instance>();
+        readonly HashSet<(int,BuffEventKind)> _dispatching=new HashSet<(int,BuffEventKind)>();
         AttributeSet _attr;
         TagComp _tags;
-
-        public int Count => _list.Count;
-
+        int _nextLocal,_clearing,_dispatchDepth;
+        public int Count=>_list.Count;
         public int StacksOf(int buffId)
-        {
-            int n = 0;
-            for (int i = 0; i < _list.Count; i++)
-            {
-                if (_list[i].BuffId == buffId)
-                    n += _list[i].Stacks;
-            }
-
-            return n;
-        }
-
-        protected override void OnAttach()
-        {
-            _attr = Self.GetComp<AttributeSet>();
-            _tags = Self.GetComp<TagComp>();
-        }
-
+        {int count=0;foreach(var item in _list)if(item.Spec.BuffId==buffId)count+=item.Stacks;return count;}
+        protected override void OnAttach(){_attr=Self.GetComp<AttributeSet>();_tags=Self.GetComp<TagComp>();}
         protected override void OnDetach()
+        {ClearAll(BuffRemovalReason.Detached,false);_attr=null;_tags=null;_dispatching.Clear();}
+
+        public BuffState[] Snapshot()
         {
-            ClearAllSilent();
-            _attr = null;
-            _tags = null;
-        }
-
-        public bool Apply(DurationSpec spec, Actor source, int addStacks = 1)
-        {
-            if (spec == null) throw new ArgumentNullException(nameof(spec));
-            if (addStacks < 1) addStacks = 1;
-
-            if (spec.MutexGroup > 0)
-                RemoveMutexGroup(spec.MutexGroup, spec.BuffId);
-
-            if (spec.Stack != StackPolicy.Independent)
+            var result=new BuffState[_list.Count];
+            for(int i=0;i<result.Length;i++)
             {
-                int idx = IndexOfBuffId(spec.BuffId);
-                if (idx >= 0)
-                    return ApplyOnExisting(idx, spec, source, addStacks);
+                var item=_list[i];result[i]=new BuffState(item.Id,item.Spec.BuffId,item.Spec.Key,item.Spec.Name,item.Source,item.Stacks,
+                    double.IsPositiveInfinity(item.ExpiresAt)?null:(float?)Math.Max(0,item.ExpiresAt-item.Age));
             }
-
-            if (spec.Stack == StackPolicy.RejectIfExists && IndexOfBuffId(spec.BuffId) >= 0)
-                return false;
-
-            return SpawnNew(spec, source, addStacks);
+            return result;
         }
-
+        public bool Apply(DurationSpec spec,Actor source,int addStacks=1,float? snapshotAttack=null,float power=1,SkillOrigin origin=default)
+        {
+            if(spec==null)throw new ArgumentNullException(nameof(spec));
+            if(Self==null||!Self.IsActive||_clearing>0||_tags.Has(CommonTags.Dead))return false;
+            addStacks=Math.Max(1,addStacks);
+            if(spec.MutexGroup>0)
+                foreach(var old in _list.ToArray())
+                    if(old.Spec.MutexGroup==spec.MutexGroup&&old.Spec.BuffId!=spec.BuffId)Remove(old,BuffRemovalReason.Mutex);
+            if(!Self.IsActive||_tags.Has(CommonTags.Dead))return false;
+            Instance existing=null;
+            if(spec.Stack!=StackPolicy.Independent)
+                foreach(var item in _list)if(item.Spec.BuffId==spec.BuffId){existing=item;break;}
+            if(existing!=null)
+            {
+                if(spec.Stack==StackPolicy.RejectIfExists){Record(existing,BuffEventKind.Rejected);return false;}
+                int old=existing.Stacks;
+                if(spec.Stack==StackPolicy.AddStack)existing.Stacks=Math.Min(Math.Max(1,spec.MaxStacks),existing.Stacks+addStacks);
+                existing.ExpiresAt=spec.Duration>0?existing.Age+spec.Duration:double.PositiveInfinity;
+                SetSource(existing,source,snapshotAttack,power,origin);
+                var kind=existing.Stacks>old?BuffEventKind.Stacked:BuffEventKind.Refreshed;
+                Record(existing,kind);
+                if(kind==BuffEventKind.Stacked)Dispatch(existing,kind,spec.OnStack!=null&&spec.OnStack.Length>0?spec.OnStack:spec.OnApply);
+                return true;
+            }
+            if(_list.Count>=128)
+            {
+                Self.World?.Events.Publish(new EvBuffLifecycle(Self.Id,source?.Id??EntityId.Invalid,source?.Id??EntityId.Invalid,spec.BuffId,0,0,BuffEventKind.Rejected));
+                return false;
+            }
+            var created=new Instance{Id=Self.World!=null?Self.World.NextBuffInstanceId():++_nextLocal,Stacks=Math.Min(Math.Max(1,spec.MaxStacks),addStacks),
+                BornFrame=Self.World?.Time.Frame??0,Spec=spec,ExpiresAt=spec.Duration>0?spec.Duration:double.PositiveInfinity,NextPeriod=spec.TickInterval};
+            SetSource(created,source,snapshotAttack,power,origin);_list.Add(created);
+            foreach(var prototype in spec.Modifiers??Array.Empty<Modifier>()){var mod=prototype;mod.SourceId=created.Id;_attr.AddMod(mod);}
+            foreach(var tag in spec.GrantedTags??Array.Empty<TagId>())created.Leases.Add(_tags.Acquire(tag));
+            Record(created,BuffEventKind.Applied);Dispatch(created,BuffEventKind.Applied,spec.OnApply);return true;
+        }
+        void SetSource(Instance item,Actor source,float? snapshotAttack,float power,SkillOrigin origin)
+        {
+            if(source!=null&&source.World==Self.World&&source.IsActive)
+            {item.Source=source.Id;item.Attack=snapshotAttack??(source.TryGetComp<AttributeSet>(out var attr)?attr.GetFinal(AttrId.Atk):0);}
+            else if(!item.Source.IsValid){item.Source=EntityId.Invalid;item.Attack=snapshotAttack??0;}
+            item.Power=power>0?power:1;
+            item.Origin=origin;
+        }
         public override void Tick(float dt)
         {
-            if (Self.World == null) return;
-            int frame = Self.World.Time.Frame;
-            float now = Self.World.Time.Time;
-
-            for (int i = _list.Count - 1; i >= 0; i--)
+            if(Self.World==null||dt<0)return;
+            foreach(var item in _list.ToArray())
             {
-                var inst = _list[i];
-                var spec = inst.Spec;
-                if (spec.Duration > 0f && now >= inst.ExpireTime)
-                {
-                    RemoveAt(i, true);
-                    continue;
-                }
-
-                if (spec.TickInterval <= 0f) continue;
-                if (inst.BornFrame == frame) continue;
-
-                inst.PeriodAcc += dt;
-                while (inst.PeriodAcc >= spec.TickInterval)
-                {
-                    inst.PeriodAcc -= spec.TickInterval;
-                    _list[i] = inst;
-                    Dispatch(spec.OnPeriod, inst.Source, Self, inst.Stacks);
-                    if (i >= _list.Count || _list[i].InstanceId != inst.InstanceId)
-                        break;
-                    inst = _list[i];
-                }
-
-                if (i < _list.Count && _list[i].InstanceId == inst.InstanceId)
-                    _list[i] = inst;
+                if(!_list.Contains(item)||item.BornFrame==Self.World.Time.Frame)continue;
+                item.Age+=dt;
+                if(item.Spec.TickInterval>0)
+                    while(_list.Contains(item)&&item.NextPeriod<=item.Age+.000001&&item.NextPeriod<item.ExpiresAt-.000001)
+                    {
+                        item.NextPeriod+=item.Spec.TickInterval;
+                        Record(item,BuffEventKind.Period);Dispatch(item,BuffEventKind.Period,item.Spec.OnPeriod);
+                    }
+                if(_list.Contains(item)&&item.Age+.000001>=item.ExpiresAt)Remove(item,BuffRemovalReason.Expired);
             }
         }
-
-        public bool RemoveInstance(int instanceId)
+        public bool RemoveInstance(int id)
+        {foreach(var item in _list.ToArray())if(item.Id==id){Remove(item,BuffRemovalReason.Manual);return true;}return false;}
+        public int Dispel(DispelMode mode,int key,TagId tag,int maxCount,EntityId source=default)
         {
-            int idx = IndexOfInstance(instanceId);
-            if (idx < 0) return false;
-            RemoveAt(idx, true);
-            return true;
-        }
-
-        public int Dispel(DispelMode mode, int key, TagId tag, int maxCount)
-        {
-            int removed = 0;
-            int limit = maxCount <= 0 ? int.MaxValue : maxCount;
-            for (int i = _list.Count - 1; i >= 0 && removed < limit; i--)
+            int removed=0;
+            var snapshot=_list.ToArray();
+            for(int i=snapshot.Length-1;i>=0;i--)
             {
-                var inst = _list[i];
-                bool hit = false;
-                switch (mode)
-                {
-                    case DispelMode.ByBuffId: hit = inst.BuffId == key; break;
-                    case DispelMode.ByMutexGroup: hit = inst.MutexGroup != 0 && inst.MutexGroup == key; break;
-                    case DispelMode.ByTag: hit = Grants(inst.Spec, tag); break;
-                    case DispelMode.BySource: hit = inst.AppliedByPacked == key; break;
-                }
-
-                if (!hit) continue;
-                RemoveAt(i, true);
-                removed++;
+                var item=snapshot[i];if(!_list.Contains(item))continue;
+                bool matches=mode==DispelMode.ByBuffId?item.Spec.BuffId==key:
+                    mode==DispelMode.ByMutexGroup?key>0&&item.Spec.MutexGroup==key:
+                    mode==DispelMode.BySource?source.IsValid&&item.Source==source:Grants(item.Spec,tag);
+                if(!matches)continue;Remove(item,BuffRemovalReason.Dispelled);removed++;
+                if(maxCount>0&&removed>=maxCount)break;
             }
-
             return removed;
         }
-
-        public void ClearAllWithExpire()
+        public void ClearAll(BuffRemovalReason reason,bool effects=true)
         {
-            for (int i = _list.Count - 1; i >= 0; i--)
-                RemoveAt(i, true);
+            _clearing++;
+            try{foreach(var item in _list.ToArray())Remove(item,reason,effects);}
+            finally{_clearing--;}
         }
-
-        public void DispatchOnHurted(Actor attacker)
+        void Remove(Instance item,BuffRemovalReason reason,bool effects=true)
         {
-            if (Self.World == null) return;
-            int frame = Self.World.Time.Frame;
-            _snapshot.Clear();
-            for (int i = 0; i < _list.Count; i++)
-            {
-                if (_list[i].BornFrame == frame) continue;
-                var bag = _list[i].Spec.OnHurted;
-                if (bag == null || bag.Length == 0) continue;
-                _snapshot.Add(_list[i]);
-            }
-
-            for (int i = 0; i < _snapshot.Count; i++)
-            {
-                var inst = _snapshot[i];
-                Dispatch(inst.Spec.OnHurted, attacker, Self, inst.Stacks);
-            }
+            if(!_list.Remove(item))return;
+            _attr.RemoveBySource(item.Id);foreach(var lease in item.Leases)lease.Dispose();item.Leases.Clear();
+            if(reason==BuffRemovalReason.Expired)
+            {Record(item,BuffEventKind.Expired,reason);if(effects)Dispatch(item,BuffEventKind.Expired,item.Spec.OnExpire,removed:true);}
+            Record(item,BuffEventKind.Removed,reason);
+            if(effects)Dispatch(item,BuffEventKind.Removed,item.Spec.OnRemoved,removed:true);
         }
-
+        public void DispatchOnHurted(Actor attacker,SkillOrigin origin=default)
+        {
+            foreach(var item in _list.ToArray())
+                if(item.BornFrame!=(Self.World?.Time.Frame??0)&&_list.Contains(item))
+                {Record(item,BuffEventKind.Hurt,source:attacker?.Id??EntityId.Invalid);Dispatch(item,BuffEventKind.Hurt,item.Spec.OnHurted,attacker,eventOrigin:origin);}
+        }
         public void DispatchOnOwnerCast()
         {
-            if (Self.World == null) return;
-            _snapshot.Clear();
-            for (int i = 0; i < _list.Count; i++)
+            foreach(var item in _list.ToArray())if(_list.Contains(item))
+            {Record(item,BuffEventKind.Cast,source:Self.Id);Dispatch(item,BuffEventKind.Cast,item.Spec.OnOwnerCast,Self,eventOrigin:Self.TryGetComp<SkillDirectorComp>(out var director)?director.CurrentOrigin:default);}
+        }
+        void Dispatch(Instance item,BuffEventKind kind,IEffect[] effects,Actor eventSource=null,bool removed=false,SkillOrigin eventOrigin=default)
+        {
+            if(effects==null||effects.Length==0||Self.World==null||(!removed&&!_list.Contains(item)))return;
+            if(_dispatchDepth>=16||!_dispatching.Add((item.Id,kind))){Record(item,BuffEventKind.Rejected);return;}
+            _dispatchDepth++;
+            try
             {
-                var bag = _list[i].Spec.OnOwnerCast;
-                if (bag == null || bag.Length == 0) continue;
-                _snapshot.Add(_list[i]);
+                Actor source=eventSource;float attack=item.Attack;
+                if(kind==BuffEventKind.Hurt||kind==BuffEventKind.Cast)
+                    attack=source!=null&&source.TryGetComp<AttributeSet>(out var attr)?attr.GetFinal(AttrId.Atk):0;
+                else Self.World.TryGetActor(item.Source,out source);
+                var provenance=kind==BuffEventKind.Hurt||kind==BuffEventKind.Cast?eventOrigin:item.Origin;
+                if(item.Origin.SuppressedEvents)provenance=provenance.WithoutEvents();
+                Self.World.Deliver(effects,source,Self,attack,Self.GetComp<TransformComp>().Position,buffStacks:item.Stacks,power:item.Power,origin:provenance);
             }
-
-            for (int i = 0; i < _snapshot.Count; i++)
-            {
-                var inst = _snapshot[i];
-                Dispatch(inst.Spec.OnOwnerCast, Self, Self, inst.Stacks);
-            }
+            finally{_dispatchDepth--;_dispatching.Remove((item.Id,kind));}
         }
-
-        void ClearAllSilent()
-        {
-            for (int i = _list.Count - 1; i >= 0; i--)
-                RemoveAt(i, false);
-        }
-
-        bool ApplyOnExisting(int idx, DurationSpec spec, Actor source, int addStacks)
-        {
-            var inst = _list[idx];
-            if (spec.Stack == StackPolicy.RejectIfExists)
-                return false;
-
-            if (spec.Stack == StackPolicy.RefreshDuration)
-            {
-                inst.ExpireTime = NextExpire(spec);
-                inst.Source = source ?? inst.Source;
-                _list[idx] = inst;
-                return true;
-            }
-
-            if (spec.Stack == StackPolicy.AddStack)
-            {
-                int cap = spec.MaxStacks < 1 ? 1 : spec.MaxStacks;
-                int old = inst.Stacks;
-                int n = old + addStacks;
-                if (n > cap) n = cap;
-                inst.Stacks = n;
-                inst.ExpireTime = NextExpire(spec);
-                inst.Source = source ?? inst.Source;
-                _list[idx] = inst;
-                if (n > old)
-                {
-                    var bag = (spec.OnStack != null && spec.OnStack.Length > 0)
-                        ? spec.OnStack
-                        : spec.OnApply;
-                    Dispatch(bag, inst.Source, Self, inst.Stacks);
-                }
-
-                return true;
-            }
-
-            return false;
-        }
-
-        bool SpawnNew(DurationSpec spec, Actor source, int stacks)
-        {
-            int cap = spec.MaxStacks < 1 ? 1 : spec.MaxStacks;
-            if (stacks > cap) stacks = cap;
-            int instanceId = Self.World != null ? Self.World.NextBuffInstanceId() : ++_nextLocal;
-            var inst = new Inst
-            {
-                InstanceId = instanceId,
-                BuffId = spec.BuffId,
-                MutexGroup = spec.MutexGroup,
-                Stacks = stacks,
-                AppliedByPacked = Pack(source),
-                BornFrame = Self.World != null ? Self.World.Time.Frame : 0,
-                ExpireTime = NextExpire(spec),
-                PeriodAcc = 0f,
-                Spec = spec,
-                Source = source
-            };
-            _list.Add(inst);
-            AttachModsAndTags(inst);
-            Dispatch(spec.OnApply, source, Self, inst.Stacks);
-            return true;
-        }
-
-        void RemoveMutexGroup(int group, int keepBuffId)
-        {
-            for (int i = _list.Count - 1; i >= 0; i--)
-            {
-                if (_list[i].MutexGroup == group && _list[i].BuffId != keepBuffId)
-                    RemoveAt(i, true);
-            }
-        }
-
-        void RemoveAt(int idx, bool fireExpire)
-        {
-            var inst = _list[idx];
-            if (fireExpire)
-                Dispatch(inst.Spec.OnExpire, inst.Source, Self, inst.Stacks);
-            _attr.RemoveBySource(inst.InstanceId);
-            DetachTags(inst);
-            _list.RemoveAt(idx);
-        }
-
-        void AttachModsAndTags(in Inst inst)
-        {
-            var mods = inst.Spec.Modifiers;
-            if (mods != null)
-            {
-                for (int i = 0; i < mods.Length; i++)
-                {
-                    var m = mods[i];
-                    m.SourceId = inst.InstanceId;
-                    _attr.AddMod(m);
-                }
-            }
-
-            var tags = inst.Spec.GrantedTags;
-            if (tags == null || _tags == null) return;
-            for (int i = 0; i < tags.Length; i++)
-                _tags.Add(tags[i], 1, TagSource.Effect("Buff.Grant"));
-        }
-
-        void DetachTags(in Inst inst)
-        {
-            var tags = inst.Spec.GrantedTags;
-            if (tags == null || _tags == null) return;
-            for (int i = 0; i < tags.Length; i++)
-                _tags.Remove(tags[i], 1, TagSource.Effect("Buff.Ungrant"));
-        }
-
-        void Dispatch(IEffect[] bag, Actor source, Actor target, int stacks)
-        {
-            if (bag == null || bag.Length == 0 || Self.World == null) return;
-            float atk = 0f;
-            if (source != null && source.TryGetComp<AttributeSet>(out var srcAttr))
-                atk = srcAttr.GetFinal(AttrId.Atk);
-            Self.World.Deliver(bag, source, target, atk, null, null, stacks);
-        }
-
-        float NextExpire(DurationSpec spec)
-        {
-            if (spec.Duration <= 0f) return float.PositiveInfinity;
-            float t = Self.World != null ? Self.World.Time.Time : 0f;
-            return t + spec.Duration;
-        }
-
-        int IndexOfBuffId(int buffId)
-        {
-            for (int i = 0; i < _list.Count; i++)
-                if (_list[i].BuffId == buffId) return i;
-            return -1;
-        }
-
-        int IndexOfInstance(int instanceId)
-        {
-            for (int i = 0; i < _list.Count; i++)
-                if (_list[i].InstanceId == instanceId) return i;
-            return -1;
-        }
-
-        static bool Grants(DurationSpec spec, TagId tag)
-        {
-            var tags = spec.GrantedTags;
-            if (tags == null) return false;
-            for (int i = 0; i < tags.Length; i++)
-                if (tags[i].Equals(tag)) return true;
-            return false;
-        }
-
-        public static int Pack(Actor a)
-        {
-            if (a == null || !a.Id.IsValid) return 0;
-            return unchecked(a.Id.Index * 397 ^ a.Id.Generation);
-        }
+        void Record(Instance item,BuffEventKind kind,BuffRemovalReason reason=default,EntityId? source=null)
+            =>Self.World?.Events.Publish(new EvBuffLifecycle(Self.Id,source??item.Source,item.Source,item.Spec.BuffId,item.Id,item.Stacks,kind,reason));
+        static bool Grants(DurationSpec spec,TagId tag)
+        {foreach(var value in spec.GrantedTags??Array.Empty<TagId>())if(value==tag)return true;return false;}
     }
 }

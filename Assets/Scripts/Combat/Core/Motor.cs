@@ -36,6 +36,7 @@ namespace Combat.Core
         public bool IsGrounded => _grounded;
         public float ClipSteer => _clipSteer;
         public SimVec3 MoveIntent => _moveIntent;
+        public float CollisionRadius { get; set; } = .4f;
 
         protected override void OnAttach()
         {
@@ -78,7 +79,8 @@ namespace Combat.Core
             _hitDelta.Z += z;
         }
 
-        public void RequestTeleport(in SimVec3 pos) => _teleport = pos;
+        public bool RequestTeleport(in SimVec3 pos)
+        {if(Self.World!=null&&!Self.World.Collision.IsFree(pos,CollisionRadius))return false;_teleport=pos;return true;}
 
         public void RequestSnapYaw()
         {
@@ -105,10 +107,15 @@ namespace Combat.Core
             _grounded = false;
             WriteGroundTags(false);
         }
+        public void ImpulseVertical(float speed)
+        {
+            if(speed<=0||_tags==null||_tags.Has(CommonTags.Dead))return;
+            _verticalVel=speed;_grounded=false;WriteGroundTags(false);
+        }
 
         public void SetClipSteer(float steer) => _clipSteer = steer < 0f ? 0f : steer;
         public void ClearClipSteer() => _clipSteer = 0f;
-        public void ClearPendingSkill() => _skillDelta = SimVec3.Zero;
+        public void ClearPendingSkill() { _skillDelta = SimVec3.Zero; _teleport = null; }
 
         public void Integrate(float dt)
         {
@@ -164,7 +171,11 @@ namespace Combat.Core
             ApplyFacing(policy.Facing);
 
             if (delta.X != 0f || delta.Y != 0f || delta.Z != 0f)
-                _tf.Position = _tf.Position + delta;
+            {
+                var destination=_tf.Position+delta;
+                _tf.Position=Self.World.Collision.Constrain(_tf.Position,destination,CollisionRadius,out var obstacle);
+                if(obstacle.Blocked)Self.World.Events.Publish(new EvObstacleHit(Self.Id,Self.Id,obstacle.Id,obstacle.Point,obstacle.Normal,"movement"));
+            }
 
             ClearFrameRequests();
         }

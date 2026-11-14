@@ -151,7 +151,7 @@ namespace Combat.Demos
             trace.Check("互斥组替换 Wet", !tags.Has(new TagId(2102)), "Wet Tag=false",
                 $"Wet Tag={tags.Has(new TagId(2102))}", () => $"Burn层数={buffs.StacksOf(1)} {DemoTrace.Snapshot(actor)}");
             // 按来源驱散所有 Buff，并验证 Modifier、Tag、Buff 实例都被清理。
-            world.Deliver(new IEffect[] { new DispelEffect(DispelMode.BySource, BuffComp.Pack(actor)) }, actor, actor, 0f);
+            world.Deliver(new IEffect[] { new DispelEffect(DispelMode.BySource, source:actor.Id) }, actor, actor, 0f);
             trace.Check("驱散后清理 Buff、Tag 与 Modifier",
                 buffs.Count == 0 && !tags.Has(slow) && attr.ModCount == 0 && Math.Abs(attr.GetFinal(AttrId.Atk) - 10f) <= 1e-3f,
                 "Buff=0 Tag=false Modifier数量=0 Atk=10",

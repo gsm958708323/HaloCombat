@@ -8,7 +8,9 @@ namespace Combat.Core
         CancelTag = 1,
         Move = 2,
         Hitbox = 3,
-        IFrame = 4
+        IFrame = 4,
+        Melee = 5,
+        Dash = 6
     }
 
     [Serializable]
@@ -22,13 +24,21 @@ namespace Combat.Core
         public float HitRadius;
         public float HitOffsetX, HitOffsetY, HitOffsetZ;
         public IEffect[] OnHit;
+        public bool OnPayload;
+        public int PayloadIndex;
+        public HitShape Shape;
+        public float Length, Width, Angle;
+        public int MaxTargets;
     }
 
     [Serializable]
     public struct TimelinePayload
     {
         public float Time;
+        public float RepeatInterval;
         public IEffect[] Effects;
+        public bool OnPayload;
+        public int PayloadIndex;
     }
 
     [Serializable]
@@ -159,6 +169,10 @@ namespace Combat.Core
         public TimelineClip Clip;
         public float Start;
         public float End;
+        public SkillAim Aim;
+        public float Power;
+        public int Sequence;
+        public SkillOrigin Origin;
     }
 
     public interface IClipHandler
@@ -178,6 +192,8 @@ namespace Combat.Core
                 case ClipKind.Move: return new MoveClipHandler();
                 case ClipKind.Hitbox: return new HitboxClipHandler();
                 case ClipKind.IFrame: return new IFrameClipHandler();
+                case ClipKind.Melee: return new MeleeClipHandler();
+                case ClipKind.Dash: return new DashClipHandler();
                 default: throw new NotSupportedException(kind.ToString());
             }
         }
@@ -263,117 +279,4 @@ namespace Combat.Core
         public ClipRuntime Rt;
     }
 
-    public sealed class TimelinePlayer
-    {
-        readonly List<LiveClip> _live = new List<LiveClip>(8);
-        bool[] _clipOpened = new bool[8];
-        bool[] _payloadFired = new bool[8];
-        TimelineSO _so;
-        float _time;
-        bool _playing;
-
-        public bool IsPlaying => _playing;
-        public float Time => _time;
-        public TimelineId Id => _so != null ? _so.Id : TimelineId.None;
-
-        public void Play(TimelineSO so)
-        {
-            StopInternal(true);
-            _so = so ?? throw new ArgumentNullException(nameof(so));
-            _time = 0f;
-            _playing = true;
-            EnsureFlags(_so.Clips?.Length ?? 0, ref _clipOpened);
-            EnsureFlags(_so.Payloads?.Length ?? 0, ref _payloadFired);
-        }
-
-        public void Stop() => StopInternal(true);
-
-        public void Tick(float dt, Actor self)
-        {
-            if (!_playing || _so == null) return;
-            float prev = _time;
-            _time += dt;
-            OpenDue(self);
-            TickLive(dt);
-            CloseDue();
-            FirePayloads(self, prev);
-            if (_time >= _so.Duration)
-                StopInternal(false);
-        }
-
-        void OpenDue(Actor self)
-        {
-            var clips = _so.Clips;
-            if (clips == null) return;
-            for (int i = 0; i < clips.Length; i++)
-            {
-                if (_clipOpened[i] || clips[i].Start > _time) continue;
-                _clipOpened[i] = true;
-                var rt = new ClipRuntime
-                {
-                    Self = self,
-                    Clip = clips[i],
-                    Start = clips[i].Start,
-                    End = clips[i].End
-                };
-                var handler = ClipHandlerFactory.Create(clips[i].Kind);
-                handler.Open(rt);
-                _live.Add(new LiveClip { Handler = handler, Rt = rt });
-            }
-        }
-
-        void TickLive(float dt)
-        {
-            for (int i = 0; i < _live.Count; i++)
-                _live[i].Handler.Tick(_live[i].Rt, dt);
-        }
-
-        void CloseDue()
-        {
-            for (int i = _live.Count - 1; i >= 0; i--)
-            {
-                var live = _live[i];
-                if (_time < live.Rt.End) continue;
-                live.Handler.Close(live.Rt, false);
-                _live.RemoveAt(i);
-            }
-        }
-
-        void FirePayloads(Actor self, float prev)
-        {
-            var payloads = _so.Payloads;
-            if (payloads == null || self.World == null) return;
-            float atk = 0f;
-            if (self.TryGetComp<AttributeSet>(out var attr))
-                atk = attr.GetFinal(AttrId.Atk);
-            Actor target = null;
-            if (self.TryGetComp<BehaviorTreeComp>(out var bt) && self.World.TryGetActor(bt.Board.Target, out var selected))
-                target = selected;
-            for (int i = 0; i < payloads.Length; i++)
-            {
-                if (_payloadFired[i]) continue;
-                float t = payloads[i].Time;
-                bool due = (t > prev && t <= _time) || (prev <= 0f && t <= _time && t >= 0f && !_payloadFired[i]);
-                if (!due) continue;
-                _payloadFired[i] = true;
-                self.World.Deliver(payloads[i].Effects, self, target, atk);
-            }
-        }
-
-        void StopInternal(bool interrupted)
-        {
-            for (int i = 0; i < _live.Count; i++)
-                _live[i].Handler.Close(_live[i].Rt, interrupted);
-            _live.Clear();
-            _playing = false;
-            _so = null;
-            _time = 0f;
-        }
-
-        static void EnsureFlags(int n, ref bool[] flags)
-        {
-            if (flags.Length < n) flags = new bool[n];
-            for (int i = 0; i < flags.Length; i++) flags[i] = false;
-        }
-    }
 }

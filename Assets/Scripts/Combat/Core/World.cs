@@ -22,6 +22,10 @@ namespace Combat.Core
         MotorConfig _motor;
         readonly List<Action> _servicePhase = new List<Action>(8);
         int _buffIds;
+        int _actionIds;
+        int _castIds;
+        int _damageIds;
+        readonly SkillEventRouter _skillEvents;
         int _hitstopPending;
         int _hitstopLeft;
 
@@ -37,6 +41,7 @@ namespace Combat.Core
         public bool InHitstop => _hitstopLeft > 0;
         public CueLibrary Cues => _cues;
         public MotorConfig Motor => _motor;
+        public CollisionWorld Collision { get; }
 
         public CombatWorld(
             IActorFactory actorFactory,
@@ -45,7 +50,8 @@ namespace Combat.Core
             CombatTime time = null,
             IRandom random = null,
             CueLibrary cues = null,
-            MotorConfig? motor = null)
+            MotorConfig? motor = null,
+            ObstacleDefinition[] obstacles = null,SkillEventCatalog skillEvents=null)
         {
             _time = time ?? new CombatTime();
             _intents = intents ?? new IntentQueue();
@@ -54,15 +60,21 @@ namespace Combat.Core
             _random = random ?? new SeededRandom(1);
             _cues = cues ?? CueLibrary.DefaultCombat();
             _motor = motor ?? MotorConfig.SeasonOneDefaults();
+            Collision = new CollisionWorld(obstacles);
             _query = new SimpleTargetQuery();
             _query.Bind(this);
             _registry = new EntityRegistry(actorFactory ?? throw new ArgumentNullException(nameof(actorFactory)), this);
             _hitDetect = new HitDetectService(this);
             _projectilesSvc = new ProjectileService(this);
             _aoe = new AoeService(this);
+            _skillEvents=new SkillEventRouter(this,skillEvents??new SkillEventCatalog());
         }
 
         public int NextBuffInstanceId() => ++_buffIds;
+        public int NextActionInstanceId() => ++_actionIds;
+        public int NextCastId() => ++_castIds;
+        public int NextDamageHitId()=>++_damageIds;
+        public void DispatchSkillEvent(SkillEventKind kind,in EffectContext context)=>_skillEvents.Emit(kind,context);
 
         public void ReplaceCatalogs(ProjectileCatalog projectiles, AoeCatalog aoes, SummonCatalog summons)
         {
@@ -98,7 +110,14 @@ namespace Combat.Core
             _events.Publish(new EvEntitySpawn(id, blueprintId, owner));
         }
         public bool TryGetActor(EntityId id, out Actor actor) => _registry.TryGet(id, out actor);
-        public void RequestDespawn(EntityId id) => _registry.RequestDespawn(id);
+        public void RequestDespawn(EntityId id)
+        {
+            if(TryGetActor(id,out var actor)&&actor.TryGetComp<SummonComp>(out var summon)&&summon.Def!=null&&!summon.Ending)
+            {summon.End(SummonEventKind.Removed);return;}
+            CleanupByOwner(id);
+            _registry.RequestDespawn(id);
+            actor?.SetActive(false);
+        }
         public void RequestHitstop(int frames)
         {
             if (frames > _hitstopPending) _hitstopPending = frames;
@@ -118,7 +137,10 @@ namespace Combat.Core
             float snapshotAtk,
             SimVec3? point = null,
             SimVec3? dir = null,
-            int buffStacks = 0)
+            int buffStacks = 0,
+            float power = 1,
+            SkillOrigin origin = default,
+            ProjectileHitContext projectileHit = null,DamageResult damage=null)
         {
             if (effects == null || effects.Length == 0) return;
             var ctx = new EffectContext
@@ -127,7 +149,10 @@ namespace Combat.Core
                 Source = source,
                 Target = target,
                 SnapshotAtk = snapshotAtk,
-                BuffStacks = buffStacks
+                BuffStacks = buffStacks,
+                Power = power,
+                Origin = origin,
+                ProjectileHit = projectileHit,Damage=damage
             };
             if (point.HasValue) { ctx.Point = point.Value; ctx.HasPoint = true; }
             if (dir.HasValue) { ctx.Dir = dir.Value; ctx.HasDir = true; }
@@ -154,31 +179,7 @@ namespace Combat.Core
                 }
                 else if (a.TryGetComp<SummonComp>(out var summon) && summon.OwnerId == owner)
                 {
-                    // A summon may already have emitted projectiles or fields. Clean
-                    // those descendants before removing the summon itself. Do not
-                    // recurse through the summon branch itself.
-                    CleanupRuntimeByOwner(a.Id);
-                    RequestDespawn(a.Id);
-                    a.SetActive(false);
-                }
-            }
-        }
-
-        void CleanupRuntimeByOwner(EntityId owner)
-        {
-            if (!owner.IsValid) return;
-            var actors = _registry.CopyActiveActors();
-            for (int i = 0; i < actors.Count; i++)
-            {
-                var a = actors[i];
-                if (a.TryGetComp<ProjectileComp>(out var p) && p.OwnerId == owner)
-                {
-                    RequestDespawn(a.Id);
-                    a.SetActive(false);
-                }
-                else if (a.TryGetComp<AoeComp>(out var ao) && ao.OwnerId == owner)
-                {
-                    _aoe.DespawnAoe(a, ao, null);
+                    summon.End(SummonEventKind.OwnerRemoved);
                 }
             }
         }
@@ -219,9 +220,10 @@ namespace Combat.Core
                 if (!TryGetActor(intent.TargetId, out var dst) || dst == null)
                     return;
                 SimVec3? pt = intent.HasPoint ? intent.Point : (SimVec3?)null;
-                Deliver(intent.Effects, src, dst, intent.SnapshotAtk, pt, null, intent.BuffStacks);
+                Deliver(intent.Effects, src, dst, intent.SnapshotAtk, pt, intent.HasDirection?(SimVec3?)intent.Direction:null, intent.BuffStacks, intent.Power,intent.Origin);
             });
 
+            _projectilesSvc.FinishTerminations();
             _aoe.Tick(_time.Delta);
 
             actors = _registry.CopyActiveActors();

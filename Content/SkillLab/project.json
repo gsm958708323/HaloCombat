@@ -1,0 +1,3875 @@
+{
+  "formatVersion": 1,
+  "id": "halo-skill-lab",
+  "name": "HaloCombat 技能实验室",
+  "skills": [
+    {
+      "id": "basic-shot",
+      "runtimeId": 2001,
+      "name": "普通射击",
+      "category": "枪专精",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "projectile",
+          "kind": "projectile",
+          "runtimeId": 4001,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "speed": 12,
+            "range": 24,
+            "radius": 0.18,
+            "maxHits": 1,
+            "homingRate": 0
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 80,
+            "coefficient": 0,
+            "critChance": 0.15,
+            "critMultiplier": 1.8,
+            "ignoreDefense": false,
+            "hitstopFrames": 0
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "projectile",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "projectile",
+          "sourcePort": "hit",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "burst-shot",
+      "runtimeId": 2002,
+      "name": "三连发",
+      "category": "枪专精",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.4,
+            "count": 3,
+            "interval": 0.08
+          }
+        },
+        {
+          "id": "projectile",
+          "kind": "projectile",
+          "runtimeId": 4002,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "speed": 12,
+            "range": 24,
+            "radius": 0.18,
+            "maxHits": 1,
+            "homingRate": 0
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 80,
+            "coefficient": 0,
+            "critChance": 0.15,
+            "critMultiplier": 1.8,
+            "ignoreDefense": false,
+            "hitstopFrames": 0
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "projectile",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "projectile",
+          "sourcePort": "hit",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "held-spray",
+      "runtimeId": 2003,
+      "name": "持续引导",
+      "category": "引导",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "channel",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1,
+            "sustained": true,
+            "energyPerSecond": 12
+          }
+        },
+        {
+          "id": "projectile",
+          "kind": "projectile",
+          "runtimeId": 4003,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "speed": 12,
+            "range": 24,
+            "radius": 0.18,
+            "maxHits": 1,
+            "homingRate": 0
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 80,
+            "coefficient": 0,
+            "critChance": 0.15,
+            "critMultiplier": 1.8,
+            "ignoreDefense": false,
+            "hitstopFrames": 0
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "projectile",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "projectile",
+          "sourcePort": "hit",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "charged-shot",
+      "runtimeId": 2004,
+      "name": "蓄力射击",
+      "category": "蓄力",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "charge",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1,
+            "chargeMin": 0.2,
+            "chargeMax": 1,
+            "powerMin": 1,
+            "powerMax": 3,
+            "autoRelease": true,
+            "energyPerSecond": 0
+          }
+        },
+        {
+          "id": "projectile",
+          "kind": "projectile",
+          "runtimeId": 4004,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "speed": 12,
+            "range": 24,
+            "radius": 0.18,
+            "maxHits": 1,
+            "homingRate": 0
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 80,
+            "coefficient": 0,
+            "critChance": 0,
+            "critMultiplier": 1.8,
+            "ignoreDefense": false,
+            "hitstopFrames": 0
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "projectile",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "projectile",
+          "sourcePort": "hit",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "explosive-shot",
+      "runtimeId": 2005,
+      "name": "爆裂弹",
+      "category": "范围",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "projectile",
+          "kind": "projectile",
+          "runtimeId": 4005,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "speed": 12,
+            "range": 24,
+            "radius": 0.18,
+            "maxHits": 1,
+            "homingRate": 0
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 80,
+            "coefficient": 0,
+            "critChance": 0,
+            "critMultiplier": 1.8,
+            "ignoreDefense": false,
+            "hitstopFrames": 0,
+            "scope": "area",
+            "center": "point",
+            "radius": 4,
+            "maxTargets": 0
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "projectile",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "projectile",
+          "sourcePort": "hit",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "ground-field",
+      "runtimeId": 2006,
+      "name": "地面持续伤害",
+      "category": "范围",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "area",
+          "kind": "delivery",
+          "runtimeId": 5001,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "area",
+            "center": "point",
+            "radius": 4,
+            "maxTargets": 0,
+            "persistent": true,
+            "duration": 1,
+            "interval": 0.2,
+            "pulseOnSpawn": true
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 20,
+            "coefficient": 0,
+            "critChance": 0,
+            "critMultiplier": 1.8,
+            "ignoreDefense": false,
+            "hitstopFrames": 0
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "area",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "area",
+          "sourcePort": "apply",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "direct-hit",
+      "runtimeId": 2007,
+      "name": "目标打击",
+      "category": "目标",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "nearest",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "delivery",
+          "kind": "delivery",
+          "runtimeId": 5002,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "target",
+            "recipient": "target"
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 80,
+            "coefficient": 0,
+            "critChance": 0,
+            "critMultiplier": 1.8,
+            "ignoreDefense": false,
+            "hitstopFrames": 0
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "delivery",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "delivery",
+          "sourcePort": "apply",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "melee-thrust",
+      "runtimeId": 2008,
+      "name": "近战刺击",
+      "category": "近战与位移",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "action",
+          "kind": "delivery",
+          "runtimeId": 5100,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "melee",
+            "shape": "thrust",
+            "length": 7,
+            "width": 1,
+            "angle": 90,
+            "maxTargets": 0,
+            "startup": 0.1,
+            "activeDuration": 0.3
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 80,
+            "coefficient": 0,
+            "critChance": 0,
+            "critMultiplier": 1.8,
+            "ignoreDefense": false,
+            "hitstopFrames": 0
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "action",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "action",
+          "sourcePort": "apply",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "melee-fan",
+      "runtimeId": 2009,
+      "name": "扇形斩",
+      "category": "近战与位移",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "action",
+          "kind": "delivery",
+          "runtimeId": 5101,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "melee",
+            "shape": "fan",
+            "length": 9,
+            "width": 1,
+            "angle": 90,
+            "maxTargets": 0,
+            "startup": 0.1,
+            "activeDuration": 0.3
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 80,
+            "coefficient": 0,
+            "critChance": 0,
+            "critMultiplier": 1.8,
+            "ignoreDefense": false,
+            "hitstopFrames": 0
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "action",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "action",
+          "sourcePort": "apply",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "melee-whirl",
+      "runtimeId": 2010,
+      "name": "旋风斩",
+      "category": "近战与位移",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "action",
+          "kind": "delivery",
+          "runtimeId": 5102,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "melee",
+            "shape": "circle",
+            "length": 9,
+            "width": 1,
+            "angle": 360,
+            "maxTargets": 0,
+            "startup": 0.1,
+            "activeDuration": 0.3
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 80,
+            "coefficient": 0,
+            "critChance": 0,
+            "critMultiplier": 1.8,
+            "ignoreDefense": false,
+            "hitstopFrames": 0
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "action",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "action",
+          "sourcePort": "apply",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "dash-strike",
+      "runtimeId": 2011,
+      "name": "冲刺打击",
+      "category": "近战与位移",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "action",
+          "kind": "delivery",
+          "runtimeId": 5103,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "displacement",
+            "movementMode": "dash",
+            "distance": 12,
+            "speed": 20,
+            "hitRadius": 1.2,
+            "maxTargets": 0,
+            "startup": 0.1
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 80,
+            "coefficient": 0,
+            "critChance": 0,
+            "critMultiplier": 1.8,
+            "ignoreDefense": false,
+            "hitstopFrames": 0
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "action",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "action",
+          "sourcePort": "apply",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "blink-strike",
+      "runtimeId": 2012,
+      "name": "闪现打击",
+      "category": "近战与位移",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "action",
+          "kind": "delivery",
+          "runtimeId": 5104,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "displacement",
+            "movementMode": "blink",
+            "distance": 12,
+            "speed": 20,
+            "hitRadius": 4,
+            "maxTargets": 0,
+            "startup": 0.1
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 80,
+            "coefficient": 0,
+            "critChance": 0,
+            "critMultiplier": 1.8,
+            "ignoreDefense": false,
+            "hitstopFrames": 0
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "action",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "action",
+          "sourcePort": "apply",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "ray-shot",
+      "runtimeId": 2013,
+      "name": "单体射线",
+      "category": "射线",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "ray",
+          "kind": "delivery",
+          "runtimeId": 5200,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "ray",
+            "length": 24,
+            "width": 0.3,
+            "pierce": false,
+            "maxTargets": 0
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 80,
+            "coefficient": 0,
+            "critChance": 0,
+            "critMultiplier": 1.8,
+            "ignoreDefense": false,
+            "hitstopFrames": 0
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "ray",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "ray",
+          "sourcePort": "apply",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "piercing-ray",
+      "runtimeId": 2014,
+      "name": "贯穿射线",
+      "category": "射线",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "ray",
+          "kind": "delivery",
+          "runtimeId": 5201,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "ray",
+            "length": 24,
+            "width": 0.3,
+            "pierce": true,
+            "maxTargets": 0
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 80,
+            "coefficient": 0,
+            "critChance": 0,
+            "critMultiplier": 1.8,
+            "ignoreDefense": false,
+            "hitstopFrames": 0
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "ray",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "ray",
+          "sourcePort": "apply",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "summon-gunners",
+      "runtimeId": 2015,
+      "name": "双重射击分身",
+      "category": "召唤",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "summon",
+          "kind": "delivery",
+          "runtimeId": 6001,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "summon",
+            "blueprint": "echo-gunner",
+            "center": "source",
+            "count": 2,
+            "spacing": 1.2,
+            "duration": 2,
+            "maxAlive": 4
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "summon",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "summon-blade",
+      "runtimeId": 2016,
+      "name": "近战召唤",
+      "category": "召唤",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "summon",
+          "kind": "delivery",
+          "runtimeId": 6002,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "summon",
+            "blueprint": "echo-blade",
+            "center": "source",
+            "count": 1,
+            "spacing": 1.2,
+            "duration": 2,
+            "maxAlive": 4
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "summon",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "burn-shot",
+      "runtimeId": 2017,
+      "name": "灼烧弹",
+      "category": "Buff",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "projectile",
+          "kind": "projectile",
+          "runtimeId": 4020,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "speed": 12,
+            "range": 24,
+            "radius": 0.18,
+            "maxHits": 1,
+            "homingRate": 0
+          }
+        },
+        {
+          "id": "burn",
+          "kind": "buff",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "buff": "burn",
+            "stacks": 1,
+            "recipient": "target"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "projectile",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "projectile",
+          "sourcePort": "hit",
+          "target": "burn",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "cleanse-burn",
+      "runtimeId": 2018,
+      "name": "驱散灼烧",
+      "category": "Buff",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "nearest",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "delivery",
+          "kind": "delivery",
+          "runtimeId": 5020,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "target",
+            "recipient": "target"
+          }
+        },
+        {
+          "id": "cleanse",
+          "kind": "dispel",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "buff",
+            "buff": "burn",
+            "recipient": "target",
+            "maxCount": 0
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "delivery",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "delivery",
+          "sourcePort": "apply",
+          "target": "cleanse",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "battle-rage",
+      "runtimeId": 2019,
+      "name": "战斗强化",
+      "category": "Buff",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "self",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "delivery",
+          "kind": "delivery",
+          "runtimeId": 5021,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "target",
+            "recipient": "self"
+          }
+        },
+        {
+          "id": "rage",
+          "kind": "buff",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "buff": "battle-rage",
+            "stacks": 1,
+            "recipient": "target"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "delivery",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "delivery",
+          "sourcePort": "apply",
+          "target": "rage",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "burning-field",
+      "runtimeId": 2020,
+      "name": "灼烧火区",
+      "category": "Buff",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "area",
+          "kind": "delivery",
+          "runtimeId": 5022,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "area",
+            "center": "point",
+            "radius": 4,
+            "maxTargets": 0,
+            "persistent": true,
+            "duration": 0.7,
+            "interval": 0.2,
+            "pulseOnSpawn": true
+          }
+        },
+        {
+          "id": "burn",
+          "kind": "buff",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "buff": "burn",
+            "stacks": 1,
+            "recipient": "target"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "area",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "area",
+          "sourcePort": "apply",
+          "target": "burn",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "slow-aura",
+      "runtimeId": 2021,
+      "name": "来源独立的减速光环",
+      "category": "Buff",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "area",
+          "kind": "delivery",
+          "runtimeId": 5023,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "area",
+            "center": "point",
+            "radius": 4,
+            "maxTargets": 0,
+            "persistent": true,
+            "duration": 1,
+            "interval": 0.5,
+            "pulseOnSpawn": false
+          }
+        },
+        {
+          "id": "slow",
+          "kind": "buff",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "buff": "aura-slow",
+            "stacks": 1,
+            "recipient": "target"
+          }
+        },
+        {
+          "id": "leave",
+          "kind": "dispel",
+          "position": {
+            "x": 810,
+            "y": 450
+          },
+          "parameters": {
+            "mode": "source",
+            "maxCount": 0,
+            "recipient": "target"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "area",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "area",
+          "sourcePort": "enter",
+          "target": "slow",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "leave",
+          "source": "area",
+          "sourcePort": "exit",
+          "target": "leave",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "spread-shot",
+      "runtimeId": 2022.0,
+      "name": "扇形散射",
+      "category": "投射物行为",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "projectile",
+          "kind": "projectile",
+          "runtimeId": 6003.0,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "speed": 12,
+            "range": 24,
+            "radius": 0.18,
+            "maxHits": 1,
+            "homingRate": 0,
+            "multi": true,
+            "count": 5,
+            "spread": 60
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 80,
+            "coefficient": 0,
+            "critChance": 0,
+            "critMultiplier": 1.8,
+            "ignoreDefense": false,
+            "hitstopFrames": 0
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "projectile",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "projectile",
+          "sourcePort": "hit",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "chain-shot",
+      "runtimeId": 2023.0,
+      "name": "连锁射击",
+      "category": "投射物行为",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "projectile",
+          "kind": "projectile",
+          "runtimeId": 6004.0,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "speed": 12,
+            "range": 24,
+            "radius": 0.18,
+            "maxHits": 1,
+            "homingRate": 0,
+            "chain": true,
+            "chainCount": 3,
+            "chainRadius": 6,
+            "chainMode": "nearest"
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 80,
+            "coefficient": 0,
+            "critChance": 0,
+            "critMultiplier": 1.8,
+            "ignoreDefense": false,
+            "hitstopFrames": 0
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "projectile",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "projectile",
+          "sourcePort": "hit",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "split-shot",
+      "runtimeId": 2024.0,
+      "name": "命中分裂弹",
+      "category": "投射物行为",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "projectile",
+          "kind": "projectile",
+          "runtimeId": 6005.0,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "speed": 12,
+            "range": 24,
+            "radius": 0.18,
+            "maxHits": 1,
+            "homingRate": 0
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 80,
+            "coefficient": 0,
+            "critChance": 0,
+            "critMultiplier": 1.8,
+            "ignoreDefense": false,
+            "hitstopFrames": 0
+          }
+        },
+        {
+          "id": "split",
+          "kind": "split",
+          "enabled": true,
+          "position": {
+            "y": 80,
+            "x": 1080
+          },
+          "parameters": {
+            "rangeMode": "fixed",
+            "range": 8,
+            "spread": 60,
+            "generations": 1,
+            "count": 3,
+            "powerMultiplier": 0.5
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "projectile",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "projectile",
+          "sourcePort": "hit",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "damage-split",
+          "source": "damage",
+          "sourcePort": "next",
+          "target": "split",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "fan-channel",
+      "runtimeId": 2025.0,
+      "name": "持续扇形弹幕",
+      "category": "投射物行为",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "channel",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1,
+            "sustained": true,
+            "energyPerSecond": 12
+          }
+        },
+        {
+          "id": "projectile",
+          "kind": "projectile",
+          "runtimeId": 6006.0,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "speed": 12,
+            "range": 24,
+            "radius": 0.18,
+            "maxHits": 0,
+            "homingRate": 0,
+            "multi": true,
+            "count": 5,
+            "spread": 60
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 80,
+            "coefficient": 0,
+            "critChance": 0,
+            "critMultiplier": 1.8,
+            "ignoreDefense": false,
+            "hitstopFrames": 0
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "projectile",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "projectile",
+          "sourcePort": "hit",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "accelerating-shot",
+      "runtimeId": 2026,
+      "name": "加速弹",
+      "category": "投射物运动",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "projectile",
+          "kind": "projectile",
+          "runtimeId": 6007,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "range": 24,
+            "radius": 0.18,
+            "maxHits": 1,
+            "homingRate": 0,
+            "speed": 4,
+            "acceleration": 8,
+            "trajectory": "accelerate",
+            "maxSpeed": 20
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 80,
+            "coefficient": 0,
+            "critChance": 0,
+            "critMultiplier": 1.8,
+            "ignoreDefense": false,
+            "hitstopFrames": 0
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "projectile",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "projectile",
+          "sourcePort": "hit",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "returning-shot",
+      "runtimeId": 2027,
+      "name": "回旋弹",
+      "category": "投射物运动",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "projectile",
+          "kind": "projectile",
+          "runtimeId": 6008,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "speed": 12,
+            "range": 24,
+            "radius": 0.18,
+            "homingRate": 0,
+            "maxHits": 0,
+            "returnAfter": 0.6,
+            "catchRadius": 0.4,
+            "returnSpeed": 16,
+            "trajectory": "return"
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 80,
+            "coefficient": 0,
+            "critChance": 0,
+            "critMultiplier": 1.8,
+            "ignoreDefense": false,
+            "hitstopFrames": 0
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "projectile",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "projectile",
+          "sourcePort": "hit",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "bouncing-shot",
+      "runtimeId": 2028,
+      "name": "地面弹跳弹",
+      "category": "投射物运动",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "projectile",
+          "kind": "projectile",
+          "runtimeId": 6009,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "range": 24,
+            "radius": 0.18,
+            "homingRate": 0,
+            "groundBounces": 2,
+            "speed": 8,
+            "verticalSpeed": 5,
+            "trajectory": "bounce",
+            "gravity": 20,
+            "restitution": 0.6,
+            "launchHeight": 0.5,
+            "maxHits": 0
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 80,
+            "coefficient": 0,
+            "critChance": 0,
+            "critMultiplier": 1.8,
+            "ignoreDefense": false,
+            "hitstopFrames": 0
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "projectile",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "projectile",
+          "sourcePort": "hit",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "ricochet-shot",
+      "runtimeId": 2029,
+      "name": "撞墙反射弹",
+      "category": "投射物运动",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "projectile",
+          "kind": "projectile",
+          "runtimeId": 6010,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "speed": 12,
+            "range": 24,
+            "radius": 0.18,
+            "homingRate": 0,
+            "wallBounces": 3,
+            "maxHits": 0,
+            "trajectory": "linear"
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 80,
+            "coefficient": 0,
+            "critChance": 0,
+            "critMultiplier": 1.8,
+            "ignoreDefense": false,
+            "hitstopFrames": 0
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "projectile",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "projectile",
+          "sourcePort": "hit",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "homing-shot",
+      "runtimeId": 2030,
+      "name": "追踪弹",
+      "category": "投射物运动",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "projectile",
+          "kind": "projectile",
+          "runtimeId": 6011,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "speed": 12,
+            "range": 24,
+            "radius": 0.18,
+            "maxHits": 1,
+            "homingRadius": 12,
+            "homingRetarget": true,
+            "homingRate": 360
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 80,
+            "coefficient": 0,
+            "critChance": 0,
+            "critMultiplier": 1.8,
+            "ignoreDefense": false,
+            "hitstopFrames": 0
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "projectile",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "projectile",
+          "sourcePort": "hit",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "event-shot",
+      "runtimeId": 2031,
+      "name": "暴击与技能事件",
+      "category": "结算与事件",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "projectile",
+          "kind": "projectile",
+          "runtimeId": 6012,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "speed": 12,
+            "range": 24,
+            "radius": 0.18,
+            "maxHits": 1,
+            "homingRate": 0
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 80,
+            "coefficient": 0,
+            "critChance": 1,
+            "critMultiplier": 2,
+            "ignoreDefense": false,
+            "hitstopFrames": 0
+          }
+        },
+        {
+          "id": "skill-events",
+          "kind": "skill-events",
+          "position": {
+            "y": 650,
+            "x": 0
+          },
+          "parameters": {}
+        },
+        {
+          "id": "event-cue-0",
+          "kind": "cue",
+          "position": {
+            "y": 650,
+            "x": 270
+          },
+          "parameters": {
+            "id": 110
+          }
+        },
+        {
+          "id": "event-cue-1",
+          "kind": "cue",
+          "position": {
+            "y": 650,
+            "x": 510
+          },
+          "parameters": {
+            "id": 111
+          }
+        },
+        {
+          "id": "event-cue-2",
+          "kind": "cue",
+          "position": {
+            "y": 650,
+            "x": 750
+          },
+          "parameters": {
+            "id": 112
+          }
+        },
+        {
+          "id": "event-cue-3",
+          "kind": "cue",
+          "position": {
+            "y": 650,
+            "x": 990
+          },
+          "parameters": {
+            "id": 113
+          }
+        },
+        {
+          "id": "event-cue-4",
+          "kind": "cue",
+          "position": {
+            "y": 650,
+            "x": 1230
+          },
+          "parameters": {
+            "id": 114
+          }
+        },
+        {
+          "id": "event-cue-5",
+          "kind": "cue",
+          "position": {
+            "y": 650,
+            "x": 1470
+          },
+          "parameters": {
+            "id": 115
+          }
+        },
+        {
+          "id": "event-cue-6",
+          "kind": "cue",
+          "position": {
+            "y": 650,
+            "x": 1710
+          },
+          "parameters": {
+            "id": 116
+          }
+        },
+        {
+          "id": "bonus-damage",
+          "kind": "damage",
+          "position": {
+            "y": 850,
+            "x": 540
+          },
+          "parameters": {
+            "coefficient": 0,
+            "ignoreDefense": true,
+            "flat": 5,
+            "critChance": 0,
+            "includeBonuses": false
+          }
+        },
+        {
+          "id": "confirm",
+          "kind": "after-damage",
+          "position": {
+            "y": 80,
+            "x": 1080
+          },
+          "parameters": {
+            "latestCastOnly": true
+          }
+        },
+        {
+          "id": "impact",
+          "kind": "impact",
+          "position": {
+            "y": 80,
+            "x": 1350
+          },
+          "parameters": {
+            "mode": "knockback",
+            "recipient": "target",
+            "distance": 1.5
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "projectile",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "projectile",
+          "sourcePort": "hit",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "event-cue-0",
+          "source": "skill-events",
+          "sourcePort": "hit",
+          "target": "event-cue-0",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "event-cue-1",
+          "source": "skill-events",
+          "sourcePort": "critical",
+          "target": "event-cue-1",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "event-cue-2",
+          "source": "skill-events",
+          "sourcePort": "kill",
+          "target": "event-cue-2",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "event-cue-3",
+          "source": "skill-events",
+          "sourcePort": "completed",
+          "target": "event-cue-3",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "event-cue-4",
+          "source": "skill-events",
+          "sourcePort": "wall",
+          "target": "event-cue-4",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "event-cue-5",
+          "source": "skill-events",
+          "sourcePort": "range",
+          "target": "event-cue-5",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "event-cue-6",
+          "source": "skill-events",
+          "sourcePort": "projectile-end",
+          "target": "event-cue-6",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "bonus",
+          "source": "skill-events",
+          "sourcePort": "hit",
+          "target": "bonus-damage",
+          "targetPort": "execute",
+          "order": 1
+        },
+        {
+          "id": "confirm",
+          "source": "damage",
+          "sourcePort": "next",
+          "target": "confirm",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "impact",
+          "source": "confirm",
+          "sourcePort": "apply",
+          "target": "impact",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "elemental-shot",
+      "runtimeId": 2032,
+      "name": "通用元素弹",
+      "category": "结算与事件",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "projectile",
+          "kind": "projectile",
+          "runtimeId": 6013,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "speed": 12,
+            "range": 24,
+            "radius": 0.18,
+            "maxHits": 1,
+            "homingRate": 0
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 80,
+            "coefficient": 0,
+            "critChance": 0,
+            "critMultiplier": 1.8,
+            "ignoreDefense": false,
+            "hitstopFrames": 0,
+            "damageType": "elemental"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "projectile",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "projectile",
+          "sourcePort": "hit",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "shield-self",
+      "runtimeId": 2033,
+      "name": "护盾自身",
+      "category": "结算与事件",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "self",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "delivery",
+          "kind": "delivery",
+          "runtimeId": 6014,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "target",
+            "recipient": "target"
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "impact",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "shield",
+            "recipient": "self",
+            "amount": 200
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "delivery",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "delivery",
+          "sourcePort": "apply",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "impact-strike",
+      "runtimeId": 2034,
+      "name": "受击击退击飞",
+      "category": "结算与事件",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "nearest",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "delivery",
+          "kind": "delivery",
+          "runtimeId": 6015,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "target",
+            "recipient": "target"
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 80,
+            "coefficient": 0,
+            "critChance": 0,
+            "critMultiplier": 1.8,
+            "ignoreDefense": false,
+            "hitstopFrames": 0
+          }
+        },
+        {
+          "id": "stun",
+          "kind": "impact",
+          "position": {
+            "y": 500,
+            "x": 1080
+          },
+          "parameters": {
+            "mode": "hitstun",
+            "distance": 2,
+            "speed": 5,
+            "duration": 0.3,
+            "recipient": "target"
+          }
+        },
+        {
+          "id": "push",
+          "kind": "impact",
+          "position": {
+            "y": 600,
+            "x": 1080
+          },
+          "parameters": {
+            "mode": "knockback",
+            "distance": 2,
+            "speed": 5,
+            "duration": 0.3,
+            "recipient": "target"
+          }
+        },
+        {
+          "id": "launch",
+          "kind": "impact",
+          "position": {
+            "y": 700,
+            "x": 1080
+          },
+          "parameters": {
+            "mode": "launch",
+            "distance": 2,
+            "speed": 5,
+            "duration": 0.3,
+            "recipient": "target"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "delivery",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "delivery",
+          "sourcePort": "apply",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "stun",
+          "source": "damage",
+          "sourcePort": "next",
+          "target": "stun",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "push",
+          "source": "stun",
+          "sourcePort": "next",
+          "target": "push",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "launch",
+          "source": "push",
+          "sourcePort": "next",
+          "target": "launch",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    }
+  ],
+  "preview": {
+    "seed": 1,
+    "energy": 100,
+    "recovery": 10,
+    "caster": {
+      "id": "caster",
+      "x": -6,
+      "z": 0,
+      "hp": 1000,
+      "atk": 80,
+      "def": 0
+    },
+    "targets": [
+      {
+        "id": "target-1",
+        "x": 0,
+        "z": 0,
+        "hp": 1000,
+        "atk": 0,
+        "def": 0
+      },
+      {
+        "id": "target-2",
+        "x": 3,
+        "z": 2,
+        "hp": 1000,
+        "atk": 0,
+        "def": 0
+      },
+      {
+        "id": "target-3",
+        "x": 1,
+        "z": -3,
+        "hp": 1000,
+        "atk": 0,
+        "def": 0
+      },
+      {
+        "id": "target-4",
+        "x": 5,
+        "z": -1,
+        "hp": 1000,
+        "atk": 0,
+        "def": 0
+      }
+    ]
+  },
+  "summonBlueprints": [
+    {
+      "id": "echo-gunner",
+      "name": "射击分身",
+      "skillId": "basic-shot",
+      "hp": 100,
+      "attack": 80,
+      "defense": 0,
+      "moveSpeed": 3,
+      "collisionRadius": 0.4,
+      "energy": 100,
+      "initialEnergy": 100,
+      "recovery": 10,
+      "acquireRadius": 20,
+      "attackRange": 12,
+      "followRange": 2,
+      "holdDuration": 0.75
+    },
+    {
+      "id": "echo-blade",
+      "name": "近战分身",
+      "skillId": "melee-thrust",
+      "hp": 120,
+      "attack": 80,
+      "defense": 0,
+      "moveSpeed": 5,
+      "collisionRadius": 0.4,
+      "energy": 100,
+      "initialEnergy": 100,
+      "recovery": 10,
+      "acquireRadius": 20,
+      "attackRange": 6,
+      "followRange": 2,
+      "holdDuration": 0.75
+    }
+  ],
+  "buffs": [
+    {
+      "id": "burn",
+      "runtimeId": 8001,
+      "name": "灼烧",
+      "permanent": false,
+      "duration": 1.1,
+      "interval": 0.25,
+      "stack": "add",
+      "maxStacks": 3,
+      "mutexGroup": 0,
+      "tags": [
+        3101
+      ],
+      "modifiers": [
+        {
+          "attribute": "moveSpeed",
+          "operation": "mul",
+          "value": 0.5,
+          "priority": 0
+        }
+      ],
+      "nodes": [
+        {
+          "id": "events",
+          "kind": "buff-events",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {}
+        },
+        {
+          "id": "period-damage",
+          "kind": "damage",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 10,
+            "coefficient": 0,
+            "critChance": 0,
+            "critMultiplier": 1.8,
+            "ignoreDefense": false,
+            "hitstopFrames": 0,
+            "scaleByStacks": true,
+            "notifyHurt": false
+          }
+        },
+        {
+          "id": "apply-cue",
+          "kind": "cue",
+          "position": {
+            "x": 270,
+            "y": -180
+          },
+          "parameters": {
+            "id": 51
+          }
+        },
+        {
+          "id": "stack-cue",
+          "kind": "cue",
+          "position": {
+            "x": 270,
+            "y": -70
+          },
+          "parameters": {
+            "id": 52
+          }
+        },
+        {
+          "id": "expire-cue",
+          "kind": "cue",
+          "position": {
+            "x": 270,
+            "y": 380
+          },
+          "parameters": {
+            "id": 53
+          }
+        },
+        {
+          "id": "removed-cue",
+          "kind": "cue",
+          "position": {
+            "x": 270,
+            "y": 490
+          },
+          "parameters": {
+            "id": 54
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "period",
+          "source": "events",
+          "sourcePort": "period",
+          "target": "period-damage",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "apply",
+          "source": "events",
+          "sourcePort": "apply",
+          "target": "apply-cue",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "stack",
+          "source": "events",
+          "sourcePort": "stack",
+          "target": "stack-cue",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "expire",
+          "source": "events",
+          "sourcePort": "expire",
+          "target": "expire-cue",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "removed",
+          "source": "events",
+          "sourcePort": "removed",
+          "target": "removed-cue",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "battle-rage",
+      "runtimeId": 8002,
+      "name": "战斗强化",
+      "permanent": false,
+      "duration": 1,
+      "interval": 0,
+      "stack": "refresh",
+      "maxStacks": 1,
+      "mutexGroup": 0,
+      "tags": [
+        1004,
+        3102
+      ],
+      "modifiers": [
+        {
+          "attribute": "attack",
+          "operation": "add",
+          "value": 40,
+          "priority": 0
+        }
+      ],
+      "nodes": [
+        {
+          "id": "events",
+          "kind": "buff-events",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {}
+        },
+        {
+          "id": "cast-cue",
+          "kind": "cue",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "id": 61
+          }
+        },
+        {
+          "id": "hurt-cue",
+          "kind": "cue",
+          "position": {
+            "x": 270,
+            "y": 220
+          },
+          "parameters": {
+            "id": 62
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "cast",
+          "source": "events",
+          "sourcePort": "cast",
+          "target": "cast-cue",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hurt",
+          "source": "events",
+          "sourcePort": "hurt",
+          "target": "hurt-cue",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "aura-slow",
+      "runtimeId": 8003,
+      "name": "区域减速",
+      "permanent": true,
+      "duration": 2,
+      "interval": 0,
+      "stack": "independent",
+      "maxStacks": 1,
+      "mutexGroup": 0,
+      "tags": [
+        3103
+      ],
+      "modifiers": [
+        {
+          "attribute": "moveSpeed",
+          "operation": "mul",
+          "value": 0.5,
+          "priority": 0
+        }
+      ],
+      "nodes": [
+        {
+          "id": "events",
+          "kind": "buff-events",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {}
+        }
+      ],
+      "edges": []
+    }
+  ]
+}

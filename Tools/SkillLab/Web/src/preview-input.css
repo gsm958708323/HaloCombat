@@ -1,0 +1,50 @@
+.scene-resources { border-bottom: 1px solid #36464c; padding: 5px 9px; font-size: 10px; }
+.scene-resources summary { cursor: pointer; color: #afc2c6; }
+.scene-resources > div { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; padding: 8px 0 3px; }
+.scene-resources label { display: flex; flex-direction: column; gap: 4px; }
+.scene-resources input { width: 100%; padding: 4px; }
+.scene-resources button { grid-column: 1 / -1; font-size: 10px; padding: 4px; }
+.charge-box { border-bottom: 1px solid #53645c; padding: 7px 10px; background: #2e352b; }
+.charge-box > div { display: flex; justify-content: space-between; color: #e2d2a1; font-size: 10px; }
+.charge-box span { color: #adbbb0; }
+.charge-box progress { width: 100%; height: 7px; accent-color: #d6bd78; }
+.preview-readiness { padding: 4px 9px; font-size: 10px; color: #a3beb3; border-bottom: 1px solid #36464c; overflow-wrap: anywhere; }
+.scene-obstacles { padding: 5px 9px; border-bottom: 1px solid #36464c; font-size: 10px; }
+.scene-obstacles summary { cursor: pointer; color: #afc2c6; }
+.obstacle-controls { padding-top: 7px; max-height: 180px; overflow: auto; }
+.obstacle-controls button { padding: 3px 7px; font-size: 10px; }
+.obstacle-controls fieldset { border: 1px solid #44545b; margin: 6px 0; }
+.obstacle-fields { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 4px; margin-bottom: 5px; }
+.obstacle-fields label { display: flex; flex-direction: column; gap: 3px; }
+.obstacle-fields input { width: 100%; padding: 4px 2px; }
+.blueprint-panel { border-top: 1px solid #3b4c50; padding: 12px 0; }
+.blueprint-panel summary { color: #9dc7ab; cursor: pointer; margin-bottom: 7px; }
+.blueprint-panel fieldset { border: 1px solid #41565b; padding: 7px; margin: 8px 0; }
+.blueprint-panel legend { color: #c8dabd; }
+.blueprint-panel label { display: flex; flex-direction: column; gap: 4px; font-size: 10px; margin-bottom: 7px; }
+.blueprint-panel input,.blueprint-panel select { width: 100%; padding: 4px; }
+.blueprint-panel button { padding: 4px 7px; font-size: 10px; margin-right: 5px; }
+.blueprint-fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 5px; }
+.instances div:has(.instance-owner) { flex-wrap: wrap; }
+.instance-owner { flex-basis: 100%; color: #93ac9a; font-size: 9px; padding-top: 3px; }
+.buff-properties label { display:flex;justify-content:space-between;align-items:center;gap:5px;margin:8px 0;font-size:10px; }
+.buff-properties input,.buff-properties select { max-width:120px;font-size:10px;padding:4px; }
+.buff-properties input[type=number] { width:75px; }
+.buff-properties h4 { margin:15px 0 8px; }
+.buff-properties button { font-size:10px;padding:4px 6px; }
+.buff-properties fieldset { margin:6px 0;padding:7px;border:1px solid #3f5550;display:flex;flex-wrap:wrap;gap:5px; }
+.buff-properties p { font-size:10px;color:#9eafa9;line-height:1.6; }
+.buff-tag { display:flex;gap:6px;margin:5px 0; }
+.instance-buffs { flex-basis:100%;font-size:9px;line-height:1.5;color:#c1d4a6; }
+.instance-buffs button { font-size:9px;padding:2px 4px;margin-left:4px; }
+.editor-heading .buff-select { max-width:140px; }
+.preview-panel>.statistics{grid-template-columns:repeat(6,minmax(0,1fr));flex-shrink:0}
+.scene-actors,.damage-inspector{padding:5px 9px;font-size:10px;border-bottom:1px solid #36464c;flex-shrink:0}
+.scene-actors summary,.damage-inspector summary{cursor:pointer;color:#bdd2cf}
+.scene-actors>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;padding:7px 0;max-height:180px;overflow:auto}
+.scene-actors select,.scene-actors small{grid-column:1/-1}.scene-actors label{display:flex;flex-direction:column;gap:3px}.scene-actors input{width:100%}
+.damage-inspector[open]{max-height:none;overflow:visible}.damage-inspector article{padding:6px 0;border-top:1px solid #35484b}.damage-inspector b,.damage-inspector small{display:block;overflow-wrap:anywhere}
+.damage-inspector dl{margin:6px 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}.damage-inspector dl>div{display:flex;justify-content:space-between}.damage-inspector dd{margin:0;color:#dfcf9d}
+.preview-panel>.world-canvas{min-height:0}.world-canvas>svg{min-height:0}
+.preview-panel>.panel-title,.preview-controls,.preview-options,.preview-readiness{flex-shrink:0}
+.preview-settings{flex:0 1 auto;min-height:0;max-height:30%;overflow:auto}

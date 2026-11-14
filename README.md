@@ -1,5 +1,11 @@
 # HaloCombat 纯 C# 战斗核（第一期总装）
 
+## 网页技能编辑器（开发中）
+
+在 `codex/web-skill-editor-json` 分支开发 JSON 网页技能编辑器。运行 `./Tools/SkillLab/Start.ps1` 启动本地网页，使用说明见 [Tools/SkillLab/README.md](Tools/SkillLab/README.md)，完整范围和验证记录见 [docs/实施进度.md](docs/实施进度.md)。
+
+网页预览和 Unity `Assets/Scenes/HaloCombat/SkillLab.unity` 共用实际战斗核。网页发布 F6/F7 后，Unity SkillLab 运行中按 F5 重载，再按 F6/F7 施放。已接通瞬发、有限连发、引导、蓄力、目标/范围伤害、持续区域、近战、位移、射线、矩形障碍、召唤分身、共享 Buff 生命周期图，以及投射物散射/穿透/连锁/命中分裂/加减速/回旋/重力弹跳/墙反射，提供34个示例模板；发布包含技能/Buff/蓝图依赖闭包。旧 SO 内容迁移、剩余节点和最终对照仍在开发中。
+
 ## 运行
 
 dotnet run

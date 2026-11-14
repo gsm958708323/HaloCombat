@@ -49,7 +49,7 @@ namespace Combat.Core
         public void Apply(ref EffectContext ctx)
         {
             if (ctx.Target == null) return;
-            ctx.Target.GetComp<BuffComp>().Apply(_spec, ctx.Source, _stacks);
+            ctx.Target.GetComp<BuffComp>().Apply(_spec, ctx.Source, _stacks,ctx.SnapshotAtk,ctx.Power,ctx.Origin);
         }
     }
 
@@ -59,21 +59,21 @@ namespace Combat.Core
         readonly int _key;
         readonly TagId _tag;
         readonly int _maxCount;
-        public DispelEffect(DispelMode mode, int key = 0, TagId tag = default, int maxCount = 0)
+        readonly EntityId _source;
+        public DispelEffect(DispelMode mode, int key = 0, TagId tag = default, int maxCount = 0,EntityId source=default)
         {
             _mode = mode;
             _key = key;
             _tag = tag;
             _maxCount = maxCount;
+            _source=source;
         }
 
         public void Apply(ref EffectContext ctx)
         {
             if (ctx.Target == null) return;
-            int key = _key;
-            if (_mode == DispelMode.BySource && key == 0)
-                key = BuffComp.Pack(ctx.Source);
-            ctx.Target.GetComp<BuffComp>().Dispel(_mode, key, _tag, _maxCount);
+            var source=_source.IsValid?_source:ctx.Source?.Id??EntityId.Invalid;
+            ctx.Target.GetComp<BuffComp>().Dispel(_mode, _key, _tag, _maxCount,source);
         }
     }
 
@@ -103,7 +103,9 @@ namespace Combat.Core
         public readonly float Yaw;
         public readonly float SnapshotAtk;
         public readonly EntityId Target;
-        public SpawnProjectileIntent(EntityId owner, int specId, SimVec3 origin, float yaw, float snapshotAtk, EntityId target = default)
+        public readonly float Power;
+        public readonly ProjectileSeed Seed;
+        public SpawnProjectileIntent(EntityId owner, int specId, SimVec3 origin, float yaw, float snapshotAtk, EntityId target = default, float power = 1,ProjectileSeed seed=null)
         {
             Owner = owner;
             SpecId = specId;
@@ -111,13 +113,17 @@ namespace Combat.Core
             Yaw = yaw;
             SnapshotAtk = snapshotAtk;
             Target = target;
+            Power = power;
+            Seed=seed;
         }
     }
 
     public sealed class SpawnProjectileEffect : IEffect
     {
         readonly int _specId;
-        public SpawnProjectileEffect(int specId) => _specId = specId;
+        readonly int _count;
+        readonly float _spread;
+        public SpawnProjectileEffect(int specId,int count=1,float spread=0) {_specId=specId;_count=count;_spread=spread;}
 
         public void Apply(ref EffectContext ctx)
         {
@@ -126,16 +132,22 @@ namespace Combat.Core
             float atk = ctx.SnapshotAtk;
             if (atk == 0f && ctx.Source.TryGetComp<AttributeSet>(out var attr))
                 atk = attr.GetFinal(AttrId.Atk);
-            ctx.World.Intents.Post(new SpawnProjectileIntent(
-                ctx.Source.Id, _specId, tf.Position, tf.YawDegrees, atk,
-                ctx.Target != null ? ctx.Target.Id : EntityId.Invalid));
+            var origin=ctx.Origin;
+            if(origin.CastId==0&&ctx.Source.TryGetComp<SkillDirectorComp>(out var director)&&director.IsPlaying)origin=director.CurrentOrigin;
+            var family=ctx.ProjectileHit?.Family??new ProjectileFamily(origin);
+            float yaw=ctx.HasDir?LocomotionComp.YawFromStick(ctx.Dir):tf.YawDegrees;
+            for(int i=0;i<_count;i++)
+                ProjectileEmission.Post(ctx.World,ctx.Source.Id,_specId,tf.Position,yaw+ProjectileEmission.Offset(i,_count,_spread),atk,
+                    ctx.Target!=null?ctx.Target.Id:EntityId.Invalid,ctx.Power>0?ctx.Power:1,
+                    new ProjectileSeed(family,ctx.ProjectileHit!=null?ctx.ProjectileHit.Generation+1:0,0,false,Array.Empty<EntityId>()));
         }
     }
 
     public sealed class SpawnAoeEffect : IEffect
     {
         readonly int _specId;
-        public SpawnAoeEffect(int specId) => _specId = specId;
+        readonly EffectCenter _center;
+        public SpawnAoeEffect(int specId, EffectCenter center = EffectCenter.Auto) { _specId = specId; _center = center; }
 
         public void Apply(ref EffectContext ctx)
         {
@@ -143,11 +155,7 @@ namespace Combat.Core
             if (!ctx.World.Aoes.TryGet(_specId, out var def))
                 throw new InvalidOperationException("Unknown AoE " + _specId);
 
-            SimVec3 origin;
-            if (ctx.HasPoint) origin = ctx.Point;
-            else if (ctx.Source != null && ctx.Source.TryGetComp<TransformComp>(out var stf))
-                origin = stf.Position;
-            else origin = SimVec3.Zero;
+            if (!EffectPosition.TryResolve(ctx, _center, out var origin)) return;
 
             float snap = ctx.SnapshotAtk;
             if (snap == 0f && ctx.Source != null && ctx.Source.TryGetComp<AttributeSet>(out var attr))
@@ -162,15 +170,14 @@ namespace Combat.Core
             CopyTeam(ctx.Source, aoe);
 
             var body = aoe.GetComp<AoeComp>();
-            body.Setup(def, ctx.Source != null ? ctx.Source.Id : EntityId.Invalid, snap, ctx.World.Time.Frame);
+            body.Setup(def, ctx.Source != null ? ctx.Source.Id : EntityId.Invalid, snap, ctx.World.Time.Frame, ctx.Power > 0 ? ctx.Power : 1,ctx.Origin);
 
             if (def.CueId != 0)
                 ctx.World.Events.Publish(new EvCue(def.CueId, body.OwnerId, "AoeSpawn"));
 
+            ctx.World.PublishSpawn(id, "aoe");
             if (def.PulseOnSpawn)
                 AoePulse.PulseNow(ctx.World, aoe, body);
-
-            ctx.World.PublishSpawn(id, "aoe");
         }
 
         public static void CopyTeam(Actor owner, Actor spawned)
@@ -186,11 +193,12 @@ namespace Combat.Core
         public float Amount = 10f;
         public void Apply(ref EffectContext ctx)
         {
-            if (ctx.Target == null) return;
+            if (ctx.Target == null||!ctx.Target.IsActive||ctx.Target.GetComp<TagComp>().Has(CommonTags.Dead)) return;
             var attr = ctx.Target.GetComp<AttributeSet>();
-            float hp = attr.GetBase(AttrId.Hp) + Amount;
+            float old=attr.GetBase(AttrId.Hp);if(old<=0)return;
+            float hp = old + Math.Max(0,Amount);
             attr.SetBase(AttrId.Hp, hp);
-            ctx.World?.Events.Publish(new EvHeal(ctx.Target.Id, Amount));
+            ctx.World?.Events.Publish(new EvHeal(ctx.Target.Id, attr.GetBase(AttrId.Hp)-old));
         }
     }
 
@@ -201,116 +209,6 @@ namespace Combat.Core
             if (ctx.Target == null || !ctx.HasPoint) return;
             if (ctx.Target.TryGetComp<LocomotionComp>(out var loco))
                 loco.RequestTeleport(ctx.Point);
-        }
-    }
-
-    public sealed class DamageEffect : IEffect
-    {
-        public float Coeff = 1f;
-        public float Flat;
-        public bool IgnoreDef;
-        public bool CanCrit;
-        public bool UseSnapshotAtk = true;
-        public bool ScaleByBuffStacks;
-        public float CritMul = 2f;
-        public bool FireOnHurted = true;
-        public int HitstopFrames;
-
-        public void Apply(ref EffectContext ctx)
-        {
-            var target = ctx.Target;
-            var source = ctx.Source;
-            if (target == null || ctx.World == null) return;
-
-            var tags = target.GetComp<TagComp>();
-            if (tags.Has(CommonTags.Invincible) ||
-                (target.TryGetComp<HealthComp>(out var hc) && hc.InIFrame))
-            {
-                ctx.World.Events.Publish(new EvImmune(target.Id, source != null ? source.Id : EntityId.Invalid));
-                return;
-            }
-
-            var dstAttr = target.GetComp<AttributeSet>();
-            float atk;
-            if (UseSnapshotAtk) atk = ctx.SnapshotAtk;
-            else if (source != null && source.TryGetComp<AttributeSet>(out var srcLive))
-                atk = srcLive.GetFinal(AttrId.Atk);
-            else atk = ctx.SnapshotAtk;
-
-            float def = IgnoreDef ? 0f : dstAttr.GetFinal(AttrId.Def);
-            float raw = atk * Coeff + Flat - def;
-            if (raw < 0f) raw = 0f;
-            if (ScaleByBuffStacks)
-                raw *= Math.Max(1, ctx.BuffStacks);
-
-            bool crit = false;
-            if (CanCrit && source != null && source.TryGetComp<AttributeSet>(out var srcAttr))
-            {
-                float rate = srcAttr.GetFinal(AttrId.CritRate);
-                if (ctx.World.Random.Next01() < rate)
-                {
-                    crit = true;
-                    raw *= CritMul > 0f ? CritMul : 2f;
-                }
-            }
-
-            float dealMul = 1f;
-            float takenMul = dstAttr.GetFinal(AttrId.DmgTakenMul);
-            if (source != null && source.TryGetComp<AttributeSet>(out var srcM))
-                dealMul = srcM.GetFinal(AttrId.DmgDealMul);
-            raw *= dealMul * takenMul;
-            if (raw < 0f) raw = 0f;
-
-            float shield = dstAttr.GetBase(AttrId.Shield);
-            float absorb = 0f;
-            if (shield > 0f)
-            {
-                absorb = raw < shield ? raw : shield;
-                dstAttr.SetBase(AttrId.Shield, shield - absorb);
-                raw -= absorb;
-            }
-
-            float hp = dstAttr.GetBase(AttrId.Hp);
-            hp -= raw;
-            if (hp < 0f) hp = 0f;
-            dstAttr.SetBase(AttrId.Hp, hp);
-
-            bool kill = hp <= 0f;
-            ctx.World.Events.Publish(new EvDamage(
-                source != null ? source.Id : EntityId.Invalid,
-                target.Id, raw + absorb, crit, absorb, kill));
-
-            if (HitstopFrames > 0 && raw + absorb > 0f)
-            {
-                ctx.World.RequestHitstop(HitstopFrames);
-                ctx.World.Events.Publish(new EvHitstop(
-                    source != null ? source.Id : EntityId.Invalid, target.Id, HitstopFrames));
-            }
-
-            if (kill && target.TryGetComp<StateMachineComp>(out var fsm))
-            {
-                fsm.TryEnter(ActivityId.Dead, new ActivityEnterArgs
-                {
-                    Reason = "Kill",
-                    Killer = source != null ? source.Id : EntityId.Invalid
-                });
-            }
-
-            if (FireOnHurted && target.TryGetComp<BuffComp>(out var buffs))
-                buffs.DispatchOnHurted(source);
-        }
-    }
-
-    public sealed class DamageAttackerEffect : IEffect
-    {
-        public DamageEffect Inner = new DamageEffect { FireOnHurted = false, CanCrit = false, UseSnapshotAtk = true };
-
-        public void Apply(ref EffectContext ctx)
-        {
-            if (ctx.Source == null) return;
-            var inner = ctx;
-            inner.Target = ctx.Source;
-            Inner.Apply(ref inner);
         }
     }
 

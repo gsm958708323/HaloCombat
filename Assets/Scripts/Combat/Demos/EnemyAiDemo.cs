@@ -14,7 +14,16 @@ namespace Combat.Demos
             var player = SeasonTwoDemoSupport.Spawn(world, "fighter", 2f, 0f);
             var board = enemy.GetComp<BehaviorTreeComp>().Board;
             var director = enemy.GetComp<SkillDirectorComp>();
-            var trace = new DemoTrace("EnemyAi", CombatCategories.EnemyAi, world, dt => SeasonTwoDemoSupport.Step(world, dt));
+            float minDistanceToHome = float.MaxValue;
+            bool observeReturn = false;
+            var trace = new DemoTrace("EnemyAi", CombatCategories.EnemyAi, world, dt =>
+            {
+                SeasonTwoDemoSupport.Step(world, dt);
+                if (!observeReturn) return;
+                var position = enemy.GetComp<TransformComp>().Position;
+                float dx = position.X - board.Home.X, dz = position.Z - board.Home.Z;
+                minDistanceToHome = Math.Min(minDistanceToHome, (float)Math.Sqrt(dx * dx + dz * dz));
+            });
             trace.Step("初始化 melee_guard 策略与 Home", () => $"{DemoTrace.Snapshot(enemy)} player={DemoTrace.Snapshot(player)}");
             bool sawAttack = false;
             // 初始距离在攻击范围附近，行为树应完成选敌并播放 G1。
@@ -30,16 +39,17 @@ namespace Combat.Demos
                 "Home=(0,0)", $"Home=({board.Home.X},{board.Home.Z})", () => DemoTrace.Snapshot(enemy));
             // 把玩家拉到远处，验证 guard 不会无限追击而是回到 Home。
             player.GetComp<TransformComp>().Position = new SimVec3(20f, 0f, 0f);
-            float minDistanceToHome = float.MaxValue;
+            // AdvanceFor's details callback runs once after all ticks. Sample the minimum
+            // in the tick callback so the later patrol phase cannot masquerade as failure to return.
+            observeReturn = true;
             trace.AdvanceFor("目标离开后 Guard 回到 Home", 0.02f, 150, () =>
             {
                 float rx = enemy.GetComp<TransformComp>().Position.X - board.Home.X;
                 float rz = enemy.GetComp<TransformComp>().Position.Z - board.Home.Z;
                 float distance = (float)Math.Sqrt(rx * rx + rz * rz);
-                if (distance < minDistanceToHome)
-                    minDistanceToHome = distance;
                 return $"distanceToHome={distance.ToString("F2")} min={minDistanceToHome.ToString("F2")} {DemoTrace.Snapshot(enemy)}";
             });
+            observeReturn = false;
             trace.Check("目标离开后回到 Home 附近", minDistanceToHome <= 0.6f && enemy.GetComp<TransformComp>().Position.X < 3f,
                 "回到 Home 附近且未越界", $"minDistance={minDistanceToHome.ToString("F2")} x={enemy.GetComp<TransformComp>().Position.X.ToString("F2")}",
                 () => DemoTrace.Snapshot(enemy));

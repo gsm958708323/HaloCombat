@@ -79,7 +79,8 @@ namespace Combat.Core
         public ActivityId Id => ActivityId.Root;
         public ActivityMotorPolicy Motor { get; } = new ActivityMotorPolicy
         {
-            Loco = new LocoProfile { MotorScale = 1f, ApplyGravity = true },
+            // External hit displacement does not require entering the Hit activity.
+            Loco = new LocoProfile { MotorScale = 1f, UseHit = true, ApplyGravity = true },
             Facing = new FacingPolicy { Mode = FacingMode.FollowStickIfGrounded }
         };
 
@@ -94,7 +95,7 @@ namespace Combat.Core
         public ActivityId Id => ActivityId.Attack;
         public ActivityMotorPolicy Motor { get; } = new ActivityMotorPolicy
         {
-            Loco = new LocoProfile { MotorScale = 0f, UseSkill = true, ApplyGravity = true },
+            Loco = new LocoProfile { MotorScale = 0f, UseSkill = true, UseHit = true, ApplyGravity = true },
             Facing = new FacingPolicy { Mode = FacingMode.SteerIfGrounded }
         };
 
@@ -176,7 +177,7 @@ namespace Combat.Core
             ctx.Loco?.ClearPendingSkill();
             ctx.Tags.Add(CommonTags.Dead, 1, TagSource.StateEnter("Dead"));
             if (ctx.Self.TryGetComp<BuffComp>(out var buffs))
-                buffs.ClearAllWithExpire();
+                buffs.ClearAll(BuffRemovalReason.Death);
             var world = ctx.Self.World;
             if (world != null)
             {
