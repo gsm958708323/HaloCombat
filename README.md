@@ -25,6 +25,8 @@ dotnet run --project Combat.csproj -- json Assets/StreamingAssets/Combat/project
 
 正式Arena的男女原角色、枪械和CharacterAnimator已从历史资源恢复。`runtime.views`具名目录与`timeline.animation`连接网页JSON和真实Animator，动作相位跟随Timeline、循环/受击跟随ActorTime，支持独立顿帧、同技能重播和重开；缺失资源/状态拒绝替换旧局。编辑方式见[角色动画配置](docs/角色动画配置.md)，实际浏览器发布和Unity证据见[角色动画验收](docs/验证/2026-11-15-actor-animation.md)。
 
+持续区域可配置前移、同队弹体吸收、水平冲量和半径增长，吸收端口与实时半径/速度/次数已接入网页。Arena的Monkey输入使用原SK2003/TL3003/AD4102；弹体可显式配置同目标间隔重击和无敌穿透，回旋往返两次命中已验收。吸收沿用逻辑步端点重叠，不是高速弹体连续拦截，详见[移动区域与重复接触验收](docs/验证/2026-11-15-area-interactions.md)。
+
 `Assets/Scenes/Arena.unity`是可直接运行的JSON入口，也位于Build Settings首位。WASD/方向键移动，鼠标瞄准，按住左键/1重复主攻击；2/右键、3/中键、5/鼠标侧键、Space/Q/E走JSON的输入绑定。Esc暂停，HUD可重开/切换训练模式。F5明确重载，F6/F7使用同一正式玩家的消耗/冷却/状态守卫；槽必须从当前正式工程发布，其他工程的槽会报错并保留当前局。首次启动只读正式文件，避免未关联的旧调试槽阻止进入。
 
 当前Arena使用已迁移技能、原角色Animator和部分内置物体模型；Fire1弹药主攻击/换弹、Fire4追踪弹重施放、Fire5木桶链爆，以及来源/目标独立顿帧和受伤反馈已经接入JSON。历史13技能其余内容、弹体/AoE/Cue/音频等剩余原资源和角色成长值仍需迁移，不能将本入口称为旧玩法/美术完整复刻。验收边界见[JSON Arena记录](docs/验证/2026-11-15-json-arena.md)、[弹药与重施放](docs/验证/2026-11-15-ammo-and-recasts.md)、[可破坏物](docs/验证/2026-11-15-constructs.md)和[独立顿帧验收](docs/验证/2026-11-15-actor-feedback.md)。

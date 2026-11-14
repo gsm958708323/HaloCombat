@@ -70,7 +70,7 @@ namespace Combat.Unity
                 : Mathf.Sin(_poseTime * 4f + Id.Index) * 0.025f;
             _visual.localPosition = new Vector3(0f, bob,Feedback.Impulse*.05f);
             if (_core != null) _core.localScale = _coreScale * (1f + Mathf.Sin(_poseTime * 8f) * 0.08f);
-            if (_ring != null) _ring.localScale = _ringScale * (1f + Mathf.Sin(_poseTime * 4f) * 0.05f);
+            if (_ring != null) _ring.localScale = _blueprint=="aoe"?_ringScale:_ringScale * (1f + Mathf.Sin(_poseTime * 4f) * 0.05f);
             for(int i=0;i<_materials.Count;i++)if(_materials[i]!=null)_materials[i].color=Color.Lerp(_baseColors[i],Color.white,Feedback.Flash*.8f);
         }
 

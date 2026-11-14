@@ -10,7 +10,7 @@ namespace Combat.Core
             if (world == null || aoe == null || body?.Def == null || body.Ending || !aoe.IsActive) return;
             world.TryGetActor(body.OwnerId, out var owner);
             var point = aoe.GetComp<TransformComp>().Position;
-            var targets = AreaTargets.Query(world, point, body.Def.Radius, owner, body.Def.HostileMask, body.Def.MaxTargets);
+            var targets = AreaTargets.Query(world, point, body.Radius, owner, body.Def.HostileMask, body.Def.MaxTargets);
             world.Events.Publish(new EvAoeLifecycle(aoe.Id, body.OwnerId, EntityId.Invalid, AoeEventKind.Pulse));
             foreach (var id in targets)
             {
@@ -36,11 +36,14 @@ namespace Combat.Core
                 if (!aoe.IsActive || _world.IsActorStopped(aoe) || !aoe.TryGetComp<AoeComp>(out var body) || body.Def == null || body.Ending) continue;
                 if (body.BornFrame == _world.Time.Frame) continue;
                 var def = body.Def;
-                double nextAge = body.Age + dt;
+                double previousAge=body.Age;double nextAge = body.Age + dt;
                 body.Age = def.Duration > 0 ? Math.Min(nextAge, def.Duration) : nextAge;
                 _world.TryGetActor(body.OwnerId, out var owner);
+                if(!AoeInteractions.Move(_world,aoe,body,(float)(body.Age-previousAge))){DespawnAoe(aoe,body,owner);continue;}
+                AoeInteractions.Absorb(_world,aoe,body,owner);
+                if(body.Ending||!aoe.IsActive)continue;
                 var point = aoe.GetComp<TransformComp>().Position;
-                var targets = AreaTargets.Query(_world, point, def.Radius, owner, def.HostileMask, def.MaxTargets);
+                var targets = AreaTargets.Query(_world, point, body.Radius, owner, def.HostileMask, def.MaxTargets);
                 if (def.TrackOccupancy) DiffOccupancy(aoe, body, targets, point);
                 if (body.Ending || !aoe.IsActive) continue;
 

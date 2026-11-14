@@ -64,6 +64,7 @@ namespace Combat.Config
                     e.Kind=="split"||e.Kind=="rejected"?e.Count+" queued / generation "+e.Generation:e.Kind+" / y="+e.Point.Y.ToString("F3",System.Globalization.CultureInfo.InvariantCulture),e.Origin);
             });
             _world.Events.Subscribe<EvAoeLifecycle>(e => Record("area-" + e.Kind.ToString().ToLowerInvariant(), Name(e.Source), Name(e.Target.IsValid ? e.Target : e.Id)));
+            _world.Events.Subscribe<EvAoeAbsorbed>(e=>Record("area-absorbed",Name(e.Area),Name(e.Projectile)+" / count="+e.Count+" / radius="+e.Radius.ToString("F3",System.Globalization.CultureInfo.InvariantCulture),e.Origin));
             _world.Events.Subscribe<EvSkillEnded>(OnSkillEnded);
             _world.Events.Subscribe<EvSkillReleased>(e => Record("released", Name(e.Source), "Power " + e.Power.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
             _world.Events.Subscribe<EvCue>(e => Record("cue", Name(e.Source), e.CueId.ToString()));
@@ -228,10 +229,10 @@ namespace Combat.Config
                 return new SkillActorSnapshot
                 {
                     Id = HitboxComp.Pack(a.Id).ToString(), Name = Name(a.Id), Kind = _kinds[HitboxComp.Pack(a.Id)], X = p.X,Y=p.Y, Z = p.Z,
-                    Hp = attr?.GetBase(AttrId.Hp), MaxHp = attr?.GetFinal(AttrId.MaxHp), Radius = projectile?.Def?.HitRadius ?? area?.Def?.Radius ?? (a.TryGetComp<LocomotionComp>(out var locomotion)?locomotion.CollisionRadius:.4f),
-                    Remaining = projectile!=null?(float?)Math.Max(0,projectile.Def.Lifetime-projectile.Age):area?.Def != null ? (float?)Math.Max(0, area.Def.Duration - area.Age) : summon!=null&&summon.Lifetime>0?(float?)Math.Max(0,summon.Lifetime-summon.Age):null,
+                    Hp = attr?.GetBase(AttrId.Hp), MaxHp = attr?.GetFinal(AttrId.MaxHp), Radius = projectile?.Def?.HitRadius ?? area?.Radius ?? (a.TryGetComp<LocomotionComp>(out var locomotion)?locomotion.CollisionRadius:.4f),
+                    Remaining = projectile!=null?(float?)Math.Max(0,projectile.Def.Lifetime-projectile.Age):area?.Def != null ? area.Def.Duration>0?(float?)Math.Max(0, area.Def.Duration - area.Age):null : summon!=null&&summon.Lifetime>0?(float?)Math.Max(0,summon.Lifetime-summon.Age):null,
                     Dead = a.TryGetComp<TagComp>(out var tags) && tags.Has(CommonTags.Dead),
-                    Owner=owner.IsValid?Name(owner):null,Blueprint=blueprint,Skill=projectile!=null?SkillName(projectile.Family.Origin):construct!=null?SkillName(construct.Origin):actorBlueprint?.SkillKey,Energy=a.TryGetComp<EnergyComp>(out var energy)?(float?)energy.Current:null,
+                    Owner=owner.IsValid?Name(owner):null,Blueprint=blueprint,Skill=projectile!=null?SkillName(projectile.Family.Origin):area!=null?SkillName(area.Origin):construct!=null?SkillName(construct.Origin):actorBlueprint?.SkillKey,Energy=a.TryGetComp<EnergyComp>(out var energy)?(float?)energy.Current:null,
                     Group=construct?.Def?.Group,DamageCap=construct?.Def?.DamageCap,NextDecay=construct?.NextDecay,
                     Stopped=_world.IsActorStopped(a),HitstopFrames=a.Time.HitstopLeft,LogicalTime=a.Time.Time,HurtLevel=hurt?reaction.Level.ToString().ToLowerInvariant():null,HurtAge=hurt?(float?)(_steps-reaction.Step)*Step:null,
                     ComboConfirmed=director?.HasComboConfirmation??false,CurrentSkill=director!=null&&director.IsPlaying?SkillName(director.CurrentOrigin):null,
@@ -239,10 +240,11 @@ namespace Combat.Config
                     ControlTags=director?.ActiveControls.Select(tag=>tag.Value).ToArray()??Array.Empty<int>(),
                     BufferedInput=a.TryGetComp<InputBufferComp>(out var buffer)&&buffer.TryPeek(out var token)?token.Action:null,
                     Ammo=a.TryGetComp<AmmoComp>(out var ammo)?(int?)ammo.Current:null,TrackingKey=projectile?.Def?.TrackingKey,
-                    CastId=projectile?.Family.Origin.CastId??construct?.Origin.CastId??(director!=null&&director.IsPlaying?director.CurrentOrigin.CastId:0),Generation=projectile?.Generation??0,ChainsLeft=projectile?.ChainsLeft??0,
+                    CastId=projectile?.Family.Origin.CastId??area?.Origin.CastId??construct?.Origin.CastId??(director!=null&&director.IsPlaying?director.CurrentOrigin.CastId:0),Generation=projectile?.Generation??0,ChainsLeft=projectile?.ChainsLeft??0,
                     Distance=projectile!=null?(float?)projectile.Distance:null,Range=projectile!=null&&!double.IsInfinity(projectile.RangeLimit)?(float?)projectile.RangeLimit:null,
                     Speed=projectile!=null?(float?)ProjectileKinematics.Speed(projectile):null,VerticalSpeed=projectile?.Def.Motion?.Bounce!=null?(float?)projectile.VerticalSpeed:null,
                     Returning=projectile?.Returning??false,GroundBouncesLeft=projectile?.GroundBouncesLeft??0,WallBouncesLeft=projectile?.WallBouncesLeft??0,
+                    AbsorbedProjectiles=area?.AbsorbedProjectiles??0,AreaVelocityX=area?.Velocity.X,AreaVelocityZ=area?.Velocity.Z,
                     Buffs=a.TryGetComp<BuffComp>(out var buffs)?buffs.Snapshot().Select(b=>new SkillBuffSnapshot{InstanceId=b.InstanceId,Id=b.Key??b.BuffId.ToString(),Name=b.Name??b.Key??b.BuffId.ToString(),
                         Source=Name(b.Source),Stacks=b.Stacks,Remaining=b.Remaining}).ToArray():Array.Empty<SkillBuffSnapshot>(),
                     Tags=a.TryGetComp<TagComp>(out var tagValues)?tagValues.Snapshot():new Dictionary<int,int>(),Attributes=Attributes(attr)

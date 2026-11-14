@@ -20,7 +20,7 @@ export interface GraphViewport { kind:'skill'|'buff';id:string;x:number;y:number
 export interface EditorMetadata { selectedSkill?:string;selectedBuff?:string;viewports?:GraphViewport[] }
 export interface Project { formatVersion: number; id: string; name: string; skills: Skill[]; buffs?:BuffDefinition[]; summonBlueprints?: SummonBlueprint[];editor?:EditorMetadata;runtime?:RuntimeContent; preview: { seed: number; energy: number; initialEnergy?: number | null; recovery: number; ammo?:number;initialAmmo?:number|null;caster: ActorInitial; targets: ActorInitial[]; obstacles?: ObstacleView[] } }
 export interface BuffView {instanceId:number;id:string;name:string;source:string;stacks:number;remaining:number|null}
-export interface ActorView { id: string; name: string; kind: string; x: number; y:number; z: number; hp: number | null; maxHp: number | null; radius: number; remaining: number | null; dead: boolean; owner: string | null; blueprint: string | null; skill: string | null; energy: number | null;ammo:number|null;trackingKey:string|null;group:string|null;damageCap:number|null;nextDecay:number|null;stopped:boolean;hitstopFrames:number;logicalTime:number;hurtLevel:string|null;hurtAge:number|null;comboConfirmed:boolean;currentSkill:string|null;bufferedInput:string|null;actionTime:number|null;actionDuration:number|null;actionRate:number;controlTags:number[];castId:number;generation:number;chainsLeft:number;distance:number|null;range:number|null;speed:number|null;verticalSpeed:number|null;returning:boolean;groundBouncesLeft:number;wallBouncesLeft:number;buffs:BuffView[];tags:Record<string,number>;attributes:Record<string,number> }
+export interface ActorView { id: string; name: string; kind: string; x: number; y:number; z: number; hp: number | null; maxHp: number | null; radius: number; remaining: number | null; dead: boolean; owner: string | null; blueprint: string | null; skill: string | null; energy: number | null;ammo:number|null;trackingKey:string|null;group:string|null;damageCap:number|null;nextDecay:number|null;stopped:boolean;hitstopFrames:number;logicalTime:number;hurtLevel:string|null;hurtAge:number|null;comboConfirmed:boolean;currentSkill:string|null;bufferedInput:string|null;actionTime:number|null;actionDuration:number|null;actionRate:number;controlTags:number[];castId:number;generation:number;chainsLeft:number;distance:number|null;range:number|null;speed:number|null;verticalSpeed:number|null;returning:boolean;groundBouncesLeft:number;wallBouncesLeft:number;absorbedProjectiles:number;areaVelocityX:number|null;areaVelocityZ:number|null;buffs:BuffView[];tags:Record<string,number>;attributes:Record<string,number> }
 export interface AreaView { sequence: number; step: number; x: number; z: number; radius: number; targets: number }
 export interface VolumeView { sequence: number; source: string; shape: string; x: number; z: number; yaw: number; length: number; width: number; angle: number }
 export interface DamageBreakdown {kind:string;target:string;base:number;scaled:number;afterDefense:number;afterCritical:number;final:number;absorbed:number;hpLost:number;overkill:number;killed:boolean;feedback:string}
@@ -56,6 +56,8 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
     { key: 'autoRelease', label: '满蓄自动释放', type: 'check', initial: true, when: p => p.mode === 'charge' }
   ] },
   projectile: { title: '效果传递', color: '#887547', inputs: ['execute'], outputs: [['hit','命中结算'],['wall','撞墙终结'],['range','射程耗尽'],['lifetime','寿命结束'],['bounce','成功反弹'],['returned','返回来源'],['ground','落地终结'],['expire','投射物结束']], fields: [
+    {key:'sameTargetDelay',label:'同目标再次命中间隔 (0=一次)',unit:'秒',min:0,max:3600,step:.01,initial:0},
+    {key:'passInvulnerable',label:'穿过无敌目标且保留命中数',type:'check',initial:false},
     {key:'trackingKey',label:'来源追踪键',type:'text',initial:''},
     {key:'trajectory',label:'飞行轨迹',type:'select',initial:'linear',options:[['linear','方向飞行'],['accelerate','加减速'],['ramp','渐进加速曲线'],['return','回旋返回'],['bounce','地面弹跳']]},
     {key:'rampTime',label:'加速时间尺度',unit:'秒',min:.001,max:3600,step:.01,initial:5,when:p=>p.trajectory==='ramp'},
@@ -146,7 +148,7 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
   ]},
   heal:{title:'恢复生命',color:'#597f76',inputs:['execute'],outputs:[['next','继续']],fields:[{key:'amount',label:'恢复量',min:0,max:1000000,step:1,initial:10}]},
   'buff-events':{title:'Buff 生命周期',color:'#537760',inputs:[],outputs:[['apply','首次施加'],['stack','实际增层'],['period','周期'],['expire','自然到期'],['hurt','持有者受击'],['cast','持有者施法'],['removed','移除清理']],fields:[]},
-  delivery: { title: '目标 / 区域 / 动作', color: '#887547', inputs: ['execute'], outputs: [['apply','作用效果'],['enter','进入区域'],['exit','离开区域'],['stay','区域停留'],['expire','自然到期'],['wall','撞墙'],['complete','完成'],['removed','移除']], fields: [
+  delivery: { title: '目标 / 区域 / 动作', color: '#887547', inputs: ['execute'], outputs: [['apply','作用效果'],['enter','进入区域'],['exit','离开区域'],['stay','区域停留'],['expire','自然到期'],['wall','撞墙'],['complete','完成'],['removed','移除'],['absorb','吸收弹体']], fields: [
     { key:'mode', label:'传递方式', type:'select', initial:'target', options:[['target','目标作用'],['area','区域作用'],['melee','近战判定'],['displacement','位移攻击'],['ray','射线判定'],['summon','召唤分身']] },
     { key:'recipient', label:'作用目标', type:'select', initial:'target', options:[['target','当前目标'],['self','施法者自身']],when:p=>!p.mode||p.mode==='target' },
     { key:'center',label:'作用中心',type:'select',initial:'point',options:[['point','事件 / 指定点'],['target','当前目标位置'],['source','来源位置'],['auto','指定点或来源']],when:p=>p.mode==='area'||p.mode==='summon' },
@@ -154,10 +156,17 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
     {key:'hostileMask',label:'目标阵营掩码 (0=敌对)',min:0,max:2147483647,step:1,initial:0,when:p=>p.mode==='area'},
     { key:'maxTargets',label:'目标上限 (0=全部)',min:0,max:128,step:1,initial:0,when:p=>p.mode==='area'||p.mode==='melee'||p.mode==='displacement'||(p.mode==='ray'&&p.pierce===true) },
     { key:'persistent',label:'持续区域',type:'check',initial:false,when:p=>p.mode==='area' },
-    { key:'permanent',label:'永久召唤',type:'check',initial:false,when:p=>p.mode==='summon' },
-    { key:'duration',label:'持续时间',unit:'秒',min:.02,max:120,step:.02,initial:2,when:p=>(p.mode==='area'&&p.persistent===true)||(p.mode==='summon'&&p.permanent!==true) },
+    { key:'permanent',label:'永久存在',type:'check',initial:false,when:p=>p.mode==='summon'||p.mode==='area'&&p.persistent===true },
+    { key:'duration',label:'持续时间',unit:'秒',min:.02,max:120,step:.02,initial:2,when:p=>p.permanent!==true&&(p.mode==='area'&&p.persistent===true||p.mode==='summon') },
     { key:'interval',label:'脉冲间隔 (0=关闭)',unit:'秒',min:0,max:10,step:.001,initial:.5,when:p=>p.mode==='area'&&p.persistent===true },
     { key:'pulseOnSpawn',label:'生成时脉冲',type:'check',initial:true,when:p=>p.mode==='area'&&p.persistent===true },
+    {key:'forwardOffset',label:'区域出生前移',unit:'米',min:0,max:100,step:.01,initial:0,when:p=>p.mode==='area'&&p.persistent===true},
+    {key:'areaMotion',label:'区域运动',type:'select',initial:'static',options:[['static','固定位置'],['forward','朝向前移 + 吸收冲量']],when:p=>p.mode==='area'&&p.persistent===true},
+    {key:'moveSpeed',label:'区域基础速度',unit:'米/秒',min:0,max:1000,step:.1,initial:.1,when:p=>p.mode==='area'&&p.persistent===true&&p.areaMotion==='forward'},
+    {key:'removeOnObstacle',label:'区域碰障移除',type:'check',initial:true,when:p=>p.mode==='area'&&p.persistent===true&&p.areaMotion==='forward'},
+    {key:'absorbProjectiles',label:'吸收同队弹体',type:'check',initial:false,when:p=>p.mode==='area'&&p.persistent===true},
+    {key:'absorbForce',label:'弹体速度转为冲量系数',min:0,max:10,step:.01,initial:.05,when:p=>p.mode==='area'&&p.persistent===true&&p.absorbProjectiles===true},
+    {key:'radiusPerProjectile',label:'每次吸收半径增幅',unit:'×基础半径',min:0,max:10,step:.01,initial:.05,when:p=>p.mode==='area'&&p.persistent===true&&p.absorbProjectiles===true},
     { key:'shape',label:'判定形状',type:'select',initial:'thrust',options:[['thrust','刺击'],['fan','扇形横扫'],['circle','360° 旋风']],when:p=>p.mode==='melee' },
     { key:'length',label:'攻击距离',unit:'米',min:.1,max:1000,step:.1,initial:3,when:p=>p.mode==='melee'||p.mode==='ray' },
     { key:'width',label:'判定宽度',unit:'米',min:.01,max:100,step:.01,initial:1,when:p=>p.mode==='ray'||(p.mode==='melee'&&(!p.shape||p.shape==='thrust')) },
@@ -210,7 +219,7 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
 export function nodeOutputs(node: GraphNode): [string,string][] {
   const ports=kinds[node.kind]?.outputs??[];
   if(node.kind!=='delivery')return ports;
-  const allowed=node.parameters.mode==='summon'?['apply','expire','removed']:node.parameters.mode==='ray'?['apply','wall','complete']:node.parameters.mode==='area'&&node.parameters.persistent===true?['apply','enter','exit','stay','expire']:['apply'];
+  const allowed=node.parameters.mode==='summon'?['apply','expire','removed']:node.parameters.mode==='ray'?['apply','wall','complete']:node.parameters.mode==='area'&&node.parameters.persistent===true?['apply','enter','exit','stay','expire',...(node.parameters.absorbProjectiles===true?['absorb']:[])]:['apply'];
   return ports.filter(([port])=>allowed.includes(port));
 }
 export const deliveryLabel = (node: GraphNode) => node.kind==='projectile'?'投射物':node.kind==='construct'?'可破坏物':node.parameters.mode==='summon'?'召唤分身':node.parameters.mode==='area'?(node.parameters.persistent?'持续区域':'瞬时区域'):node.parameters.mode==='ray'?'射线判定':node.parameters.mode==='melee'?'近战判定':node.parameters.mode==='displacement'?(node.parameters.movementMode==='blink'?'闪现打击':'冲刺打击'):'目标作用';

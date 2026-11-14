@@ -187,7 +187,7 @@ test('real transformed project is exported for the C# compiler and HTTP validati
   let p=example();p=edits.renameContent(p,'skill','basic-shot','authoring-basic');p=edits.renameContent(p,'buff','burn','authoring-burn');p=edits.renameContent(p,'blueprint','echo-gunner','authoring-summon');
   const duplicate=edits.duplicateContent(p,'skill','authoring-basic','作者复制验证',ids());p=edits.selectGraph(duplicate.project,duplicate.id);
   const output=path.resolve(__dirname,'../../.local/verification');fs.mkdirSync(output,{recursive:true});fs.writeFileSync(path.join(output,'authoring-transformed.json'),JSON.stringify(p,null,2));
-  assert.equal(p.skills.length,43);
+  assert.equal(p.skills.length,45);
 });
 
 
@@ -199,4 +199,19 @@ test('merge keeps each imported actor bound to its own view and preserves action
   const view=next.runtime.views.find(v=>v.id===imported.view);assert.equal(view.resource,'Combat/Actors/FemaleGunner');assert.equal(view.states.Fire,'Base Layer.Fire');
   assert.equal(next.skills.slice(p.skills.length).find(s=>s.name===p.skills.find(s=>s.id==='arena-reload-ammo').name).timeline.animation,'Reload');
   assert.equal(JSON.stringify(p),before);
+});
+
+
+test('copying a moving absorption area preserves its independent definition and absorb branch',()=>{
+  const p=example(),s=p.skills.find(s=>s.id==='absorbing-orb'),area=s.nodes.find(n=>n.id==='orb');
+  s.nodes.push({id:'absorb-cue',kind:'cue',position:{x:900,y:400},parameters:{id:101,name:'Absorb'}});s.edges.push({id:'absorb-branch',source:area.id,sourcePort:'absorb',target:'absorb-cue',targetPort:'execute',order:0});
+  const copy=edits.duplicateContent(p,'skill',s.id,'copy',ids()).project.skills.at(-1),other=copy.nodes.find(n=>n.kind==='delivery');
+  assert.notEqual(other.runtimeId,area.runtimeId);assert.equal(other.parameters.areaMotion,'forward');assert.equal(other.parameters.absorbForce,.05);assert(copy.edges.some(e=>e.source===other.id&&e.sourcePort==='absorb'));
+  other.parameters.radiusPerProjectile=1;assert.equal(area.parameters.radiusPerProjectile,.05);
+});
+
+test('repeat-contact projectile policy survives merge and clipboard graph transfer',()=>{
+  const p=example(),next=mergeProjects(p,p,ids()),imported=next.skills.slice(p.skills.length).find(s=>s.name===p.skills.find(s=>s.id==='repeat-contact').name);
+  const shot=imported.nodes.find(n=>n.kind==='projectile');assert.equal(shot.parameters.sameTargetDelay,.15);assert.equal(shot.parameters.passInvulnerable,true);
+  const copy=graph.copySelection(imported,[shot.id]);assert.equal(copy.nodes[0].parameters.sameTargetDelay,.15);
 });

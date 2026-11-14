@@ -54,7 +54,7 @@ namespace Combat.Core
         public EvProjectileBehavior(EntityId source,EntityId projectile,string kind,SimVec3 point,EntityId target,int count,int generation,SkillOrigin origin)
         {Source=source;Projectile=projectile;Kind=kind;Point=point;Target=target;Count=count;Generation=generation;Origin=origin;}
     }
-    public enum ProjectileEndReason {HitLimit,Wall,Range,Lifetime,ChainExhausted,Returned,Ground}
+    public enum ProjectileEndReason {HitLimit,Wall,Range,Lifetime,ChainExhausted,Returned,Ground,Absorbed}
     public readonly struct EvProjectileEnded
     {
         public readonly EntityId Source,Id;

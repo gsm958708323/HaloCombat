@@ -52,6 +52,18 @@ namespace Combat.Tests
                 if(value is DamageEffect&&field.Name=="Feedback"&&(HitFeedbackLevel)field.GetValue(value)==HitFeedbackLevel.None)continue;
                 // The pre-tracking fixture has no tracking metadata; live routing is tested separately.
                 if(value is ProjectileDefinition&&field.Name=="TrackingKey"&&string.IsNullOrEmpty((string)field.GetValue(value)))continue;
+                // Static baseline definitions predate moving-area/contact extensions;
+                // only neutral defaults are excluded, with behavior covered independently.
+                if(value is ProjectileDefinition&&field.Name=="SameTargetDelay"&&(float)field.GetValue(value)==0)continue;
+                if(value is ProjectileDefinition&&field.Name=="PassInvulnerable"&&!(bool)field.GetValue(value))continue;
+                if(value is SpawnAoeEffect&&field.Name=="_forwardOffset"&&(float)field.GetValue(value)==0)continue;
+                if(value is AoeDefinition area)
+                {
+                    if((field.Name=="MoveForward"||field.Name=="AbsorbProjectiles")&&!(bool)field.GetValue(value))continue;
+                    if(field.Name=="RemoveOnObstacle"&&(bool)field.GetValue(value))continue;
+                    if((field.Name=="MoveSpeed"||field.Name=="ProjectileAbsorbForce"||field.Name=="ProjectileRadiusScale")&&(float)field.GetValue(value)==0)continue;
+                    if(field.Name=="OnAbsorb"&&area.OnAbsorb.Length==0)continue;
+                }
                 // The old circle wrapper used implicit hostility; zero preserves that rule.
                 if(value is CircleEffects&&field.Name=="_mask"&&(int)field.GetValue(value)==0)continue;
                 fields[field.Name]=Shape(field.GetValue(value),depth+1);

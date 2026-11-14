@@ -141,7 +141,7 @@ namespace Combat.Config
         {
             var p=new NodeParameters(node,path,"speed","range","lifetime","radius","maxHits","homingRate",
                 "multi","count","spread","chain","chainCount","chainRadius","chainMode","homingRetarget","homingRadius",
-                "trajectory","acceleration","maxSpeed","returnAfter","returnSpeed","catchRadius","launchHeight","verticalSpeed","gravity","restitution","groundBounces","wallBounces","spawnForward","snapshotAttack","hostileMask","cueId","homingMaxTurn","trackingKey","rampTime");
+                "trajectory","acceleration","maxSpeed","returnAfter","returnSpeed","catchRadius","launchHeight","verticalSpeed","gravity","restitution","groundBounces","wallBounces","spawnForward","snapshotAttack","hostileMask","cueId","homingMaxTurn","trackingKey","rampTime","sameTargetDelay","passInvulnerable");
             CheckId(node,path,_projectiles,"projectile");
             int projectileCue=p.Integer("cueId",0,0,1000000);if(projectileCue>0)_content.RequiredCues.Add(projectileCue);
             int maxHits=p.Integer("maxHits",1,0,10000);
@@ -165,6 +165,7 @@ namespace Combat.Config
                 SpecId=node.RuntimeId,Speed=speed,Range=p.Number("range",24,0,1000),Lifetime=p.Number("lifetime",120,.001f,3600),Motion=motion,TrackingKey=p.OptionalIdentity("trackingKey"),
                 SpawnForward=p.Number("spawnForward",.4f,0,100),SnapshotAtk=p.Boolean("snapshotAttack",true),HostileMask=p.Integer("hostileMask",0,0,int.MaxValue),CueId=projectileCue,HomingMaxTurn=p.Number("homingMaxTurn",0,0,10000),
                 HitRadius=p.Number("radius",.18f,.01f,100),MaxHits=maxHits,Chain=chain,
+                SameTargetDelay=p.Number("sameTargetDelay",0,0,3600),PassInvulnerable=p.Boolean("passInvulnerable",false),
                 HomingRate=p.Number("homingRate",0,0,10000),HomingRetarget=p.Boolean("homingRetarget",false),HomingAcquireRadius=p.Number("homingRadius",12,.01f,1000),
                 OnHit=Outputs(node,"hit"),OnWall=Outputs(node,"wall"),OnRange=Outputs(node,"range"),OnExpire=Outputs(node,"lifetime"),OnEnd=Outputs(node,"expire"),
                 OnBounce=Outputs(node,"bounce"),OnReturned=Outputs(node,"returned"),OnGround=Outputs(node,"ground")
@@ -177,11 +178,12 @@ namespace Combat.Config
         IEffect Delivery(SkillNodeDocument node, string path)
         {
             var p = new NodeParameters(node, path, "mode", "recipient", "center", "radius", "maxTargets", "persistent", "duration", "interval", "pulseOnSpawn",
-                "shape","length","width","angle","startup","activeDuration","movementMode","distance","speed","hitRadius","pierce","blueprint","count","spacing","maxAlive","permanent","cueId","hostileMask");
+                "shape","length","width","angle","startup","activeDuration","movementMode","distance","speed","hitRadius","pierce","blueprint","count","spacing","maxAlive","permanent","cueId","hostileMask",
+                "areaMotion","moveSpeed","removeOnObstacle","absorbProjectiles","absorbForce","radiusPerProjectile","forwardOffset");
             string mode = p.Choice("mode", "target", "target", "area","ray","summon");
             if(mode=="summon")
             {
-                _graph.RequireNoOutputs(node,"enter","exit","stay","wall","complete");
+                _graph.RequireNoOutputs(node,"enter","exit","stay","wall","complete","absorb");
                 string key=p.Text("blueprint");
                 if(!_content.Blueprints.TryGet(key,out var blueprint))throw new ContentValidationException(path+".parameters.blueprint","Unknown summon blueprint: "+key);
                 CheckId(node,path,_summons,"summon");
@@ -198,13 +200,13 @@ namespace Combat.Config
             _graph.RequireNoOutputs(node,"removed");
             if(mode=="ray")
             {
-                _graph.RequireNoOutputs(node,"enter","exit","stay","expire");
+                _graph.RequireNoOutputs(node,"enter","exit","stay","expire","absorb");
                 return new RayStrikeEffect(Outputs(node,"apply"),Outputs(node,"wall"),Outputs(node,"complete"),
                     p.Number("length",20,.01f,1000),p.Number("width",.3f,.01f,100),p.Boolean("pierce",false),p.Integer("maxTargets",0,0,128));
             }
             _graph.RequireNoOutputs(node,"wall","complete");
             bool persistent = mode == "area" && p.Boolean("persistent", false);
-            if (!persistent) _graph.RequireNoOutputs(node, "enter", "exit", "stay", "expire");
+            if (!persistent) _graph.RequireNoOutputs(node, "enter", "exit", "stay", "expire","absorb");
             var apply = Outputs(node, "apply");
             if (!persistent && apply.Length == 0) throw new ContentValidationException(path, "Delivery needs an enabled apply effect.");
             if (mode == "target") return new TargetEffects(apply, p.Choice("recipient", "target", "target", "self") == "self");
@@ -215,17 +217,22 @@ namespace Combat.Config
             int areaCue=p.Integer("cueId",0,0,1000000);if(areaCue>0)_content.RequiredCues.Add(areaCue);
             var enter = Outputs(node, "enter"); var exit = Outputs(node, "exit"); var stay = Outputs(node, "stay");
             var expire = Outputs(node, "expire");
-            if (apply.Length + enter.Length + exit.Length + stay.Length + expire.Length == 0)
+            bool absorb=p.Boolean("absorbProjectiles",false);
+            if(!absorb)_graph.RequireNoOutputs(node,"absorb");
+            var absorbed=Outputs(node,"absorb");
+            if (apply.Length + enter.Length + exit.Length + stay.Length + expire.Length == 0&&!absorb)
                 throw new ContentValidationException(path, "Persistent area needs a lifecycle effect.");
             _content.Aoes.Register(new AoeDefinition
             {
-                SpecId = node.RuntimeId, Radius = radius, Duration = p.Number("duration", 2, .02f, 120),
+                SpecId = node.RuntimeId, Radius = radius, Duration = p.Boolean("permanent",false)?0:p.Number("duration", 2, .02f, 120),
                 PulseInterval = p.Number("interval", .5f, 0, 60), PulseOnSpawn = p.Boolean("pulseOnSpawn", true), MaxTargets = maximum,
                 CueId=areaCue,HostileMask=p.Integer("hostileMask",0,0,int.MaxValue),
                 TrackOccupancy = enter.Length + exit.Length + stay.Length > 0,
+                MoveForward=p.Choice("areaMotion","static","static","forward")=="forward",MoveSpeed=p.Number("moveSpeed",0,0,1000),RemoveOnObstacle=p.Boolean("removeOnObstacle",true),
+                AbsorbProjectiles=absorb,ProjectileAbsorbForce=absorb?p.Number("absorbForce",.05f,0,10):0,ProjectileRadiusScale=absorb?p.Number("radiusPerProjectile",.05f,0,10):0,OnAbsorb=absorbed,
                 OnPulse = apply, OnEnter = enter, OnExit = exit, OnStay = stay, OnExpire = expire
             });
-            return new SpawnAoeEffect(node.RuntimeId, center);
+            return new SpawnAoeEffect(node.RuntimeId, center,p.Number("forwardOffset",0,0,100));
         }
 
         void Spatial(SkillNodeDocument node)
@@ -234,7 +241,7 @@ namespace Combat.Config
             var p=new NodeParameters(node,path,"mode","recipient","center","radius","maxTargets","persistent","duration","interval","pulseOnSpawn",
                 "shape","length","width","angle","startup","activeDuration","movementMode","distance","speed","hitRadius","pierce","blueprint","count","spacing","maxAlive");
             string mode=p.Choice("mode","melee","melee","displacement");
-            _graph.RequireNoOutputs(node,"enter","exit","stay","expire","wall","complete","removed");
+            _graph.RequireNoOutputs(node,"enter","exit","stay","expire","wall","complete","removed","absorb");
             var effects=Outputs(node,"apply");
             if(effects.Length==0)throw new ContentValidationException(path,"Action needs an enabled apply effect.");
             float start=p.Number("startup",.1f,0,60);int maximum=p.Integer("maxTargets",0,0,128);

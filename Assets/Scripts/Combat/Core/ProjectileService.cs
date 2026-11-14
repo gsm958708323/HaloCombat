@@ -103,10 +103,14 @@ namespace Combat.Core
                 foreach(var hit in LineTargeting.Query(_world,owner,from,to,def.HitRadius,def.HostileMask))
                 {
                     if(hit.Fraction>=limit-.000001f&&(obstacle.Blocked||catchFraction<=1))break;
-                    if(!AreaTargets.TryLive(_world,hit.Target,out var victim)||!body.TryRecord(hit.Target))continue;
+                    if(!AreaTargets.TryLive(_world,hit.Target,out var victim))continue;
                     double path=distance*hit.Fraction-spentDistance;
                     double time=ProjectileKinematics.Time(body,path,elapsed-spentTime);
+                    if(!body.CanHit(hit.Target,body.Age+time))continue;
+                    if(def.PassInvulnerable&&(victim.GetComp<TagComp>().Has(CommonTags.Invincible)||victim.TryGetComp<HealthComp>(out var health)&&health.InIFrame))
+                    {if(owner!=null&&owner.TryGetComp<SkillDirectorComp>(out var director))director.GrantComboConfirm(victim,body.Family.Origin);continue;}
                     ProjectileKinematics.Advance(body,transform,transform.Position,direction,time,path);
+                    if(!body.TryRecord(hit.Target))continue;
                     spentDistance+=path;spentTime+=time;timeLeft-=time;body.HitCount++;body.LegHits++;
                     float attack=Attack(body,owner);
                     var context=new ProjectileHitContext(projectile,body,transform.Position,transform.YawDegrees,attack);

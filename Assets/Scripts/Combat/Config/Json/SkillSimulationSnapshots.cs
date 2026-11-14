@@ -69,6 +69,9 @@ namespace Combat.Config
         public bool Returning {get;internal set;}
         public int GroundBouncesLeft {get;internal set;}
         public int WallBouncesLeft {get;internal set;}
+        public int AbsorbedProjectiles {get;internal set;}
+        public float? AreaVelocityX {get;internal set;}
+        public float? AreaVelocityZ {get;internal set;}
         public SkillBuffSnapshot[] Buffs {get;internal set;}
         public Dictionary<int,int> Tags {get;internal set;}
         public Dictionary<string,float> Attributes {get;internal set;}

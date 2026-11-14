@@ -147,7 +147,8 @@ namespace Combat.Core
     {
         readonly int _specId;
         readonly EffectCenter _center;
-        public SpawnAoeEffect(int specId, EffectCenter center = EffectCenter.Auto) { _specId = specId; _center = center; }
+        readonly float _forwardOffset;
+        public SpawnAoeEffect(int specId, EffectCenter center = EffectCenter.Auto,float forwardOffset=0) { _specId = specId; _center = center;_forwardOffset=forwardOffset; }
 
         public void Apply(ref EffectContext ctx)
         {
@@ -164,9 +165,10 @@ namespace Combat.Core
             var id = ctx.World.SpawnActor(new ActorSpawnSpec("aoe"), publishSpawn: false);
             if (!ctx.World.TryGetActor(id, out var aoe) || aoe == null) return;
 
-            aoe.GetComp<TransformComp>().Position = origin;
-            if (ctx.Source != null && ctx.Source.TryGetComp<TransformComp>(out var yawSrc))
-                aoe.GetComp<TransformComp>().YawDegrees = yawSrc.YawDegrees;
+            float yaw=ctx.HasDir?LocomotionComp.YawFromStick(ctx.Dir):ctx.Source!=null&&ctx.Source.TryGetComp<TransformComp>(out var sourceTransform)?sourceTransform.YawDegrees:0;
+            var direction=LocomotionComp.ForwardFromYaw(yaw);
+            aoe.GetComp<TransformComp>().Position = new SimVec3(origin.X+direction.X*_forwardOffset,origin.Y,origin.Z+direction.Z*_forwardOffset);
+            aoe.GetComp<TransformComp>().YawDegrees=yaw;
             CopyTeam(ctx.Source, aoe);
 
             var body = aoe.GetComp<AoeComp>();

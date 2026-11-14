@@ -1519,6 +1519,137 @@
         ],
         "animation": "Fire"
       }
+    },
+    {
+      "id": "arena-absorbing-orb",
+      "runtimeId": 2003,
+      "name": "移动吸收球",
+      "category": "Arena 原技能",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "facing",
+            "range": 20
+          }
+        },
+        {
+          "id": "orb",
+          "kind": "delivery",
+          "position": {
+            "x": 600,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "area",
+            "persistent": true,
+            "center": "source",
+            "radius": 0.25,
+            "duration": 100,
+            "interval": 0.45,
+            "pulseOnSpawn": true,
+            "areaMotion": "forward",
+            "moveSpeed": 0.1,
+            "removeOnObstacle": true,
+            "forwardOffset": 0.5,
+            "absorbProjectiles": true,
+            "absorbForce": 0.05,
+            "radiusPerProjectile": 0.05
+          },
+          "runtimeId": 4102
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 900,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 0,
+            "coefficient": 0.2,
+            "canCrit": true,
+            "critChance": 0.05,
+            "critMultiplier": 1.8,
+            "notifyHurt": false,
+            "sourceHitstopFrames": 0,
+            "targetHitstopFrames": 2,
+            "feedback": "light"
+          }
+        },
+        {
+          "id": "hurt",
+          "kind": "hurt-feedback",
+          "position": {
+            "x": 1200,
+            "y": 80
+          },
+          "parameters": {
+            "level": "light",
+            "requireHpDamage": true
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 300,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 0,
+            "cooldown": 0,
+            "ammoCost": 3
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "orb-enter-damage",
+          "source": "orb",
+          "sourcePort": "enter",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "damage-next-hurt",
+          "source": "damage",
+          "sourcePort": "next",
+          "target": "hurt",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ],
+      "timeline": {
+        "runtimeId": 3003,
+        "duration": 0.5,
+        "animation": "Fire",
+        "clips": [],
+        "payloads": [
+          {
+            "id": "spawn",
+            "time": 0.1,
+            "effects": [
+              "orb"
+            ]
+          }
+        ]
+      }
     }
   ],
   "buffs": [
@@ -1935,6 +2066,14 @@
         ],
         "priority": 10,
         "toSkill": "g1"
+      },
+      {
+        "id": "arena-orb-root",
+        "input": "ArenaOrb",
+        "preSkills": [],
+        "requiredTags": [],
+        "priority": 0,
+        "toSkill": "arena-absorbing-orb"
       }
     ],
     "actors": [
@@ -2168,7 +2307,7 @@
         },
         {
           "action": "Monkey",
-          "input": "ArenaSummon"
+          "input": "ArenaOrb"
         },
         {
           "action": "Fire4",

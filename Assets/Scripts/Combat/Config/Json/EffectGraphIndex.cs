@@ -92,7 +92,7 @@ namespace Combat.Config
                 bool valid = (kind == "target" && edge.SourcePort == "target" && edge.TargetPort == "target")
                     || (kind == "cast" && edge.SourcePort == "cast" && edge.TargetPort == "execute")
                     || (kind == "projectile" && Array.IndexOf(new[]{"hit","wall","range","lifetime","expire","bounce","returned","ground"},edge.SourcePort)>=0 && edge.TargetPort == "execute")
-                    || (kind == "delivery" && Array.IndexOf(new[] { "apply", "enter", "exit", "stay", "expire","wall","complete","removed" }, edge.SourcePort) >= 0 && edge.TargetPort == "execute")
+                    || (kind == "delivery" && Array.IndexOf(new[] { "apply", "enter", "exit", "stay", "expire","wall","complete","removed","absorb" }, edge.SourcePort) >= 0 && edge.TargetPort == "execute")
                     || (kind=="buff-events"&&Array.IndexOf(new[]{"apply","stack","period","expire","hurt","cast","removed"},edge.SourcePort)>=0&&edge.TargetPort=="execute")
                     || (kind=="skill-events"&&Array.IndexOf(new[]{"hit","critical","kill","completed","wall","range","projectile-end"},edge.SourcePort)>=0&&edge.TargetPort=="execute")
                     || (kind=="construct"&&Array.IndexOf(new[]{"apply","death","removed"},edge.SourcePort)>=0&&edge.TargetPort=="execute")

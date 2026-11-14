@@ -22,6 +22,8 @@ namespace Combat.Core
         public ProjectileChainDefinition Chain;
         public ProjectileMotionDefinition Motion;
         public string TrackingKey;
+        public float SameTargetDelay;
+        public bool PassInvulnerable;
         public IEffect[] OnHit = Array.Empty<IEffect>();
         public IEffect[] OnExpire = Array.Empty<IEffect>();
         public IEffect[] OnWall = Array.Empty<IEffect>();
@@ -43,6 +45,13 @@ namespace Combat.Core
         public int MaxTargets;
         public int HostileMask;
         public int CueId;
+        public bool MoveForward;
+        public float MoveSpeed;
+        public bool RemoveOnObstacle=true;
+        public bool AbsorbProjectiles;
+        public float ProjectileAbsorbForce;
+        public float ProjectileRadiusScale;
+        public IEffect[] OnAbsorb=Array.Empty<IEffect>();
         public IEffect[] OnPulse = Array.Empty<IEffect>();
         public IEffect[] OnEnter = Array.Empty<IEffect>();
         public IEffect[] OnExit = Array.Empty<IEffect>();
@@ -77,6 +86,7 @@ namespace Combat.Core
     public sealed class ProjectileComp : Comp
     {
         readonly HashSet<EntityId> _hits = new HashSet<EntityId>();
+        readonly Dictionary<EntityId,double> _nextHit=new Dictionary<EntityId,double>();
         public EntityId OwnerId { get; private set; }
         public float SnapshotAtk { get; private set; }
         public float Power { get; private set; } = 1;
@@ -116,14 +126,17 @@ namespace Combat.Core
             Exhausted = false;
             HomingTarget = homingTarget;
             _hits.Clear();
+            _nextHit.Clear();
             if(seed!=null)foreach(var id in seed.Ancestors)_hits.Add(id);
         }
 
         public bool TryRecord(EntityId id)
         {
-            if (!id.IsValid || Exhausted) return false;
-            return _hits.Add(id);
+            if(!CanHit(id,Age))return false;
+            _hits.Add(id);float delay=Def?.SameTargetDelay??0;if(delay>0)_nextHit[id]=Age+delay;return true;
         }
+        public bool CanHit(EntityId id,double atAge)=>id.IsValid&&!Exhausted&&
+            (!_hits.Contains(id)||(Def?.SameTargetDelay??0)>0&&_nextHit.TryGetValue(id,out double next)&&atAge+.0000001>=next);
         public bool HasHit(EntityId id)=>_hits.Contains(id);
         internal EntityId[] Visited()
         {
@@ -134,6 +147,7 @@ namespace Combat.Core
         {
             if(Self.World!=null&&Self.World.TryGetActor(OwnerId,out var owner)&&owner.TryGetComp<TrackedProjectilesComp>(out var tracker))tracker.ClearIf(Def?.TrackingKey,Self.Id);
             _hits.Clear();
+            _nextHit.Clear();
             Def = null;
             Exhausted = true;
             Power = 1;
@@ -154,6 +168,12 @@ namespace Combat.Core
         public int BornFrame { get; private set; }
         public SkillOrigin Origin {get;private set;}
         public HashSet<long> Inside => _inside;
+        public float BaseRadius {get;private set;}
+        public float Radius=>BaseRadius*(1+AbsorbedProjectiles*(Def?.ProjectileRadiusScale??0));
+        public int AbsorbedProjectiles {get;private set;}
+        public SimVec3 Velocity {get;private set;}
+        internal void Absorb(SimVec3 velocity)
+        {AbsorbedProjectiles++;Velocity=new SimVec3(Velocity.X+velocity.X*Def.ProjectileAbsorbForce,0,Velocity.Z+velocity.Z*Def.ProjectileAbsorbForce);}
 
         public void Setup(AoeDefinition def, EntityId owner, float snapshotAtk, int bornFrame, float power = 1,SkillOrigin origin=default)
         {
@@ -165,6 +185,7 @@ namespace Combat.Core
             Age = 0f;
             NextPulse = 1;
             BornFrame = bornFrame;
+            BaseRadius=def?.Radius??0;AbsorbedProjectiles=0;Velocity=SimVec3.Zero;
             _inside = (def != null && def.TrackOccupancy) ? new HashSet<long>() : null;
         }
 
@@ -173,6 +194,7 @@ namespace Combat.Core
             _inside?.Clear();
             Def = null;
             Power = 1; Ending = true;
+            BaseRadius=0;AbsorbedProjectiles=0;Velocity=SimVec3.Zero;OwnerId=EntityId.Invalid;Origin=default;
         }
     }
 

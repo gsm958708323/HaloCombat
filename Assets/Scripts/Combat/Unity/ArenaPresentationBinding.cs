@@ -56,7 +56,7 @@ namespace Combat.Unity
                 Camera.transform.position=target+new Vector3(0,definition.CameraHeight,-definition.CameraDistance);Camera.transform.LookAt(target);Camera.fieldOfView=definition.CameraFov;
             }
             foreach(var body in _root.GetComponentsInChildren<UnityActorView>())
-                if(_session.World.TryGetActor(body.Id,out var actor)&&actor.TryGetComp<AoeComp>(out var area))body.SetAreaRadius(area.Def?.Radius??1);
+                if(_session.World.TryGetActor(body.Id,out var actor)&&actor.TryGetComp<AoeComp>(out var area))body.SetAreaRadius(area.Radius);
         }
         public void Dispose()
         {

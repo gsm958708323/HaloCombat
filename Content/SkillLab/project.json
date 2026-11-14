@@ -4334,6 +4334,233 @@
           }
         ]
       }
+    },
+    {
+      "id": "absorbing-orb",
+      "runtimeId": 2043,
+      "name": "吸收移动球",
+      "category": "持续区域与接触",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "facing",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 300,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 0,
+            "cooldown": 0.1,
+            "delay": 0.1,
+            "duration": 0.5,
+            "ammoCost": 3
+          }
+        },
+        {
+          "id": "orb",
+          "kind": "delivery",
+          "position": {
+            "x": 600,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "area",
+            "persistent": true,
+            "center": "source",
+            "radius": 0.25,
+            "duration": 100,
+            "interval": 0.45,
+            "pulseOnSpawn": true,
+            "areaMotion": "forward",
+            "moveSpeed": 0.1,
+            "removeOnObstacle": true,
+            "forwardOffset": 0.5,
+            "absorbProjectiles": true,
+            "absorbForce": 0.05,
+            "radiusPerProjectile": 0.05
+          },
+          "runtimeId": 6501
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 900,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 0,
+            "coefficient": 0.2,
+            "canCrit": true,
+            "critChance": 0.05,
+            "critMultiplier": 1.8,
+            "notifyHurt": false,
+            "sourceHitstopFrames": 0,
+            "targetHitstopFrames": 2,
+            "feedback": "light"
+          }
+        },
+        {
+          "id": "hurt",
+          "kind": "hurt-feedback",
+          "position": {
+            "x": 1200,
+            "y": 80
+          },
+          "parameters": {
+            "level": "light",
+            "requireHpDamage": true
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-cast-orb",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "orb",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "orb-enter-damage",
+          "source": "orb",
+          "sourcePort": "enter",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "damage-next-hurt",
+          "source": "damage",
+          "sourcePort": "next",
+          "target": "hurt",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "repeat-contact",
+      "runtimeId": 2044,
+      "name": "回旋弹重复接触",
+      "category": "持续区域与接触",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "projectile",
+          "kind": "projectile",
+          "runtimeId": 6502,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "speed": 12,
+            "range": 24,
+            "radius": 0.18,
+            "homingRate": 0,
+            "maxHits": 0,
+            "returnAfter": 0.6,
+            "catchRadius": 0.4,
+            "returnSpeed": 16,
+            "trajectory": "return",
+            "sameTargetDelay": 0.15,
+            "passInvulnerable": true
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 80,
+            "coefficient": 0,
+            "critChance": 0,
+            "critMultiplier": 1.8,
+            "ignoreDefense": false,
+            "hitstopFrames": 0
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "projectile",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "projectile",
+          "sourcePort": "hit",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
     }
   ],
   "preview": {
