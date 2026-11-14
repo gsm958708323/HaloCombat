@@ -26,7 +26,7 @@ namespace Combat.Presentation
             _floaters = floaters;
             _hitstop = hitstop;
             _debug = debug;
-            _onHitstop=e=>_hitstop?.ShowFlash();
+            _onHitstop=e=>{if(e.Scope==HitstopScope.World)_hitstop?.ShowFlash();};
         }
 
         public void Bind(EventBus bus)
@@ -35,6 +35,7 @@ namespace Combat.Presentation
             bus.Subscribe<EvEntitySpawn>(_views.HandleSpawn);
             bus.Subscribe<EvEntityDead>(_views.HandleDead);
             bus.Subscribe<EvEntityCleanup>(_views.HandleCleanup);
+            bus.Subscribe<EvHurt>(_views.HandleHurt);
             if (_cues != null) bus.Subscribe<EvCue>(_cues.Play);
             if (_floaters != null)
             {
@@ -52,6 +53,7 @@ namespace Combat.Presentation
             bus.Unsubscribe<EvEntitySpawn>(_views.HandleSpawn);
             bus.Unsubscribe<EvEntityDead>(_views.HandleDead);
             bus.Unsubscribe<EvEntityCleanup>(_views.HandleCleanup);
+            bus.Unsubscribe<EvHurt>(_views.HandleHurt);
             if (_cues != null) bus.Unsubscribe<EvCue>(_cues.Play);
             if (_floaters != null)
             {

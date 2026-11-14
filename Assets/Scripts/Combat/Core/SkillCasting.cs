@@ -107,6 +107,7 @@ namespace Combat.Core
         public bool TryCast(SkillNodeId id, in SkillAim aim)
         {
             LastRejection = null;
+            if(Self.World.IsActorStopped(Self))return Reject("Actor is in hitstop.");
             if(aim.HasPoint&&(!Finite(aim.Point.X)||!Finite(aim.Point.Y)||!Finite(aim.Point.Z)||!Finite(aim.Yaw)))return Reject("Aim must be finite.");
             if (IsChanneling || IsCharging) return Reject("A held cast is already active.");
             if(!SkillCastRouting.TryResolve(Self,_catalog,id,out var definition,out var routeError))return Reject(routeError);

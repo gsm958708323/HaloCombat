@@ -42,6 +42,10 @@ namespace Combat.Tests
             {
                 if(field.IsStatic||new[]{"Name","Key","OriginContentKey","Tree","PresentationKind","ResourceKey"}.Contains(field.Name))continue;
                 if(value is DamageEffect damage&&!damage.CanCrit&&field.Name=="CritChance")continue;
+                // Original six-skill fixtures predate independent actor stops and graded
+                // feedback. Nonzero values still participate in the strict comparison.
+                if(value is DamageEffect&&(field.Name=="SourceHitstopFrames"||field.Name=="TargetHitstopFrames")&&(int)field.GetValue(value)==0)continue;
+                if(value is DamageEffect&&field.Name=="Feedback"&&(HitFeedbackLevel)field.GetValue(value)==HitFeedbackLevel.None)continue;
                 // The pre-tracking fixture has no tracking metadata; live routing is tested separately.
                 if(value is ProjectileDefinition&&field.Name=="TrackingKey"&&string.IsNullOrEmpty((string)field.GetValue(value)))continue;
                 // The old circle wrapper used implicit hostility; zero preserves that rule.

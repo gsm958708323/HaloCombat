@@ -42,7 +42,8 @@ namespace Combat.Core
         public AoeCatalog Aoes => _aoes;
         public SummonCatalog Summons => _summons;
         public int HitstopLeft => _hitstopLeft;
-        public bool InHitstop => _hitstopLeft > 0;
+        public bool InHitstop {get;private set;}
+        public bool IsActorStopped(Actor actor)=>InHitstop||actor!=null&&actor.Time.IsStopped;
         public CueLibrary Cues => _cues;
         public MotorConfig Motor => _motor;
         public CollisionWorld Collision { get; }
@@ -89,7 +90,7 @@ namespace Combat.Core
         public void Shutdown()
         {
             _registry.ClearAll();_intents.ClearAll();_servicePhase.Clear();
-            _hitstopPending=0;_hitstopLeft=0;
+            _hitstopPending=0;_hitstopLeft=0;InHitstop=false;
         }
 
         public void ReplaceCues(CueLibrary cues)
@@ -133,6 +134,11 @@ namespace Combat.Core
         public void RequestHitstop(int frames)
         {
             if (frames > _hitstopPending) _hitstopPending = frames;
+        }
+        public bool RequestActorHitstop(EntityId id,int frames)
+        {
+            if(frames<0||frames>1000)throw new ArgumentOutOfRangeException(nameof(frames));
+            if(!TryGetActor(id,out var actor))return false;actor.Time.RequestHitstop(frames);return true;
         }
         public List<Actor> RegistryActive() => _registry.CopyActiveActors();
         public void FlushCleanup()=>_registry.FlushDespawn();
@@ -202,23 +208,16 @@ namespace Combat.Core
         {
             _time.Advance(dt);
 
-            if (_hitstopLeft > 0)
+            _hitstopLeft=Math.Max(_hitstopLeft,_hitstopPending);_hitstopPending=0;InHitstop=_hitstopLeft>0;
+            if (InHitstop)
             {
-                _hitstopLeft--;
-                _registry.FlushDespawn();
-                return;
-            }
-
-            if (_hitstopPending > 0)
-            {
-                _hitstopLeft = _hitstopPending;
-                _hitstopPending = 0;
                 _hitstopLeft--;
                 _registry.FlushDespawn();
                 return;
             }
 
             var actors = _registry.CopyActiveActors();
+            for(int i=0;i<actors.Count;i++)actors[i].Time.BeginStep(_time.Delta);
             for (int i = 0; i < actors.Count; i++)
                 actors[i].TickAll(_time.Delta);
 
@@ -243,14 +242,14 @@ namespace Combat.Core
             actors = _registry.CopyActiveActors();
             for (int i = 0; i < actors.Count; i++)
             {
-                if (actors[i].TryGetComp<BuffComp>(out var buffs))
+                if (!IsActorStopped(actors[i])&&actors[i].TryGetComp<BuffComp>(out var buffs))
                     buffs.Tick(_time.Delta);
             }
 
             actors = _registry.CopyActiveActors();
             for (int i = 0; i < actors.Count; i++)
             {
-                if (actors[i].TryGetComp<LocomotionComp>(out var loco))
+                if (!IsActorStopped(actors[i])&&actors[i].TryGetComp<LocomotionComp>(out var loco))
                     loco.Integrate(_time.Delta);
             }
 

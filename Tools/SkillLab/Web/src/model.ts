@@ -19,10 +19,10 @@ export interface GraphViewport { kind:'skill'|'buff';id:string;x:number;y:number
 export interface EditorMetadata { selectedSkill?:string;selectedBuff?:string;viewports?:GraphViewport[] }
 export interface Project { formatVersion: number; id: string; name: string; skills: Skill[]; buffs?:BuffDefinition[]; summonBlueprints?: SummonBlueprint[];editor?:EditorMetadata;runtime?:RuntimeContent; preview: { seed: number; energy: number; initialEnergy?: number | null; recovery: number; ammo?:number;initialAmmo?:number|null;caster: ActorInitial; targets: ActorInitial[]; obstacles?: ObstacleView[] } }
 export interface BuffView {instanceId:number;id:string;name:string;source:string;stacks:number;remaining:number|null}
-export interface ActorView { id: string; name: string; kind: string; x: number; y:number; z: number; hp: number | null; maxHp: number | null; radius: number; remaining: number | null; dead: boolean; owner: string | null; blueprint: string | null; skill: string | null; energy: number | null;ammo:number|null;trackingKey:string|null;group:string|null;damageCap:number|null;nextDecay:number|null;castId:number;generation:number;chainsLeft:number;distance:number|null;range:number|null;speed:number|null;verticalSpeed:number|null;returning:boolean;groundBouncesLeft:number;wallBouncesLeft:number;buffs:BuffView[];tags:Record<string,number>;attributes:Record<string,number> }
+export interface ActorView { id: string; name: string; kind: string; x: number; y:number; z: number; hp: number | null; maxHp: number | null; radius: number; remaining: number | null; dead: boolean; owner: string | null; blueprint: string | null; skill: string | null; energy: number | null;ammo:number|null;trackingKey:string|null;group:string|null;damageCap:number|null;nextDecay:number|null;stopped:boolean;hitstopFrames:number;logicalTime:number;hurtLevel:string|null;hurtAge:number|null;castId:number;generation:number;chainsLeft:number;distance:number|null;range:number|null;speed:number|null;verticalSpeed:number|null;returning:boolean;groundBouncesLeft:number;wallBouncesLeft:number;buffs:BuffView[];tags:Record<string,number>;attributes:Record<string,number> }
 export interface AreaView { sequence: number; step: number; x: number; z: number; radius: number; targets: number }
 export interface VolumeView { sequence: number; source: string; shape: string; x: number; z: number; yaw: number; length: number; width: number; angle: number }
-export interface DamageBreakdown {kind:string;target:string;base:number;scaled:number;afterDefense:number;afterCritical:number;final:number;absorbed:number;hpLost:number;overkill:number;killed:boolean}
+export interface DamageBreakdown {kind:string;target:string;base:number;scaled:number;afterDefense:number;afterCritical:number;final:number;absorbed:number;hpLost:number;overkill:number;killed:boolean;feedback:string}
 export interface RunEvent { sequence: number; time: number; kind: string; source: string; result: string;castId:number;skill:string|null;hitIndex:number;damage:DamageBreakdown|null }
 export interface PreviewState { step: number; time: number; actors: ActorView[]; events: RunEvent[]; areas: AreaView[]; volumes: VolumeView[]; obstacles: ObstacleView[]; rays: RayView[]; trails: { entity: string; x: number; z: number; step: number }[]; energy: number; ammo:number;ammoCapacity:number;channeling: boolean; charging: boolean; chargeProgress: number; castPower: number; cooldowns: Record<string, number>; statistics: { damage: number; hits: number; casts: number; projectiles: number; chains:number; splits:number; areas: number; summons: number;constructs:number } }
 export interface Field { key: string; label: string; type?: 'select' | 'check' | 'text'; unit?: string; min?: number; max?: number; step?: number; options?: [string, string][]; initial: number | string | boolean; when?: (parameters: Parameters) => boolean }
@@ -111,7 +111,10 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
     { key: 'ignoreDefense', label: '忽略防御', type: 'check', initial: false },
     {key:'scaleByStacks',label:'按Buff层数缩放',type:'check',initial:false},
     {key:'notifyHurt',label:'通知受击Buff',type:'check',initial:true},
-    { key: 'hitstopFrames', label: '命中顿帧', unit: '帧', min: 0, max: 10, step: 1, initial: 0 }
+    { key: 'hitstopFrames', label: '世界顿帧', unit: '帧', min: 0, max: 1000, step: 1, initial: 0 },
+    {key:'sourceHitstopFrames',label:'攻击者顿帧',unit:'帧',min:0,max:1000,step:1,initial:0},
+    {key:'targetHitstopFrames',label:'目标顿帧',unit:'帧',min:0,max:1000,step:1,initial:0},
+    {key:'feedback',label:'命中反馈等级',type:'select',initial:'none',options:[['none','基础'],['light','轻'],['confirm','连段'],['heavy','重'],['finisher','终结']]}
   ] },
   'skill-events':{title:'技能事件',color:'#765f79',inputs:[],outputs:[['hit','实际扣血命中'],['critical','暴击扣血'],['kill','击杀'],['completed','自然完成'],['wall','撞墙终结'],['range','射程耗尽'],['projectile-end','投射物结束']],fields:[]},
   'after-damage':{title:'扣血后条件',color:'#7d6d5c',inputs:['execute'],outputs:[['apply','符合条件'],['next','继续']],fields:[{key:'latestCastOnly',label:'仅来源最近施法',type:'check',initial:false}]},
@@ -197,6 +200,10 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
     {key:'group',label:'引爆组',type:'text',initial:'barrel'},
     {key:'radius',label:'引爆范围',unit:'米',min:.01,max:100,step:.01,initial:2.2},
     {key:'damage',label:'引爆伤害',min:0,max:10000000,step:1,initial:9999}
+  ]},
+  'hurt-feedback':{title:'受伤反馈',color:'#82707b',inputs:['execute'],outputs:[['next','继续']],fields:[
+    {key:'level',label:'受伤反馈等级',type:'select',initial:'light',options:[['none','基础'],['light','轻'],['confirm','连段'],['heavy','重'],['finisher','终结']]},
+    {key:'requireHpDamage',label:'仅本次实际扣血',type:'check',initial:true}
   ]}
 };
 export function nodeOutputs(node: GraphNode): [string,string][] {
@@ -207,7 +214,7 @@ export function nodeOutputs(node: GraphNode): [string,string][] {
 }
 export const deliveryLabel = (node: GraphNode) => node.kind==='projectile'?'投射物':node.kind==='construct'?'可破坏物':node.parameters.mode==='summon'?'召唤分身':node.parameters.mode==='area'?(node.parameters.persistent?'持续区域':'瞬时区域'):node.parameters.mode==='ray'?'射线判定':node.parameters.mode==='melee'?'近战判定':node.parameters.mode==='displacement'?(node.parameters.movementMode==='blink'?'闪现打击':'冲刺打击'):'目标作用';
 export const portName = (port: string) => port === 'target' ? '目标数据' : '执行';
-export const effectKinds:[string,string][]=[['damage','伤害结算'],['impact','受击与状态'],['heal','治疗'],['buff','施加 Buff'],['dispel','驱散 Buff'],['cue','表现事件'],['split','命中分裂'],['after-damage','扣血后条件'],['refill-ammo','补充弹药'],['teleport-projectile','传送到追踪弹'],['construct-chain','范围引爆物体']];
+export const effectKinds:[string,string][]=[['damage','伤害结算'],['impact','受击与状态'],['heal','治疗'],['buff','施加 Buff'],['dispel','驱散 Buff'],['cue','表现事件'],['split','命中分裂'],['after-damage','扣血后条件'],['refill-ammo','补充弹药'],['teleport-projectile','传送到追踪弹'],['construct-chain','范围引爆物体'],['hurt-feedback','受伤反馈']];
 export const parameterValue = (field: Field, parameters: Parameters) => parameters[field.key] ?? (field.key === 'energyPerSecond' && parameters.mode === 'charge' ? 0 : field.initial);
 export const clone = <T,>(value: T): T => structuredClone(value);
 export async function api<T>(path: string, body?: unknown, method = 'POST'): Promise<T> {

@@ -20,6 +20,7 @@ namespace Combat.Presentation
         void Bind(EntityId id, string blueprintId);
         void Sample(in PoseSample sample);
         void OnDead(in EvEntityDead e);
+        void OnHurt(in EvHurt e);
         void Release();
     }
 

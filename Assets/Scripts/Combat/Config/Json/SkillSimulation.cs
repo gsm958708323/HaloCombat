@@ -12,6 +12,7 @@ namespace Combat.Config
         readonly CombatContentSnapshot _content;
         readonly Dictionary<long, string> _names = new Dictionary<long, string>();
         readonly Dictionary<long, string> _kinds = new Dictionary<long, string>();
+        readonly Dictionary<long,(HitFeedbackLevel Level,int Step)> _hurts=new Dictionary<long,(HitFeedbackLevel,int)>();
         readonly List<SkillEventSnapshot> _events = new List<SkillEventSnapshot>();
         readonly List<SkillTrailSnapshot> _trails = new List<SkillTrailSnapshot>();
         readonly List<SkillAreaSnapshot> _areas = new List<SkillAreaSnapshot>();
@@ -36,6 +37,8 @@ namespace Combat.Config
             _world.ReplaceConstructs(content.Constructs);
             _world.Events.Subscribe<EvEntitySpawn>(OnSpawn);
             _world.Events.Subscribe<EvDamage>(OnDamage);
+            _world.Events.Subscribe<EvHurt>(e=>{_hurts[HitboxComp.Pack(e.Target)]=(e.Feedback,_steps);Record("hurt",Name(e.Target),e.Feedback.ToString().ToLowerInvariant(),e.Origin);});
+            _world.Events.Subscribe<EvHitstop>(e=>Record("hitstop",Name(e.Source),e.Scope==HitstopScope.World?"World "+e.Frames+" frames":"Source "+e.SourceFrames+" / target "+e.TargetFrames));
             _world.Events.Subscribe<EvSkillEvent>(e=>Record(e.Rejected?"skill-event-rejected":"skill-"+e.Kind.ToString().ToLowerInvariant(),Name(e.Source),Name(e.Target),e.Origin,e.Damage));
             _world.Events.Subscribe<EvHeal>(e=>Record("heal",Name(e.Target),e.Amount.ToString("F1",System.Globalization.CultureInfo.InvariantCulture)));
             _world.Events.Subscribe<EvShield>(e=>Record("shield",Name(e.Target),e.Amount.ToString("F1",System.Globalization.CultureInfo.InvariantCulture),e.Origin));
@@ -205,6 +208,7 @@ namespace Combat.Config
                 a.TryGetComp<SummonComp>(out var summon);a.TryGetComp<ConstructComp>(out var construct);string blueprint=summon?.Def?.BlueprintId??construct?.Def?.View;
                 _content.Blueprints.TryGet(blueprint,out var actorBlueprint);
                 var owner=projectile?.OwnerId??area?.OwnerId??summon?.OwnerId??construct?.OwnerId??EntityId.Invalid;
+                bool hurt=_hurts.TryGetValue(HitboxComp.Pack(a.Id),out var reaction);
                 return new SkillActorSnapshot
                 {
                     Id = HitboxComp.Pack(a.Id).ToString(), Name = Name(a.Id), Kind = _kinds[HitboxComp.Pack(a.Id)], X = p.X,Y=p.Y, Z = p.Z,
@@ -213,6 +217,7 @@ namespace Combat.Config
                     Dead = a.TryGetComp<TagComp>(out var tags) && tags.Has(CommonTags.Dead),
                     Owner=owner.IsValid?Name(owner):null,Blueprint=blueprint,Skill=projectile!=null?SkillName(projectile.Family.Origin):construct!=null?SkillName(construct.Origin):actorBlueprint?.SkillKey,Energy=a.TryGetComp<EnergyComp>(out var energy)?(float?)energy.Current:null,
                     Group=construct?.Def?.Group,DamageCap=construct?.Def?.DamageCap,NextDecay=construct?.NextDecay,
+                    Stopped=_world.IsActorStopped(a),HitstopFrames=a.Time.HitstopLeft,LogicalTime=a.Time.Time,HurtLevel=hurt?reaction.Level.ToString().ToLowerInvariant():null,HurtAge=hurt?(float?)(_steps-reaction.Step)*Step:null,
                     Ammo=a.TryGetComp<AmmoComp>(out var ammo)?(int?)ammo.Current:null,TrackingKey=projectile?.Def?.TrackingKey,
                     CastId=projectile?.Family.Origin.CastId??construct?.Origin.CastId??0,Generation=projectile?.Generation??0,ChainsLeft=projectile?.ChainsLeft??0,
                     Distance=projectile!=null?(float?)projectile.Distance:null,Range=projectile!=null&&!double.IsInfinity(projectile.RangeLimit)?(float?)projectile.RangeLimit:null,
@@ -295,6 +300,7 @@ namespace Combat.Config
         {
             Record("cleanup", Name(e.Id), e.Reason);
             _names.Remove(HitboxComp.Pack(e.Id)); _kinds.Remove(HitboxComp.Pack(e.Id));
+            _hurts.Remove(HitboxComp.Pack(e.Id));
         }
         string Name(EntityId id) => _names.TryGetValue(HitboxComp.Pack(id), out var name) ? name : id.ToString();
         string SkillName(SkillOrigin origin)=>_content.Skills.TryGet(origin.Skill,out var skill)?skill.Key:null;
@@ -302,7 +308,7 @@ namespace Combat.Config
         {
             _events.Add(new SkillEventSnapshot { Sequence = ++_eventSequence, Time = _steps * Step, Kind = kind, Source = source, Result = result,CastId=origin.CastId,Skill=SkillName(origin),
                 HitIndex=damage?.HitIndex??0,Damage=damage==null?null:new SkillDamageSnapshot {Kind=damage.Kind.ToString().ToLowerInvariant(),Target=Name(damage.Target),Base=damage.Base,Scaled=damage.Scaled,
-                    AfterDefense=damage.AfterDefense,AfterCritical=damage.AfterCritical,Final=damage.Final,Absorbed=damage.Absorbed,HpLost=damage.HpLost,Overkill=damage.Overkill,Killed=damage.Killed} });
+                    AfterDefense=damage.AfterDefense,AfterCritical=damage.AfterCritical,Final=damage.Final,Absorbed=damage.Absorbed,HpLost=damage.HpLost,Overkill=damage.Overkill,Killed=damage.Killed,Feedback=damage.Feedback.ToString().ToLowerInvariant()} });
             if (_events.Count > 500) _events.RemoveAt(0);
         }
         void EnsureAlive() { if (_disposed) throw new ObjectDisposedException(nameof(SkillSimulation)); }
@@ -312,7 +318,7 @@ namespace Combat.Config
             foreach (var actor in _world.RegistryActive())
             { if (actor.TryGetComp<SkillDirectorComp>(out var director)) director.Stop(DirectorStopReason.Detach); _world.RequestDespawn(actor.Id); }
             _world.Tick(0);
-            _events.Clear(); _trails.Clear(); _areas.Clear(); _rays.Clear(); _volumes.Clear(); _names.Clear(); _kinds.Clear(); _sceneActors.Clear();
+            _events.Clear(); _trails.Clear(); _areas.Clear(); _rays.Clear(); _volumes.Clear(); _names.Clear(); _kinds.Clear(); _hurts.Clear(); _sceneActors.Clear();
             _disposed = true;
         }
     }

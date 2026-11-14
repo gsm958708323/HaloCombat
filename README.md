@@ -4,7 +4,7 @@
 
 在 `codex/web-skill-editor-json` 分支开发 JSON 网页技能编辑器。运行 `./Tools/SkillLab/Start.ps1` 启动本地网页，使用说明见 [Tools/SkillLab/README.md](Tools/SkillLab/README.md)，完整范围和验证记录见 [docs/实施进度.md](docs/实施进度.md)。
 
-网页预览和 Unity `Assets/Scenes/HaloCombat/SkillLab.unity` 共用实际战斗核。网页发布 F6/F7 后，Unity SkillLab 运行中按 F5 重载，再按 F6/F7 施放。已接通瞬发、有限连发、引导、蓄力、目标/范围伤害、持续区域、近战、位移、射线、矩形障碍、召唤分身、共享 Buff 生命周期图、弹药换弹、追踪弹传送、可破坏物/木桶链爆，以及投射物散射/穿透/连锁/命中分裂/加减速/回旋/重力弹跳/墙反射，提供40个示例模板；发布包含技能/Buff/蓝图依赖闭包。现有V1–V4、训练场与Arena已接通同一JSON协议；历史技能/表现能力和最终参考对照仍在开发中。
+网页预览和 Unity `Assets/Scenes/HaloCombat/SkillLab.unity` 共用实际战斗核。网页发布 F6/F7 后，Unity SkillLab 运行中按 F5 重载，再按 F6/F7 施放。已接通瞬发、有限连发、引导、蓄力、目标/范围伤害、持续区域、近战、位移、射线、矩形障碍、召唤分身、共享 Buff 生命周期图、弹药换弹、追踪弹传送、可破坏物/木桶链爆，以及投射物散射/穿透/连锁/命中分裂/加减速/回旋/重力弹跳/墙反射，提供41个示例模板；发布包含技能/Buff/蓝图依赖闭包。现有V1–V4、训练场与Arena已接通同一JSON协议；历史技能/表现能力和最终参考对照仍在开发中。
 
 ## JSON 正式内容
 
@@ -21,7 +21,7 @@ dotnet run --project Combat.csproj -- json Assets/StreamingAssets/Combat/project
 
 `Assets/Scenes/Arena.unity`是可直接运行的JSON入口，也位于Build Settings首位。WASD/方向键移动，鼠标瞄准，按住左键/1重复主攻击；2/右键、3/中键、5/鼠标侧键、Space/Q/E走JSON的输入绑定。Esc暂停，HUD可重开/切换训练模式。F5明确重载，F6/F7使用同一正式玩家的消耗/冷却/状态守卫；槽必须从当前正式工程发布，其他工程的槽会报错并保留当前局。首次启动只读正式文件，避免未关联的旧调试槽阻止进入。
 
-当前Arena复用已迁移技能和内置模型；Fire1弹药主攻击/缺弹换弹、Fire4追踪弹重施放和Fire5木桶自伤/死亡链爆已经接入JSON。历史13技能其余内容、目标独立顿帧/受伤反馈、原资源/动画和角色成长值仍需迁移，不能将本入口称为旧玩法/美术完整复刻。验收边界见[JSON Arena记录](docs/验证/2026-11-15-json-arena.md)、[弹药与重施放](docs/验证/2026-11-15-ammo-and-recasts.md)和[可破坏物验收](docs/验证/2026-11-15-constructs.md)。
+当前Arena复用已迁移技能和内置模型；Fire1弹药主攻击/换弹、Fire4追踪弹重施放、Fire5木桶链爆，以及来源/目标独立顿帧和受伤反馈已经接入JSON。历史13技能其余内容、原资源/动画和角色成长值仍需迁移，不能将本入口称为旧玩法/美术完整复刻。验收边界见[JSON Arena记录](docs/验证/2026-11-15-json-arena.md)、[弹药与重施放](docs/验证/2026-11-15-ammo-and-recasts.md)、[可破坏物](docs/验证/2026-11-15-constructs.md)和[独立顿帧验收](docs/验证/2026-11-15-actor-feedback.md)。
 
 ## 运行
 

@@ -15,7 +15,11 @@ namespace Combat.Unity
         Transform _core;
         Transform _ring;
         Vector3 _coreScale,_ringScale;
+        float _poseTime;
+        double _feedbackWallTime;
+        public HitFeedbackState Feedback {get;}=new HitFeedbackState();
         readonly System.Collections.Generic.List<Material> _materials=new System.Collections.Generic.List<Material>();
+        readonly System.Collections.Generic.List<Color> _baseColors=new System.Collections.Generic.List<Color>();
         public void SetAreaRadius(float radius){if(_ring!=null&&_blueprint=="aoe"){_ringScale=new Vector3(radius*2,.025f,radius*2);_ring.localScale=_ringScale;}}
 
         public void Bind(EntityId id, string blueprintId)
@@ -23,6 +27,7 @@ namespace Combat.Unity
             Id = id;
             _blueprint = blueprintId ?? string.Empty;
             _dead = false;
+            Feedback.Reset();_poseTime=0;_feedbackWallTime=Time.realtimeSinceStartupAsDouble;
             gameObject.name = _blueprint + "_" + id.Index;
             BuildModel();
         }
@@ -34,17 +39,21 @@ namespace Combat.Unity
             transform.rotation = Quaternion.Euler(0f, 90f - sample.YawDeg, 0f);
             if (_dead) transform.rotation *= Quaternion.Euler(0f, 0f, 80f);
             if (_visual == null) return;
+            if(!sample.InHitstop&&!_dead)_poseTime+=Time.unscaledDeltaTime;
+            double now=Time.realtimeSinceStartupAsDouble;Feedback.AdvanceWall((float)(now-_feedbackWallTime));_feedbackWallTime=now;
             float bob = _blueprint == "projectile" || _blueprint == "aoe"
-                ? Mathf.Sin(Time.time * 7f + Id.Index) * 0.04f
-                : Mathf.Sin(Time.time * 4f + Id.Index) * 0.025f;
-            _visual.localPosition = new Vector3(0f, bob, 0f);
-            if (_core != null) _core.localScale = _coreScale * (1f + Mathf.Sin(Time.time * 8f) * 0.08f);
-            if (_ring != null) _ring.localScale = _ringScale * (1f + Mathf.Sin(Time.time * 4f) * 0.05f);
+                ? Mathf.Sin(_poseTime * 7f + Id.Index) * 0.04f
+                : Mathf.Sin(_poseTime * 4f + Id.Index) * 0.025f;
+            _visual.localPosition = new Vector3(0f, bob,Feedback.Impulse*.05f);
+            if (_core != null) _core.localScale = _coreScale * (1f + Mathf.Sin(_poseTime * 8f) * 0.08f);
+            if (_ring != null) _ring.localScale = _ringScale * (1f + Mathf.Sin(_poseTime * 4f) * 0.05f);
+            for(int i=0;i<_materials.Count;i++)if(_materials[i]!=null)_materials[i].color=Color.Lerp(_baseColors[i],Color.white,Feedback.Flash*.8f);
         }
 
         public void OnDead(in EvEntityDead e)
         {
             _dead = true;
+            Feedback.Reset();
             if (_ring != null) _ring.gameObject.SetActive(false);
         }
 
@@ -52,6 +61,7 @@ namespace Combat.Unity
         {
             if (this != null) Destroy(gameObject);
         }
+        public void OnHurt(in EvHurt e){if(!_dead){Feedback.Receive(e.Feedback);_feedbackWallTime=Time.realtimeSinceStartupAsDouble;}}
 
         void BuildModel()
         {
@@ -112,6 +122,7 @@ namespace Combat.Unity
             var shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard") ?? Shader.Find("Unlit/Color");
             var material = new Material(shader) { color = color };
             _materials.Add(material);
+            _baseColors.Add(color);
             if (emissive)
             {
                 material.EnableKeyword("_EMISSION");

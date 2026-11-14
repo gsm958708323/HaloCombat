@@ -57,10 +57,10 @@ namespace Combat.Core
 
     public sealed class InputBufferComp : Comp
     {
-        CombatTime _time;
+        ActorTime _time;
         InputToken _buffered;
         bool _hasBuffered;
-        float _bufferedLogicalTime;
+        double _bufferedLogicalTime;
         float _bufferWindow = 0.2f;
 
         public float LastPushTime { get; private set; }
@@ -71,7 +71,7 @@ namespace Combat.Core
 
         protected override void OnAttach()
         {
-            _time = Self.World.Time;
+            _time = Self.Time;
         }
 
         protected override void OnDetach()
@@ -86,7 +86,7 @@ namespace Combat.Core
             _buffered = token;
             _hasBuffered = true;
             _bufferedLogicalTime = _time.Time;
-            LastPushTime = _time.Time;
+            LastPushTime = (float)_time.Time;
         }
 
         public bool TryPeek(out InputToken token)

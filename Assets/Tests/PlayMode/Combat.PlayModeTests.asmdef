@@ -1,7 +1,7 @@
 {
   "name": "Combat.PlayModeTests",
   "rootNamespace": "Combat.Tests",
-  "references": ["Combat.Core", "Combat.Config", "Combat.Unity"],
+  "references": ["Combat.Core", "Combat.Config", "Combat.Unity", "Combat.Presentation"],
   "includePlatforms": [],
   "excludePlatforms": [],
   "allowUnsafeCode": false,

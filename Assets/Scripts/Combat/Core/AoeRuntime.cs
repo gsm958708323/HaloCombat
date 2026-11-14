@@ -33,7 +33,7 @@ namespace Combat.Core
         {
             foreach (var aoe in _world.RegistryActive())
             {
-                if (!aoe.IsActive || !aoe.TryGetComp<AoeComp>(out var body) || body.Def == null || body.Ending) continue;
+                if (!aoe.IsActive || _world.IsActorStopped(aoe) || !aoe.TryGetComp<AoeComp>(out var body) || body.Def == null || body.Ending) continue;
                 if (body.BornFrame == _world.Time.Frame) continue;
                 var def = body.Def;
                 double nextAge = body.Age + dt;

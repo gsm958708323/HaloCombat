@@ -47,6 +47,7 @@ namespace Combat.Core
         public EntityId Id { get; private set; }
         public bool IsActive { get; private set; }
         public CombatWorld World { get; internal set; }
+        public ActorTime Time {get;}=new ActorTime();
 
         public void SetId(EntityId id) => Id = id;
         public void SetActive(bool active) => IsActive = active;
@@ -82,7 +83,7 @@ namespace Combat.Core
 
         public void TickAll(float dt)
         {
-            if (!IsActive) return;
+            if (!IsActive||Time.IsStopped) return;
             for (int i = 0; i < _ticks.Count && IsActive; i++)
                 _ticks[i].Tick(dt);
         }
@@ -117,6 +118,7 @@ namespace Combat.Core
         public void ResetForPool()
         {
             DetachAll();
+            Time.Reset();
             _comps.Clear();
             _order.Clear();
             _ticks.Clear();

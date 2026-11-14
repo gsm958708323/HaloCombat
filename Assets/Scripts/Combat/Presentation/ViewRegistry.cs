@@ -30,6 +30,7 @@ namespace Combat.Presentation
         }
 
         public void HandleCleanup(EvEntityCleanup e){if(_map.TryGetValue(e.Id.Index,out var view)&&view.Id==e.Id)ReleaseIndex(e.Id.Index);}
+        public void HandleHurt(EvHurt e){if(_map.TryGetValue(e.Target.Index,out var view)&&view.Id==e.Target)view.OnHurt(e);}
 
         public void SampleAll(CombatWorld world, float alpha, bool hitstop)
         {
@@ -44,6 +45,7 @@ namespace Combat.Presentation
                 var tags = actor.TryGetComp<TagComp>(out var tagComp) ? tagComp : null;
                 var sm = actor.TryGetComp<StateMachineComp>(out var stateMachine) ? stateMachine : null;
                 var director = actor.TryGetComp<SkillDirectorComp>(out var skillDirector) ? skillDirector : null;
+                bool stopped=hitstop||world.IsActorStopped(actor);
                 var sample = new PoseSample
                 {
                     Id = actor.Id,
@@ -52,8 +54,8 @@ namespace Combat.Presentation
                     Grounded = tags != null && tags.Has(CommonTags.Grounded),
                     Activity = sm != null ? sm.Current : ActivityId.None,
                     Skill = director != null ? director.CurrentSkill : SkillNodeId.None,
-                    InHitstop = hitstop,
-                    Alpha = hitstop ? 1f : alpha
+                    InHitstop = stopped,
+                    Alpha = stopped ? 1f : alpha
                 };
                 view.Sample(sample);
             }

@@ -62,7 +62,7 @@ namespace Combat.Core
             // Newly emitted children are only drained at the next tick.
             foreach(var projectile in _world.RegistryActive())
             {
-                if(!projectile.IsActive||!projectile.TryGetComp<ProjectileComp>(out var body)||body.Def==null||body.Exhausted)continue;
+                if(!projectile.IsActive||_world.IsActorStopped(projectile)||!projectile.TryGetComp<ProjectileComp>(out var body)||body.Def==null||body.Exhausted)continue;
                 _world.TryGetActor(body.OwnerId,out var owner);
                 Steer(body,projectile.GetComp<TransformComp>(),dt,owner);
                 Move(projectile,body,owner,dt);

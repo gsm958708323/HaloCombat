@@ -846,7 +846,22 @@
             "canCrit": true,
             "critChance": 0.05,
             "critMultiplier": 1.8,
-            "notifyHurt": false
+            "notifyHurt": false,
+            "sourceHitstopFrames": 1,
+            "targetHitstopFrames": 2,
+            "feedback": "light"
+          }
+        },
+        {
+          "id": "damage-hurt",
+          "kind": "hurt-feedback",
+          "parameters": {
+            "level": "light",
+            "requireHpDamage": true
+          },
+          "position": {
+            "x": 1200,
+            "y": 320
           }
         }
       ],
@@ -864,6 +879,14 @@
           "source": "projectile",
           "sourcePort": "hit",
           "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "damage-hurt-edge",
+          "source": "damage",
+          "sourcePort": "next",
+          "target": "damage-hurt",
           "targetPort": "execute",
           "order": 0
         }
@@ -1024,7 +1047,22 @@
             "flat": 0,
             "coefficient": 0.6,
             "canCrit": false,
-            "notifyHurt": false
+            "notifyHurt": false,
+            "sourceHitstopFrames": 0,
+            "targetHitstopFrames": 2,
+            "feedback": "none"
+          }
+        },
+        {
+          "id": "damage-hurt",
+          "kind": "hurt-feedback",
+          "parameters": {
+            "level": "none",
+            "requireHpDamage": true
+          },
+          "position": {
+            "x": 1200,
+            "y": 320
           }
         }
       ],
@@ -1042,6 +1080,14 @@
           "source": "projectile",
           "sourcePort": "hit",
           "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "damage-hurt-edge",
+          "source": "damage",
+          "sourcePort": "next",
+          "target": "damage-hurt",
           "targetPort": "execute",
           "order": 0
         }
@@ -1209,7 +1255,10 @@
             "critChance": 0.05,
             "critMultiplier": 1.8,
             "canCrit": true,
-            "notifyHurt": false
+            "notifyHurt": false,
+            "sourceHitstopFrames": 0,
+            "targetHitstopFrames": 3,
+            "feedback": "heavy"
           },
           "position": {
             "x": 1200,
@@ -1253,6 +1302,18 @@
           "position": {
             "x": 1500,
             "y": 80
+          }
+        },
+        {
+          "id": "damage-hurt",
+          "kind": "hurt-feedback",
+          "parameters": {
+            "level": "heavy",
+            "requireHpDamage": true
+          },
+          "position": {
+            "x": 1500,
+            "y": 320
           }
         }
       ],
@@ -1299,9 +1360,17 @@
         },
         {
           "id": "hit-cue",
-          "source": "damage",
+          "source": "damage-hurt",
           "sourcePort": "next",
           "target": "hit-cue",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "damage-hurt-edge",
+          "source": "damage",
+          "sourcePort": "next",
+          "target": "damage-hurt",
           "targetPort": "execute",
           "order": 0
         }

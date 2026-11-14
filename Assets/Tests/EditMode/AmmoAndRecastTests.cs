@@ -137,7 +137,10 @@ namespace Combat.Tests
             using(var s=new ArenaProject(p).Create(true))
             {
                 s.Start();s.ApplyInput(new ArenaInputFrame{PrimaryHeld=true,Pressed=new[]{"Fire1"}});s.Advance(41);s.World.TryGetActor(s.PlayerId,out var player);
-                Assert.AreEqual(0,player.GetComp<AmmoComp>().Current);Assert.AreEqual(new SkillNodeId(2009),player.GetComp<SkillDirectorComp>().CurrentSkill);
+                Assert.AreEqual(0,player.GetComp<AmmoComp>().Current);Assert.AreEqual(SkillNodeId.None,player.GetComp<SkillDirectorComp>().CurrentSkill);
+                // The migrated Light primary now explicitly stops its source for one
+                // step. The finished action is observed by the driver on step42.
+                s.Advance();Assert.AreEqual(new SkillNodeId(2009),player.GetComp<SkillDirectorComp>().CurrentSkill);
                 s.Advance(54);Assert.AreEqual(60,player.GetComp<AmmoComp>().Current);
             }
         }

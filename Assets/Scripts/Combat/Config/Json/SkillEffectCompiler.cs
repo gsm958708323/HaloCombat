@@ -64,12 +64,14 @@ namespace Combat.Config
                     effects.AddRange(Outputs(node,"next",allowSpatial));break;
                 case "delivery": effects.Add(Delivery(node, path)); break;
                 case "damage":
-                    var d = new NodeParameters(node, path, "flat", "coefficient", "critChance", "critMultiplier", "ignoreDefense", "hitstopFrames", "scope", "center", "radius", "maxTargets","scaleByStacks","notifyHurt","damageType","includeBonuses","critFromAttribute","snapshotAttack","canCrit");
+                    var d = new NodeParameters(node, path, "flat", "coefficient", "critChance", "critMultiplier", "ignoreDefense", "hitstopFrames", "scope", "center", "radius", "maxTargets","scaleByStacks","notifyHurt","damageType","includeBonuses","critFromAttribute","snapshotAttack","canCrit","sourceHitstopFrames","targetHitstopFrames","feedback");
                     IEffect damage = new DamageEffect
                     {
                         Flat = d.Number("flat", 80, 0, 10000000), Coeff = d.Number("coefficient", 0, 0, 100000), CanCrit = d.Boolean("canCrit",true),
                         CritMul = d.Number("critMultiplier", 1.8f, 1, 100), CritChance = d.Number("critChance", .15f, 0, 1),
                         HitstopFrames = d.Integer("hitstopFrames", 0, 0, 1000), IgnoreDef = d.Boolean("ignoreDefense", false),
+                        SourceHitstopFrames=d.Integer("sourceHitstopFrames",0,0,1000),TargetHitstopFrames=d.Integer("targetHitstopFrames",0,0,1000),
+                        Feedback=Feedback(d),
                         ScaleByBuffStacks=d.Boolean("scaleByStacks",false),FireOnHurted=d.Boolean("notifyHurt",true),UseSnapshotAtk=d.Boolean("snapshotAttack",true),
                         Kind=d.Choice("damageType","physical","physical","elemental")=="physical"?DamageKind.Physical:DamageKind.Elemental,IncludeBonuses=d.Boolean("includeBonuses",true)
                     };
@@ -100,6 +102,10 @@ namespace Combat.Config
                 case "heal":
                     var heal=new NodeParameters(node,path,"amount");effects.Add(new HealEffect {Amount=heal.Number("amount",10,0,10000000)});
                     effects.AddRange(Outputs(node,"next",allowSpatial));break;
+                case "hurt-feedback":
+                    var hurt=new NodeParameters(node,path,"level","requireHpDamage");
+                    var level=(HitFeedbackLevel)Array.IndexOf(new[]{"none","light","confirm","heavy","finisher"},hurt.Choice("level","light","none","light","confirm","heavy","finisher"));
+                    effects.Add(new HurtFeedbackEffect(level,hurt.Boolean("requireHpDamage",true)));effects.AddRange(Outputs(node,"next",allowSpatial));break;
                 case "after-damage":
                     var after=new NodeParameters(node,path,"latestCastOnly");effects.Add(new AfterDamageEffect(Outputs(node,"apply"),after.Boolean("latestCastOnly",false)));
                     effects.AddRange(Outputs(node,"next",allowSpatial));break;
@@ -255,6 +261,7 @@ namespace Combat.Config
 
         static EffectCenter Center(NodeParameters parameters)
             => (EffectCenter)Array.IndexOf(new[] { "point", "target", "source","auto" }, parameters.Choice("center", "point", "point", "target", "source","auto"));
+        static HitFeedbackLevel Feedback(NodeParameters p)=>(HitFeedbackLevel)Array.IndexOf(new[]{"none","light","confirm","heavy","finisher"},p.Choice("feedback","none","none","light","confirm","heavy","finisher"));
         DurationSpec Buff(string id,string path)
         {
             if(!_content.Buffs.TryGet(id,out var buff))throw new ContentValidationException(path,"Unknown Buff identity: "+id);

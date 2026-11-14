@@ -21,10 +21,11 @@ namespace Combat.Core
         public float Overkill {get;}
         public bool Critical {get;}
         public bool Killed {get;}
+        public HitFeedbackLevel Feedback {get;}
         public DamageResult(EntityId source,EntityId target,SkillOrigin origin,int index,DamageKind kind,
-            float basis,float scaled,float defense,float critical,float final,float absorbed,float lost,float overkill,bool crit,bool killed)
+            float basis,float scaled,float defense,float critical,float final,float absorbed,float lost,float overkill,bool crit,bool killed,HitFeedbackLevel feedback=HitFeedbackLevel.None)
         {Source=source;Target=target;Origin=origin;HitIndex=index;Kind=kind;Base=basis;Scaled=scaled;AfterDefense=defense;AfterCritical=critical;
-            Final=final;Absorbed=absorbed;HpLost=lost;Overkill=overkill;Critical=crit;Killed=killed;}
+            Final=final;Absorbed=absorbed;HpLost=lost;Overkill=overkill;Critical=crit;Killed=killed;Feedback=feedback;}
     }
 
     public sealed class DamageEffect:IEffect
@@ -34,6 +35,8 @@ namespace Combat.Core
         public bool UseSnapshotAtk=true,IncludeBonuses=true,FireOnHurted=true;
         public float CritMul=2,CritChance=-1;
         public int HitstopFrames;
+        public int SourceHitstopFrames,TargetHitstopFrames;
+        public HitFeedbackLevel Feedback;
         public DamageKind Kind;
         public void Apply(ref EffectContext ctx)
         {
@@ -62,11 +65,17 @@ namespace Combat.Core
             attributes.SetBase(AttrId.Shield,Math.Max(0,attributes.GetBase(AttrId.Shield)-absorbed));
             attributes.SetBase(AttrId.Hp,hp-lost);
             bool killed=lost>0&&hp-lost<=0;
-            var result=new DamageResult(source?.Id??EntityId.Invalid,target.Id,ctx.Origin,ctx.World.NextDamageHitId(),Kind,basis,scaled,afterDefense,afterCritical,final,absorbed,lost,overkill,crit,killed);
+            var result=new DamageResult(source?.Id??EntityId.Invalid,target.Id,ctx.Origin,ctx.World.NextDamageHitId(),Kind,basis,scaled,afterDefense,afterCritical,final,absorbed,lost,overkill,crit,killed,Feedback);
             ctx.Damage=result;
             ctx.World.Events.Publish(new EvDamage(result.Source,target.Id,absorbed+lost,crit,absorbed,killed,ctx.Origin,result));
             if(HitstopFrames>0&&absorbed+lost>0)
             {ctx.World.RequestHitstop(HitstopFrames);ctx.World.Events.Publish(new EvHitstop(result.Source,target.Id,HitstopFrames));}
+            if(lost>0&&(SourceHitstopFrames>0||TargetHitstopFrames>0))
+            {
+                if(SourceHitstopFrames>0)ctx.World.RequestActorHitstop(result.Source,SourceHitstopFrames);
+                if(TargetHitstopFrames>0)ctx.World.RequestActorHitstop(target.Id,TargetHitstopFrames);
+                ctx.World.Events.Publish(new EvHitstop(result.Source,target.Id,SourceHitstopFrames,TargetHitstopFrames));
+            }
             if(killed&&target.TryGetComp<StateMachineComp>(out var fsm))
                 fsm.TryEnter(ActivityId.Dead,new ActivityEnterArgs{Reason="Kill",Killer=result.Source});
             if(FireOnHurted&&target.TryGetComp<BuffComp>(out var buffs))buffs.DispatchOnHurted(source,ctx.Origin);

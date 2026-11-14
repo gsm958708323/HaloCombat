@@ -293,6 +293,7 @@ namespace Combat.Core
             Func<float, float> advanceBudget = null, Func<int, bool> payPulse = null, Func<SkillAim?> aimResolver = null,
             ChargeDefinition charge = null,float power=1)
         {
+            if(Self.World!=null&&Self.World.IsActorStopped(Self))return false;
             if (_tags != null &&
                 (_tags.Has(CommonTags.Dead) || _tags.Has(CommonTags.Stunned) ||
                  _tags.Has(CommonTags.Downed) || _tags.Has(CommonTags.Silence)))

@@ -47,6 +47,11 @@ namespace Combat.Config
         public string Group {get;internal set;}
         public float? DamageCap {get;internal set;}
         public float? NextDecay {get;internal set;}
+        public bool Stopped {get;internal set;}
+        public int HitstopFrames {get;internal set;}
+        public double LogicalTime {get;internal set;}
+        public string HurtLevel {get;internal set;}
+        public float? HurtAge {get;internal set;}
         public int CastId {get;internal set;}
         public int Generation {get;internal set;}
         public int ChainsLeft {get;internal set;}
@@ -139,6 +144,7 @@ namespace Combat.Config
         public float HpLost {get;internal set;}
         public float Overkill {get;internal set;}
         public bool Killed {get;internal set;}
+        public string Feedback {get;internal set;}
     }
 
     public sealed class SkillTrailSnapshot

@@ -179,6 +179,7 @@ namespace Combat.Core
         }
     }
 
+    public enum HitstopScope {World,Actors}
     public readonly struct EvHitstop
     {
         public readonly EntityId Source;
@@ -186,6 +187,8 @@ namespace Combat.Core
         public readonly int LogicFrames;
         public readonly bool FreezeSource;
         public readonly bool FreezeTarget;
+        public readonly int SourceFrames,TargetFrames;
+        public readonly HitstopScope Scope;
         public int Frames => LogicFrames;
 
         public EvHitstop(EntityId source, EntityId target, int logicFrames)
@@ -195,7 +198,10 @@ namespace Combat.Core
             LogicFrames = logicFrames;
             FreezeSource = true;
             FreezeTarget = true;
+            SourceFrames=TargetFrames=logicFrames;Scope=HitstopScope.World;
         }
+        public EvHitstop(EntityId source,EntityId target,int sourceFrames,int targetFrames)
+        {Source=source;Target=target;SourceFrames=sourceFrames;TargetFrames=targetFrames;LogicFrames=System.Math.Max(sourceFrames,targetFrames);FreezeSource=sourceFrames>0;FreezeTarget=targetFrames>0;Scope=HitstopScope.Actors;}
     }
 
     public readonly struct EvHeal
