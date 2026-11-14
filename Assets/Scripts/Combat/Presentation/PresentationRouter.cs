@@ -10,6 +10,7 @@ namespace Combat.Presentation
         readonly IFloaterPlayer _floaters;
         readonly IHitstopOverlay _hitstop;
         readonly IDebugOverlay _debug;
+        readonly System.Action<EvHitstop> _onHitstop;
 
         public PresentationRouter(
             CombatWorld world,
@@ -25,6 +26,7 @@ namespace Combat.Presentation
             _floaters = floaters;
             _hitstop = hitstop;
             _debug = debug;
+            _onHitstop=e=>_hitstop?.ShowFlash();
         }
 
         public void Bind(EventBus bus)
@@ -41,7 +43,7 @@ namespace Combat.Presentation
             }
 
             if (_hitstop != null)
-                bus.Subscribe<EvHitstop>(_ => _hitstop.ShowFlash());
+                bus.Subscribe<EvHitstop>(_onHitstop);
         }
 
         public void Unbind(EventBus bus)
@@ -56,6 +58,7 @@ namespace Combat.Presentation
                 bus.Unsubscribe<EvDamage>(_floaters.Play);
                 bus.Unsubscribe<EvImmune>(_floaters.PlayImmune);
             }
+            if(_hitstop!=null)bus.Unsubscribe<EvHitstop>(_onHitstop);
         }
 
         public void SampleLate(float alpha)

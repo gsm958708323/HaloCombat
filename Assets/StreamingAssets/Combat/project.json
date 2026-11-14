@@ -953,6 +953,131 @@
         ],
         "priority": 5,
         "toSkill": "g1"
+      },
+      {
+        "preSkills": [],
+        "toSkill": "g2",
+        "id": "ArenaArea",
+        "requiredTags": [],
+        "input": "ArenaArea",
+        "priority": 0
+      },
+      {
+        "preSkills": [],
+        "toSkill": "aura",
+        "id": "ArenaAura",
+        "requiredTags": [],
+        "input": "ArenaAura",
+        "priority": 0
+      },
+      {
+        "preSkills": [],
+        "toSkill": "summon-melee",
+        "id": "ArenaSummon",
+        "requiredTags": [],
+        "input": "ArenaSummon",
+        "priority": 0
+      },
+      {
+        "preSkills": [],
+        "toSkill": "dodge",
+        "id": "ArenaDodge",
+        "requiredTags": [],
+        "input": "ArenaDodge",
+        "priority": 0
+      },
+      {
+        "preSkills": [],
+        "toSkill": "homing",
+        "id": "ArenaHoming",
+        "requiredTags": [],
+        "input": "ArenaHoming",
+        "priority": 0
+      },
+      {
+        "preSkills": [
+          "g1",
+          "g2",
+          "dodge",
+          "homing",
+          "aura",
+          "summon-melee"
+        ],
+        "id": "ArenaArea-cancel",
+        "input": "ArenaArea",
+        "priority": 5,
+        "requiredTags": [
+          1001
+        ],
+        "toSkill": "g2"
+      },
+      {
+        "preSkills": [
+          "g1",
+          "g2",
+          "dodge",
+          "homing",
+          "aura",
+          "summon-melee"
+        ],
+        "id": "ArenaAura-cancel",
+        "input": "ArenaAura",
+        "priority": 5,
+        "requiredTags": [
+          1001
+        ],
+        "toSkill": "aura"
+      },
+      {
+        "preSkills": [
+          "g1",
+          "g2",
+          "dodge",
+          "homing",
+          "aura",
+          "summon-melee"
+        ],
+        "id": "ArenaSummon-cancel",
+        "input": "ArenaSummon",
+        "priority": 5,
+        "requiredTags": [
+          1001
+        ],
+        "toSkill": "summon-melee"
+      },
+      {
+        "preSkills": [
+          "g1",
+          "g2",
+          "dodge",
+          "homing",
+          "aura",
+          "summon-melee"
+        ],
+        "id": "ArenaDodge-cancel",
+        "input": "ArenaDodge",
+        "priority": 5,
+        "requiredTags": [
+          1001
+        ],
+        "toSkill": "dodge"
+      },
+      {
+        "preSkills": [
+          "g1",
+          "g2",
+          "dodge",
+          "homing",
+          "aura",
+          "summon-melee"
+        ],
+        "id": "ArenaHoming-cancel",
+        "input": "ArenaHoming",
+        "priority": 5,
+        "requiredTags": [
+          1001
+        ],
+        "toSkill": "homing"
       }
     ],
     "actors": [
@@ -1044,6 +1169,62 @@
         "ai": "ranged",
         "skillId": "homing",
         "attackRange": 4
+      },
+      {
+        "id": "arena-player",
+        "role": "player",
+        "team": 1,
+        "hp": 100000,
+        "attack": 50,
+        "defense": 0,
+        "moveSpeed": 3,
+        "critRate": 0.05,
+        "collisionRadius": 0.25,
+        "energy": 100,
+        "recovery": 10,
+        "dodgeSkill": "dodge",
+        "slots": [
+          "g1",
+          "g2",
+          "homing"
+        ],
+        "ai": "none",
+        "view": "fighter"
+      },
+      {
+        "id": "arena-enemy",
+        "role": "ai",
+        "team": 2,
+        "hp": 50,
+        "attack": 15,
+        "defense": 0,
+        "moveSpeed": 2.2,
+        "critRate": 0.05,
+        "collisionRadius": 0.25,
+        "energy": 100,
+        "recovery": 10,
+        "skillId": "homing",
+        "ai": "ranged",
+        "acquireRadius": 40,
+        "attackRange": 4,
+        "followRange": 1.5,
+        "leashRange": 100,
+        "patrolRadius": 0,
+        "view": "ranged_ai"
+      },
+      {
+        "id": "arena-target",
+        "role": "target",
+        "team": 2,
+        "hp": 1000000000,
+        "attack": 0,
+        "defense": 0,
+        "moveSpeed": 0,
+        "collisionRadius": 0.25,
+        "energy": 0,
+        "recovery": 0,
+        "ai": "none",
+        "view": "stake"
       }
     ],
     "cues": [
@@ -1071,6 +1252,56 @@
         "kind": "cube",
         "lifetime": 2
       }
-    ]
+    ],
+    "arena": {
+      "player": "arena-player",
+      "enemy": "arena-enemy",
+      "trainingTarget": "arena-target",
+      "seed": 1,
+      "maxEnemies": 10,
+      "spawnPeriod": 10,
+      "cleanupDelay": 5,
+      "halfWidth": 16,
+      "halfDepth": 12,
+      "spawnDistance": 4,
+      "playerX": 0,
+      "playerZ": 0,
+      "playerYaw": 0,
+      "cameraDistance": 2.5,
+      "cameraHeight": 2.5,
+      "cameraFov": 60,
+      "cameraFocusHeight": 0.75,
+      "bindings": [
+        {
+          "action": "Fire1",
+          "input": "Attack"
+        },
+        {
+          "action": "Fire2",
+          "input": "ArenaArea"
+        },
+        {
+          "action": "Fire3",
+          "input": "ArenaAura"
+        },
+        {
+          "action": "Fire5",
+          "input": "ArenaSummon"
+        },
+        {
+          "action": "Roll",
+          "input": "ArenaDodge"
+        },
+        {
+          "action": "Homing",
+          "input": "ArenaHoming"
+        },
+        {
+          "action": "Monkey",
+          "input": "ArenaSummon"
+        }
+      ],
+      "obstacles": []
+    }
   }
 }

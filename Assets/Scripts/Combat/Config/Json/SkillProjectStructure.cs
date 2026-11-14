@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Combat.Config
 {
@@ -51,6 +52,11 @@ namespace Combat.Config
             Action<string,string> check=(id,path)=>{if(!string.IsNullOrEmpty(id)&&!skills.Contains(id))Fail(path,"Unknown skill reference: "+id);};
             foreach(var row in runtime.Combos){check(row.ToSkill,"$.runtime.combos["+row.Id+"].toSkill");if(row.PreSkills==null)Fail("$.runtime.combos","PreSkills array is required.");foreach(string id in row.PreSkills)check(id,"$.runtime.combos["+row.Id+"].preSkills");}
             foreach(var actor in runtime.Actors){string p="$.runtime.actors["+actor.Id+"]";check(actor.SkillId,p+".skillId");check(actor.DodgeSkill,p+".dodgeSkill");if(actor.Slots==null)Fail(p+".slots","Slot array is required.");foreach(string id in actor.Slots)check(id,p+".slots");}
+            if(runtime.Arena!=null)
+            {
+                var actors=new HashSet<string>(runtime.Actors.Select(a=>a.Id));
+                foreach(string id in new[]{runtime.Arena.Player,runtime.Arena.Enemy,runtime.Arena.TrainingTarget})if(!actors.Contains(id??""))Fail("$.runtime.arena","Unknown actor reference: "+id);
+            }
         }
 
         static HashSet<string> Identities<T>(T[] values,Func<T,string> key,string path,int limit) where T:class

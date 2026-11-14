@@ -23,6 +23,8 @@ namespace Combat.Core
         SimVec3? _teleport;
         float _pendingYaw;
         bool _hasSnapYaw;
+        bool _hasAimYaw;
+        float _aimYaw;
         float _clipSteer;
         float _verticalVel;
         bool _grounded = true;
@@ -84,6 +86,7 @@ namespace Combat.Core
 
         public void RequestSnapYaw()
         {
+            if(_hasAimYaw){RequestSnapYawDegrees(_aimYaw);return;}
             if (StickMag(_moveIntent) >= _stickDeadzone)
             {
                 _pendingYaw = YawFromStick(_moveIntent);
@@ -96,6 +99,7 @@ namespace Combat.Core
             _pendingYaw = yaw;
             _hasSnapYaw = true;
         }
+        public void RequestAimYaw(float yaw){_hasAimYaw=true;_aimYaw=yaw;}
 
         public float FacingForSkillMove()
             => _hasSnapYaw ? _pendingYaw : (_tf != null ? _tf.YawDegrees : 0f);
@@ -227,6 +231,11 @@ namespace Combat.Core
 
         void ApplyFacing(in FacingPolicy facing)
         {
+            if(_hasAimYaw)
+            {
+                if(_grounded&&(facing.Mode==FacingMode.FollowStickIfGrounded||facing.Mode==FacingMode.SteerIfGrounded&&_clipSteer>0))_tf.YawDegrees=_aimYaw;
+                return;
+            }
             bool stick = StickMag(_moveIntent) >= _stickDeadzone;
             float want = stick ? YawFromStick(_moveIntent) : _tf.YawDegrees;
             switch (facing.Mode)
@@ -264,6 +273,7 @@ namespace Combat.Core
 
         void ClearFrameRequests()
         {
+            _hasAimYaw=false;
             _skillDelta = SimVec3.Zero;
             _hitDelta = SimVec3.Zero;
         }

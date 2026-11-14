@@ -128,6 +128,7 @@ namespace Combat.Core
             if (frames > _hitstopPending) _hitstopPending = frames;
         }
         public List<Actor> RegistryActive() => _registry.CopyActiveActors();
+        public void FlushCleanup()=>_registry.FlushDespawn();
 
         public void AddServicePhase(Action phase)
         {

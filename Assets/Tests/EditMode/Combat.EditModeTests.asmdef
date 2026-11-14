@@ -1,7 +1,7 @@
 {
   "name": "Combat.EditModeTests",
   "rootNamespace": "Combat.Tests",
-  "references": ["Combat.Core", "Combat.Config", "UnityEngine.TestRunner", "UnityEditor.TestRunner"],
+  "references": ["Combat.Core", "Combat.Config", "Combat.Presentation", "UnityEngine.TestRunner", "UnityEditor.TestRunner"],
   "includePlatforms": ["Editor"],
   "overrideReferences": true,
   "precompiledReferences": ["nunit.framework.dll", "Newtonsoft.Json.dll"],

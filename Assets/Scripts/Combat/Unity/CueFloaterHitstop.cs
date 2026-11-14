@@ -10,8 +10,11 @@ namespace Combat.Unity
         readonly CueLibrary _cues;
         readonly System.Collections.Generic.Dictionary<int,GameObject> _prefabs=new System.Collections.Generic.Dictionary<int,GameObject>();
         readonly System.Collections.Generic.Dictionary<int,AudioClip> _sounds=new System.Collections.Generic.Dictionary<int,AudioClip>();
-        public UnityCuePlayer(CueLibrary cues)
+        readonly Transform _root;
+        readonly CombatWorld _world;
+        public UnityCuePlayer(CueLibrary cues,Transform root=null,CombatWorld world=null)
         {
+            _root=root;_world=world;
             _cues=cues??throw new System.ArgumentNullException(nameof(cues));
             foreach(var cue in cues.All)
             {
@@ -36,6 +39,8 @@ namespace Combat.Unity
             }
 
             gameObject.name = "Cue_" + e.CueId;
+            if(_root!=null)gameObject.transform.SetParent(_root,false);
+            if(_world!=null&&_world.TryGetActor(e.Source,out var actor)){var p=actor.GetComp<TransformComp>().Position;gameObject.transform.position=new Vector3(p.X,p.Y,p.Z);}
             if(_sounds.TryGetValue(e.CueId,out var sound))AudioSource.PlayClipAtPoint(sound,gameObject.transform.position);
             Object.Destroy(gameObject, definition.LifeTime);
         }

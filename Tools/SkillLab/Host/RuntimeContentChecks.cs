@@ -21,5 +21,24 @@ internal static class RuntimeContentChecks
             Console.WriteLine("PASS: actual runtime project JSON, actor data, Combo input, authored Timeline clips/payloads and real damage="+damage);
         }
         finally{world.Shutdown();}
+        CheckArena(loaded);
+    }
+    static void CheckArena(RuntimeProjectLoader loaded)
+    {
+        var content=new ArenaProject(loaded.Project);
+        using var a=content.Create();using var b=content.Create();a.Start();b.Start();
+        var input=new ArenaInputFrame{MoveZ=.5f,AimValid=true,Aim=new SkillAim(EntityId.Invalid,new SimVec3(4,0,0),0),PrimaryHeld=true,Pressed=new[]{"Fire1"}};
+        a.ApplyInput(input);b.ApplyInput(input);a.Advance(120);b.Advance(120);
+        var left=a.World.RegistryActive();var right=b.World.RegistryActive();
+        if(a.SpawnedEnemies!=10||left.Count!=right.Count)throw new Exception("Arena spawn/replay mismatch.");
+        for(int i=0;i<left.Count;i++)
+        {var x=left[i].GetComp<TransformComp>();var y=right[i].GetComp<TransformComp>();if(x.Position.X!=y.Position.X||x.Position.Z!=y.Position.Z)throw new Exception("Arena fixed-input replay diverged.");}
+        a.SetPaused(true);int frame=a.World.Time.Frame;a.Advance(10);if(a.World.Time.Frame!=frame)throw new Exception("Paused Arena advanced.");
+        Console.WriteLine("PASS: formal JSON Arena session, 10 configured enemies, 120-step deterministic input and paused clock.");
+        using var training=content.Create(true);training.Start();float damage=0;int hits=0,casts=0;
+        training.World.Events.Subscribe<EvDamage>(e=>{damage+=e.Amount;hits++;});training.World.Events.Subscribe<EvSkillStarted>(e=>casts++);
+        input.MoveZ=0;training.ApplyInput(input);training.Advance(90);input.PrimaryHeld=false;input.Pressed=Array.Empty<string>();training.ApplyInput(input);training.Advance(30);
+        if(damage<=0||training.SpawnedEnemies!=0)throw new Exception("Training Arena did not deliver primary attacks to its configured target.");
+        Console.WriteLine("PASS: Arena training replay frame="+training.World.Time.Frame+" / damage="+damage+" / hits="+hits+" / casts="+casts+" / spawned="+training.SpawnedEnemies+" / actors="+training.World.RegistryActive().Count);
     }
 }

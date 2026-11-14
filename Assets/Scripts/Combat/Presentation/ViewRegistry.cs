@@ -25,11 +25,11 @@ namespace Combat.Presentation
 
         public void HandleDead(EvEntityDead e)
         {
-            if (_map.TryGetValue(e.Id.Index, out var view))
+            if (_map.TryGetValue(e.Id.Index, out var view)&&view.Id==e.Id)
                 view.OnDead(e);
         }
 
-        public void HandleCleanup(EvEntityCleanup e) => ReleaseIndex(e.Id.Index);
+        public void HandleCleanup(EvEntityCleanup e){if(_map.TryGetValue(e.Id.Index,out var view)&&view.Id==e.Id)ReleaseIndex(e.Id.Index);}
 
         public void SampleAll(CombatWorld world, float alpha, bool hitstop)
         {
@@ -38,7 +38,7 @@ namespace Combat.Presentation
             for (int i = 0; i < actors.Count; i++)
             {
                 var actor = actors[i];
-                if (!_map.TryGetValue(actor.Id.Index, out var view))
+                if (!_map.TryGetValue(actor.Id.Index, out var view)||view.Id!=actor.Id)
                     continue;
                 var tf = actor.TryGetComp<TransformComp>(out var transform) ? transform : null;
                 var tags = actor.TryGetComp<TagComp>(out var tagComp) ? tagComp : null;

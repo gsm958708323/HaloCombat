@@ -8,6 +8,7 @@ namespace Combat.Config
         public RuntimeComboDocument[] Combos {get;set;}=Array.Empty<RuntimeComboDocument>();
         public RuntimeActorDocument[] Actors {get;set;}=Array.Empty<RuntimeActorDocument>();
         public RuntimeCueDocument[] Cues {get;set;}=Array.Empty<RuntimeCueDocument>();
+        [Newtonsoft.Json.JsonProperty(NullValueHandling=Newtonsoft.Json.NullValueHandling.Ignore)]public ArenaDocument Arena {get;set;}
     }
     public sealed class RuntimeMotorDocument
     {

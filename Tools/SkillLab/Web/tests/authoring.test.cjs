@@ -32,6 +32,15 @@ test('merging runtime content preserves authored timing and rewrites all importe
   assert(next.runtime.combos.slice(p.runtime.combos.length).every(c=>valid.has(c.toSkill)&&c.preSkills.every(id=>valid.has(id))));
   assert(next.runtime.actors.slice(p.runtime.actors.length).every(a=>(!a.skillId||valid.has(a.skillId))&&(!a.dodgeSkill||valid.has(a.dodgeSkill))&&(a.slots??[]).every(id=>valid.has(id))));
   for(const s of imported)assert([...s.timeline.clips,...s.timeline.payloads].every(c=>(c.effects??[]).every(id=>s.nodes.some(n=>n.id===id))));
+  assert.deepEqual(next.runtime.arena,p.runtime.arena);
+});
+test('imported Arena remaps actor and input references without selecting an existing Combo root',()=>{
+  const source=runtime(),destination=runtime();delete destination.runtime.arena;
+  const next=mergeProjects(destination,source,ids()),arena=next.runtime.arena;
+  const importedActors=next.runtime.actors.slice(destination.runtime.actors.length),importedCombos=next.runtime.combos.slice(destination.runtime.combos.length);
+  for(const role of ['player','enemy','trainingTarget'])assert(importedActors.some(a=>a.id===arena[role]));
+  for(const binding of arena.bindings){assert(importedCombos.some(c=>c.input===binding.input&&c.preSkills.length===0));assert(!destination.runtime.combos.some(c=>c.input===binding.input));}
+  assert.notEqual(arena.player,source.runtime.arena.player);assert.equal(source.runtime.arena.bindings[0].input,'Attack');
 });
 
 test('skill ID rename updates blueprint references and editor selection, preserving numeric identity',()=>{

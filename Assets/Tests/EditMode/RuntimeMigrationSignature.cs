@@ -17,7 +17,10 @@ namespace Combat.Tests
             var projectiles=new JObject();foreach(int id in new[]{901,902}){data.Projectiles.TryGet(id,out var d);projectiles[id.ToString()]=Shape(d);}
             var areas=new JObject();foreach(int id in new[]{801,802}){data.Aoes.TryGet(id,out var d);areas[id.ToString()]=Shape(d);}
             data.Summons.TryGet(701,out var summon);
-            return new JObject{{"combo",Shape(data.Combo)},{"timelines",timelines},{"projectiles",projectiles},{"areas",areas},{"summon",Shape(summon)},{"motor",Shape(data.Motor)},{"cues",Shape(data.Cues)}};
+            // The fixture describes the three migrated Attack transitions. Arena input rows
+            // added later are validated by Arena tests and must not overwrite these originals.
+            var originalCombo=new ComboTableDefinition{Entries=data.Combo.Entries.Where(e=>e.Input==InputToken.Attack).ToArray()};
+            return new JObject{{"combo",Shape(originalCombo)},{"timelines",timelines},{"projectiles",projectiles},{"areas",areas},{"summon",Shape(summon)},{"motor",Shape(data.Motor)},{"cues",Shape(data.Cues)}};
         }
         static JToken Shape(object value,int depth=0)
         {

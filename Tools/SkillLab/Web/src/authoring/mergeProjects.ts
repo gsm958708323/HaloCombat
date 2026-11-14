@@ -31,8 +31,11 @@ function mergeRuntime(destination:Project,source:Project,skills:Map<string,strin
   if(current&&JSON.stringify(current.motor)!==JSON.stringify(incoming.motor))throw new Error('两个工程的 Motor 设置不同，请分别发布或先统一设置后合并');
   const ids=(existing:{id:string}[])=>{const used=new Set(existing.map(v=>v.id));return (id:string)=>{while(used.has(id))id=newId();used.add(id);return id;};};
   const actorId=ids(current?.actors??[]),comboId=ids(current?.combos??[]);
+  const actorIds=new Map(incoming.actors.map(a=>[a.id,actorId(a.id)]));
+  const inputId=ids((current?.combos??[]).map(c=>({id:c.input}))),inputIds=new Map([...new Set(incoming.combos.map(c=>c.input))].map(input=>[input,inputId(input)]));
+  const arena=current?.arena??(incoming.arena?{...clone(incoming.arena),player:actorIds.get(incoming.arena.player)!,enemy:actorIds.get(incoming.arena.enemy)!,trainingTarget:actorIds.get(incoming.arena.trainingTarget)!,bindings:incoming.arena.bindings.map(b=>({...b,input:inputIds.get(b.input)!}))}:undefined);
   const cues=[...(current?.cues??[])];
   for(const cue of incoming.cues){const old=cues.find(c=>c.id===cue.id);if(old&&JSON.stringify(old)!==JSON.stringify(cue))throw new Error('Cue数字身份冲突：'+cue.id+'，请先修改冲突定义');if(!old)cues.push(clone(cue));}
-  return {...clone(incoming),cues,actors:[...(current?.actors??[]),...incoming.actors.map(a=>({...clone(a),id:actorId(a.id),skillId:a.skillId?skills.get(a.skillId):undefined,dodgeSkill:a.dodgeSkill?skills.get(a.dodgeSkill):undefined,slots:a.slots?.map(id=>skills.get(id)!)}))],
-    combos:[...(current?.combos??[]),...incoming.combos.map(c=>({...clone(c),id:comboId(c.id),toSkill:skills.get(c.toSkill)!,preSkills:c.preSkills.map(id=>skills.get(id)!)}))]};
+  return {...clone(incoming),arena,cues,actors:[...(current?.actors??[]),...incoming.actors.map(a=>({...clone(a),id:actorIds.get(a.id)!,skillId:a.skillId?skills.get(a.skillId):undefined,dodgeSkill:a.dodgeSkill?skills.get(a.dodgeSkill):undefined,slots:a.slots?.map(id=>skills.get(id)!)}))],
+    combos:[...(current?.combos??[]),...incoming.combos.map(c=>({...clone(c),id:comboId(c.id),input:inputIds.get(c.input)!,toSkill:skills.get(c.toSkill)!,preSkills:c.preSkills.map(id=>skills.get(id)!)}))]};
 }

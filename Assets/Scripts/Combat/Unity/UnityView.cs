@@ -14,6 +14,9 @@ namespace Combat.Unity
         Transform _visual;
         Transform _core;
         Transform _ring;
+        Vector3 _coreScale,_ringScale;
+        readonly System.Collections.Generic.List<Material> _materials=new System.Collections.Generic.List<Material>();
+        public void SetAreaRadius(float radius){if(_ring!=null&&_blueprint=="aoe"){_ringScale=new Vector3(radius*2,.025f,radius*2);_ring.localScale=_ringScale;}}
 
         public void Bind(EntityId id, string blueprintId)
         {
@@ -35,8 +38,8 @@ namespace Combat.Unity
                 ? Mathf.Sin(Time.time * 7f + Id.Index) * 0.04f
                 : Mathf.Sin(Time.time * 4f + Id.Index) * 0.025f;
             _visual.localPosition = new Vector3(0f, bob, 0f);
-            if (_core != null) _core.localScale = Vector3.one * (1f + Mathf.Sin(Time.time * 8f) * 0.08f);
-            if (_ring != null) _ring.localScale = Vector3.one * (1f + Mathf.Sin(Time.time * 4f) * 0.05f);
+            if (_core != null) _core.localScale = _coreScale * (1f + Mathf.Sin(Time.time * 8f) * 0.08f);
+            if (_ring != null) _ring.localScale = _ringScale * (1f + Mathf.Sin(Time.time * 4f) * 0.05f);
         }
 
         public void OnDead(in EvEntityDead e)
@@ -68,7 +71,6 @@ namespace Combat.Unity
             else if (model == "aoe")
             {
                 _ring = Part(PrimitiveType.Cylinder, "AreaField", Vector3.zero, new Vector3(2f, 0.025f, 2f), accent, true);
-                _ring.gameObject.AddComponent<LessonPulse>();
             }
             else if (model == "stake")
             {
@@ -87,6 +89,7 @@ namespace Combat.Unity
                 _ring = Part(PrimitiveType.Cylinder, "GroundRing", new Vector3(0f, 0.02f, 0f), new Vector3(1.25f, 0.015f, 1.25f) * scale, accent, true);
                 if (small) Part(PrimitiveType.Sphere, "SummonOrb", new Vector3(0f, 1.9f * scale, 0f), Vector3.one * 0.12f, accent, true);
             }
+            _coreScale=_core!=null?_core.localScale:Vector3.one;_ringScale=_ring!=null?_ring.localScale:Vector3.one;
         }
 
         Transform Part(PrimitiveType type, string name, Vector3 position, Vector3 scale, Color color, bool emissive)
@@ -99,10 +102,11 @@ namespace Combat.Unity
             return go.transform;
         }
 
-        static Material Material(Color color, bool emissive)
+        Material Material(Color color, bool emissive)
         {
             var shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard") ?? Shader.Find("Unlit/Color");
             var material = new Material(shader) { color = color };
+            _materials.Add(material);
             if (emissive)
             {
                 material.EnableKeyword("_EMISSION");
@@ -116,15 +120,18 @@ namespace Combat.Unity
             }
             return material;
         }
+        void OnDestroy(){foreach(var material in _materials)if(material!=null)Destroy(material);_materials.Clear();}
     }
 
     public sealed class UnityViewFactory : IViewFactory
     {
         readonly System.Collections.Generic.IReadOnlyDictionary<string,RuntimeActorDefinition> _actors;
-        public UnityViewFactory(System.Collections.Generic.IReadOnlyDictionary<string,RuntimeActorDefinition> actors=null)=>_actors=actors;
+        readonly Transform _root;
+        public UnityViewFactory(System.Collections.Generic.IReadOnlyDictionary<string,RuntimeActorDefinition> actors=null,Transform root=null){_actors=actors;_root=root;}
         public IActorView Create(string blueprintId)
         {
             var go = new GameObject("ActorView_" + blueprintId);
+            if(_root!=null)go.transform.SetParent(_root,false);
             var view=go.AddComponent<UnityActorView>();
             if(_actors!=null&&_actors.TryGetValue(blueprintId,out var definition))view.ConfigureModel(definition.View);
             return view;
@@ -136,7 +143,7 @@ namespace Combat.Unity
         public static Color Main(string id)
         {
             if (id == "stake") return new Color(0.35f, 0.42f, 0.5f);
-            if (id == "melee_guard" || id == "melee_ai" || id == "melee_ai_narrow") return new Color(0.78f, 0.16f, 0.08f);
+            if (id == "melee_guard" || id == "melee_ai" || id == "melee_ai_narrow" || id=="ranged_ai") return new Color(0.78f, 0.16f, 0.08f);
             if (id == "summon") return new Color(0.05f, 0.48f, 0.44f);
             if (id == "projectile") return new Color(0.8f, 0.12f, 0.04f);
             if (id == "aoe") return new Color(0.04f, 0.32f, 0.5f, 0.35f);
@@ -146,7 +153,7 @@ namespace Combat.Unity
         public static Color Accent(string id)
         {
             if (id == "stake") return new Color(0.9f, 0.92f, 1f);
-            if (id == "melee_guard" || id == "melee_ai" || id == "melee_ai_narrow") return new Color(1f, 0.26f, 0.06f);
+            if (id == "melee_guard" || id == "melee_ai" || id == "melee_ai_narrow" || id=="ranged_ai") return new Color(1f, 0.26f, 0.06f);
             if (id == "summon") return new Color(0.05f, 1f, 0.78f);
             if (id == "projectile") return new Color(1f, 0.48f, 0.06f);
             if (id == "aoe") return new Color(0.08f, 0.84f, 1f, 0.4f);
@@ -154,10 +161,4 @@ namespace Combat.Unity
         }
     }
 
-    sealed class LessonPulse : MonoBehaviour
-    {
-        Vector3 _base;
-        void Awake() => _base = transform.localScale;
-        void Update() => transform.localScale = _base * (1f + Mathf.Sin(Time.time * 5f) * 0.08f);
-    }
 }

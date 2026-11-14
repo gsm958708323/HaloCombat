@@ -54,7 +54,7 @@ app.MapPost("/api/runtime/publish",async(HttpContext context)=>
     await jsonLock.WaitAsync();
     try{var temporary=runtimeFile+".tmp";await File.WriteAllTextAsync(temporary,SkillProjectJson.Write(project));File.Move(temporary,runtimeFile,true);}
     finally{jsonLock.Release();}
-    return Results.Ok(new{message="正式JSON已发布；Unity演示场景F1重建，训练场点击重置后载入。"});
+    return Results.Ok(new{message="正式JSON已发布；Arena按F5载入，演示场景按F1重建，训练场点击重置。"});
 });
 app.MapGet("/api/templates/{id}",(string id)=>
 {var project=SkillProjectJson.Read(File.ReadAllText(exampleFile));return Results.Text(SkillProjectJson.Write(SkillProjectJson.SelectTemplate(project,id)),"application/json");});

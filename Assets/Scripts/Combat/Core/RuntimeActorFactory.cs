@@ -39,7 +39,7 @@ namespace Combat.Core
             actor.AddComp(new EnergyComp(definition.Energy,definition.Recovery,definition.InitialEnergy));actor.AddComp(new SkillCastComp(_skills));
             if(definition.Role=="player")
             {
-                actor.AddComp(new InputBufferComp());actor.AddComp(new ComboComp(_data.Combo));
+                actor.AddComp(new InputBufferComp());actor.AddComp(new ComboComp(_data.Combo));actor.AddComp(new PlayerAimComp());
                 actor.AddComp(new RuntimePlayerDriverComp(_data.Combo,definition.DodgeSkill));var slots=new LoadoutComp();actor.AddComp(slots);
                 for(int i=0;i<definition.Slots.Length;i++)if(_skills.TryGet(definition.Slots[i],out var skill))slots.EquipSkill((SkillSlot)i,skill.Id,skill.Timeline);
             }
@@ -66,7 +66,13 @@ namespace Combat.Core
         public override void Tick(float dt)
         {
             var tags=Self.GetComp<TagComp>();var input=Self.GetComp<InputBufferComp>();
-            if(tags.Has(CommonTags.Dead)||tags.Has(CommonTags.Stunned)||tags.Has(CommonTags.Downed)||!input.TryPeek(out var token))return;
+            var aiming=Self.GetComp<PlayerAimComp>();var cast=Self.GetComp<SkillCastComp>();
+            if(aiming.Valid)cast.UpdateAim(aiming.Aim);
+            if(tags.Has(CommonTags.Dead)||tags.Has(CommonTags.Stunned)||tags.Has(CommonTags.Downed))return;
+            bool buffered=input.TryPeek(out var token);
+            // Holding repeats a complete primary action. Only a new press can take a Combo
+            // cancel edge; otherwise a held button could cut off its own delayed payload.
+            if(!buffered){if(!aiming.PrimaryHeld||!aiming.PrimaryToken.IsValid||Self.GetComp<SkillDirectorComp>().IsPlaying)return;token=aiming.PrimaryToken;}
             if(token==InputToken.Jump)
             {if(tags.Has(CommonTags.Grounded)){input.Consume();Self.GetComp<LocomotionComp>().ImpulseJump();}return;}
             SkillNodeId selected;
@@ -77,7 +83,12 @@ namespace Combat.Core
                 selected=result.ToSkill;
             }
             var transform=Self.GetComp<TransformComp>();
-            if(selected.IsValid&&Self.GetComp<SkillCastComp>().TryCast(selected,new SkillAim(EntityId.Invalid,transform.Position,transform.YawDegrees,false)))input.Consume();
+            var aim=aiming.Valid?aiming.Aim:new SkillAim(EntityId.Invalid,transform.Position,transform.YawDegrees,false);
+            if(selected.IsValid&&cast.TryCast(selected,aim))
+            {
+                if(buffered)input.Consume();
+                if(token==aiming.PrimaryToken&&aiming.PrimaryHeld)aiming.PrimaryCastId=Self.GetComp<SkillDirectorComp>().CurrentOrigin.CastId;
+            }
         }
     }
 }

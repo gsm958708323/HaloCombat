@@ -9,6 +9,7 @@ namespace Combat.Config
     {
         public BakedCombatData Data {get;internal set;}
         public IReadOnlyDictionary<string,RuntimeActorDefinition> Actors {get;internal set;}
+        public ArenaDefinition Arena {get;internal set;}
         public IActorFactory CreateFactory(SkillCatalog skills)=>new RuntimeActorFactory(Data,skills,Actors);
     }
     internal static class RuntimeContentCompiler
@@ -80,7 +81,8 @@ namespace Combat.Config
                     Skill=b.Skill,AcquireRadius=b.AcquireRadius,AttackRange=b.AttackRange,FollowRange=b.FollowRange,LeashRange=20,
                     Tree=skill.Mode==SkillCastMode.Instant?BtFactory.SummonMelee(skill.Id,skill.Timeline):SummonBehavior.Create(b.Skill,b.HoldDuration)});
             }
-            return new RuntimeContentSnapshot{Data=data,Actors=actors};
+            var result=new RuntimeContentSnapshot{Data=data,Actors=actors};
+            content.Runtime=result;result.Arena=ArenaCompiler.Compile(source.Arena,content,actors);return result;
         }
         static SkillDefinition Skill(CombatContentSnapshot content,string key,string path)
         {foreach(var skill in content.Skills.All)if(skill.Key==key)return skill;throw new ContentValidationException(path,"Unknown skill: "+key);}
