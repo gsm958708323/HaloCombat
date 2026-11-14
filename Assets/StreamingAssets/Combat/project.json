@@ -782,6 +782,353 @@
           }
         ]
       }
+    },
+    {
+      "id": "arena-ammo-shot",
+      "runtimeId": 2001,
+      "name": "弹药射击",
+      "category": "弹药与重施放",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "facing",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 300,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 0,
+            "cooldown": 0,
+            "ammoCost": 1,
+            "fallbackSkill": "arena-reload-ammo"
+          }
+        },
+        {
+          "id": "projectile",
+          "kind": "projectile",
+          "position": {
+            "x": 600,
+            "y": 80
+          },
+          "parameters": {
+            "speed": 6,
+            "range": 0,
+            "lifetime": 10,
+            "radius": 0.1,
+            "maxHits": 1,
+            "spawnForward": 0.4
+          },
+          "runtimeId": 4001
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 900,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 0,
+            "coefficient": 1,
+            "canCrit": true,
+            "critChance": 0.05,
+            "critMultiplier": 1.8,
+            "notifyHurt": false
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "projectile",
+          "sourcePort": "hit",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ],
+      "timeline": {
+        "runtimeId": 3001,
+        "duration": 0.8,
+        "clips": [
+          {
+            "id": "cancel",
+            "kind": "cancel",
+            "start": 0.5,
+            "end": 0.8,
+            "effects": []
+          }
+        ],
+        "payloads": [
+          {
+            "id": "payload",
+            "time": 0.1,
+            "effects": [
+              "projectile"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "arena-reload-ammo",
+      "runtimeId": 2009,
+      "name": "换弹 · 1.1秒补充",
+      "category": "弹药与重施放",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "facing",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 300,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 0,
+            "cooldown": 0
+          }
+        },
+        {
+          "id": "refill",
+          "kind": "refill-ammo",
+          "position": {
+            "x": 600,
+            "y": 80
+          },
+          "parameters": {
+            "amount": 60,
+            "recipient": "self"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        }
+      ],
+      "timeline": {
+        "runtimeId": 3009,
+        "duration": 1.15,
+        "clips": [],
+        "payloads": [
+          {
+            "id": "payload",
+            "time": 1.1,
+            "effects": [
+              "refill"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "arena-tracked-shot",
+      "runtimeId": 2006,
+      "name": "传送弹 · 再次施放传送",
+      "category": "弹药与重施放",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "facing",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 300,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 0,
+            "cooldown": 0,
+            "recastProjectile": "warp",
+            "recastSkill": "arena-projectile-warp"
+          }
+        },
+        {
+          "id": "projectile",
+          "kind": "projectile",
+          "position": {
+            "x": 600,
+            "y": 80
+          },
+          "parameters": {
+            "speed": 6,
+            "range": 0,
+            "lifetime": 3,
+            "radius": 0.1,
+            "maxHits": 1,
+            "spawnForward": 0.4,
+            "trajectory": "ramp",
+            "trackingKey": "warp",
+            "rampTime": 5
+          },
+          "runtimeId": 4004
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 900,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 0,
+            "coefficient": 0.6,
+            "canCrit": false,
+            "notifyHurt": false
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "projectile",
+          "sourcePort": "hit",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ],
+      "timeline": {
+        "runtimeId": 3006,
+        "duration": 0.5,
+        "clips": [],
+        "payloads": [
+          {
+            "id": "payload",
+            "time": 0.1,
+            "effects": [
+              "projectile"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "arena-projectile-warp",
+      "runtimeId": 2014,
+      "name": "追踪弹传送操作",
+      "category": "弹药与重施放",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "self",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 300,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 0,
+            "cooldown": 0,
+            "requiredProjectile": "warp"
+          }
+        },
+        {
+          "id": "warp",
+          "kind": "teleport-projectile",
+          "position": {
+            "x": 600,
+            "y": 80
+          },
+          "parameters": {
+            "trackingKey": "warp"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        }
+      ],
+      "timeline": {
+        "runtimeId": 3014,
+        "duration": 0.02,
+        "clips": [],
+        "payloads": [
+          {
+            "id": "payload",
+            "time": 0,
+            "effects": [
+              "warp"
+            ]
+          }
+        ]
+      }
     }
   ],
   "buffs": [
@@ -1078,6 +1425,64 @@
           1001
         ],
         "toSkill": "homing"
+      },
+      {
+        "id": "arena-tracked-root",
+        "preSkills": [],
+        "input": "ArenaTracked",
+        "requiredTags": [],
+        "priority": 0,
+        "toSkill": "arena-tracked-shot"
+      },
+      {
+        "id": "arena-tracked-cancel",
+        "preSkills": [
+          "g1",
+          "g2",
+          "dodge",
+          "homing",
+          "aura",
+          "summon-melee",
+          "arena-ammo-shot",
+          "arena-reload-ammo",
+          "arena-tracked-shot",
+          "arena-projectile-warp"
+        ],
+        "input": "ArenaTracked",
+        "requiredTags": [
+          1001
+        ],
+        "priority": 10,
+        "toSkill": "arena-tracked-shot"
+      },
+      {
+        "id": "arena-primary-root",
+        "preSkills": [],
+        "input": "ArenaPrimary",
+        "requiredTags": [],
+        "priority": 0,
+        "toSkill": "arena-ammo-shot"
+      },
+      {
+        "id": "arena-primary-cancel",
+        "preSkills": [
+          "g1",
+          "g2",
+          "dodge",
+          "homing",
+          "aura",
+          "summon-melee",
+          "arena-ammo-shot",
+          "arena-reload-ammo",
+          "arena-tracked-shot",
+          "arena-projectile-warp"
+        ],
+        "input": "ArenaPrimary",
+        "requiredTags": [
+          1001
+        ],
+        "priority": 10,
+        "toSkill": "arena-ammo-shot"
       }
     ],
     "actors": [
@@ -1189,7 +1594,8 @@
           "homing"
         ],
         "ai": "none",
-        "view": "fighter"
+        "view": "fighter",
+        "ammo": 60
       },
       {
         "id": "arena-enemy",
@@ -1274,7 +1680,7 @@
       "bindings": [
         {
           "action": "Fire1",
-          "input": "Attack"
+          "input": "ArenaPrimary"
         },
         {
           "action": "Fire2",
@@ -1299,6 +1705,10 @@
         {
           "action": "Monkey",
           "input": "ArenaSummon"
+        },
+        {
+          "action": "Fire4",
+          "input": "ArenaTracked"
         }
       ],
       "obstacles": []

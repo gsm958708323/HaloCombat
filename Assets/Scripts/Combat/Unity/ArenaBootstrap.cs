@@ -35,7 +35,9 @@ namespace Combat.Unity
                 var project=new ArenaProject(loaded.Project,files);candidate=project.Create(_training);
                 _present=GetComponent<ArenaPresentation>();prepared=_present.Prepare(candidate,project.Content);
                 candidate.Start(); // The previous session stays live until spawn and view construction succeed.
+                candidate.World.Events.Subscribe<EvProjectileTeleport>(OnProjectileTeleport);
                 var previous=_session;_present.Replace(prepared);prepared=null;_session=candidate;candidate=null;
+                if(previous!=null)previous.World.Events.Unsubscribe<EvProjectileTeleport>(OnProjectileTeleport);
                 previous?.Dispose();_clock.Reset();_present.Sample(1);
                 LastLoadError=null;Status=includePublished?"JSON reloaded, F6/F7 updated":"JSON Arena ready";return true;
             }
@@ -55,6 +57,7 @@ namespace Combat.Unity
         public void StepForTests(int steps)=>_session?.Advance(steps);
         public void ReleasePublished(string slot)=>_session?.ReleaseSlot(slot);
         public void AdvanceWallForTests(float dt)=>_session?.AdvanceWall(dt);
+        void OnProjectileTeleport(EvProjectileTeleport result)=>Status=result.Result;
         void Update()
         {
             if(_session==null)return;
@@ -74,6 +77,6 @@ namespace Combat.Unity
         void LateUpdate(){if(_session!=null)_present?.Sample(_session.Paused||_session.PlayerDead?1:_clock.Alpha);}
         void OnApplicationFocus(bool focused){if(!focused){_session?.CancelInput();_clock.Reset();}}
         void OnDisable(){_session?.CancelInput();_clock.Reset();}
-        void OnDestroy(){_present?.Unbind();_session?.Dispose();_session=null;}
+        void OnDestroy(){if(_session!=null)_session.World.Events.Unsubscribe<EvProjectileTeleport>(OnProjectileTeleport);_present?.Unbind();_session?.Dispose();_session=null;}
     }
 }

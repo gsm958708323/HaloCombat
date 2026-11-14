@@ -15,6 +15,8 @@ namespace Combat.Config
         public SkillObstacleSnapshot[] Obstacles {get;internal set;}
         public SkillRaySnapshot[] Rays {get;internal set;}
         public float Energy { get; internal set; }
+        public int Ammo {get;internal set;}
+        public int AmmoCapacity {get;internal set;}
         public bool Channeling { get; internal set; }
         public bool Charging { get; internal set; }
         public float ChargeProgress { get; internal set; }
@@ -40,6 +42,8 @@ namespace Combat.Config
         public string Blueprint {get;internal set;}
         public string Skill {get;internal set;}
         public float? Energy {get;internal set;}
+        public int? Ammo {get;internal set;}
+        public string TrackingKey {get;internal set;}
         public int CastId {get;internal set;}
         public int Generation {get;internal set;}
         public int ChainsLeft {get;internal set;}

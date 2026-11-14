@@ -28,6 +28,9 @@ namespace Combat.Core
         public float EnergyPerSecond;
         public bool CostPerPulse;
         public float AimRange;
+        public int AmmoCost;
+        public SkillNodeId AmmoFallback,RecastSkill;
+        public string RecastProjectile,RequiredProjectile;
     }
 
     public sealed class SkillCatalog
@@ -76,6 +79,7 @@ namespace Combat.Core
         readonly Dictionary<int, float> _readyAt = new Dictionary<int, float>();
         SkillDirectorComp _director;
         EnergyComp _energy;
+        AmmoComp _ammo;
         TagComp _tags;
         SkillDefinition _active;
         SkillAim _inputAim;
@@ -96,6 +100,7 @@ namespace Combat.Core
             _director = Self.GetComp<SkillDirectorComp>();
             _tags = Self.GetComp<TagComp>();
             Self.TryGetComp(out _energy);
+            Self.TryGetComp(out _ammo);
         }
         public float CooldownLeft(SkillNodeId id)
             => _readyAt.TryGetValue(id.Value, out var until) ? Math.Max(0f, until - _time) : 0f;
@@ -104,13 +109,16 @@ namespace Combat.Core
             LastRejection = null;
             if(aim.HasPoint&&(!Finite(aim.Point.X)||!Finite(aim.Point.Y)||!Finite(aim.Point.Z)||!Finite(aim.Yaw)))return Reject("Aim must be finite.");
             if (IsChanneling || IsCharging) return Reject("A held cast is already active.");
-            if (!_catalog.TryGet(id, out var definition)) return Reject("Unknown skill.");
+            if(!SkillCastRouting.TryResolve(Self,_catalog,id,out var definition,out var routeError))return Reject(routeError);
+            id=definition.Id;
             if (CooldownLeft(id) > 0f) return Reject("Cooldown.");
             if (_director.IsPlaying && !_tags.Has(CommonTags.Cancel)) return Reject("Cancel window is closed.");
             if (_tags.Has(CommonTags.Dead) || _tags.Has(CommonTags.Stunned) || _tags.Has(CommonTags.Downed) || _tags.Has(CommonTags.Silence))
                 return Reject("Casting is blocked by actor state.");
             if (definition.EnergyCost > 0f && (_energy == null || !_energy.CanSpend(definition.EnergyCost)))
                 return Reject("Insufficient energy.");
+            if(definition.AmmoCost>0&&(_ammo==null||!_ammo.CanSpend(definition.AmmoCost)))return Reject("Insufficient ammunition.");
+            if(!string.IsNullOrEmpty(definition.RequiredProjectile)&&(!Self.TryGetComp<TrackedProjectilesComp>(out var tracked)||!tracked.TryFind(definition.RequiredProjectile,out _)))return Reject("Required projectile is unavailable.");
             if (!SkillTargeting.TryResolve(Self, definition, aim, out var resolved)) return Reject("No valid target.");
             if (definition.AimRange > 0)
             {
@@ -125,6 +133,7 @@ namespace Combat.Core
                 return Reject("Activity rejected casting.");
             _active = definition; _inputAim = aim;
             if (definition.EnergyCost > 0f) _energy.TrySpend(definition.EnergyCost);
+            if(definition.AmmoCost>0)_ammo.TrySpend(definition.AmmoCost);
             _readyAt[id.Value] = _time + definition.Cooldown;
             Self.World.Events.Publish(new EvSkillStarted(Self.Id,id));
             return true;
@@ -143,13 +152,17 @@ namespace Combat.Core
             if (_active == null || _active.EnergyPerSecond <= 0 || (!IsChanneling && !IsCharging)) return duration;
             return _energy == null ? 0 : _energy.SpendDuration(_active.EnergyPerSecond, duration);
         }
-        bool PayPulse(int pulse) => pulse == 0 || _active == null || !_active.CostPerPulse || _active.EnergyCost <= 0
-            || (_energy != null && _energy.TrySpend(_active.EnergyCost));
+        bool PayPulse(int pulse)
+        {
+            if(pulse==0||_active==null||!_active.CostPerPulse)return true;
+            if(_active.EnergyCost>0&&(_energy==null||!_energy.CanSpend(_active.EnergyCost))||_active.AmmoCost>0&&(_ammo==null||!_ammo.CanSpend(_active.AmmoCost)))return false;
+            if(_active.EnergyCost>0)_energy.TrySpend(_active.EnergyCost);if(_active.AmmoCost>0)_ammo.TrySpend(_active.AmmoCost);return true;
+        }
         SkillAim? ResolveAim() => SkillTargeting.TryResolve(Self, _active, _inputAim, out var aim) ? aim : (SkillAim?)null;
         bool Reject(string reason) { LastRejection = reason; return false; }
         static bool Finite(float value)=>!float.IsNaN(value)&&!float.IsInfinity(value);
         public override void Tick(float dt) => _time += dt;
         protected override void OnDetach()
-        { _readyAt.Clear(); _time = 0f; _basePower=1; _active = null; _director = null; _energy = null; _tags = null; }
+        { _readyAt.Clear(); _time = 0f; _basePower=1; _active = null; _director = null; _energy = null; _ammo=null; _tags = null; }
     }
 }

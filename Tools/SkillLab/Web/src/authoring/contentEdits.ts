@@ -20,6 +20,7 @@ function referenceField(node:GraphNode,kind:ContentKind) {
 }
 export function referencesTo(p:Project,kind:ContentKind,id:string):ContentReference[] {
   if(kind==='skill')return [
+    ...allGraphs(p).flatMap(({kind:owner,graph})=>graph.nodes.filter(n=>n.kind==='cast').flatMap(n=>['fallbackSkill','recastSkill'].filter(field=>n.parameters[field]===id).map(field=>({kind:owner,id:graph.id,name:graph.name,nodeId:n.id,field})))),
     ...(p.summonBlueprints??[]).filter(b=>b.skillId===id).map(b=>({kind:'blueprint' as const,id:b.id,name:b.name,field:'skillId'})),
     ...(p.runtime?.actors??[]).flatMap(a=>[...(['skillId','dodgeSkill'] as const).filter(k=>a[k]===id).map(field=>({kind:'actor' as const,id:a.id,name:a.id,field})),...(a.slots??[]).flatMap((v,i)=>v===id?[{kind:'actor' as const,id:a.id,name:a.id,field:'slots['+i+']'}]:[])]),
     ...(p.runtime?.combos??[]).flatMap(c=>[...(c.toSkill===id?[{kind:'combo' as const,id:c.id,name:c.id,field:'toSkill'}]:[]),...c.preSkills.flatMap((v,i)=>v===id?[{kind:'combo' as const,id:c.id,name:c.id,field:'preSkills['+i+']'}]:[])])];
@@ -29,7 +30,7 @@ export function referencesTo(p:Project,kind:ContentKind,id:string):ContentRefere
   }));
 }
 function rewriteReferences(p:Project,kind:ContentKind,from:string,to:string):Project {
-  if(kind==='skill')return {...p,summonBlueprints:p.summonBlueprints?.map(b=>b.skillId===from?{...b,skillId:to}:b),runtime:p.runtime?{...p.runtime,
+  if(kind==='skill')return {...p,skills:p.skills.map(s=>({...s,nodes:s.nodes.map(n=>n.kind==='cast'?{...n,parameters:{...n.parameters,...Object.fromEntries(['fallbackSkill','recastSkill'].filter(field=>n.parameters[field]===from).map(field=>[field,to]))}}:n)})),summonBlueprints:p.summonBlueprints?.map(b=>b.skillId===from?{...b,skillId:to}:b),runtime:p.runtime?{...p.runtime,
     actors:p.runtime.actors.map(a=>({...a,skillId:a.skillId===from?to:a.skillId,dodgeSkill:a.dodgeSkill===from?to:a.dodgeSkill,slots:a.slots?.map(id=>id===from?to:id)})),
     combos:p.runtime.combos.map(c=>({...c,toSkill:c.toSkill===from?to:c.toSkill,preSkills:c.preSkills.map(id=>id===from?to:id)}))}:undefined};
   const nodes=(items:GraphNode[])=>items.map(node=>{const field=referenceField(node,kind);return field&&node.parameters[field]===from?{...node,parameters:{...node.parameters,[field]:to}}:node;});

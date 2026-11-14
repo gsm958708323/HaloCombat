@@ -1,4 +1,5 @@
 using System;
+using Newtonsoft.Json;
 
 namespace Combat.Config
 {
@@ -43,6 +44,8 @@ namespace Combat.Config
         public float CollisionRadius {get;set;}
         public float Energy {get;set;}=100;
         public float Recovery {get;set;}=10;
+        [System.ComponentModel.DefaultValue(0),JsonProperty(DefaultValueHandling=DefaultValueHandling.Ignore)] public int Ammo {get;set;}
+        [JsonProperty(NullValueHandling=NullValueHandling.Ignore)] public int? InitialAmmo {get;set;}
         public string SkillId {get;set;}
         public string DodgeSkill {get;set;}
         public string[] Slots {get;set;}=Array.Empty<string>();

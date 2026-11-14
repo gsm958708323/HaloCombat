@@ -12,6 +12,7 @@ export function mergeProjects(destination:Project,source:Project,newId:()=>strin
   const skillNumber=numberAllocator(destination.skills.flatMap(s=>[s.runtimeId,s.timeline?.runtimeId??0])),buffNumber=numberAllocator((destination.buffs??[]).map(b=>b.runtimeId),8000);
   const definitionNumber=definitionAllocator(destination);
   const references=(nodes:GraphNode[])=>nodes.map(node=>{
+    if(node.kind==='cast')return {...node,parameters:{...node.parameters,...Object.fromEntries(['fallbackSkill','recastSkill'].filter(field=>typeof node.parameters[field]==='string'&&skillIds.has(String(node.parameters[field]))).map(field=>[field,skillIds.get(String(node.parameters[field]))!]))}};
     if((node.kind==='buff'||node.kind==='dispel')&&typeof node.parameters.buff==='string'&&buffIds.has(node.parameters.buff))return {...node,parameters:{...node.parameters,buff:buffIds.get(node.parameters.buff)!}};
     if(node.kind==='delivery'&&typeof node.parameters.blueprint==='string'&&blueprintIds.has(node.parameters.blueprint))return {...node,parameters:{...node.parameters,blueprint:blueprintIds.get(node.parameters.blueprint)!}};
     return node;

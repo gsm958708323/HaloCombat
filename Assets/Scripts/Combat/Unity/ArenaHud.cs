@@ -17,10 +17,12 @@ namespace Combat.Unity
             {
                 var attr=player.GetComp<AttributeSet>();var energy=player.GetComp<EnergyComp>();
                 GUILayout.Label("HP "+attr.GetBase(AttrId.Hp).ToString("F0")+" / "+attr.GetFinal(AttrId.MaxHp).ToString("F0")+"    Energy "+energy.Current.ToString("F0")+" / "+energy.Capacity.ToString("F0"));
+                var ammo=player.GetComp<AmmoComp>();GUILayout.Label("Ammo "+ammo.Current+" / "+ammo.Capacity);
                 GUILayout.Label("State "+player.GetComp<StateMachineComp>().Current+"    Enemies "+session.EnemyCount+"    Frame "+session.World.Time.Frame);
             }
             GUILayout.Label("WASD / Arrows: move | Mouse: aim | Hold LMB / 1: primary");
-            GUILayout.Label("2 / RMB, 3 / MMB, 5: skills | Space: roll | Q / E: skills");
+            GUILayout.Label("2 / RMB, 3 / MMB, 5: skills | 4: tracked shot / teleport");
+            GUILayout.Label("Space: roll | Q / E: skills");
             GUILayout.Label("Esc: pause | F5: reload project + published slots | F6 / F7: cast");
             GUILayout.BeginHorizontal();
             if(GUILayout.Button(session.Paused?"Resume":"Pause"))_bootstrap.SetPaused(!session.Paused);

@@ -5,6 +5,7 @@ namespace Combat.Core
     public sealed class ProjectileMotionDefinition
     {
         public float Acceleration;
+        public float RampTime;
         public float MaxSpeed=1000;
         public float ReturnAfter=-1;
         public float ReturnSpeed=12;
@@ -24,16 +25,21 @@ namespace Combat.Core
 
     public static class ProjectileKinematics
     {
+        // The authored ramp samples once at the start of the logic step, matching the
+        // source curve. Contact/reflect substeps reuse that speed for the remaining step.
+        public static void SampleStep(ProjectileComp body)
+        {if(body.Def.Motion?.RampTime>0)body.SampledSpeed=2*body.Def.Speed*body.Age/(body.Age+body.Def.Motion.RampTime);}
         public static double Speed(ProjectileComp body)
         {
             var motion=body.Def.Motion;
             if(body.Returning)return motion.ReturnSpeed;
+            if(motion?.RampTime>0)return body.SampledSpeed;
             return motion==null?body.Def.Speed:Math.Max(0,Math.Min(motion.MaxSpeed,body.Def.Speed+motion.Acceleration*body.Age));
         }
 
         public static double Distance(ProjectileComp body,double time)
         {
-            double speed=Speed(body),a=body.Returning?0:body.Def.Motion?.Acceleration??0;
+            double speed=Speed(body),a=body.Returning||body.Def.Motion?.RampTime>0?0:body.Def.Motion?.Acceleration??0;
             if(a==0)return speed*time;
             double limit=a>0?body.Def.Motion.MaxSpeed:0;
             double cap=Math.Max(0,(limit-speed)/a),part=Math.Min(time,cap);
@@ -43,7 +49,7 @@ namespace Combat.Core
         public static double Time(ProjectileComp body,double distance,double maximumTime)
         {
             if(distance<=.0000000001)return 0;
-            double speed=Speed(body),a=body.Returning?0:body.Def.Motion?.Acceleration??0;
+            double speed=Speed(body),a=body.Returning||body.Def.Motion?.RampTime>0?0:body.Def.Motion?.Acceleration??0;
             if(a==0)return speed>0?Math.Min(maximumTime,distance/speed):maximumTime;
             double limit=a>0?body.Def.Motion.MaxSpeed:0;
             double cap=Math.Max(0,(limit-speed)/a),capDistance=speed*cap+.5*a*cap*cap;

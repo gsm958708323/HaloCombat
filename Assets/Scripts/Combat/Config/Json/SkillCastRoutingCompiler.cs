@@ -1,0 +1,24 @@
+using System.Collections.Generic;
+using Combat.Core;
+
+namespace Combat.Config
+{
+    internal static class SkillCastRoutingCompiler
+    {
+        public static SkillDefinition Apply(SkillDefinition definition,string key,NodeParameters p,string path,Dictionary<string,SkillNodeId> skills,ContentDependencies dependencies)
+        {
+            SkillNodeId Reference(string field)
+            {
+                string id=p.OptionalIdentity(field);if(id.Length==0)return SkillNodeId.None;
+                if(!skills.TryGetValue(id,out var number))throw new ContentValidationException(path+".parameters."+field,"Unknown skill reference: "+id);
+                dependencies.Add(ContentDependencies.Skill(key),ContentDependencies.Skill(id));return number;
+            }
+            definition.AmmoCost=p.Integer("ammoCost",0,0,1000000);
+            definition.AmmoFallback=Reference("fallbackSkill");definition.RecastSkill=Reference("recastSkill");
+            definition.RecastProjectile=p.OptionalIdentity("recastProjectile");definition.RequiredProjectile=p.OptionalIdentity("requiredProjectile");
+            if(definition.RecastSkill.IsValid!=(definition.RecastProjectile.Length>0))throw new ContentValidationException(path+".parameters.recastSkill","Recast skill and projectile key must be configured together.");
+            if(definition.AmmoFallback.IsValid&&definition.AmmoCost==0)throw new ContentValidationException(path+".parameters.fallbackSkill","Ammo fallback requires a positive ammunition cost.");
+            return definition;
+        }
+    }
+}

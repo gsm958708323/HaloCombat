@@ -16,6 +16,7 @@ namespace Combat.Core
 
         internal void Detach()
         {
+            if(Self==null)return;
             OnDetach();
             Self = null;
         }

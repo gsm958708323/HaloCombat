@@ -39,6 +39,8 @@ namespace Combat.Tests
             {
                 if(field.IsStatic||new[]{"Name","Key","OriginContentKey","Tree","PresentationKind","ResourceKey"}.Contains(field.Name))continue;
                 if(value is DamageEffect damage&&!damage.CanCrit&&field.Name=="CritChance")continue;
+                // The pre-tracking fixture has no tracking metadata; live routing is tested separately.
+                if(value is ProjectileDefinition&&field.Name=="TrackingKey"&&string.IsNullOrEmpty((string)field.GetValue(value)))continue;
                 fields[field.Name]=Shape(field.GetValue(value),depth+1);
             }
             return fields;

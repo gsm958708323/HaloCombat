@@ -157,6 +157,11 @@ namespace Combat.Tests
         {
             var p=Project();var examples=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));
             var graph=examples.Skills.First(s=>s.Id==(charge?"charged-shot":"basic-shot"));graph.Id="g1";graph.RuntimeId=101;p.Skills[0]=graph;
+            p.Runtime.Arena.Bindings.First(b=>b.Action=="Fire1").Input="Attack";
+            // Real Arena definitions now own 4001/4004; this synthetic held-cast fixture
+            // needs its own definition identities while preserving the formal skill ID.
+            int definition=p.Skills.Skip(1).SelectMany(s=>s.Nodes).Select(n=>n.RuntimeId).Concat(p.Buffs.SelectMany(b=>b.Nodes).Select(n=>n.RuntimeId)).Max();
+            foreach(var n in graph.Nodes)if(n.Kind=="projectile"||n.Kind=="delivery")n.RuntimeId=++definition;
             var cast=graph.Nodes.First(n=>n.Kind=="cast").Parameters;
             cast["mode"]=charge?"charge":"channel";cast["autoRelease"]=false;cast["sustained"]=true;cast["interval"]=.1f;cast["delay"]=0;cast["cost"]=0;cast["energyPerSecond"]=0;
             return p;

@@ -97,6 +97,13 @@ namespace Combat.Config
                     effects.AddRange(Outputs(node,"next",allowSpatial));break;
                 case "impact":
                     effects.Add(Impact(node,path));effects.AddRange(Outputs(node,"next",allowSpatial));break;
+                case "refill-ammo":
+                    var ammo=new NodeParameters(node,path,"amount","recipient");
+                    effects.Add(new TargetEffects(new IEffect[]{new RefillAmmoEffect(ammo.Integer("amount",60,0,1000000))},ammo.Choice("recipient","self","self","target")=="self"));
+                    effects.AddRange(Outputs(node,"next",allowSpatial));break;
+                case "teleport-projectile":
+                    var teleport=new NodeParameters(node,path,"trackingKey");effects.Add(new TeleportTrackedProjectileEffect(teleport.Text("trackingKey")));
+                    effects.AddRange(Outputs(node,"next",allowSpatial));break;
                 default: throw new ContentValidationException(path + ".kind", "Unsupported effect kind: " + node.Kind);
             }
             var result=effects.ToArray();
@@ -120,7 +127,7 @@ namespace Combat.Config
         {
             var p=new NodeParameters(node,path,"speed","range","lifetime","radius","maxHits","homingRate",
                 "multi","count","spread","chain","chainCount","chainRadius","chainMode","homingRetarget","homingRadius",
-                "trajectory","acceleration","maxSpeed","returnAfter","returnSpeed","catchRadius","launchHeight","verticalSpeed","gravity","restitution","groundBounces","wallBounces","spawnForward","snapshotAttack","hostileMask","cueId","homingMaxTurn");
+                "trajectory","acceleration","maxSpeed","returnAfter","returnSpeed","catchRadius","launchHeight","verticalSpeed","gravity","restitution","groundBounces","wallBounces","spawnForward","snapshotAttack","hostileMask","cueId","homingMaxTurn","trackingKey","rampTime");
             CheckId(node,path,_projectiles,"projectile");
             int projectileCue=p.Integer("cueId",0,0,1000000);if(projectileCue>0)_content.RequiredCues.Add(projectileCue);
             int maxHits=p.Integer("maxHits",1,0,10000);
@@ -130,7 +137,7 @@ namespace Combat.Config
             var chain=p.Boolean("chain",false)?new ProjectileChainDefinition {ExtraChains=chainCount,Radius=chainRadius,Mode=chainMode=="random"?ChainTargetMode.Random:ChainTargetMode.Nearest}:null;
             if(chain!=null&&maxHits==0)throw new ContentValidationException(path+".parameters.maxHits","Chain needs a finite per-segment hit budget; unlimited piercing has no segment endpoint.");
             float speed=p.Number("speed",12,.1f,1000);
-            string trajectory=p.Choice("trajectory","linear","linear","accelerate","return","bounce");
+            string trajectory=p.Choice("trajectory","linear","linear","accelerate","return","bounce","ramp");
             float acceleration=p.Number("acceleration",6,-1000,1000),maxSpeed=p.Number("maxSpeed",60,.1f,1000);
             float returnAfter=p.Number("returnAfter",.6f,0,3600),returnSpeed=p.Number("returnSpeed",12,.1f,1000),catchRadius=p.Number("catchRadius",.4f,.01f,10);
             var bounce=new ProjectileBounceDefinition {LaunchHeight=p.Number("launchHeight",.5f,0,100),VerticalSpeed=p.Number("verticalSpeed",5,0,100),
@@ -138,10 +145,10 @@ namespace Combat.Config
             int walls=p.Integer("wallBounces",0,0,64);
             if(trajectory=="accelerate"&&maxSpeed<speed)throw new ContentValidationException(path+".parameters.maxSpeed","Maximum speed cannot be less than initial speed.");
             var motion=trajectory=="linear"&&walls==0?null:new ProjectileMotionDefinition {Acceleration=trajectory=="accelerate"?acceleration:0,MaxSpeed=trajectory=="accelerate"?maxSpeed:1000,
-                ReturnAfter=trajectory=="return"?returnAfter:-1,ReturnSpeed=returnSpeed,CatchRadius=catchRadius,Bounce=trajectory=="bounce"?bounce:null,WallBounces=walls};
+                ReturnAfter=trajectory=="return"?returnAfter:-1,ReturnSpeed=returnSpeed,CatchRadius=catchRadius,Bounce=trajectory=="bounce"?bounce:null,WallBounces=walls,RampTime=trajectory=="ramp"?p.Number("rampTime",5,.001f,3600):0};
             _content.Projectiles.Register(new ProjectileDefinition
             {
-                SpecId=node.RuntimeId,Speed=speed,Range=p.Number("range",24,0,1000),Lifetime=p.Number("lifetime",120,.001f,3600),Motion=motion,
+                SpecId=node.RuntimeId,Speed=speed,Range=p.Number("range",24,0,1000),Lifetime=p.Number("lifetime",120,.001f,3600),Motion=motion,TrackingKey=p.OptionalIdentity("trackingKey"),
                 SpawnForward=p.Number("spawnForward",.4f,0,100),SnapshotAtk=p.Boolean("snapshotAttack",true),HostileMask=p.Integer("hostileMask",0,0,int.MaxValue),CueId=projectileCue,HomingMaxTurn=p.Number("homingMaxTurn",0,0,10000),
                 HitRadius=p.Number("radius",.18f,.01f,100),MaxHits=maxHits,Chain=chain,
                 HomingRate=p.Number("homingRate",0,0,10000),HomingRetarget=p.Boolean("homingRetarget",false),HomingAcquireRadius=p.Number("homingRadius",12,.01f,1000),

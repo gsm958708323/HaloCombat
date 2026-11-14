@@ -23,6 +23,7 @@ namespace Combat.Config
                 var skill=project.Skills[i];string path="$.skills["+i+"]";
                 Number(skill.RuntimeId,skillNumbers,path+".runtimeId");
                 Graph(skill.Nodes,skill.Edges,path,false,buffs,blueprints,checkRetainedReferences);
+                foreach(var node in skill.Nodes)if(node.Kind=="cast")foreach(string field in new[]{"fallbackSkill","recastSkill"})Reference(node,field,skills,path+".nodes["+node.Id+"]");
                 TimelineReferences(skill.Timeline,skill.Nodes,path+".timeline");
             }
             for(int i=0;i<project.Buffs.Length;i++)

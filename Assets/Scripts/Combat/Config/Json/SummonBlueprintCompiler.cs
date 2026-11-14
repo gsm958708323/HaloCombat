@@ -26,6 +26,7 @@ namespace Combat.Config
                     FollowRange=Number(d.FollowRange,path+".followRange",0,100),HoldDuration=Number(d.HoldDuration,path+".holdDuration",.02f,120)
                 };
                 value.InitialEnergy=Number(d.InitialEnergy??d.Energy,path+".initialEnergy",0,value.Energy);
+                Number(d.Ammo,path+".ammo",0,1000000);Number(d.InitialAmmo??d.Ammo,path+".initialAmmo",0,d.Ammo);value.Ammo=d.Ammo;value.InitialAmmo=d.InitialAmmo??d.Ammo;
                 value.AttackRange=Number(d.AttackRange,path+".attackRange",.01f,value.AcquireRadius);
                 catalog.Register(value);
             }

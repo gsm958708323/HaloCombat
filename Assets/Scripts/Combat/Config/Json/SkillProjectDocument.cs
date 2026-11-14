@@ -58,6 +58,8 @@ namespace Combat.Config
         public float Energy { get; set; } = 100;
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public float? InitialEnergy { get; set; }
         public float Recovery { get; set; } = 10;
+        [DefaultValue(60),JsonProperty(DefaultValueHandling=DefaultValueHandling.Ignore)] public int Ammo {get;set;}=60;
+        [JsonProperty(NullValueHandling=NullValueHandling.Ignore)] public int? InitialAmmo {get;set;}
         public PreviewActorDocument Caster { get; set; } = new PreviewActorDocument { Id = "caster", X = -6 };
         public PreviewActorDocument[] Targets { get; set; } = Array.Empty<PreviewActorDocument>();
         public PreviewObstacleDocument[] Obstacles { get; set; } = Array.Empty<PreviewObstacleDocument>();

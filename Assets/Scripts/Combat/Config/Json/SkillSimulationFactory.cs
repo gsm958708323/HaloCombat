@@ -35,6 +35,7 @@ namespace Combat.Config
             if (spec.BlueprintId == "caster"||summoned)
             {
                 actor.AddComp(summoned?new EnergyComp(blueprint.Energy,blueprint.Recovery,blueprint.InitialEnergy):new EnergyComp(_preview.Energy, _preview.Recovery, _preview.InitialEnergy));
+                actor.AddComp(summoned?new AmmoComp(blueprint.Ammo,blueprint.InitialAmmo):new AmmoComp(_preview.Ammo,_preview.InitialAmmo));actor.AddComp(new TrackedProjectilesComp());
                 actor.AddComp(new SkillCastComp(_content.Skills));
             }
             return actor;

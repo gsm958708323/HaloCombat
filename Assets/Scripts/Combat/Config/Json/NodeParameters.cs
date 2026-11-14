@@ -50,6 +50,14 @@ namespace Combat.Config
             if(value.Type!=JTokenType.String||string.IsNullOrWhiteSpace(value.Value<string>())||value.Value<string>().Length>128)Fail(name,"Expected nonempty identity up to128 characters.");
             return value.Value<string>();
         }
+        public string OptionalIdentity(string name)
+        {
+            if(!_values.TryGetValue(name,out var value))return "";
+            if(value.Type!=JTokenType.String)Fail(name,"Expected an identity string.");
+            string text=value.Value<string>();
+            if(text.Length>128||text.Length>0&&string.IsNullOrWhiteSpace(text))Fail(name,"Expected an empty or nonblank identity up to128 characters.");
+            return text;
+        }
         void Fail(string name, string reason) => throw new ContentValidationException(_path + "." + name, reason);
     }
 }

@@ -14,7 +14,7 @@ namespace Combat.Config
         readonly Dictionary<string, SkillNodeDocument> _nodes = new Dictionary<string, SkillNodeDocument>();
         readonly HashSet<string> _used = new HashSet<string>();
         readonly List<SkillNodeDocument> _entries=new List<SkillNodeDocument>();
-        static readonly HashSet<string> Kinds=new HashSet<string>{"target","cast","projectile","split","damage","cue","delivery","buff","dispel","heal","buff-events","skill-events","after-damage","impact"};
+        static readonly HashSet<string> Kinds=new HashSet<string>{"target","cast","projectile","split","damage","cue","delivery","buff","dispel","heal","buff-events","skill-events","after-damage","impact","refill-ammo","teleport-projectile"};
         internal static bool KnownKind(string kind)=>kind!=null&&Kinds.Contains(kind);
         public EffectGraphIndex(string contentKey,SkillNodeDocument[] nodes,SkillEdgeDocument[] edges, string path,bool buffGraph=false)
         {
@@ -96,7 +96,7 @@ namespace Combat.Config
                     || (kind=="buff-events"&&Array.IndexOf(new[]{"apply","stack","period","expire","hurt","cast","removed"},edge.SourcePort)>=0&&edge.TargetPort=="execute")
                     || (kind=="skill-events"&&Array.IndexOf(new[]{"hit","critical","kill","completed","wall","range","projectile-end"},edge.SourcePort)>=0&&edge.TargetPort=="execute")
                     || (kind=="after-damage"&&(edge.SourcePort=="apply"||edge.SourcePort=="next")&&edge.TargetPort=="execute")
-                    || ((kind == "damage" || kind == "cue" || kind=="buff" || kind=="dispel" || kind=="heal" || kind=="split" || kind=="impact") && edge.SourcePort == "next" && edge.TargetPort == "execute");
+                    || ((kind == "damage" || kind == "cue" || kind=="buff" || kind=="dispel" || kind=="heal" || kind=="split" || kind=="impact"||kind=="refill-ammo"||kind=="teleport-projectile") && edge.SourcePort == "next" && edge.TargetPort == "execute");
                 valid &= edge.TargetPort == "target" ? _nodes[edge.Target].Kind == "cast" : _nodes[edge.Target].Kind != "target" && _nodes[edge.Target].Kind != "cast" && _nodes[edge.Target].Kind!="buff-events" && _nodes[edge.Target].Kind!="skill-events";
                 if (!valid) Fail(Path + ".edges." + edge.Id, "Unsupported port connection.");
             }

@@ -12,6 +12,7 @@ namespace Combat.Core
         public SkillNodeId[] Slots=Array.Empty<SkillNodeId>();
         public BtNode Tree;
         public float AcquireRadius,AttackRange,FollowRange,LeashRange,PatrolRadius;
+        public int Ammo,InitialAmmo;
     }
 
     // Gameplay factories consume domain definitions; they never read authoring JSON or Unity assets.
@@ -37,6 +38,7 @@ namespace Combat.Core
             if(definition.Role=="target")return actor;
             actor.AddComp(new HitboxComp());
             actor.AddComp(new EnergyComp(definition.Energy,definition.Recovery,definition.InitialEnergy));actor.AddComp(new SkillCastComp(_skills));
+            actor.AddComp(new AmmoComp(definition.Ammo,definition.InitialAmmo));actor.AddComp(new TrackedProjectilesComp());
             if(definition.Role=="player")
             {
                 actor.AddComp(new InputBufferComp());actor.AddComp(new ComboComp(_data.Combo));actor.AddComp(new PlayerAimComp());

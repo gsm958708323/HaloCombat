@@ -1,14 +1,15 @@
 import { Handle, Position, useUpdateNodeInternals } from '@xyflow/react';
 import { useEffect } from 'react';
 import type { Node, NodeProps } from '@xyflow/react';
-import type { GraphNode, Field, SummonBlueprint,BuffDefinition } from './model';
+import type { GraphNode, Field, SummonBlueprint,BuffDefinition,Skill } from './model';
 import { kinds, portName, parameterValue, nodeOutputs,effectKinds } from './model';
-type Data = GraphNode & { authoredTimeline?:boolean;counts?:Record<string,number>;blueprints?: SummonBlueprint[];buffs?:BuffDefinition[];changeKind:(id:string,kind:string)=>void; change: (id: string, key: string, value: string | number | boolean) => void; toggle: (id: string, enabled: boolean) => void; remove: (id: string) => void };
+type Data = GraphNode & { authoredTimeline?:boolean;counts?:Record<string,number>;blueprints?: SummonBlueprint[];buffs?:BuffDefinition[];skills?:Skill[];changeKind:(id:string,kind:string)=>void; change: (id: string, key: string, value: string | number | boolean) => void; toggle: (id: string, enabled: boolean) => void; remove: (id: string) => void };
 export type EditorNode = Node<Data & Record<string, unknown>, 'skill'>;
 function Parameter({ field, value, change }: { field: Field; value: string | number | boolean; change: (value: string | number | boolean) => void }) {
   return <label className="parameter nodrag nowheel"><span>{field.label}<small>{field.unit}</small></span>
     {field.type === 'select' ? <select aria-label={field.label} value={String(value)} onChange={e => change(e.target.value)}>{field.options?.map(([key,label]) => <option key={key} value={key}>{label}</option>)}</select>
       : field.type === 'check' ? <input aria-label={field.label} type="checkbox" checked={!!value} onChange={e => change(e.target.checked)} />
+      : field.type === 'text' ? <input aria-label={field.label} type="text" maxLength={128} value={String(value)} onChange={e=>change(e.target.value)}/>
       : <div className="number-pair"><input aria-label={`${field.label}滑条`} type="range" min={field.min} max={field.max} step={field.step} value={Number(value)} onChange={e => change(Number(e.target.value))} /><input aria-label={field.label} type="number" min={field.min} max={field.max} step={field.step} value={Number(value)} onChange={e => { if (e.target.value !== '') change(Number(e.target.value)); }} /></div>}
   </label>;
 }
@@ -17,6 +18,13 @@ export function SkillNode({ data, selected }: NodeProps<EditorNode>) {
   const update=useUpdateNodeInternals();const ports=nodeOutputs(data);const portKey=ports.map(([key])=>key).join(',');
   useEffect(()=>update(data.id),[data.id,portKey,update]);
   if (!schema) return <div className="skill-node">未知节点：{data.kind}</div>;
+  const routing=['ammoCost','fallbackSkill','recastProjectile','recastSkill','requiredProjectile'];
+  const fields=schema.fields.filter(field=>(!field.when||field.when(data.parameters))&&(!data.authoredTimeline||data.kind!=='cast'||['cost','cooldown',...routing].includes(field.key)));
+  function control(field:Field){
+    const options=field.key==='blueprint'?data.blueprints?.map(b=>[b.id,b.name??b.id] as [string,string]):field.key==='buff'?data.buffs?.map(b=>[b.id,b.name??b.id] as [string,string]):
+      field.key==='fallbackSkill'||field.key==='recastSkill'?data.skills?.map(s=>[s.id,s.name] as [string,string]):undefined;
+    return <Parameter key={field.key} field={options?{...field,options:[['','无'],...options]}:field} value={parameterValue(field,data.parameters)} change={value=>data.change(data.id,field.key,value)}/>;
+  }
   return <div className={`skill-node ${selected ? 'selected' : ''} ${data.enabled === false ? 'disabled' : ''}`} style={{ '--node-color': schema.color } as React.CSSProperties}>
     <div className="node-heading"><strong>{schema.title}</strong>{data.kind!=='buff-events'&&<button className="nodrag icon-button" aria-label={`删除${schema.title}节点`} onClick={() => data.remove(data.id)}>×</button>}</div>
     <div className="node-ports">
@@ -30,7 +38,8 @@ export function SkillNode({ data, selected }: NodeProps<EditorNode>) {
       {data.kind === 'projectile' && <label className="enable-row nodrag"><span>无限穿透</span><input aria-label="无限穿透" type="checkbox" checked={data.parameters.maxHits===0} onChange={e=>data.change(data.id,'maxHits',e.target.checked?0:1)}/></label>}
       {data.kind === 'damage' && <div className="module-label">效果结算 <b>伤害结算</b></div>}
       {data.kind==='cast'&&data.authoredTimeline&&<small>时序由右侧显式时间轴管理</small>}
-      {schema.fields.filter(field => (!field.when || field.when(data.parameters))&&(!data.authoredTimeline||data.kind!=='cast'||['cost','cooldown'].includes(field.key))).map(field => <Parameter key={field.key} field={field.key==='blueprint'?{...field,options:[['','选择蓝图'],...(data.blueprints??[]).map(b=>[b.id,b.name??b.id] as [string,string])]}:field.key==='buff'?{...field,options:[['','选择Buff'],...(data.buffs??[]).map(b=>[b.id,b.name??b.id] as [string,string])]}:field} value={parameterValue(field,data.parameters)} change={value => data.change(data.id,field.key,value)} />)}
+      {fields.filter(field=>data.kind!=='cast'||!routing.includes(field.key)).map(control)}
+      {data.kind==='cast'&&<details className="nodrag nowheel"><summary>弹药与重施放</summary>{fields.filter(field=>routing.includes(field.key)).map(control)}</details>}
     </div>
   </div>;
 }

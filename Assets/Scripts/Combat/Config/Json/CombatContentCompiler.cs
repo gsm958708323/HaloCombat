@@ -59,7 +59,7 @@ namespace Combat.Config
                 var effects = compiler.Outputs(cast, "cast", true);
                 var authored=skill.Timeline==null?null:AuthoredTimelineCompiler.Compile(skill.Timeline,graph,compiler);
                 if (authored==null&&effects.Length + compiler.Clips.Count + compiler.Followups.Count == 0) Fail(graph.NodePath(cast), "Cast needs an enabled delivery/effect.");
-                var definition = SkillCastCompiler.Compile(skill, cast, graph.NodePath(cast), effects, content.Timelines,compiler.Clips.ToArray(),compiler.Followups.ToArray(),authored);
+                var definition = SkillCastCompiler.Compile(skill, cast, graph.NodePath(cast), effects, content.Timelines,compiler.Clips.ToArray(),compiler.Followups.ToArray(),authored,skillIds,content.Dependencies);
                 definition.AimRange=compiler.AimRange;
                 definition.TargetMode = (SkillTargetMode)Array.IndexOf(new[] { "point", "entity", "nearest", "random", "direction", "self","facing" }, mode);
                 definition.TargetRange = range;

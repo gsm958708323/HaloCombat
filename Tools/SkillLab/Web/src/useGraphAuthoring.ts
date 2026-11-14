@@ -52,8 +52,8 @@ export function useGraphAuthoring(document:ReturnType<typeof useProjectDocument>
   }),[editGraph]);
   const nodes=useMemo<EditorNode[]>(()=>graph?.nodes.map(n=>({id:n.id,type:'skill',position:n.position,measured:measurements[keyString+':'+n.id],selected:selectedNodes.includes(n.id),deletable:n.kind!=='buff-events',data:{...n,authoredTimeline:!!graph.timeline,
     counts:Object.fromEntries(nodeOutputs(n).map(([port])=>[port,graph.edges.filter(e=>e.source===n.id&&e.sourcePort===port).length])),
-    blueprints:project?.summonBlueprints,buffs:project?.buffs,change:parameter,changeKind,remove:(id)=>remove([id]),
-    toggle:(id,enabled)=>editGraph(g=>({...g,nodes:g.nodes.map(v=>v.id===id?{...v,enabled}:v)}))}}))??[],[graph,project?.summonBlueprints,project?.buffs,selectedNodes,parameter,changeKind,remove,editGraph,measurements,keyString]);
+    blueprints:project?.summonBlueprints,buffs:project?.buffs,skills:project?.skills,change:parameter,changeKind,remove:(id)=>remove([id]),
+    toggle:(id,enabled)=>editGraph(g=>({...g,nodes:g.nodes.map(v=>v.id===id?{...v,enabled}:v)}))}}))??[],[graph,project?.summonBlueprints,project?.buffs,project?.skills,selectedNodes,parameter,changeKind,remove,editGraph,measurements,keyString]);
   const edges=useMemo<Edge[]>(()=>graph?.edges.map(e=>({id:e.id,source:e.source,sourceHandle:e.sourcePort,target:e.target,targetHandle:e.targetPort,
     selected:selectedEdges.includes(e.id),type:'default',reconnectable:true,style:{stroke:selectedEdges.includes(e.id)?'#f4d890':e.sourcePort==='target'?'#85abbc':'#d1b66e',strokeWidth:selectedEdges.includes(e.id)?3:2},animated:false}))??[],[graph,selectedEdges]);
   function nodeChanges(changes:NodeChange<EditorNode>[]){

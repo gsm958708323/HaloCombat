@@ -51,6 +51,7 @@ namespace Combat.Core
                 SpawnAoeEffect.CopyTeam(owner,projectile);
                 float attack=def.SnapshotAtk?intent.SnapshotAtk:owner.TryGetComp<AttributeSet>(out var attributes)?attributes.GetFinal(AttrId.Atk):0;
                 var body=projectile.GetComp<ProjectileComp>();body.Setup(def,intent.Owner,attack,intent.Target,intent.Power,seed);
+                if(owner.TryGetComp<TrackedProjectilesComp>(out var tracker))tracker.Track(def.TrackingKey,id);
                 _world.PublishSpawn(id,"projectile");
                 if(obstacle.Blocked){Wall(projectile,body,obstacle);if(body.Exhausted)alive--;}
             });
@@ -71,6 +72,7 @@ namespace Combat.Core
         void Move(Actor projectile,ProjectileComp body,Actor owner,float dt)
         {
             var def=body.Def;var transform=projectile.GetComp<TransformComp>();
+            ProjectileKinematics.SampleStep(body);
             double timeLeft=Math.Min(dt,Math.Max(0,def.Lifetime-body.Age));
             while(projectile.IsActive&&!body.Exhausted)
             {

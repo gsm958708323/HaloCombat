@@ -10,6 +10,24 @@ const ids=()=>{let number=0;return ()=> 'generated-'+ ++number;};
 const skillKey={kind:'skill',id:'basic-shot'};
 const runtime=()=>JSON.parse(fs.readFileSync(path.resolve(__dirname,'../../../../Assets/StreamingAssets/Combat/project.json'),'utf8'));
 
+test('skill rename and delete update ammunition fallback and projectile recast references',()=>{
+  const p=example();assert(edits.referencesTo(p,'skill','reload-ammo').some(r=>r.field==='fallbackSkill'));
+  let next=edits.renameContent(p,'skill','reload-ammo','magazine-reload');assert.equal(next.skills.find(s=>s.id==='ammo-shot').nodes.find(n=>n.kind==='cast').parameters.fallbackSkill,'magazine-reload');
+  assert.throws(()=>edits.deleteContent(next,'skill','magazine-reload'),/替代引用/);
+  next=edits.deleteContent(next,'skill','projectile-warp','magazine-reload');assert.equal(next.skills.find(s=>s.id==='tracked-shot').nodes.find(n=>n.kind==='cast').parameters.recastSkill,'magazine-reload');
+  assert.equal(p.skills.find(s=>s.id==='ammo-shot').nodes.find(n=>n.kind==='cast').parameters.fallbackSkill,'reload-ammo');
+});
+test('merge binds imported ammunition and recast routes to their own imported skill identities',()=>{
+  const p=example(),next=mergeProjects(p,p,ids()),imported=next.skills.slice(p.skills.length);
+  const reload=imported.find(s=>s.name===p.skills.find(s=>s.id==='reload-ammo').name),warp=imported.find(s=>s.name===p.skills.find(s=>s.id==='projectile-warp').name);
+  assert.equal(imported.find(s=>s.name===p.skills.find(s=>s.id==='ammo-shot').name).nodes.find(n=>n.kind==='cast').parameters.fallbackSkill,reload.id);
+  assert.equal(imported.find(s=>s.name===p.skills.find(s=>s.id==='tracked-shot').name).nodes.find(n=>n.kind==='cast').parameters.recastSkill,warp.id);
+});
+test('pasting a cast cannot silently retain a missing fallback skill from another project',()=>{
+  const p=example(),cast=p.skills.find(s=>s.id==='ammo-shot').nodes.find(n=>n.kind==='cast');
+  p.skills=[{...p.skills[0],nodes:[],edges:[]}];assert.throws(()=>graph.pasteSelection(p,skillKey,{nodes:[cast],edges:[]},{x:0,y:0},ids()),/不存在的技能/);
+});
+
 test('runtime skill rename updates Combo predecessor/target, dodge, actor AI and loadout slots',()=>{
   const p=runtime();const next=edits.renameContent(p,'skill','g1','new-g1');
   assert.equal(next.runtime.combos[0].toSkill,'new-g1');assert(next.runtime.combos[1].preSkills.includes('new-g1'));
@@ -40,7 +58,7 @@ test('imported Arena remaps actor and input references without selecting an exis
   const importedActors=next.runtime.actors.slice(destination.runtime.actors.length),importedCombos=next.runtime.combos.slice(destination.runtime.combos.length);
   for(const role of ['player','enemy','trainingTarget'])assert(importedActors.some(a=>a.id===arena[role]));
   for(const binding of arena.bindings){assert(importedCombos.some(c=>c.input===binding.input&&c.preSkills.length===0));assert(!destination.runtime.combos.some(c=>c.input===binding.input));}
-  assert.notEqual(arena.player,source.runtime.arena.player);assert.equal(source.runtime.arena.bindings[0].input,'Attack');
+  assert.notEqual(arena.player,source.runtime.arena.player);assert.equal(source.runtime.arena.bindings[0].input,'ArenaPrimary');
 });
 
 test('skill ID rename updates blueprint references and editor selection, preserving numeric identity',()=>{
@@ -154,5 +172,5 @@ test('real transformed project is exported for the C# compiler and HTTP validati
   let p=example();p=edits.renameContent(p,'skill','basic-shot','authoring-basic');p=edits.renameContent(p,'buff','burn','authoring-burn');p=edits.renameContent(p,'blueprint','echo-gunner','authoring-summon');
   const duplicate=edits.duplicateContent(p,'skill','authoring-basic','作者复制验证',ids());p=edits.selectGraph(duplicate.project,duplicate.id);
   const output=path.resolve(__dirname,'../../.local/verification');fs.mkdirSync(output,{recursive:true});fs.writeFileSync(path.join(output,'authoring-transformed.json'),JSON.stringify(p,null,2));
-  assert.equal(p.skills.length,35);
+  assert.equal(p.skills.length,39);
 });

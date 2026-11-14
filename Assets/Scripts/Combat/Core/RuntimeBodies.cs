@@ -21,6 +21,7 @@ namespace Combat.Core
         public float HomingAcquireRadius = 12f;
         public ProjectileChainDefinition Chain;
         public ProjectileMotionDefinition Motion;
+        public string TrackingKey;
         public IEffect[] OnHit = Array.Empty<IEffect>();
         public IEffect[] OnExpire = Array.Empty<IEffect>();
         public IEffect[] OnWall = Array.Empty<IEffect>();
@@ -89,6 +90,7 @@ namespace Combat.Core
         public int LegHits { get; set; }
         public bool Returning { get; set; }
         public double VerticalSpeed { get; set; }
+        public double SampledSpeed {get;internal set;}
         public int GroundBouncesLeft { get; set; }
         public int WallBouncesLeft { get; set; }
         public int HitCount { get; set; }
@@ -106,6 +108,7 @@ namespace Combat.Core
             RangeLimit=seed!=null&&seed.Range>0?seed.Range:def.Range>0?def.Range:double.PositiveInfinity;
             ChainsLeft=def.Chain?.ExtraChains??0;LegHits=0;
             Returning=false;VerticalSpeed=seed?.VerticalSpeed??def.Motion?.Bounce?.VerticalSpeed??0;
+            SampledSpeed=0;
             GroundBouncesLeft=def.Motion?.Bounce?.Count??0;WallBouncesLeft=def.Motion?.WallBounces??0;
             Age = 0f;
             Distance = 0;
@@ -129,6 +132,7 @@ namespace Combat.Core
 
         protected override void OnDetach()
         {
+            if(Self.World!=null&&Self.World.TryGetActor(OwnerId,out var owner)&&owner.TryGetComp<TrackedProjectilesComp>(out var tracker))tracker.ClearIf(Def?.TrackingKey,Self.Id);
             _hits.Clear();
             Def = null;
             Exhausted = true;

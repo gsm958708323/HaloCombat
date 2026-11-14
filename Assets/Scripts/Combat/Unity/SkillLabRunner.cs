@@ -146,6 +146,7 @@ namespace Combat.Unity
             {
                 GUILayout.Label("Version " + Revision.Substring(0, 12) + " / " + SkillId);
                 GUILayout.Label("Time " + Snapshot.Time.ToString("F2") + "s / Energy " + Snapshot.Energy.ToString("F1"));
+                GUILayout.Label("Ammo "+Snapshot.Ammo+" / "+Snapshot.AmmoCapacity);
                 if (Snapshot.Charging) GUILayout.Label("Charging " + (Snapshot.ChargeProgress * 100).ToString("F0") + "% / " + Snapshot.CastPower.ToString("F2") + "x");
                 GUILayout.Label("Casts " + Snapshot.Statistics.Casts + " / Projectiles " + Snapshot.Statistics.Projectiles
                     + " / Hits " + Snapshot.Statistics.Hits + " / Damage " + Snapshot.Statistics.Damage.ToString("F1"));

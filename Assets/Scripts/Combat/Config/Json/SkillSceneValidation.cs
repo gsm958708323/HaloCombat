@@ -12,6 +12,8 @@ namespace Combat.Config
             if (preview.InitialEnergy.HasValue && (!Finite(preview.InitialEnergy.Value) || preview.InitialEnergy < 0 || preview.InitialEnergy > preview.Energy))
                 Fail("$.preview.initialEnergy", "Expected initial energy in [0, capacity].");
             if (!Finite(preview.Recovery) || preview.Recovery < 0) Fail("$.preview.recovery", "Expected finite nonnegative recovery.");
+            if(preview.Ammo<0||preview.Ammo>1000000)Fail("$.preview.ammo","Expected capacity in [0,1000000].");
+            if(preview.InitialAmmo.HasValue&&(preview.InitialAmmo<0||preview.InitialAmmo>preview.Ammo))Fail("$.preview.initialAmmo","Expected initial ammunition in [0, capacity].");
             if (preview.Targets == null || preview.Targets.Length > 128) Fail("$.preview.targets", "Expected up to 128 targets.");
             var collision=new CollisionWorld(Obstacles(preview));
             var ids = new HashSet<string>();

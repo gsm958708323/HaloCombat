@@ -13,6 +13,8 @@ namespace Combat.Config
         public float Energy {get;set;}=100;
         public float? InitialEnergy {get;set;}
         public float Recovery {get;set;}=10;
+        [System.ComponentModel.DefaultValue(0),Newtonsoft.Json.JsonProperty(DefaultValueHandling=Newtonsoft.Json.DefaultValueHandling.Ignore)] public int Ammo {get;set;}
+        [Newtonsoft.Json.JsonProperty(NullValueHandling=Newtonsoft.Json.NullValueHandling.Ignore)] public int? InitialAmmo {get;set;}
         public float AcquireRadius {get;set;}=20;
         public float AttackRange {get;set;}=12;
         public float FollowRange {get;set;}=2;

@@ -48,6 +48,8 @@ namespace Combat.Config
             _world.Events.Subscribe<EvRayResolved>(OnRay);
             _world.Events.Subscribe<EvObstacleHit>(e=>Record("collision",Name(e.Source),e.Kind+" -> "+e.Obstacle));
             _world.Events.Subscribe<EvProjectileEnded>(e=>Record("projectile-end",Name(e.Source),e.Reason.ToString()));
+            _world.Events.Subscribe<EvProjectileTeleport>(e=>Record(e.Moved?"projectile-teleport":"projectile-teleport-blocked",Name(e.Source),e.Key+" / "+e.Result));
+            _world.Events.Subscribe<EvAmmoChanged>(e=>Record("ammunition",Name(e.Source),e.Reason+" "+e.Delta+" -> "+e.Current+"/"+e.Capacity));
             _world.Events.Subscribe<EvProjectileBehavior>(e=>
             {
                 if(e.Kind=="chain")_chains++;if(e.Kind=="split")_splits++;
@@ -208,6 +210,7 @@ namespace Combat.Config
                     Remaining = projectile!=null?(float?)Math.Max(0,projectile.Def.Lifetime-projectile.Age):area?.Def != null ? (float?)Math.Max(0, area.Def.Duration - area.Age) : summon!=null&&summon.Lifetime>0?(float?)Math.Max(0,summon.Lifetime-summon.Age):null,
                     Dead = a.TryGetComp<TagComp>(out var tags) && tags.Has(CommonTags.Dead),
                     Owner=owner.IsValid?Name(owner):null,Blueprint=blueprint,Skill=projectile!=null?SkillName(projectile.Family.Origin):actorBlueprint?.SkillKey,Energy=a.TryGetComp<EnergyComp>(out var energy)?(float?)energy.Current:null,
+                    Ammo=a.TryGetComp<AmmoComp>(out var ammo)?(int?)ammo.Current:null,TrackingKey=projectile?.Def?.TrackingKey,
                     CastId=projectile?.Family.Origin.CastId??0,Generation=projectile?.Generation??0,ChainsLeft=projectile?.ChainsLeft??0,
                     Distance=projectile!=null?(float?)projectile.Distance:null,Range=projectile!=null&&!double.IsInfinity(projectile.RangeLimit)?(float?)projectile.RangeLimit:null,
                     Speed=projectile!=null?(float?)ProjectileKinematics.Speed(projectile):null,VerticalSpeed=projectile?.Def.Motion?.Bounce!=null?(float?)projectile.VerticalSpeed:null,
@@ -224,6 +227,7 @@ namespace Combat.Config
                 Step = _steps, Time = _steps * Step, Actors = actors, Events = _events.ToArray(), Trails = _trails.ToArray(), Areas = _areas.ToArray(), Volumes=_volumes.Values.ToArray(),
                 Obstacles=_world.Collision.Obstacles.Select(o=>new SkillObstacleSnapshot{Id=o.Id,X=o.X,Z=o.Z,Width=o.Width,Depth=o.Depth}).ToArray(),Rays=_rays.ToArray(),
                 Energy = caster?.GetComp<EnergyComp>().Current ?? 0,
+                Ammo=caster?.GetComp<AmmoComp>().Current??0,AmmoCapacity=caster?.GetComp<AmmoComp>().Capacity??0,
                 Channeling = cast?.IsChanneling ?? false,
                 Charging = cast?.IsCharging ?? false, ChargeProgress = cast?.ChargeProgress ?? 0, CastPower = cast?.CastPower ?? 1,
                 Cooldowns = _content.Skills.All.ToDictionary(s => s.Key, s => cast?.CooldownLeft(s.Id) ?? 0),
