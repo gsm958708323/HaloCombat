@@ -41,6 +41,8 @@ namespace Combat.Tests
             foreach(var field in type.GetFields(flags))
             {
                 if(field.IsStatic||new[]{"Name","Key","OriginContentKey","Tree","PresentationKind","ResourceKey"}.Contains(field.Name))continue;
+                if(value is TimelineDefinition&&field.Name=="ControlTags"&&((TagId[])field.GetValue(value)).Length==0)continue;
+                if(value is TimelineDefinition&&field.Name=="ScaleWithActionSpeed"&&!(bool)field.GetValue(value))continue;
                 if(value is DamageEffect damage&&!damage.CanCrit&&field.Name=="CritChance")continue;
                 // Original six-skill fixtures predate independent actor stops and graded
                 // feedback. Nonzero values still participate in the strict comparison.

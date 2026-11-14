@@ -81,6 +81,7 @@ namespace Combat.Config
             attr.SetBase(AttrId.MaxHp, initial.Hp); attr.SetBase(AttrId.Hp, initial.Hp);
             attr.SetBase(AttrId.Atk, initial.Atk); attr.SetBase(AttrId.Def, initial.Def);
             attr.SetBase(AttrId.Shield,initial.Shield);attr.SetBase(AttrId.DmgDealMul,initial.DamageDealt);attr.SetBase(AttrId.DmgTakenMul,initial.DamageTaken);
+            attr.SetBase(AttrId.ActionSpeed,initial.ActionSpeed);
             _names[HitboxComp.Pack(id)] = initial.Id;
             _sceneActors.Add(initial.Id, id);
             _world.PublishSpawn(id, blueprint);
@@ -234,6 +235,8 @@ namespace Combat.Config
                     Group=construct?.Def?.Group,DamageCap=construct?.Def?.DamageCap,NextDecay=construct?.NextDecay,
                     Stopped=_world.IsActorStopped(a),HitstopFrames=a.Time.HitstopLeft,LogicalTime=a.Time.Time,HurtLevel=hurt?reaction.Level.ToString().ToLowerInvariant():null,HurtAge=hurt?(float?)(_steps-reaction.Step)*Step:null,
                     ComboConfirmed=director?.HasComboConfirmation??false,CurrentSkill=director!=null&&director.IsPlaying?SkillName(director.CurrentOrigin):null,
+                    ActionTime=director!=null&&director.IsPlaying?(float?)director.TimelineTime:null,ActionDuration=director!=null&&director.IsPlaying?(float?)director.TimelineDuration:null,ActionRate=director?.ActionRate??1,
+                    ControlTags=director?.ActiveControls.Select(tag=>tag.Value).ToArray()??Array.Empty<int>(),
                     BufferedInput=a.TryGetComp<InputBufferComp>(out var buffer)&&buffer.TryPeek(out var token)?token.Action:null,
                     Ammo=a.TryGetComp<AmmoComp>(out var ammo)?(int?)ammo.Current:null,TrackingKey=projectile?.Def?.TrackingKey,
                     CastId=projectile?.Family.Origin.CastId??construct?.Origin.CastId??(director!=null&&director.IsPlaying?director.CurrentOrigin.CastId:0),Generation=projectile?.Generation??0,ChainsLeft=projectile?.ChainsLeft??0,

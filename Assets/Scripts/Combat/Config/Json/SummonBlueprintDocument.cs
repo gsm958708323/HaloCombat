@@ -9,6 +9,7 @@ namespace Combat.Config
         public float Attack {get;set;}=80;
         public float Defense {get;set;}
         public float MoveSpeed {get;set;}=3;
+        [System.ComponentModel.DefaultValue(1f),Newtonsoft.Json.JsonProperty(DefaultValueHandling=Newtonsoft.Json.DefaultValueHandling.Ignore)]public float ActionSpeed {get;set;}=1;
         public float CollisionRadius {get;set;}=.4f;
         public float Energy {get;set;}=100;
         public float? InitialEnergy {get;set;}

@@ -9,8 +9,9 @@ namespace Combat.Core
         public readonly SimVec3 Point;
         public readonly float Yaw;
         public readonly bool HasPoint;
+        public readonly bool HasYaw;
         public SkillAim(EntityId target, SimVec3 point, float yaw, bool hasPoint = true)
-        { Target = target; Point = point; Yaw = yaw; HasPoint = hasPoint; }
+        { Target = target; Point = point; Yaw = yaw; HasPoint = hasPoint;HasYaw=true; }
     }
 
     public sealed class SkillDefinition
@@ -108,13 +109,13 @@ namespace Combat.Core
         {
             LastRejection = null;
             if(Self.World.IsActorStopped(Self))return Reject("Actor is in hitstop.");
-            if(aim.HasPoint&&(!Finite(aim.Point.X)||!Finite(aim.Point.Y)||!Finite(aim.Point.Z)||!Finite(aim.Yaw)))return Reject("Aim must be finite.");
+            if(aim.HasYaw&&!Finite(aim.Yaw)||aim.HasPoint&&(!Finite(aim.Point.X)||!Finite(aim.Point.Y)||!Finite(aim.Point.Z)))return Reject("Aim must be finite.");
             if (IsChanneling || IsCharging) return Reject("A held cast is already active.");
             if(!SkillCastRouting.TryResolve(Self,_catalog,id,out var definition,out var routeError))return Reject(routeError);
             id=definition.Id;
             if (CooldownLeft(id) > 0f) return Reject("Cooldown.");
             if (_director.IsPlaying && !_tags.Has(CommonTags.Cancel)) return Reject("Cancel window is closed.");
-            if (_tags.Has(CommonTags.Dead) || _tags.Has(CommonTags.Stunned) || _tags.Has(CommonTags.Downed) || _tags.Has(CommonTags.Silence))
+            if (_tags.Has(CommonTags.Dead) || _tags.Has(CommonTags.Stunned) || _tags.Has(CommonTags.Downed) || _tags.Has(CommonTags.Silence)||_tags.Has(CommonTags.BlockSkill))
                 return Reject("Casting is blocked by actor state.");
             if (definition.EnergyCost > 0f && (_energy == null || !_energy.CanSpend(definition.EnergyCost)))
                 return Reject("Insufficient energy.");

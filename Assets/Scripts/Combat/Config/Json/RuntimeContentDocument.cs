@@ -37,6 +37,7 @@ namespace Combat.Config
         public float Attack {get;set;}=10;
         public float Defense {get;set;}
         public float MoveSpeed {get;set;}=5;
+        [System.ComponentModel.DefaultValue(1f),JsonProperty(DefaultValueHandling=DefaultValueHandling.Ignore)]public float ActionSpeed {get;set;}=1;
         public float Shield {get;set;}
         public float CritRate {get;set;}
         public float DamageDealt {get;set;}=1;

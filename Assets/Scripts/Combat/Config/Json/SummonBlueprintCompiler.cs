@@ -21,6 +21,7 @@ namespace Combat.Config
                     Id=d.Id,Name=d.Name,SkillKey=d.SkillId,Skill=skill,
                     Hp=Number(d.Hp,path+".hp",.01f,10000000),Attack=Number(d.Attack,path+".attack",0,1000000),Defense=Number(d.Defense,path+".defense",0,1000000),
                     MoveSpeed=Number(d.MoveSpeed,path+".moveSpeed",0,100),CollisionRadius=Number(d.CollisionRadius,path+".collisionRadius",0,10),
+                    ActionSpeed=Number(d.ActionSpeed,path+".actionSpeed",0,100),
                     Energy=Number(d.Energy,path+".energy",0,1000000),Recovery=Number(d.Recovery,path+".recovery",0,1000000),
                     AcquireRadius=Number(d.AcquireRadius,path+".acquireRadius",.01f,1000),
                     FollowRange=Number(d.FollowRange,path+".followRange",0,100),HoldDuration=Number(d.HoldDuration,path+".holdDuration",.02f,120)

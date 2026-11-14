@@ -15,7 +15,7 @@ export function BuffProperties({buff,change}:{buff:BuffDefinition;change:(value:
       <button aria-label={`移除BuffTag${index+1}`} onClick={()=>change({...buff,tags:buff.tags.filter((_,i)=>i!==index)})}>×</button></div>)}
     <button onClick={()=>change({...buff,tags:[...buff.tags,Math.max(3100,...buff.tags)+1]})}>添加 Tag</button>
     <h4>属性修正 · 每实例一次</h4>{buff.modifiers.map((m,index)=><fieldset key={index}>
-      <select aria-label={`修正${index+1}属性`} value={m.attribute} onChange={e=>modifier(index,{attribute:e.target.value})}>{[['maxHp','生命上限'],['attack','攻击'],['defense','防御'],['moveSpeed','移动速度'],['critRate','暴击率'],['damageDealt','伤害加成'],['damageTaken','受到伤害']].map(([key,label])=><option key={key} value={key}>{label}</option>)}</select>
+      <select aria-label={`修正${index+1}属性`} value={m.attribute} onChange={e=>modifier(index,{attribute:e.target.value})}>{[['maxHp','生命上限'],['attack','攻击'],['defense','防御'],['moveSpeed','移动速度'],['critRate','暴击率'],['damageDealt','伤害加成'],['damageTaken','受到伤害'],['actionSpeed','动作速度']].map(([key,label])=><option key={key} value={key}>{label}</option>)}</select>
       <select aria-label={`修正${index+1}运算`} value={m.operation} onChange={e=>modifier(index,{operation:e.target.value})}><option value="add">加值</option><option value="mul">乘值</option><option value="override">覆盖</option></select>
       <input aria-label={`修正${index+1}数值`} type="number" step=".1" value={m.value} onChange={e=>{if(e.target.value!=='')modifier(index,{value:Number(e.target.value)});}}/>
       <input aria-label={`修正${index+1}优先级`} type="number" value={m.priority} onChange={e=>{if(e.target.value!=='')modifier(index,{priority:Number(e.target.value)});}}/>

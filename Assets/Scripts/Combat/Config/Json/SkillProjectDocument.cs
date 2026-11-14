@@ -76,6 +76,7 @@ namespace Combat.Config
         [DefaultValue(0f),JsonProperty(DefaultValueHandling=DefaultValueHandling.Ignore)]public float Shield {get;set;}
         [DefaultValue(1f),JsonProperty(DefaultValueHandling=DefaultValueHandling.Ignore)]public float DamageDealt {get;set;}=1;
         [DefaultValue(1f),JsonProperty(DefaultValueHandling=DefaultValueHandling.Ignore)]public float DamageTaken {get;set;}=1;
+        [DefaultValue(1f),JsonProperty(DefaultValueHandling=DefaultValueHandling.Ignore)]public float ActionSpeed {get;set;}=1;
         [DefaultValue(.4f),JsonProperty(DefaultValueHandling=DefaultValueHandling.Ignore)] public float CollisionRadius { get; set; } = .4f;
     }
     public sealed class PreviewObstacleDocument

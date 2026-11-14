@@ -55,6 +55,10 @@ namespace Combat.Config
         public bool ComboConfirmed {get;internal set;}
         public string CurrentSkill {get;internal set;}
         public string BufferedInput {get;internal set;}
+        public float? ActionTime {get;internal set;}
+        public float? ActionDuration {get;internal set;}
+        public float ActionRate {get;internal set;}
+        public int[] ControlTags {get;internal set;}
         public int CastId {get;internal set;}
         public int Generation {get;internal set;}
         public int ChainsLeft {get;internal set;}

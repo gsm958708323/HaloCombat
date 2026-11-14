@@ -4215,6 +4215,125 @@
           "order": 0
         }
       ]
+    },
+    {
+      "id": "controlled-shot",
+      "runtimeId": 2042,
+      "name": "受控位移射击",
+      "category": "动作控制",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "parameters": {
+            "mode": "facing",
+            "range": 20
+          },
+          "position": {
+            "x": 0,
+            "y": 80
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.8
+          },
+          "position": {
+            "x": 300,
+            "y": 80
+          }
+        },
+        {
+          "id": "shot",
+          "kind": "projectile",
+          "parameters": {
+            "speed": 6,
+            "range": 20,
+            "lifetime": 5,
+            "radius": 0.1,
+            "maxHits": 1
+          },
+          "position": {
+            "x": 600,
+            "y": 80
+          },
+          "runtimeId": 6019
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "parameters": {
+            "flat": 20,
+            "coefficient": 0,
+            "canCrit": false
+          },
+          "position": {
+            "x": 900,
+            "y": 80
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "shot",
+          "sourcePort": "hit",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ],
+      "timeline": {
+        "runtimeId": 3042,
+        "duration": 0.6,
+        "controlTags": [
+          1011,
+          1012,
+          1013
+        ],
+        "scaleWithActionSpeed": true,
+        "clips": [
+          {
+            "id": "move",
+            "kind": "move",
+            "start": 0,
+            "end": 0.4,
+            "moveX": 2,
+            "moveY": 0,
+            "moveZ": 0,
+            "steer": 1,
+            "effects": []
+          },
+          {
+            "id": "cancel",
+            "kind": "cancel",
+            "start": 0.4,
+            "end": 0.6,
+            "effects": []
+          }
+        ],
+        "payloads": [
+          {
+            "id": "emit",
+            "time": 0.2,
+            "effects": [
+              "shot"
+            ]
+          }
+        ]
+      }
     }
   ],
   "preview": {

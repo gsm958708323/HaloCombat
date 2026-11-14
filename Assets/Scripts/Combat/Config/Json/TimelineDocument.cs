@@ -6,6 +6,9 @@ namespace Combat.Config
     {
         public int RuntimeId {get;set;}
         public float Duration {get;set;}
+        public int[] ControlTags {get;set;}=Array.Empty<int>();
+        public bool ShouldSerializeControlTags()=>ControlTags==null||ControlTags.Length>0;
+        [System.ComponentModel.DefaultValue(false),Newtonsoft.Json.JsonProperty(DefaultValueHandling=Newtonsoft.Json.DefaultValueHandling.Ignore)]public bool ScaleWithActionSpeed {get;set;}
         public TimelineClipDocument[] Clips {get;set;}=Array.Empty<TimelineClipDocument>();
         public TimelinePayloadDocument[] Payloads {get;set;}=Array.Empty<TimelinePayloadDocument>();
     }

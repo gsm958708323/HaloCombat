@@ -12,6 +12,7 @@ namespace Combat.Presentation
         public SkillNodeId Skill;
         public bool InHitstop;
         public float Alpha;
+        public float ActionTime,ActionDuration,ActionRate;
     }
 
     public interface IActorView

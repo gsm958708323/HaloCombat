@@ -27,6 +27,7 @@ namespace Combat.Config
             {
                 attributes.SetBase(AttrId.MaxHp,blueprint.Hp);attributes.SetBase(AttrId.Hp,blueprint.Hp);attributes.SetBase(AttrId.Atk,blueprint.Attack);
                 attributes.SetBase(AttrId.Def,blueprint.Defense);attributes.SetBase(AttrId.MoveSpeed,blueprint.MoveSpeed);
+                attributes.SetBase(AttrId.ActionSpeed,blueprint.ActionSpeed);
                 actor.GetComp<LocomotionComp>().CollisionRadius=blueprint.CollisionRadius;
                 actor.AddComp(new SummonComp());
                 actor.AddComp(new BehaviorTreeComp(SummonBehavior.Create(blueprint.Skill,blueprint.HoldDuration),board=>

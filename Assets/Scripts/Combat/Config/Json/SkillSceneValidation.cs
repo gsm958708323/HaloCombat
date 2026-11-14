@@ -35,6 +35,7 @@ namespace Combat.Config
             if(!Finite(actor.Shield)||actor.Shield<0||actor.Shield>10000000)Fail(path+".shield","Expected shield in [0,10000000].");
             if(!Finite(actor.DamageDealt)||actor.DamageDealt<0||actor.DamageDealt>100)Fail(path+".damageDealt","Expected multiplier in [0,100].");
             if(!Finite(actor.DamageTaken)||actor.DamageTaken<0||actor.DamageTaken>100)Fail(path+".damageTaken","Expected multiplier in [0,100].");
+            if(!Finite(actor.ActionSpeed)||actor.ActionSpeed<0||actor.ActionSpeed>100)Fail(path+".actionSpeed","Expected action speed in [0,100].");
             if(!Finite(actor.CollisionRadius)||actor.CollisionRadius<0||actor.CollisionRadius>10)Fail(path+".collisionRadius","Expected movement radius in [0,10].");
         }
 

@@ -152,9 +152,14 @@ namespace Combat.Core
         LocomotionComp _loco;
         SkillNodeId _currentSkill = SkillNodeId.None;
         TagLease _comboConfirm;
+        readonly List<TagLease> _controls=new List<TagLease>();
+        public float TimelineTime=>_player.Time;
+        public float TimelineDuration=>_player.Definition?.Duration??0;
+        public float ActionRate=>IsPlaying&&_player.Definition.ScaleWithActionSpeed?Math.Max(.1f,Self.GetComp<AttributeSet>().GetFinal(AttrId.ActionSpeed)):1;
+        public TagId[] ActiveControls=>IsPlaying?_player.Definition.ControlTags:Array.Empty<TagId>();
         public bool HasComboConfirmation=>_comboConfirm!=null;
         public bool CanStartSkill=>Self!=null&&Self.World!=null&&!Self.World.IsActorStopped(Self)&&
-            (_tags==null||!_tags.Has(CommonTags.Dead)&&!_tags.Has(CommonTags.Stunned)&&!_tags.Has(CommonTags.Downed)&&!_tags.Has(CommonTags.Silence));
+            (_tags==null||!_tags.Has(CommonTags.Dead)&&!_tags.Has(CommonTags.Stunned)&&!_tags.Has(CommonTags.Downed)&&!_tags.Has(CommonTags.Silence)&&!_tags.Has(CommonTags.BlockSkill));
 
         public SkillNodeId CurrentSkill => _currentSkill;
         public SkillOrigin CurrentOrigin { get; private set; }
@@ -190,20 +195,23 @@ namespace Combat.Core
             ChargeDefinition charge = null,float power=1)
         {
             if(!CanStartSkill)return false;
+            if(aim.HasYaw&&(float.IsNaN(aim.Yaw)||float.IsInfinity(aim.Yaw)))return false;
             if (!_library.TryGet(timelineId, out var so))
                 throw new InvalidOperationException("Missing timeline " + timelineId);
 
             if (!_fsm.TryEnter(ActivityId.Attack, new ActivityEnterArgs { Reason = "PlaySkill" }))
                 return false;
 
-            _loco?.RequestSnapYaw();
             if (_player.IsPlaying)
                 Stop(DirectorStopReason.Replaced);
             else ConsumeComboConfirm("Replaced");
+            if(aim.HasYaw)_loco?.RequestAimYaw(aim.Yaw);
+            _loco?.SnapForCast();
 
             _currentSkill = skill;
             CurrentOrigin = new SkillOrigin(skill,Self.World.NextCastId(),caster:Self.Id);
             _player.Play(so, aim, advanceBudget, payPulse, aimResolver, charge,power,CurrentOrigin);
+            foreach(var tag in so.ControlTags??Array.Empty<TagId>())if(_tags!=null)_controls.Add(_tags.Acquire(tag));
             if (Self.TryGetComp<BuffComp>(out var buffs))
                 buffs.DispatchOnOwnerCast();
             return true;
@@ -215,6 +223,7 @@ namespace Combat.Core
             var skill = _currentSkill;
             bool wasPlaying = _player.IsPlaying;
             _player.Stop();
+            ReleaseControls();
             _currentSkill = SkillNodeId.None;
             _loco?.ClearClipSteer();
             _loco?.ClearPendingSkill();
@@ -226,7 +235,7 @@ namespace Combat.Core
         public override void Tick(float dt)
         {
             if (!_player.IsPlaying) return;
-            _player.Tick(dt, Self);
+            _player.Tick(dt*ActionRate, Self);
             FinishIfStopped();
         }
 
@@ -245,6 +254,7 @@ namespace Combat.Core
             {
                 var skill = _currentSkill;
                 ConsumeComboConfirm("Finished");
+                ReleaseControls();
                 _currentSkill = SkillNodeId.None;
                 var aim=_player.LastAim;var origin=CurrentOrigin;float power=_player.Power;
                 var reason=_player.EndReason;
@@ -272,6 +282,7 @@ namespace Combat.Core
             if(_comboConfirm==null)return;_comboConfirm.Dispose();_comboConfirm=null;
             Self?.World?.Events.Publish(new EvComboConfirmation(Self.Id,EntityId.Invalid,CurrentOrigin,reason));
         }
+        void ReleaseControls(){foreach(var lease in _controls)lease.Dispose();_controls.Clear();}
     }
 
     public sealed class PlayerCombatDriverComp : Comp

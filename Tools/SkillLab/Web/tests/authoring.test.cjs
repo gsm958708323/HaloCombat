@@ -48,6 +48,13 @@ test('authored timeline copy remaps every entry to the new nodes and allocates a
   const valid=new Set(copied.nodes.map(n=>n.id));for(const row of [...copied.timeline.clips,...copied.timeline.payloads])assert((row.effects??[]).every(id=>valid.has(id)));
   assert.deepEqual(copied.timeline.clips.map(c=>[c.start,c.end,c.kind]),source.timeline.clips.map(c=>[c.start,c.end,c.kind]));
 });
+test('Timeline controls and speed scaling survive copy and merge without sharing mutable tag arrays',()=>{
+  const p=runtime(),source=p.skills.find(s=>s.id==='arena-controlled-shot');assert(source.timeline.scaleWithActionSpeed);
+  const next=edits.duplicateContent(p,'skill',source.id,'copy',ids()).project;const copied=next.skills.at(-1);
+  assert.deepEqual(copied.timeline.controlTags,[1011,1012,1013]);copied.timeline.controlTags.pop();assert.deepEqual(source.timeline.controlTags,[1011,1012,1013]);
+  const imported=mergeProjects(p,p,ids()).skills.slice(p.skills.length).find(s=>s.name===source.name);
+  assert.deepEqual(imported.timeline.controlTags,source.timeline.controlTags);assert.equal(imported.timeline.scaleWithActionSpeed,true);
+});
 test('deleting an authored effect node removes its timeline entry and undo restores both',()=>{
   const p=runtime(),key={kind:'skill',id:'g1'},history=new EditorHistory(p);
   history.edit(graph.deleteSelection(p,key,['slash-cue'],[]));assert(!history.current.skills[0].timeline.payloads[0].effects.length);
@@ -180,5 +187,5 @@ test('real transformed project is exported for the C# compiler and HTTP validati
   let p=example();p=edits.renameContent(p,'skill','basic-shot','authoring-basic');p=edits.renameContent(p,'buff','burn','authoring-burn');p=edits.renameContent(p,'blueprint','echo-gunner','authoring-summon');
   const duplicate=edits.duplicateContent(p,'skill','authoring-basic','作者复制验证',ids());p=edits.selectGraph(duplicate.project,duplicate.id);
   const output=path.resolve(__dirname,'../../.local/verification');fs.mkdirSync(output,{recursive:true});fs.writeFileSync(path.join(output,'authoring-transformed.json'),JSON.stringify(p,null,2));
-  assert.equal(p.skills.length,42);
+  assert.equal(p.skills.length,43);
 });

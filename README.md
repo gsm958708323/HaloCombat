@@ -4,7 +4,7 @@
 
 在 `codex/web-skill-editor-json` 分支开发 JSON 网页技能编辑器。运行 `./Tools/SkillLab/Start.ps1` 启动本地网页，使用说明见 [Tools/SkillLab/README.md](Tools/SkillLab/README.md)，完整范围和验证记录见 [docs/实施进度.md](docs/实施进度.md)。
 
-网页预览和 Unity `Assets/Scenes/HaloCombat/SkillLab.unity` 共用实际战斗核。网页发布 F6/F7 后，Unity SkillLab 运行中按 F5 重载，再按 F6/F7 施放。已接通瞬发、有限连发、引导、蓄力、目标/范围伤害、持续区域、近战、位移、射线、矩形障碍、召唤分身、共享 Buff 生命周期图、弹药换弹、追踪弹传送、可破坏物/木桶链爆，以及投射物散射/穿透/连锁/命中分裂/加减速/回旋/重力弹跳/墙反射，提供41个示例模板；发布包含技能/Buff/蓝图依赖闭包。现有V1–V4、训练场与Arena已接通同一JSON协议；历史技能/表现能力和最终参考对照仍在开发中。
+网页预览和 Unity `Assets/Scenes/HaloCombat/SkillLab.unity` 共用实际战斗核。网页发布 F6/F7 后，Unity SkillLab 运行中按 F5 重载，再按 F6/F7 施放。已接通瞬发、有限连发、引导、蓄力、目标/范围伤害、持续区域、近战、位移、射线、矩形障碍、召唤分身、共享 Buff 生命周期图、弹药换弹、追踪弹传送、可破坏物/木桶链爆，以及投射物散射/穿透/连锁/命中分裂/加减速/回旋/重力弹跳/墙反射，提供42个示例模板；发布包含技能/Buff/蓝图依赖闭包。现有V1–V4、训练场与Arena已接通同一JSON协议；历史技能/表现能力和最终参考对照仍在开发中。
 
 ## JSON 正式内容
 
@@ -20,6 +20,8 @@ dotnet run --project Combat.csproj -- json Assets/StreamingAssets/Combat/project
 `CodeCombatContent`与独立Demo仍是教学测试样例，不是正式运行入口的后备。
 
 网页“连招输入与接续”可编辑正式Combo表，并在同一预览会话发送实际令牌；命中确认按完整Skill/CastId绑定，接触敌方无敌/护盾/0伤害仍可获得，取消窗与施放守卫生效，失败输入保留。ConfirmAttack示例用于G1命中后接G2，历史Arena十三技能的完整连段/数值仍继续迁移，见[确认连招验收](docs/验证/2026-11-15-confirmed-combos.md)。
+
+显式时间轴支持六种动作控制与动作速度缩放，角色/召唤/Buff的ActionSpeed只影响明确开启缩放的动作轴。控制通过独立租约释放，角色钟/冷却/Buff/已发弹体保持独立；受控位移射击示例在2倍速度下仍完成2米位移，见[时间轴控制验收](docs/验证/2026-11-15-timeline-controls.md)。原Animator/美术资源和全部旧技能仍在迁移。
 
 `Assets/Scenes/Arena.unity`是可直接运行的JSON入口，也位于Build Settings首位。WASD/方向键移动，鼠标瞄准，按住左键/1重复主攻击；2/右键、3/中键、5/鼠标侧键、Space/Q/E走JSON的输入绑定。Esc暂停，HUD可重开/切换训练模式。F5明确重载，F6/F7使用同一正式玩家的消耗/冷却/状态守卫；槽必须从当前正式工程发布，其他工程的槽会报错并保留当前局。首次启动只读正式文件，避免未关联的旧调试槽阻止进入。
 

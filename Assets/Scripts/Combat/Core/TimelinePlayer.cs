@@ -29,6 +29,7 @@ namespace Combat.Core
         public bool IsPlaying => _playing;
         public float Time => (float)_time;
         public TimelineId Id => _so != null ? _so.Id : TimelineId.None;
+        public TimelineDefinition Definition=>_so;
         public DirectorStopReason EndReason { get; private set; }
         public bool IsCharging => _charging;
         public float ChargeProgress => _charge != null ? _charge.Progress((float)_chargeTime) : 0;

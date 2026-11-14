@@ -44,6 +44,7 @@ namespace Combat.Config
                 if(Array.IndexOf(new[]{"player","target","ai","summon"},actor.Role)<0)Fail(p+".role","Unknown actor role.");
                 N(actor.Hp,.001f,1000000000,p+".hp");N(actor.Attack,0,10000000,p+".attack");N(actor.Defense,0,10000000,p+".defense");N(actor.MoveSpeed,0,1000,p+".moveSpeed");
                 N(actor.Shield,0,1000000000,p+".shield");N(actor.CritRate,0,1,p+".critRate");N(actor.DamageDealt,0,1000,p+".damageDealt");N(actor.DamageTaken,0,1000,p+".damageTaken");N(actor.CollisionRadius,0,100,p+".collisionRadius");
+                N(actor.ActionSpeed,0,100,p+".actionSpeed");
                 N(actor.Energy,0,1000000,p+".energy");N(actor.Recovery,0,1000000,p+".recovery");
                 N(actor.Ammo,0,1000000,p+".ammo");N(actor.InitialAmmo??actor.Ammo,0,actor.Ammo,p+".initialAmmo");
                 N(actor.AcquireRadius,.001f,1000,p+".acquireRadius");N(actor.AttackRange,.001f,1000,p+".attackRange");N(actor.FollowRange,0,1000,p+".followRange");N(actor.LeashRange,0,1000,p+".leashRange");N(actor.PatrolRadius,0,1000,p+".patrolRadius");
@@ -51,7 +52,7 @@ namespace Combat.Config
                 if(actor.Slots==null||actor.Slots.Length>3)Fail(p+".slots","Expected up to3 skill slots.");
                 if(string.IsNullOrWhiteSpace(actor.View)||Array.IndexOf(new[]{"fighter","stake","melee_ai","melee_guard","ranged_ai","summon"},actor.View)<0)Fail(p+".view","Unknown built-in view key.");
                 var definition=new RuntimeActorDefinition{Id=actor.Id,Role=actor.Role,View=actor.View,Team=actor.Team,Hp=actor.Hp,Attack=actor.Attack,Defense=actor.Defense,MoveSpeed=actor.MoveSpeed,
-                    Shield=actor.Shield,CritRate=actor.CritRate,DamageDealt=actor.DamageDealt,DamageTaken=actor.DamageTaken,CollisionRadius=actor.CollisionRadius,Energy=actor.Energy,InitialEnergy=actor.Energy,Recovery=actor.Recovery,Ammo=actor.Ammo,InitialAmmo=actor.InitialAmmo??actor.Ammo,
+                    Shield=actor.Shield,CritRate=actor.CritRate,DamageDealt=actor.DamageDealt,DamageTaken=actor.DamageTaken,CollisionRadius=actor.CollisionRadius,Energy=actor.Energy,InitialEnergy=actor.Energy,Recovery=actor.Recovery,Ammo=actor.Ammo,InitialAmmo=actor.InitialAmmo??actor.Ammo,ActionSpeed=actor.ActionSpeed,
                     AcquireRadius=actor.AcquireRadius,AttackRange=actor.AttackRange,FollowRange=actor.FollowRange,LeashRange=actor.LeashRange,PatrolRadius=actor.PatrolRadius,
                     Slots=actor.Slots.Select(id=>Skill(content,id,p+".slots").Id).ToArray(),DodgeSkill=string.IsNullOrEmpty(actor.DodgeSkill)?SkillNodeId.None:Skill(content,actor.DodgeSkill,p+".dodgeSkill").Id};
                 if(actor.Role=="ai"||actor.Role=="summon")
@@ -70,7 +71,7 @@ namespace Combat.Config
                 content.Blueprints.TryGet(sourceBlueprint.Id,out var b);var skill=Skill(content,b.SkillKey,"$.summonBlueprints["+b.Id+"].skillId");
                 if(actors.ContainsKey(b.Id))Fail("$.runtime.actors["+b.Id+"].id","Summon blueprint identity already defines this actor.");
                 actors.Add(b.Id,new RuntimeActorDefinition{Id=b.Id,Role="summon",View="summon",Team=1,Hp=b.Hp,Attack=b.Attack,Defense=b.Defense,MoveSpeed=b.MoveSpeed,
-                    DamageDealt=1,DamageTaken=1,CollisionRadius=b.CollisionRadius,Energy=b.Energy,InitialEnergy=b.InitialEnergy,Recovery=b.Recovery,Ammo=b.Ammo,InitialAmmo=b.InitialAmmo,
+                    DamageDealt=1,DamageTaken=1,CollisionRadius=b.CollisionRadius,Energy=b.Energy,InitialEnergy=b.InitialEnergy,Recovery=b.Recovery,Ammo=b.Ammo,InitialAmmo=b.InitialAmmo,ActionSpeed=b.ActionSpeed,
                     Skill=b.Skill,AcquireRadius=b.AcquireRadius,AttackRange=b.AttackRange,FollowRange=b.FollowRange,LeashRange=20,
                     Tree=skill.Mode==SkillCastMode.Instant?BtFactory.SummonMelee(skill.Id,skill.Timeline):SummonBehavior.Create(b.Skill,b.HoldDuration)});
             }

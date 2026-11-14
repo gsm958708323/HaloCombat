@@ -49,7 +49,7 @@ namespace Combat.Core
         public void Open(in ClipRuntime runtime) { }
         public void Tick(in ClipRuntime runtime,float dt)
         {
-            if(dt<=0||_blocked)return;
+            if(dt<=0||_blocked||runtime.Self.GetComp<TagComp>().Has(CommonTags.BlockSkillMotion))return;
             var self=runtime.Self;var origin=self.GetComp<TransformComp>().Position;
             float yaw=MeleeClipHandler.Yaw(runtime);
             var direction=LocomotionComp.ForwardFromYaw(yaw);

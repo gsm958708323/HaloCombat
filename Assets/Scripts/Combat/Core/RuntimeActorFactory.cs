@@ -13,6 +13,7 @@ namespace Combat.Core
         public BtNode Tree;
         public float AcquireRadius,AttackRange,FollowRange,LeashRange,PatrolRadius;
         public int Ammo,InitialAmmo;
+        public float ActionSpeed=1;
     }
 
     // Gameplay factories consume domain definitions; they never read authoring JSON or Unity assets.
@@ -33,6 +34,7 @@ namespace Combat.Core
             actor.AddComp(new TeamComp(definition.Team));var attr=new AttributeSet();actor.AddComp(attr);
             attr.SetBase(AttrId.MaxHp,definition.Hp);attr.SetBase(AttrId.Hp,definition.Hp);attr.SetBase(AttrId.Atk,definition.Attack);
             attr.SetBase(AttrId.Def,definition.Defense);attr.SetBase(AttrId.MoveSpeed,definition.MoveSpeed);attr.SetBase(AttrId.Shield,definition.Shield);
+            attr.SetBase(AttrId.ActionSpeed,definition.ActionSpeed);
             attr.SetBase(AttrId.CritRate,definition.CritRate);attr.SetBase(AttrId.DmgDealMul,definition.DamageDealt);attr.SetBase(AttrId.DmgTakenMul,definition.DamageTaken);
             actor.AddComp(new BuffComp());actor.AddComp(new HealthComp());actor.AddComp(new StateMachineComp());
             actor.AddComp(new LocomotionComp{CollisionRadius=definition.CollisionRadius});

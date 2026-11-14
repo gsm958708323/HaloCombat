@@ -8,6 +8,7 @@ namespace Combat.Core
         public string Id,Name,SkillKey;
         public SkillNodeId Skill;
         public float Hp=100,Attack=80,Defense,MoveSpeed=3,CollisionRadius=.4f;
+        public float ActionSpeed=1;
         public float Energy=100,InitialEnergy=100,Recovery=10;
         public int Ammo,InitialAmmo;
         public float AcquireRadius=20,AttackRange=12,FollowRange=2,HoldDuration=.75f;

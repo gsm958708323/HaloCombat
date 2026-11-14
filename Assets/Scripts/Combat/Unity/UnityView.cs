@@ -39,7 +39,7 @@ namespace Combat.Unity
             transform.rotation = Quaternion.Euler(0f, 90f - sample.YawDeg, 0f);
             if (_dead) transform.rotation *= Quaternion.Euler(0f, 0f, 80f);
             if (_visual == null) return;
-            if(!sample.InHitstop&&!_dead)_poseTime+=Time.unscaledDeltaTime;
+            if(!sample.InHitstop&&!_dead)_poseTime=sample.Skill.IsValid?sample.ActionTime:_poseTime+Time.unscaledDeltaTime;
             double now=Time.realtimeSinceStartupAsDouble;Feedback.AdvanceWall((float)(now-_feedbackWallTime));_feedbackWallTime=now;
             float bob = _blueprint == "projectile" || _blueprint == "aoe"
                 ? Mathf.Sin(_poseTime * 7f + Id.Index) * 0.04f

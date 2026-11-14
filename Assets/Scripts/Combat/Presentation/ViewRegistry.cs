@@ -55,6 +55,7 @@ namespace Combat.Presentation
                     Activity = sm != null ? sm.Current : ActivityId.None,
                     Skill = director != null ? director.CurrentSkill : SkillNodeId.None,
                     InHitstop = stopped,
+                    ActionTime=director!=null&&director.IsPlaying?director.TimelineTime:0,ActionDuration=director!=null&&director.IsPlaying?director.TimelineDuration:0,ActionRate=director?.ActionRate??1,
                     Alpha = stopped ? 1f : alpha
                 };
                 view.Sample(sample);

@@ -6,8 +6,8 @@ namespace Combat.Config
 {
     internal static class BuffCompiler
     {
-        static readonly string[] Attributes={"maxHp","attack","defense","moveSpeed","critRate","damageDealt","damageTaken"};
-        static readonly AttrId[] Ids={AttrId.MaxHp,AttrId.Atk,AttrId.Def,AttrId.MoveSpeed,AttrId.CritRate,AttrId.DmgDealMul,AttrId.DmgTakenMul};
+        static readonly string[] Attributes={"maxHp","attack","defense","moveSpeed","critRate","damageDealt","damageTaken","actionSpeed"};
+        static readonly AttrId[] Ids={AttrId.MaxHp,AttrId.Atk,AttrId.Def,AttrId.MoveSpeed,AttrId.CritRate,AttrId.DmgDealMul,AttrId.DmgTakenMul,AttrId.ActionSpeed};
         public static void Register(BuffDocument[] documents,CombatContentSnapshot content)
         {
             if(documents==null||documents.Length>128)Fail("$.buffs","Expected up to128 Buff definitions.");

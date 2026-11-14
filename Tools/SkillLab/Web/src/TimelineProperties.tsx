@@ -2,6 +2,7 @@ import type { AuthoredTimeline,Skill,TimelineClip } from './model';
 
 export function TimelineProperties({skill,change}:{skill:Skill;change:(timeline:AuthoredTimeline)=>void}) {
   const value=skill.timeline;if(!value)return null;
+  const controls:[[number,string],...Array<[number,string]>]=[[1011,'禁止走动/跳跃'],[1012,'禁止转向'],[1013,'禁止新施放'],[1014,'禁止技能增量位移'],[1015,'禁止受击位移'],[1016,'暂停重力']];
   const number=(text:string,set:(number:number)=>void)=>{if(text!=='')set(Number(text));};
   const clip=(id:string,patch:Partial<TimelineClip>)=>change({...value,clips:value.clips.map(c=>c.id===id?{...c,...patch}:c)});
   const candidates=skill.nodes.filter(n=>!['target','cast','skill-events'].includes(n.kind));
@@ -11,6 +12,8 @@ export function TimelineProperties({skill,change}:{skill:Skill;change:(timeline:
     <p>时间轴决定区间与离散触发。引用图中的效果节点，列表顺序可重复；卡片位置不改变时序。</p>
     <label>总时长 (秒)<input aria-label="时间轴总时长" type="number" step=".01" min=".001" value={value.duration} onChange={event=>number(event.target.value,duration=>change({...value,duration}))}/></label>
     <small>Timeline ID {value.runtimeId}</small>
+    <label>随动作速度缩放<input aria-label="时间轴动作速度缩放" type="checkbox" checked={value.scaleWithActionSpeed??false} onChange={event=>change({...value,scaleWithActionSpeed:event.target.checked})}/></label>
+    <fieldset><legend>动作控制 · 持续到时间轴结束</legend>{controls.map(([tag,label])=><label key={tag}><span>{label}</span><input aria-label={label} type="checkbox" checked={value.controlTags?.includes(tag)??false} onChange={event=>change({...value,controlTags:[...(value.controlTags??[]).filter(id=>id!==tag),...(event.target.checked?[tag]:[])].sort((a,b)=>a-b)})}/></label>)}</fieldset>
     <h4>持续区间</h4>{value.clips.map((c,i)=><fieldset key={c.id}><legend>区间 {i+1}</legend>
       <select aria-label={`区间${i+1}类型`} value={c.kind} onChange={event=>clip(c.id,{kind:event.target.value as TimelineClip['kind'],effects:[],hitRadius:event.target.value==='hitbox'?(c.hitRadius||.8):0})}>{[['cancel','取消窗'],['move','移动'],['hitbox','命中盒'],['iframe','无敌窗']].map(([id,name])=><option key={id} value={id}>{name}</option>)}</select>
       {(['start','end'] as const).map(field=><label key={field}>{field==='start'?'开始':'结束'} (秒)<input aria-label={`区间${i+1}${field}`} type="number" step=".01" value={c[field]} onChange={event=>number(event.target.value,n=>clip(c.id,{[field]:n}))}/></label>)}

@@ -86,6 +86,7 @@ namespace Combat.Core
 
         public void RequestSnapYaw()
         {
+            if(_tags.Has(CommonTags.BlockRotate)||Self.World.IsActorStopped(Self))return;
             if(_hasAimYaw){RequestSnapYawDegrees(_aimYaw);return;}
             if (StickMag(_moveIntent) >= _stickDeadzone)
             {
@@ -96,17 +97,20 @@ namespace Combat.Core
 
         public void RequestSnapYawDegrees(float yaw)
         {
+            if(_tags.Has(CommonTags.BlockRotate)||Self.World.IsActorStopped(Self))return;
             _pendingYaw = yaw;
             _hasSnapYaw = true;
         }
         public void RequestAimYaw(float yaw){_hasAimYaw=true;_aimYaw=yaw;}
+        public void SnapForCast()
+        {RequestSnapYaw();if(_hasSnapYaw&&!_tags.Has(CommonTags.BlockRotate))_tf.YawDegrees=_pendingYaw;_hasSnapYaw=false;}
 
         public float FacingForSkillMove()
-            => _hasSnapYaw ? _pendingYaw : (_tf != null ? _tf.YawDegrees : 0f);
+            => _hasSnapYaw&&!_tags.Has(CommonTags.BlockRotate) ? _pendingYaw : (_tf != null ? _tf.YawDegrees : 0f);
 
         public void ImpulseJump()
         {
-            if (!_grounded) return;
+            if (!_grounded||_tags.Has(CommonTags.BlockMove)||Self.World.IsActorStopped(Self)) return;
             _verticalVel = _jumpSpeed;
             _grounded = false;
             WriteGroundTags(false);
@@ -140,7 +144,7 @@ namespace Combat.Core
 
             if (_hasSnapYaw)
             {
-                _tf.YawDegrees = _pendingYaw;
+                if(!_tags.Has(CommonTags.BlockRotate))_tf.YawDegrees = _pendingYaw;
                 _hasSnapYaw = false;
             }
 
@@ -153,21 +157,21 @@ namespace Combat.Core
                 delta.Z += walk.Z;
             }
 
-            if (loco.UseSkill)
+            if (loco.UseSkill&&!_tags.Has(CommonTags.BlockSkillMotion))
             {
                 delta.X += _skillDelta.X;
                 delta.Y += _skillDelta.Y;
                 delta.Z += _skillDelta.Z;
             }
 
-            if (loco.UseHit)
+            if (loco.UseHit&&!_tags.Has(CommonTags.BlockHitMotion))
             {
                 delta.X += _hitDelta.X;
                 delta.Y += _hitDelta.Y;
                 delta.Z += _hitDelta.Z;
             }
 
-            if (loco.ApplyGravity)
+            if (loco.ApplyGravity&&!_tags.Has(CommonTags.BlockGravity))
                 delta.Y += IntegrateGravity(dt);
             else if (_grounded)
                 _verticalVel = 0f;
@@ -186,6 +190,7 @@ namespace Combat.Core
 
         float MotorScale(in LocoProfile loco)
         {
+            if(_tags.Has(CommonTags.BlockMove))return 0;
             if (_grounded)
                 return _clipSteer > 0f ? _clipSteer : loco.MotorScale;
             return _airSteer;
@@ -231,6 +236,7 @@ namespace Combat.Core
 
         void ApplyFacing(in FacingPolicy facing)
         {
+            if(_tags.Has(CommonTags.BlockRotate))return;
             if(_hasAimYaw)
             {
                 if(_grounded&&(facing.Mode==FacingMode.FollowStickIfGrounded||facing.Mode==FacingMode.SteerIfGrounded&&_clipSteer>0))_tf.YawDegrees=_aimYaw;
