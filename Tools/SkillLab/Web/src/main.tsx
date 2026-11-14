@@ -3,4 +3,5 @@ import App from './App';
 import '@xyflow/react/dist/style.css';
 import './style.css';
 import './authoring.css';
+import './runtime.css';
 createRoot(document.getElementById('root')!).render(<App/>);

@@ -4,7 +4,20 @@
 
 在 `codex/web-skill-editor-json` 分支开发 JSON 网页技能编辑器。运行 `./Tools/SkillLab/Start.ps1` 启动本地网页，使用说明见 [Tools/SkillLab/README.md](Tools/SkillLab/README.md)，完整范围和验证记录见 [docs/实施进度.md](docs/实施进度.md)。
 
-网页预览和 Unity `Assets/Scenes/HaloCombat/SkillLab.unity` 共用实际战斗核。网页发布 F6/F7 后，Unity SkillLab 运行中按 F5 重载，再按 F6/F7 施放。已接通瞬发、有限连发、引导、蓄力、目标/范围伤害、持续区域、近战、位移、射线、矩形障碍、召唤分身、共享 Buff 生命周期图，以及投射物散射/穿透/连锁/命中分裂/加减速/回旋/重力弹跳/墙反射，提供34个示例模板；发布包含技能/Buff/蓝图依赖闭包。旧 SO 内容迁移、剩余节点和最终对照仍在开发中。
+网页预览和 Unity `Assets/Scenes/HaloCombat/SkillLab.unity` 共用实际战斗核。网页发布 F6/F7 后，Unity SkillLab 运行中按 F5 重载，再按 F6/F7 施放。已接通瞬发、有限连发、引导、蓄力、目标/范围伤害、持续区域、近战、位移、射线、矩形障碍、召唤分身、共享 Buff 生命周期图，以及投射物散射/穿透/连锁/命中分裂/加减速/回旋/重力弹跳/墙反射，提供34个示例模板；发布包含技能/Buff/蓝图依赖闭包。现有V1–V4和训练场的SO内容已迁入同一JSON协议；剩余产品能力、Arena入口恢复与最终参考对照仍在开发中。
+
+## JSON 正式内容
+
+运行源为 `Assets/StreamingAssets/Combat/project.json`，保存技能效果图、显式Timeline、Combo、角色蓝图、Motor和Cue资源键。网页“打开正式内容”读取它，右侧显式时间轴编辑取消/移动/命中盒/无敌区间及离散触发，“发布正式内容”完整校验后写回同一文件。V1–V4按F1重建、训练场重置后读取新内容。缺文件、坏引用或缺资源均报错，保留已有有效会话，不回退SO或代码。旧作者类型、31个SO资产和生成入口已删除；Config程序集不再依赖UnityEngine。
+
+CLI用同一文件直接验证和运行：
+
+```powershell
+dotnet run --project Combat.csproj -- json Assets/StreamingAssets/Combat/project.json
+dotnet run --project Combat.csproj -- json Assets/StreamingAssets/Combat/project.json homing
+```
+
+`CodeCombatContent`与独立Demo仍是教学测试样例，不是正式运行入口的后备。当前工作树中的未跟踪`Arena.unity`引用历史分支中缺失的脚本/数据库，不属于已验收场景；正式Arena接入仍需补齐。
 
 ## 运行
 

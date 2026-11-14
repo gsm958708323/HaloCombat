@@ -10,6 +10,7 @@ namespace Combat
         static int Main(string[] args)
         {
             CombatLog.SetSink(new ConsoleLogSink());
+            if(args!=null&&args.Length>0&&args[0]=="json")return RuntimeContentCli.Run(args);
             string which;
             string category;
             int parseResult = ParseArguments(args, out which, out category);

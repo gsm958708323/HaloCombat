@@ -13,6 +13,7 @@ namespace Combat.Config
         public readonly string Path;
         readonly Dictionary<string, SkillNodeDocument> _nodes = new Dictionary<string, SkillNodeDocument>();
         readonly HashSet<string> _used = new HashSet<string>();
+        readonly List<SkillNodeDocument> _entries=new List<SkillNodeDocument>();
         static readonly HashSet<string> Kinds=new HashSet<string>{"target","cast","projectile","split","damage","cue","delivery","buff","dispel","heal","buff-events","skill-events","after-damage","impact"};
         internal static bool KnownKind(string kind)=>kind!=null&&Kinds.Contains(kind);
         public EffectGraphIndex(string contentKey,SkillNodeDocument[] nodes,SkillEdgeDocument[] edges, string path,bool buffGraph=false)
@@ -41,6 +42,12 @@ namespace Combat.Config
             foreach (var node in nodes) CheckCycle(node.Id, new HashSet<string>(), finished);
         }
         public string NodePath(SkillNodeDocument node) => Path + ".nodes[" + node.Id + "]";
+        public SkillNodeDocument Entry(string id,string path)
+        {
+            if(!_nodes.TryGetValue(id??"",out var node))throw new ContentValidationException(path,"Unknown effect entry node.");
+            if(node.Kind=="target"||node.Kind=="cast"||node.Kind=="skill-events"||node.Kind=="buff-events")throw new ContentValidationException(path,"Root is not an effect entry.");
+            Use(node);_entries.Add(node);return node;
+        }
         public SkillNodeDocument Root(string kind)
         {
             SkillNodeDocument result = null;
@@ -95,6 +102,7 @@ namespace Combat.Config
             }
             var contexts=new HashSet<string>();
             foreach(var node in Nodes)if(node.Enabled&&(node.Kind=="cast"||node.Kind=="buff-events"||node.Kind=="skill-events"))CheckProjectileContext(node,false,contexts);
+            foreach(var node in _entries)CheckProjectileContext(node,false,contexts);
         }
         void CheckProjectileContext(SkillNodeDocument node,bool hit,HashSet<string> visited)
         {

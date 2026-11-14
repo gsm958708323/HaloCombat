@@ -31,7 +31,7 @@ namespace Combat.Config
             _content = content ?? throw new ArgumentNullException(nameof(content));
             var preview = project?.Preview;
             SkillSceneValidation.Validate(preview);
-            _world = new CombatWorld(new SkillSimulationFactory(content, preview), random: new SeededRandom(preview.Seed), cues: content.Cues,obstacles:SkillSceneValidation.Obstacles(preview),skillEvents:content.SkillEvents);
+            _world = new CombatWorld(new SkillSimulationFactory(content, preview), random: new SeededRandom(preview.Seed), cues: content.Runtime?.Data.Cues??content.Cues,motor:content.Runtime?.Data.Motor,obstacles:SkillSceneValidation.Obstacles(preview),skillEvents:content.SkillEvents);
             _world.ReplaceCatalogs(content.Projectiles, content.Aoes, content.Summons);
             _world.Events.Subscribe<EvEntitySpawn>(OnSpawn);
             _world.Events.Subscribe<EvDamage>(OnDamage);

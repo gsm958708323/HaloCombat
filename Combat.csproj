@@ -11,9 +11,14 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
+    <Compile Include="RuntimeContentCli.cs" />
+    <Compile Include="Assets/Scripts/Combat/Config/Json/**/*.cs" />
     <Compile Include="Assets/Scripts/Combat/Core/**/*.cs" />
     <Compile Include="Assets/Scripts/Combat/Presentation/**/*.cs" />
     <Compile Include="Assets/Scripts/Combat/Demos/HaloCombatDemoCases.cs" />
+    <Compile Include="Assets/Scripts/Combat/Demos/MovementAndTimelineDemos.cs" />
+    <Compile Include="Assets/Scripts/Combat/Demos/CombatEffectDemos.cs" />
+    <Compile Include="Assets/Scripts/Combat/Demos/SeasonOneDemo.cs" />
     <Compile Include="Assets/Scripts/Combat/Demos/DemoTrace.cs" />
     <Compile Include="Assets/Scripts/Combat/Demos/SeasonTwoDemoSupport.cs" />
     <Compile Include="Assets/Scripts/Combat/Demos/KnockdownDemo.cs" />
@@ -29,4 +34,5 @@
     <Compile Include="Assets/Scripts/Combat/Demos/DemoWorld.cs" />
     <Compile Include="Assets/Scripts/Combat/Demos/PresentationDemos.cs" />
   </ItemGroup>
+  <ItemGroup><PackageReference Include="Newtonsoft.Json" Version="13.0.3" /></ItemGroup>
 </Project>

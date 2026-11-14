@@ -247,7 +247,13 @@ namespace Combat.Core
             if (ctx.Self.TryGetComp<TagComp>(out var tags) &&
                 (tags.Has(CommonTags.Dead) || tags.Has(CommonTags.Stunned) || tags.Has(CommonTags.Downed) || tags.Has(CommonTags.Silence)))
                 return BtStatus.Failure;
-            if (!dir.Play(_skill, _timeline)) return BtStatus.Failure;
+            if(ctx.Self.TryGetComp<SkillCastComp>(out var cast))
+            {
+                ctx.World.TryGetActor(ctx.Board.Target,out var target);
+                var transform=ctx.Self.GetComp<TransformComp>();var point=target!=null?target.GetComp<TransformComp>().Position:transform.Position;
+                if(!cast.TryCast(_skill,new SkillAim(target?.Id??EntityId.Invalid,point,transform.YawDegrees)))return BtStatus.Failure;
+            }
+            else if (!dir.Play(_skill, _timeline)) return BtStatus.Failure;
             _playing = true; return BtStatus.Running;
         }
         public override void Abort(in BtTick ctx) { _playing = false; }

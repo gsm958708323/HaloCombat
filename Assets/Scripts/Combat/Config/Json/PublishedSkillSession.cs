@@ -31,9 +31,11 @@ namespace Combat.Config
                 catch (ContentValidationException error) { throw new ContentValidationException("$.slots." + slot.Key, error.Message); }
                 var document=publication.Document;var closure=SkillContentClosure.Select(document.Project,publication.Content,document.SkillId);
                 if (project == null)
-                    project = new SkillProjectDocument { Id = document.Project.Id, Name = document.Project.Name, Preview = document.Project.Preview };
+                    project = new SkillProjectDocument { Id = document.Project.Id, Name = document.Project.Name, Preview = document.Project.Preview,Runtime=document.Project.Runtime };
                 if (project.Id != document.Project.Id)
                     throw new ContentValidationException("$.slots." + slot.Key, "Slots must be published from the same project.");
+                if(SkillJsonCodec.Write(project.Runtime)!=SkillJsonCodec.Write(document.Project.Runtime))
+                    throw new ContentValidationException("$.slots."+slot.Key,"Conflicting runtime Motor/Cue versions; publish both slots again.");
                 foreach(var skill in closure.Skills)
                 {
                     if (skills.TryGetValue(skill.Id, out var other) && SkillJsonCodec.Write(skill) != SkillJsonCodec.Write(other))

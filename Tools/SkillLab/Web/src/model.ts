@@ -1,7 +1,13 @@
 export type Parameters = Record<string, string | number | boolean>;
 export interface GraphNode { id: string; kind: string; runtimeId?: number; enabled?: boolean; position: { x: number; y: number }; parameters: Parameters }
 export interface GraphEdge { id: string; source: string; sourcePort: string; target: string; targetPort: string; order: number }
-export interface Skill { id: string; runtimeId: number; name: string; category: string; nodes: GraphNode[]; edges: GraphEdge[] }
+export interface TimelineClip {id:string;kind:'cancel'|'move'|'hitbox'|'iframe';start:number;end:number;moveX?:number;moveY?:number;moveZ?:number;steer?:number;hitRadius?:number;hitOffsetX?:number;hitOffsetY?:number;hitOffsetZ?:number;effects?:string[]}
+export interface TimelinePayload {id:string;time:number;repeatInterval?:number;effects:string[]}
+export interface AuthoredTimeline {runtimeId:number;duration:number;clips:TimelineClip[];payloads:TimelinePayload[]}
+export interface RuntimeCombo {id:string;preSkills:string[];input:string;requiredTags:number[];priority:number;toSkill:string}
+export interface RuntimeActor {id:string;role:string;team:number;skillId?:string;dodgeSkill?:string;slots?:string[];view:string;[key:string]:unknown}
+export interface RuntimeContent {motor:{gravity:number;jumpSpeed:number;airSteer:number;groundY:number;stickDeadzone:number};combos:RuntimeCombo[];actors:RuntimeActor[];cues:{id:number;key:string;kind:string;resource?:string;sound?:string;lifetime:number}[]}
+export interface Skill { id: string; runtimeId: number; name: string; category: string; nodes: GraphNode[]; edges: GraphEdge[];timeline?:AuthoredTimeline }
 export interface BuffModifier {attribute:string;operation:string;value:number;priority:number}
 export interface BuffDefinition {id:string;runtimeId:number;name:string;permanent:boolean;duration:number;interval:number;stack:string;maxStacks:number;mutexGroup:number;tags:number[];modifiers:BuffModifier[];nodes:GraphNode[];edges:GraphEdge[]}
 export interface ActorInitial { id: string; x: number; z: number; hp: number; atk: number; def: number; shield?:number;damageDealt?:number;damageTaken?:number;collisionRadius?: number }
@@ -10,7 +16,7 @@ export interface RayView { sequence: number; step: number; fromX: number; fromZ:
 export interface SummonBlueprint { id: string; name: string; skillId: string; hp: number; attack: number; defense: number; moveSpeed: number; collisionRadius: number; energy: number; initialEnergy?: number | null; recovery: number; acquireRadius: number; attackRange: number; followRange: number; holdDuration: number }
 export interface GraphViewport { kind:'skill'|'buff';id:string;x:number;y:number;zoom:number }
 export interface EditorMetadata { selectedSkill?:string;selectedBuff?:string;viewports?:GraphViewport[] }
-export interface Project { formatVersion: number; id: string; name: string; skills: Skill[]; buffs?:BuffDefinition[]; summonBlueprints?: SummonBlueprint[];editor?:EditorMetadata; preview: { seed: number; energy: number; initialEnergy?: number | null; recovery: number; caster: ActorInitial; targets: ActorInitial[]; obstacles?: ObstacleView[] } }
+export interface Project { formatVersion: number; id: string; name: string; skills: Skill[]; buffs?:BuffDefinition[]; summonBlueprints?: SummonBlueprint[];editor?:EditorMetadata;runtime?:RuntimeContent; preview: { seed: number; energy: number; initialEnergy?: number | null; recovery: number; caster: ActorInitial; targets: ActorInitial[]; obstacles?: ObstacleView[] } }
 export interface BuffView {instanceId:number;id:string;name:string;source:string;stacks:number;remaining:number|null}
 export interface ActorView { id: string; name: string; kind: string; x: number; y:number; z: number; hp: number | null; maxHp: number | null; radius: number; remaining: number | null; dead: boolean; owner: string | null; blueprint: string | null; skill: string | null; energy: number | null;castId:number;generation:number;chainsLeft:number;distance:number|null;range:number|null;speed:number|null;verticalSpeed:number|null;returning:boolean;groundBouncesLeft:number;wallBouncesLeft:number;buffs:BuffView[];tags:Record<string,number>;attributes:Record<string,number> }
 export interface AreaView { sequence: number; step: number; x: number; z: number; radius: number; targets: number }
@@ -21,7 +27,7 @@ export interface PreviewState { step: number; time: number; actors: ActorView[];
 export interface Field { key: string; label: string; type?: 'select' | 'check'; unit?: string; min?: number; max?: number; step?: number; options?: [string, string][]; initial: number | string | boolean; when?: (parameters: Parameters) => boolean }
 export const kinds: Record<string, { title: string; color: string; fields: Field[]; inputs: string[]; outputs: [string, string][] }> = {
   target: { title: '目标选择', color: '#526c7b', inputs: [], outputs: [['target', '目标 / 方向']], fields: [
-    { key: 'mode', label: '目标选择', type: 'select', initial: 'point', options: [['point','指定位置'],['entity','指定目标'],['nearest','最近目标'],['random','随机目标'],['direction','随机方向'],['self','施法者自身']] },
+    { key: 'mode', label: '目标选择', type: 'select', initial: 'point', options: [['point','指定位置'],['entity','指定目标'],['nearest','最近目标'],['random','随机目标'],['direction','随机方向'],['self','施法者自身'],['facing','当前朝向']] },
     { key: 'range', label: '索敌距离', unit: '米', min: .1, max: 50, step: .1, initial: 20 }
   ] },
   cast: { title: '施放规则', color: '#5b7164', inputs: ['target'], outputs: [['cast','施放']], fields: [
@@ -56,7 +62,8 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
     {key:'restitution',label:'反弹恢复系数',min:0,max:1,step:.01,initial:.6,when:p=>p.trajectory==='bounce'},
     {key:'groundBounces',label:'额外地面反弹次数',min:0,max:32,step:1,initial:2,when:p=>p.trajectory==='bounce'},
     {key:'wallBounces',label:'额外撞墙反射次数',min:0,max:64,step:1,initial:0},
-    { key: 'range', label: '飞行距离', unit: '米', min: .1, max: 60, step: .1, initial: 24 },
+    { key: 'range', label: '飞行距离 (0=寿命限制)', unit: '米', min: 0, max: 60, step: .1, initial: 24 },
+    { key:'spawnForward',label:'枪口前移',unit:'米',min:0,max:10,step:.01,initial:.4 },
     { key: 'lifetime', label: '最大寿命', unit: '秒', min: .001, max: 3600, step: .001, initial: 120 },
     { key: 'radius', label: '碰撞半径', unit: '米', min: .01, max: 2, step: .01, initial: .18 },
     { key: 'multi', label: '多重发射', type: 'check', initial: false },
@@ -88,7 +95,10 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
     { key: 'maxTargets', label: '目标上限 (0=全部)', min: 0, max: 128, step: 1, initial: 0, when:p=>p.scope==='area' },
     { key: 'flat', label: '基础伤害', min: 0, max: 500, step: 1, initial: 80 },
     { key: 'coefficient', label: '攻击系数', unit: '×', min: 0, max: 5, step: .1, initial: 0 },
-    { key: 'critChance', label: '暴击概率', min: 0, max: 1, step: .01, initial: .15 },
+    { key:'canCrit',label:'允许暴击',type:'check',initial:true },
+    { key:'critFromAttribute',label:'使用角色暴击率',type:'check',initial:false,when:p=>p.canCrit!==false },
+    { key: 'critChance', label: '暴击概率', min: 0, max: 1, step: .01, initial: .15,when:p=>p.canCrit!==false&&p.critFromAttribute!==true },
+    { key:'snapshotAttack',label:'使用攻击快照',type:'check',initial:true },
     { key: 'critMultiplier', label: '暴击倍率', unit: '×', min: 1, max: 5, step: .1, initial: 1.8 },
     { key: 'ignoreDefense', label: '忽略防御', type: 'check', initial: false },
     {key:'scaleByStacks',label:'按Buff层数缩放',type:'check',initial:false},
@@ -126,12 +136,13 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
   delivery: { title: '目标 / 区域 / 动作', color: '#887547', inputs: ['execute'], outputs: [['apply','作用效果'],['enter','进入区域'],['exit','离开区域'],['stay','区域停留'],['expire','自然到期'],['wall','撞墙'],['complete','完成'],['removed','移除']], fields: [
     { key:'mode', label:'传递方式', type:'select', initial:'target', options:[['target','目标作用'],['area','区域作用'],['melee','近战判定'],['displacement','位移攻击'],['ray','射线判定'],['summon','召唤分身']] },
     { key:'recipient', label:'作用目标', type:'select', initial:'target', options:[['target','当前目标'],['self','施法者自身']],when:p=>!p.mode||p.mode==='target' },
-    { key:'center',label:'作用中心',type:'select',initial:'point',options:[['point','事件 / 指定点'],['target','当前目标位置'],['source','来源位置']],when:p=>p.mode==='area'||p.mode==='summon' },
+    { key:'center',label:'作用中心',type:'select',initial:'point',options:[['point','事件 / 指定点'],['target','当前目标位置'],['source','来源位置'],['auto','指定点或来源']],when:p=>p.mode==='area'||p.mode==='summon' },
     { key:'radius',label:'作用半径',unit:'米',min:.1,max:20,step:.1,initial:3,when:p=>p.mode==='area' },
     { key:'maxTargets',label:'目标上限 (0=全部)',min:0,max:128,step:1,initial:0,when:p=>p.mode==='area'||p.mode==='melee'||p.mode==='displacement'||(p.mode==='ray'&&p.pierce===true) },
     { key:'persistent',label:'持续区域',type:'check',initial:false,when:p=>p.mode==='area' },
-    { key:'duration',label:'持续时间',unit:'秒',min:.02,max:120,step:.02,initial:2,when:p=>(p.mode==='area'&&p.persistent===true)||p.mode==='summon' },
-    { key:'interval',label:'脉冲间隔',unit:'秒',min:.001,max:10,step:.001,initial:.5,when:p=>p.mode==='area'&&p.persistent===true },
+    { key:'permanent',label:'永久召唤',type:'check',initial:false,when:p=>p.mode==='summon' },
+    { key:'duration',label:'持续时间',unit:'秒',min:.02,max:120,step:.02,initial:2,when:p=>(p.mode==='area'&&p.persistent===true)||(p.mode==='summon'&&p.permanent!==true) },
+    { key:'interval',label:'脉冲间隔 (0=关闭)',unit:'秒',min:0,max:10,step:.001,initial:.5,when:p=>p.mode==='area'&&p.persistent===true },
     { key:'pulseOnSpawn',label:'生成时脉冲',type:'check',initial:true,when:p=>p.mode==='area'&&p.persistent===true },
     { key:'shape',label:'判定形状',type:'select',initial:'thrust',options:[['thrust','刺击'],['fan','扇形横扫'],['circle','360° 旋风']],when:p=>p.mode==='melee' },
     { key:'length',label:'攻击距离',unit:'米',min:.1,max:1000,step:.1,initial:3,when:p=>p.mode==='melee'||p.mode==='ray' },

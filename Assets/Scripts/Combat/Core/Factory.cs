@@ -66,7 +66,7 @@ namespace Combat.Core
             {
                 actor.AddComp(new InputBufferComp());
                 actor.AddComp(new HitboxComp());
-                actor.AddComp(new ComboComp(_data.Combo ?? new ComboTableSO()));
+                actor.AddComp(new ComboComp(_data.Combo ?? new ComboTableDefinition()));
                 actor.AddComp(new PlayerCombatDriverComp());
                 actor.AddComp(new SkillDirectorComp(_data.Timelines ?? new TimelineLibrary()));
                 var loadout = new LoadoutComp();
@@ -116,16 +116,16 @@ namespace Combat.Core
         public static TimelineLibrary MakeLib()
         {
             var lib = new TimelineLibrary();
-            lib.Register(TimelineSO.G1());
-            lib.Register(TimelineSO.G2());
-            lib.Register(TimelineSO.Dodge());
-            lib.Register(TimelineSO.Homing());
+            lib.Register(TimelineDefinition.G1());
+            lib.Register(TimelineDefinition.G2());
+            lib.Register(TimelineDefinition.Dodge());
+            lib.Register(TimelineDefinition.Homing());
             return lib;
         }
 
-        public static ComboTableSO G1G2()
+        public static ComboTableDefinition G1G2()
         {
-            return new ComboTableSO
+            return new ComboTableDefinition
             {
                 Entries = new[]
                 {
@@ -162,14 +162,14 @@ namespace Combat.Core
 
         public static void ResetG1MeleeDefaults()
         {
-            TimelineSO.G1Melee.Damage.Coeff = 1f;
-            TimelineSO.G1Melee.Damage.CanCrit = true;
-            TimelineSO.G1Melee.Damage.UseSnapshotAtk = true;
-            TimelineSO.G1Melee.Damage.HitstopFrames = 3;
-            TimelineSO.G1Melee.Stun = new HitStunEffect { Duration = 0.35f };
-            TimelineSO.G1Melee.Knockback = new KnockbackEffect { Distance = 0.4f };
-            TimelineSO.G1Melee.IFrame = null;
-            TimelineSO.G1Melee.ClearCache();
+            TimelineDefinition.G1Melee.Damage.Coeff = 1f;
+            TimelineDefinition.G1Melee.Damage.CanCrit = true;
+            TimelineDefinition.G1Melee.Damage.UseSnapshotAtk = true;
+            TimelineDefinition.G1Melee.Damage.HitstopFrames = 3;
+            TimelineDefinition.G1Melee.Stun = new HitStunEffect { Duration = 0.35f };
+            TimelineDefinition.G1Melee.Knockback = new KnockbackEffect { Distance = 0.4f };
+            TimelineDefinition.G1Melee.IFrame = null;
+            TimelineDefinition.G1Melee.ClearCache();
         }
     }
 }

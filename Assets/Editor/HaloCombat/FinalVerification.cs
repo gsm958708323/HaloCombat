@@ -1,3 +1,4 @@
+using Combat.Unity;
 using Combat.Unity.Editor;
 
 namespace Combat.EditorTools
@@ -6,8 +7,7 @@ namespace Combat.EditorTools
     {
         public static void Run()
         {
-            GenerateDefaultDatabase.GenerateBatch();
-            ValidateMenu.Validate();
+            UnityRuntimeContent.Load();
             HaloCombatDemoSceneBuilder.VerifyAll();
             SeasonThreeSceneBuilder.VerifyAll();
         }

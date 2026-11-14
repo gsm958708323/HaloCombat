@@ -22,6 +22,7 @@ namespace Combat.Config
                 var skill=project.Skills[i];string path="$.skills["+i+"]";
                 Number(skill.RuntimeId,skillNumbers,path+".runtimeId");
                 Graph(skill.Nodes,skill.Edges,path,false,buffs,blueprints,checkRetainedReferences);
+                TimelineReferences(skill.Timeline,skill.Nodes,path+".timeline");
             }
             for(int i=0;i<project.Buffs.Length;i++)
             {
@@ -32,6 +33,24 @@ namespace Combat.Config
             for(int i=0;i<project.SummonBlueprints.Length;i++)
                 if(!skills.Contains(project.SummonBlueprints[i].SkillId??""))Fail("$.summonBlueprints["+i+"].skillId","Unknown skill reference.");
             Editor(project.Editor,skills,buffs);
+            RuntimeReferences(project.Runtime,skills);
+        }
+        static void TimelineReferences(TimelineDocument timeline,SkillNodeDocument[] nodes,string path)
+        {
+            if(timeline==null)return;
+            if(timeline.Clips==null||timeline.Payloads==null)Fail(path,"Timeline arrays are required.");
+            var ids=new HashSet<string>();foreach(var node in nodes)ids.Add(node.Id);
+            Action<string[],string> check=(entries,p)=>{if(entries==null)Fail(p,"Effect entry array is required.");foreach(string id in entries)if(!ids.Contains(id??""))Fail(p,"Unknown effect entry: "+id);};
+            foreach(var clip in timeline.Clips){if(clip==null)Fail(path+".clips","Null clip.");check(clip.Effects,path+".clips["+clip.Id+"].effects");}
+            foreach(var payload in timeline.Payloads){if(payload==null)Fail(path+".payloads","Null payload.");check(payload.Effects,path+".payloads["+payload.Id+"].effects");}
+        }
+        static void RuntimeReferences(RuntimeContentDocument runtime,HashSet<string> skills)
+        {
+            if(runtime==null)return;
+            Identities(runtime.Actors,a=>a.Id,"$.runtime.actors",256);Identities(runtime.Combos,c=>c.Id,"$.runtime.combos",1024);
+            Action<string,string> check=(id,path)=>{if(!string.IsNullOrEmpty(id)&&!skills.Contains(id))Fail(path,"Unknown skill reference: "+id);};
+            foreach(var row in runtime.Combos){check(row.ToSkill,"$.runtime.combos["+row.Id+"].toSkill");if(row.PreSkills==null)Fail("$.runtime.combos","PreSkills array is required.");foreach(string id in row.PreSkills)check(id,"$.runtime.combos["+row.Id+"].preSkills");}
+            foreach(var actor in runtime.Actors){string p="$.runtime.actors["+actor.Id+"]";check(actor.SkillId,p+".skillId");check(actor.DodgeSkill,p+".dodgeSkill");if(actor.Slots==null)Fail(p+".slots","Slot array is required.");foreach(string id in actor.Slots)check(id,p+".slots");}
         }
 
         static HashSet<string> Identities<T>(T[] values,Func<T,string> key,string path,int limit) where T:class

@@ -11,7 +11,7 @@ namespace Combat.Core
         struct PendingPayload { public double Time; public IEffect[] Effects; public SkillAim Aim; public float Power; }
         bool[] _clipOpened = new bool[8];
         long[] _payloadCounts = new long[8];
-        TimelineSO _so;
+        TimelineDefinition _so;
         double _time;
         bool _playing;
         SkillAim _aim;
@@ -36,7 +36,7 @@ namespace Combat.Core
         public float ChargePower => _charge != null ? _basePower*_charge.Power((float)_chargeTime) : Power;
         public event Action<float> Released;
 
-        public void Play(TimelineSO so, SkillAim aim = default, Func<float, float> advanceBudget = null,
+        public void Play(TimelineDefinition so, SkillAim aim = default, Func<float, float> advanceBudget = null,
             Func<int, bool> payPulse = null, Func<SkillAim?> aimResolver = null, ChargeDefinition charge = null,float power=1,SkillOrigin origin=default)
         {
             StopInternal(true);

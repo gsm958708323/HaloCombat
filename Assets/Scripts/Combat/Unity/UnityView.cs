@@ -8,6 +8,8 @@ namespace Combat.Unity
     {
         public EntityId Id { get; private set; }
         string _blueprint;
+        string _model;
+        public void ConfigureModel(string model)=>_model=model;
         bool _dead;
         Transform _visual;
         Transform _core;
@@ -53,21 +55,22 @@ namespace Combat.Unity
             for (int i = transform.childCount - 1; i >= 0; i--) Destroy(transform.GetChild(i).gameObject);
             _visual = new GameObject("Visual").transform;
             _visual.SetParent(transform, false);
-            Color main = Palette.Main(_blueprint);
-            Color accent = Palette.Accent(_blueprint);
-            if (_blueprint == "projectile")
+            string model=_model??_blueprint;
+            Color main = Palette.Main(model);
+            Color accent = Palette.Accent(model);
+            if (model == "projectile")
             {
                 _core = Part(PrimitiveType.Sphere, "ProjectileCore", new Vector3(0f, 0.28f, 0f), Vector3.one * 0.3f, accent, true);
                 var trail = _core.gameObject.AddComponent<TrailRenderer>();
                 trail.time = 0.28f; trail.startWidth = 0.22f; trail.endWidth = 0.01f;
                 trail.material = Material(accent, true);
             }
-            else if (_blueprint == "aoe")
+            else if (model == "aoe")
             {
                 _ring = Part(PrimitiveType.Cylinder, "AreaField", Vector3.zero, new Vector3(2f, 0.025f, 2f), accent, true);
                 _ring.gameObject.AddComponent<LessonPulse>();
             }
-            else if (_blueprint == "stake")
+            else if (model == "stake")
             {
                 Part(PrimitiveType.Cylinder, "TargetColumn", new Vector3(0f, 0.7f, 0f), new Vector3(0.62f, 0.7f, 0.62f), main, false);
                 _core = Part(PrimitiveType.Sphere, "TargetCore", new Vector3(0f, 1.35f, 0f), Vector3.one * 0.16f, accent, true);
@@ -75,7 +78,7 @@ namespace Combat.Unity
             }
             else
             {
-                bool small = _blueprint == "summon";
+                bool small = model == "summon";
                 float scale = small ? 0.72f : 1f;
                 Part(PrimitiveType.Capsule, "Body", new Vector3(0f, 0.8f * scale, 0f), new Vector3(0.58f, 0.8f, 0.58f) * scale, main, false);
                 Part(PrimitiveType.Sphere, "Head", new Vector3(0f, 1.65f * scale, 0f), Vector3.one * 0.42f * scale, main, false);
@@ -117,10 +120,14 @@ namespace Combat.Unity
 
     public sealed class UnityViewFactory : IViewFactory
     {
+        readonly System.Collections.Generic.IReadOnlyDictionary<string,RuntimeActorDefinition> _actors;
+        public UnityViewFactory(System.Collections.Generic.IReadOnlyDictionary<string,RuntimeActorDefinition> actors=null)=>_actors=actors;
         public IActorView Create(string blueprintId)
         {
             var go = new GameObject("ActorView_" + blueprintId);
-            return go.AddComponent<UnityActorView>();
+            var view=go.AddComponent<UnityActorView>();
+            if(_actors!=null&&_actors.TryGetValue(blueprintId,out var definition))view.ConfigureModel(definition.View);
+            return view;
         }
     }
 

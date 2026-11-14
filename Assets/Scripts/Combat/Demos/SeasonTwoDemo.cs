@@ -330,8 +330,8 @@ namespace Combat.Demos
                 "无 Owner 的 guard 继续存活", $"guardActive={guard.IsActive} guardActivity={guard.GetComp<StateMachineComp>().Current}",
                 () => DemoTrace.Snapshot(guard));
 
-            trace.Check("SeasonTwo 保持 G1 默认 Coeff", Math.Abs(TimelineSO.G1Melee.Damage.Coeff - 1f) <= 1e-4f,
-                "SeasonTwo 不修改 G1 默认 Coeff", $"Coeff={TimelineSO.G1Melee.Damage.Coeff}", () => DemoTrace.Snapshot(player));
+            trace.Check("SeasonTwo 保持 G1 默认 Coeff", Math.Abs(TimelineDefinition.G1Melee.Damage.Coeff - 1f) <= 1e-4f,
+                "SeasonTwo 不修改 G1 默认 Coeff", $"Coeff={TimelineDefinition.G1Melee.Damage.Coeff}", () => DemoTrace.Snapshot(player));
 
             CombatLog.Info(CombatCategories.SeasonTwo,
                 $"[DemoSummary][SeasonTwo] 八个阶段计数 immune={immune} hitstops={hitstops} damages={damages}");

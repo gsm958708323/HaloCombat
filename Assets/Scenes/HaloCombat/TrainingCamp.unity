@@ -166,8 +166,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a1b2c3d4e5f6478899aabbccddeeff01, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _database: {fileID: 11400000, guid: 6792dd4e9b537a0429311fdb74b64e94, type: 2}
-  _useSoDatabase: 1
+  _contentFile: Combat/project.json
   _logicHz: 50
   _showPanel: 1
 --- !u!114 &103

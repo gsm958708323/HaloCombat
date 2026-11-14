@@ -7,11 +7,23 @@ namespace Combat.Config
     internal static class SkillCastCompiler
     {
         public static SkillDefinition Compile(SkillGraphDocument skill, SkillNodeDocument node, string path, IEffect[] effects, TimelineLibrary timelines,
-            TimelineClip[] actionClips,TimelinePayload[] followups)
+            TimelineClip[] actionClips,TimelinePayload[] followups,TimelineDefinition authored=null)
         {
             var c = new NodeParameters(node, path, "mode", "cost", "cooldown", "delay", "duration", "count", "interval", "sustained", "channelDuration",
                 "energyPerSecond", "costPerPulse", "chargeMin", "chargeMax", "powerMin", "powerMax", "autoRelease");
             string mode = c.Choice("mode", "instant", "instant", "channel", "charge");
+            if(authored!=null)
+            {
+                foreach(var property in node.Parameters.Properties())
+                    if(property.Name!="mode"&&property.Name!="cost"&&property.Name!="cooldown"&&property.Name!="count"&&property.Name!="delay")
+                        Fail(path+".parameters."+property.Name,"Explicit timeline owns timing and has no automatic cast schedule fields.");
+                if(mode!="instant"||effects.Length>0||actionClips.Length>0||followups.Length>0||
+                    c.Integer("count",1,1,1000)!=1||c.Number("delay",0,0,60)!=0)
+                    Fail(path,"Explicit timeline owns its schedule; use instant mode with no cast output, delay or automatic burst.");
+                timelines.Register(authored);
+                return new SkillDefinition{Id=new SkillNodeId(skill.RuntimeId),Timeline=authored.Id,Key=skill.Id,Name=skill.Name,
+                    Cooldown=c.Number("cooldown",0,0,3600),EnergyCost=c.Number("cost",0,0,1000000),Mode=SkillCastMode.Instant};
+            }
             float delay = c.Number("delay", 0, 0, 60);
             float interval = c.Number("interval", .1f, .001f, 60);
             int count = mode == "instant" ? c.Integer("count", 1, 1, 1000) : 1;
@@ -48,7 +60,7 @@ namespace Combat.Config
                     MaximumPower = c.Number("powerMax", 3, minimumPower, 100), AutoRelease = c.Boolean("autoRelease", true)
                 };
             }
-            timelines.Register(new TimelineSO { Id = new TimelineId(skill.RuntimeId), Duration = length, Payloads = payloads.ToArray(),Clips=clips.ToArray() });
+            timelines.Register(new TimelineDefinition { Id = new TimelineId(skill.RuntimeId), Duration = length, Payloads = payloads.ToArray(),Clips=clips.ToArray() });
             return new SkillDefinition
             {
                 Id = new SkillNodeId(skill.RuntimeId), Timeline = new TimelineId(skill.RuntimeId), Key = skill.Id, Name = skill.Name,

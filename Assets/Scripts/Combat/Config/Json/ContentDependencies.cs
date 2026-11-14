@@ -49,6 +49,7 @@ namespace Combat.Config
                 SummonBlueprints=source.SummonBlueprints.Where(b=>blueprints.Contains(b.Id)).ToArray(),
                 Buffs=source.Buffs.Where(b=>keys.Contains(ContentDependencies.Buff(b.Id))).ToArray()
             };
+            if(source.Runtime!=null)selected.Runtime=new RuntimeContentDocument{Motor=source.Runtime.Motor,Cues=source.Runtime.Cues};
             // A selected closure owns its graph data. Templates still need authoring positions.
             selected=SkillProjectJson.Read(SkillProjectJson.Write(selected));
             return selected;

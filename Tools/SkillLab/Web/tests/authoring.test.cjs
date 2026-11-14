@@ -8,6 +8,31 @@ const {ProjectSave}=require('../../.local/web-checks/authoring/projectIO.js');
 const example=()=>JSON.parse(fs.readFileSync(path.resolve(__dirname,'../../../../Content/SkillLab/project.json'),'utf8'));
 const ids=()=>{let number=0;return ()=> 'generated-'+ ++number;};
 const skillKey={kind:'skill',id:'basic-shot'};
+const runtime=()=>JSON.parse(fs.readFileSync(path.resolve(__dirname,'../../../../Assets/StreamingAssets/Combat/project.json'),'utf8'));
+
+test('runtime skill rename updates Combo predecessor/target, dodge, actor AI and loadout slots',()=>{
+  const p=runtime();const next=edits.renameContent(p,'skill','g1','new-g1');
+  assert.equal(next.runtime.combos[0].toSkill,'new-g1');assert(next.runtime.combos[1].preSkills.includes('new-g1'));
+  assert(next.runtime.actors.filter(a=>a.skillId).some(a=>a.skillId==='new-g1'));assert.equal(next.runtime.actors[0].slots[0],'new-g1');
+  assert.equal(edits.referencesTo(next,'skill','g1').length,0);assert.throws(()=>edits.deleteContent(p,'skill','g1'),/替代引用/);
+});
+test('authored timeline copy remaps every entry to the new nodes and allocates a fresh timeline ID',()=>{
+  const p=runtime(),source=p.skills[0];const result=edits.duplicateContent(p,'skill',source.id,'timeline-copy',ids());const copied=result.project.skills.at(-1);
+  assert(!p.skills.some(s=>s.runtimeId===copied.runtimeId||s.timeline?.runtimeId===copied.timeline.runtimeId));
+  const valid=new Set(copied.nodes.map(n=>n.id));for(const row of [...copied.timeline.clips,...copied.timeline.payloads])assert((row.effects??[]).every(id=>valid.has(id)));
+  assert.deepEqual(copied.timeline.clips.map(c=>[c.start,c.end,c.kind]),source.timeline.clips.map(c=>[c.start,c.end,c.kind]));
+});
+test('deleting an authored effect node removes its timeline entry and undo restores both',()=>{
+  const p=runtime(),key={kind:'skill',id:'g1'},history=new EditorHistory(p);
+  history.edit(graph.deleteSelection(p,key,['slash-cue'],[]));assert(!history.current.skills[0].timeline.payloads[0].effects.length);
+  history.undo();assert.deepEqual(history.current.skills[0].timeline.payloads[0].effects,['slash-cue']);
+});
+test('merging runtime content preserves authored timing and rewrites all imported Combo and actor references',()=>{
+  const p=runtime();const next=mergeProjects(p,p,ids());const imported=next.skills.slice(p.skills.length);const valid=new Set(imported.map(s=>s.id));
+  assert(next.runtime.combos.slice(p.runtime.combos.length).every(c=>valid.has(c.toSkill)&&c.preSkills.every(id=>valid.has(id))));
+  assert(next.runtime.actors.slice(p.runtime.actors.length).every(a=>(!a.skillId||valid.has(a.skillId))&&(!a.dodgeSkill||valid.has(a.dodgeSkill))&&(a.slots??[]).every(id=>valid.has(id))));
+  for(const s of imported)assert([...s.timeline.clips,...s.timeline.payloads].every(c=>(c.effects??[]).every(id=>s.nodes.some(n=>n.id===id))));
+});
 
 test('skill ID rename updates blueprint references and editor selection, preserving numeric identity',()=>{
   const p=example();p.editor={selectedSkill:'basic-shot',viewports:[{...skillKey,x:20,y:30,zoom:.5}]};

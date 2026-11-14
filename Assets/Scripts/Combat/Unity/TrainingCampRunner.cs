@@ -11,12 +11,12 @@ namespace Combat.TrainingCamp
     [RequireComponent(typeof(TrainingCampController), typeof(TrainingCampPanel), typeof(TrainingCampVisuals))]
     public sealed class TrainingCampRunner : MonoBehaviour
     {
-        [SerializeField] CombatDatabaseAsset _database;
-        [SerializeField] bool _useSoDatabase = true;
+        [SerializeField] string _contentFile=UnityRuntimeContent.DefaultFile;
         [SerializeField] float _logicHz = 50f;
         [SerializeField] bool _showPanel = true;
 
         CombatWorld _world;
+        CombatContentSnapshot _content;
         InputAdapter _input;
         EntityId _playerId, _dummyId;
         readonly List<string> _eventStream = new List<string>(12);
@@ -35,16 +35,14 @@ namespace Combat.TrainingCamp
         public float LogicHz => _logicHz;
 
         void Awake() => ResetWorld();
+        void OnDestroy()=>_world?.Shutdown();
 
         public void ResetWorld()
         {
-            _world = null;
-            var content = _useSoDatabase && _database != null
-                ? (ICombatContent)new SoCombatContent(_database)
-                : new CodeCombatContent();
-            var baked = content.Bake();
-            _world = new CombatWorld(new FighterActorFactory(baked), new IntentQueue(), new EventBus(), new CombatTime(), new SeededRandom(7), baked.Cues, baked.Motor);
-            baked.Install(_world);
+            var content=UnityRuntimeContent.Load(_contentFile);
+            UnityRuntimeContent.RequireActors(content,"fighter","melee_ai");
+            var candidate=content.CreateWorld(new SeededRandom(7));
+            _world?.Shutdown();_world=candidate;_content=content.Content;
             BindEvents();
             _input = new InputAdapter { EnableCombatKeys = true };
             _dummyAi = false;
@@ -120,7 +118,7 @@ namespace Combat.TrainingCamp
         public void SpawnFireGround() { var a = Player(); var d = Dummy(); if (a == null || d == null) return; _world.Deliver(new IEffect[] { new SpawnAoeEffect(CombatIds.FireGround) }, a, null, Atk(a), d.GetComp<TransformComp>().Position); _lastOperation = "Fire Ground spawned"; }
         public void SpawnAura() { var a = Player(); if (a == null) return; _world.Deliver(new IEffect[] { new SpawnAoeEffect(CombatIds.AuraField) }, a, null, Atk(a), a.GetComp<TransformComp>().Position); _lastOperation = "Aura occupancy field spawned"; }
         public void Summon() { var a = Player(); if (a == null) return; _world.Deliver(new IEffect[] { new SpawnSummonEffect(CombatIds.MeleeSummon) }, a, null, Atk(a)); _lastOperation = "Summon spawned with OwnerId"; }
-        public void ApplyBuff() { var a = Player(); var d = Dummy(); if (a == null || d == null) return; _world.Deliver(new IEffect[] { new ApplyDurationEffect(CombatCatalog.Burn(), 1) }, a, d, Atk(a)); _lastOperation = "Burn +1 applied (max 3)"; }
+        public void ApplyBuff() { var a = Player(); var d = Dummy(); if (a == null || d == null) return; if(!_content.Buffs.TryGet("burn",out var burn))throw new ContentValidationException("$.buffs[burn]","TrainingCamp requires burn.");_world.Deliver(new IEffect[] { new ApplyDurationEffect(burn, 1) }, a, d, Atk(a)); _lastOperation = "Burn +1 applied (max 3)"; }
         public void DispelBuff() { var a = Player(); var d = Dummy(); if (a == null || d == null) return; _world.Deliver(new IEffect[] { new DispelEffect(DispelMode.ByBuffId, CombatIds.Burn) }, a, d, 0); _lastOperation = "Dispel Burn"; }
         public void KnockdownDummy() { var a = Player(); var d = Dummy(); if (a == null || d == null) return; _world.Deliver(new IEffect[] { new KnockdownEffect() }, a, d, 0); _lastOperation = "Knockdown Dummy"; }
         public void KillRespawnPlayer()

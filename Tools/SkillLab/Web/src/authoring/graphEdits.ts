@@ -31,7 +31,8 @@ export function pasteSelection(p:Project,key:GraphKey,clipboard:GraphClipboard,p
 export function deleteSelection(p:Project,key:GraphKey,nodeIds:string[],edgeIds:string[]):Project {
   return updateGraph(p,key,g=>{
     const removed=new Set(nodeIds.filter(id=>g.nodes.find(n=>n.id===id)?.kind!=='buff-events'));
-    return {...g,nodes:g.nodes.filter(n=>!removed.has(n.id)),edges:g.edges.filter(e=>!removed.has(e.source)&&!removed.has(e.target)&&!edgeIds.includes(e.id))};
+    return {...g,nodes:g.nodes.filter(n=>!removed.has(n.id)),edges:g.edges.filter(e=>!removed.has(e.source)&&!removed.has(e.target)&&!edgeIds.includes(e.id)),timeline:g.timeline?{...g.timeline,
+      clips:g.timeline.clips.map(c=>({...c,effects:c.effects?.filter(id=>!removed.has(id))})),payloads:g.timeline.payloads.map(p=>({...p,effects:p.effects.filter(id=>!removed.has(id))}))}:undefined};
   });
 }
 export function connectGraph(graph:EditableGraph,link:Link,edgeId:string=crypto.randomUUID(),replacing=false):EditableGraph {

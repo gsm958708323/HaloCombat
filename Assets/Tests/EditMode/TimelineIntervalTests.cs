@@ -19,7 +19,7 @@ namespace Combat.Tests
         [Test]
         public void AStepCrossingBothClipBoundariesOnlyIntegratesTheClipInterval()
         {
-            var library=new TimelineLibrary();library.Register(new TimelineSO {Id=new TimelineId(777),Duration=.3f,
+            var library=new TimelineLibrary();library.Register(new TimelineDefinition {Id=new TimelineId(777),Duration=.3f,
                 Clips=new[]{new TimelineClip {Start=.1f,End=.2f,Kind=ClipKind.Move,MoveX=6}}});
             var world=new CombatWorld(new Factory {Library=library});var id=world.SpawnActor(new ActorSpawnSpec("caster"));world.TryGetActor(id,out var actor);
             actor.GetComp<SkillDirectorComp>().Play(new SkillNodeId(777),new TimelineId(777));world.Tick(.25f);

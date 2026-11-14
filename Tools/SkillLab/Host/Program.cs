@@ -44,6 +44,18 @@ app.MapGet("/api/project",async(HttpContext context)=>
     return Results.Text(snapshot.Json,"application/json");
 });
 app.MapGet("/api/examples",()=>Results.Text(File.ReadAllText(exampleFile),"application/json"));
+var runtimeFile=Path.Combine(root,"Assets/StreamingAssets/Combat/project.json");
+app.MapGet("/api/runtime",()=>Results.Text(File.ReadAllText(runtimeFile),"application/json"));
+app.MapPost("/api/runtime/publish",async(HttpContext context)=>
+{
+    var project=await ReadProject(context);var compiled=CombatContentCompiler.Compile(project);
+    if(compiled.Runtime==null||project.Runtime.Actors.Length==0)throw new ContentValidationException("$.runtime.actors","正式内容需要角色定义。");
+    project.Editor=null;
+    await jsonLock.WaitAsync();
+    try{var temporary=runtimeFile+".tmp";await File.WriteAllTextAsync(temporary,SkillProjectJson.Write(project));File.Move(temporary,runtimeFile,true);}
+    finally{jsonLock.Release();}
+    return Results.Ok(new{message="正式JSON已发布；Unity演示场景F1重建，训练场点击重置后载入。"});
+});
 app.MapGet("/api/templates/{id}",(string id)=>
 {var project=SkillProjectJson.Read(File.ReadAllText(exampleFile));return Results.Text(SkillProjectJson.Write(SkillProjectJson.SelectTemplate(project,id)),"application/json");});
 app.MapPost("/api/project",async(HttpContext context)=>

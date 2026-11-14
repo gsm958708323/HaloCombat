@@ -82,6 +82,11 @@ namespace Combat.Core
             if (aoes != null) _aoes = aoes;
             if (summons != null) _summons = summons;
         }
+        public void Shutdown()
+        {
+            _registry.ClearAll();_intents.ClearAll();_servicePhase.Clear();
+            _hitstopPending=0;_hitstopLeft=0;
+        }
 
         public void ReplaceCues(CueLibrary cues)
         {

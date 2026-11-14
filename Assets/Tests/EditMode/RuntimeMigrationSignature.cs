@@ -1,0 +1,44 @@
+using System;
+using System.Collections;
+using System.Linq;
+using System.Reflection;
+using Combat.Core;
+using Newtonsoft.Json.Linq;
+
+namespace Combat.Tests
+{
+    // Frozen against the actual legacy assets before deletion. These exclusions are metadata
+    // added by JSON authoring and the AI prototype; independent actor/AI tests cover the latter.
+    internal static class RuntimeMigrationSignature
+    {
+        public static JObject Capture(BakedCombatData data)
+        {
+            var timelines=new JObject();foreach(int id in new[]{1001,1002,1003,1004}){data.Timelines.TryGet(new TimelineId(id),out var t);timelines[id.ToString()]=Shape(t);}
+            var projectiles=new JObject();foreach(int id in new[]{901,902}){data.Projectiles.TryGet(id,out var d);projectiles[id.ToString()]=Shape(d);}
+            var areas=new JObject();foreach(int id in new[]{801,802}){data.Aoes.TryGet(id,out var d);areas[id.ToString()]=Shape(d);}
+            data.Summons.TryGet(701,out var summon);
+            return new JObject{{"combo",Shape(data.Combo)},{"timelines",timelines},{"projectiles",projectiles},{"areas",areas},{"summon",Shape(summon)},{"motor",Shape(data.Motor)},{"cues",Shape(data.Cues)}};
+        }
+        static JToken Shape(object value,int depth=0)
+        {
+            if(value==null)return JValue.CreateNull();if(depth>24)throw new InvalidOperationException("Signature depth exceeded.");
+            Type type=value.GetType();if(type.IsPrimitive||value is string||value is decimal)return new JValue(value);
+            if(type.IsEnum)return new JValue(value.ToString());
+            var flags=BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic;
+            if(value is TargetEffects&&!(bool)type.GetField("_self",flags).GetValue(value))return Shape(type.GetField("_effects",flags).GetValue(value),depth+1);
+            if(value is IDictionary map){var result=new JObject();foreach(var key in map.Keys)result[key.ToString()]=Shape(map[key],depth+1);return result;}
+            if(value is IEnumerable values)
+            {
+                var result=new JArray();foreach(var item in values){var token=Shape(item,depth+1);if(item is IEffect&&token is JArray children)foreach(var child in children)result.Add(child);else result.Add(token);}return result;
+            }
+            var fields=new JObject();if(value is IEffect)fields["type"]=type.Name;
+            foreach(var field in type.GetFields(flags))
+            {
+                if(field.IsStatic||new[]{"Name","Key","OriginContentKey","Tree","PresentationKind","ResourceKey"}.Contains(field.Name))continue;
+                if(value is DamageEffect damage&&!damage.CanCrit&&field.Name=="CritChance")continue;
+                fields[field.Name]=Shape(field.GetValue(value),depth+1);
+            }
+            return fields;
+        }
+    }
+}

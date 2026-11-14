@@ -1,0 +1,1076 @@
+{
+  "formatVersion": 1,
+  "id": "halo-combat-runtime",
+  "name": "HaloCombat 正式战斗内容",
+  "skills": [
+    {
+      "id": "g1",
+      "runtimeId": 101,
+      "name": "G1 斩击与火球",
+      "category": "正式内容",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "runtimeId": 0,
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "facing",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "runtimeId": 0,
+          "position": {
+            "x": 300,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 0,
+            "cooldown": 0
+          }
+        },
+        {
+          "id": "melee",
+          "kind": "damage",
+          "runtimeId": 0,
+          "position": {
+            "x": 900,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 0,
+            "coefficient": 1,
+            "critChance": 0,
+            "critMultiplier": 2,
+            "critFromAttribute": true,
+            "hitstopFrames": 3
+          }
+        },
+        {
+          "id": "stun",
+          "kind": "impact",
+          "runtimeId": 0,
+          "position": {
+            "x": 1500,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "hitstun",
+            "duration": 0.35
+          }
+        },
+        {
+          "id": "knockback",
+          "kind": "impact",
+          "runtimeId": 0,
+          "position": {
+            "x": 1800,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "knockback",
+            "distance": 0.4
+          }
+        },
+        {
+          "id": "slash-cue",
+          "kind": "cue",
+          "runtimeId": 0,
+          "position": {
+            "x": 2700,
+            "y": 80
+          },
+          "parameters": {
+            "id": 101,
+            "name": "G1_Slash"
+          }
+        },
+        {
+          "id": "fireball",
+          "kind": "projectile",
+          "runtimeId": 901,
+          "position": {
+            "x": 600,
+            "y": 80
+          },
+          "parameters": {
+            "speed": 14,
+            "lifetime": 2,
+            "range": 0,
+            "radius": 0.3,
+            "maxHits": 1,
+            "spawnForward": 0.4
+          }
+        },
+        {
+          "id": "fire-damage",
+          "kind": "damage",
+          "runtimeId": 0,
+          "position": {
+            "x": 1200,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 0,
+            "coefficient": 1,
+            "critChance": 0,
+            "critMultiplier": 2,
+            "critFromAttribute": true
+          }
+        },
+        {
+          "id": "burn",
+          "kind": "buff",
+          "runtimeId": 0,
+          "position": {
+            "x": 2100,
+            "y": 80
+          },
+          "parameters": {
+            "buff": "burn"
+          }
+        },
+        {
+          "id": "hit-cue",
+          "kind": "cue",
+          "runtimeId": 0,
+          "position": {
+            "x": 2400,
+            "y": 80
+          },
+          "parameters": {
+            "id": 201,
+            "name": "FireballHit"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "fireball-hit-fire-damage-0",
+          "source": "fireball",
+          "sourcePort": "hit",
+          "target": "fire-damage",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "fireball-hit-stun-1",
+          "source": "fireball",
+          "sourcePort": "hit",
+          "target": "stun",
+          "targetPort": "execute",
+          "order": 1
+        },
+        {
+          "id": "fireball-hit-knockback-2",
+          "source": "fireball",
+          "sourcePort": "hit",
+          "target": "knockback",
+          "targetPort": "execute",
+          "order": 2
+        },
+        {
+          "id": "fireball-hit-burn-3",
+          "source": "fireball",
+          "sourcePort": "hit",
+          "target": "burn",
+          "targetPort": "execute",
+          "order": 3
+        },
+        {
+          "id": "fireball-hit-hit-cue-4",
+          "source": "fireball",
+          "sourcePort": "hit",
+          "target": "hit-cue",
+          "targetPort": "execute",
+          "order": 4
+        }
+      ],
+      "timeline": {
+        "runtimeId": 1001,
+        "duration": 0.55,
+        "clips": [
+          {
+            "id": "cancel",
+            "kind": "cancel",
+            "start": 0.12,
+            "end": 0.4
+          },
+          {
+            "id": "move",
+            "kind": "move",
+            "start": 0.08,
+            "end": 0.28,
+            "moveX": 0.6
+          },
+          {
+            "id": "hit",
+            "kind": "hitbox",
+            "start": 0.18,
+            "end": 0.3,
+            "hitRadius": 0.8,
+            "effects": [
+              "melee",
+              "stun",
+              "knockback"
+            ]
+          }
+        ],
+        "payloads": [
+          {
+            "id": "slash",
+            "time": 0.18,
+            "effects": [
+              "slash-cue"
+            ]
+          },
+          {
+            "id": "fire",
+            "time": 0.22,
+            "effects": [
+              "fireball"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "g2",
+      "runtimeId": 102,
+      "name": "G2 火区",
+      "category": "正式内容",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "runtimeId": 0,
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "facing",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "runtimeId": 0,
+          "position": {
+            "x": 300,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 0,
+            "cooldown": 0
+          }
+        },
+        {
+          "id": "g2-cue",
+          "kind": "cue",
+          "runtimeId": 0,
+          "position": {
+            "x": 600,
+            "y": 80
+          },
+          "parameters": {
+            "id": 102,
+            "name": "G2"
+          }
+        },
+        {
+          "id": "ground",
+          "kind": "delivery",
+          "runtimeId": 801,
+          "position": {
+            "x": 900,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "area",
+            "persistent": true,
+            "center": "auto",
+            "radius": 1.3,
+            "duration": 2,
+            "interval": 0.45,
+            "pulseOnSpawn": true,
+            "cueId": 202
+          }
+        },
+        {
+          "id": "burn",
+          "kind": "buff",
+          "runtimeId": 0,
+          "position": {
+            "x": 1200,
+            "y": 80
+          },
+          "parameters": {
+            "buff": "burn"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "ground-apply-burn-0",
+          "source": "ground",
+          "sourcePort": "apply",
+          "target": "burn",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ],
+      "timeline": {
+        "runtimeId": 1002,
+        "duration": 0.4,
+        "clips": [
+          {
+            "id": "cancel",
+            "kind": "cancel",
+            "start": 0,
+            "end": 0.2
+          },
+          {
+            "id": "move",
+            "kind": "move",
+            "start": 0,
+            "end": 0.12,
+            "moveX": 0.25
+          }
+        ],
+        "payloads": [
+          {
+            "id": "ground",
+            "time": 0.05,
+            "effects": [
+              "g2-cue",
+              "ground"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "dodge",
+      "runtimeId": 301,
+      "name": "闪避",
+      "category": "正式内容",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "runtimeId": 0,
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "facing",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "runtimeId": 0,
+          "position": {
+            "x": 300,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 0,
+            "cooldown": 0
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        }
+      ],
+      "timeline": {
+        "runtimeId": 1003,
+        "duration": 0.4,
+        "clips": [
+          {
+            "id": "move",
+            "kind": "move",
+            "start": 0,
+            "end": 0.28,
+            "moveX": 1.2
+          },
+          {
+            "id": "iframe",
+            "kind": "iframe",
+            "start": 0.04,
+            "end": 0.22
+          },
+          {
+            "id": "cancel",
+            "kind": "cancel",
+            "start": 0.24,
+            "end": 0.4
+          }
+        ],
+        "payloads": []
+      }
+    },
+    {
+      "id": "homing",
+      "runtimeId": 201,
+      "name": "追踪箭",
+      "category": "正式内容",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "runtimeId": 0,
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "facing",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "runtimeId": 0,
+          "position": {
+            "x": 300,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 0,
+            "cooldown": 0
+          }
+        },
+        {
+          "id": "homing",
+          "kind": "projectile",
+          "runtimeId": 902,
+          "position": {
+            "x": 600,
+            "y": 80
+          },
+          "parameters": {
+            "speed": 8,
+            "lifetime": 2.5,
+            "range": 0,
+            "radius": 0.35,
+            "maxHits": 1,
+            "homingRate": 270,
+            "spawnForward": 0.2
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "runtimeId": 0,
+          "position": {
+            "x": 900,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 0,
+            "coefficient": 1,
+            "critChance": 0,
+            "critMultiplier": 2,
+            "canCrit": false
+          }
+        },
+        {
+          "id": "stun",
+          "kind": "impact",
+          "runtimeId": 0,
+          "position": {
+            "x": 1200,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "hitstun",
+            "duration": 0.35
+          }
+        },
+        {
+          "id": "knock",
+          "kind": "impact",
+          "runtimeId": 0,
+          "position": {
+            "x": 1500,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "knockback",
+            "distance": 0.4
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "homing-hit-damage-0",
+          "source": "homing",
+          "sourcePort": "hit",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "homing-hit-stun-1",
+          "source": "homing",
+          "sourcePort": "hit",
+          "target": "stun",
+          "targetPort": "execute",
+          "order": 1
+        },
+        {
+          "id": "homing-hit-knock-2",
+          "source": "homing",
+          "sourcePort": "hit",
+          "target": "knock",
+          "targetPort": "execute",
+          "order": 2
+        }
+      ],
+      "timeline": {
+        "runtimeId": 1004,
+        "duration": 0.2,
+        "clips": [],
+        "payloads": [
+          {
+            "id": "shot",
+            "time": 0.02,
+            "effects": [
+              "homing"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "aura",
+      "runtimeId": 401,
+      "name": "来源独立光环",
+      "category": "正式内容",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "runtimeId": 0,
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "facing",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "runtimeId": 0,
+          "position": {
+            "x": 300,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 0,
+            "cooldown": 0
+          }
+        },
+        {
+          "id": "aura",
+          "kind": "delivery",
+          "runtimeId": 802,
+          "position": {
+            "x": 600,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "area",
+            "persistent": true,
+            "center": "source",
+            "radius": 1.2,
+            "duration": 8,
+            "interval": 0,
+            "pulseOnSpawn": false
+          }
+        },
+        {
+          "id": "slow",
+          "kind": "buff",
+          "runtimeId": 0,
+          "position": {
+            "x": 900,
+            "y": 80
+          },
+          "parameters": {
+            "buff": "aura-slow"
+          }
+        },
+        {
+          "id": "dispel",
+          "kind": "dispel",
+          "runtimeId": 0,
+          "position": {
+            "x": 1200,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "source"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "aura-enter-slow-0",
+          "source": "aura",
+          "sourcePort": "enter",
+          "target": "slow",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "aura-exit-dispel-0",
+          "source": "aura",
+          "sourcePort": "exit",
+          "target": "dispel",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ],
+      "timeline": {
+        "runtimeId": 1401,
+        "duration": 0.1,
+        "clips": [],
+        "payloads": [
+          {
+            "id": "area",
+            "time": 0,
+            "effects": [
+              "aura"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "summon-melee",
+      "runtimeId": 402,
+      "name": "近战分身",
+      "category": "正式内容",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "runtimeId": 0,
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "facing",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "runtimeId": 0,
+          "position": {
+            "x": 300,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 0,
+            "cooldown": 0
+          }
+        },
+        {
+          "id": "summon",
+          "kind": "delivery",
+          "runtimeId": 701,
+          "position": {
+            "x": 600,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "summon",
+            "blueprint": "summon",
+            "center": "auto",
+            "count": 1,
+            "spacing": 1,
+            "permanent": true,
+            "maxAlive": 64
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        }
+      ],
+      "timeline": {
+        "runtimeId": 1402,
+        "duration": 0.1,
+        "clips": [],
+        "payloads": [
+          {
+            "id": "summon",
+            "time": 0,
+            "effects": [
+              "summon"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "buffs": [
+    {
+      "id": "burn",
+      "runtimeId": 1,
+      "name": "灼烧",
+      "permanent": false,
+      "duration": 3,
+      "interval": 1,
+      "stack": "add",
+      "maxStacks": 3,
+      "mutexGroup": 0,
+      "tags": [],
+      "modifiers": [],
+      "nodes": [
+        {
+          "id": "events",
+          "kind": "buff-events",
+          "runtimeId": 0,
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {}
+        },
+        {
+          "id": "period",
+          "kind": "damage",
+          "runtimeId": 0,
+          "position": {
+            "x": 300,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 0,
+            "coefficient": 0.2,
+            "critChance": 0,
+            "critMultiplier": 2,
+            "scaleByStacks": true,
+            "canCrit": false
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "events-period-period-0",
+          "source": "events",
+          "sourcePort": "period",
+          "target": "period",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "aura-slow",
+      "runtimeId": 2,
+      "name": "光环减速",
+      "permanent": true,
+      "duration": 3,
+      "interval": 0,
+      "stack": "independent",
+      "maxStacks": 1,
+      "mutexGroup": 0,
+      "tags": [],
+      "modifiers": [
+        {
+          "attribute": "moveSpeed",
+          "operation": "mul",
+          "value": 0.5,
+          "priority": 0
+        }
+      ],
+      "nodes": [
+        {
+          "id": "events",
+          "kind": "buff-events",
+          "runtimeId": 0,
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {}
+        }
+      ],
+      "edges": []
+    }
+  ],
+  "summonBlueprints": [
+    {
+      "id": "summon",
+      "name": "近战分身",
+      "skillId": "g1",
+      "hp": 100,
+      "attack": 10,
+      "defense": 0,
+      "moveSpeed": 5,
+      "collisionRadius": 0.4,
+      "energy": 100,
+      "initialEnergy": 100,
+      "recovery": 10,
+      "acquireRadius": 8,
+      "attackRange": 1.15,
+      "followRange": 2,
+      "holdDuration": 0.3
+    }
+  ],
+  "preview": {
+    "seed": 1,
+    "energy": 100,
+    "recovery": 10,
+    "caster": {
+      "id": "caster",
+      "x": 0,
+      "z": 0,
+      "hp": 100,
+      "atk": 10,
+      "def": 0
+    },
+    "targets": [
+      {
+        "id": "target-1",
+        "x": 2,
+        "z": 0,
+        "hp": 1000,
+        "atk": 0,
+        "def": 0
+      }
+    ]
+  },
+  "runtime": {
+    "motor": {
+      "gravity": -20,
+      "jumpSpeed": 6,
+      "airSteer": 0.35,
+      "groundY": 0,
+      "stickDeadzone": 0.25
+    },
+    "combos": [
+      {
+        "id": "attack-root",
+        "preSkills": [],
+        "input": "Attack",
+        "requiredTags": [],
+        "priority": 0,
+        "toSkill": "g1"
+      },
+      {
+        "id": "g1-to-g2",
+        "preSkills": [
+          "g1"
+        ],
+        "input": "Attack",
+        "requiredTags": [
+          1001
+        ],
+        "priority": 10,
+        "toSkill": "g2"
+      },
+      {
+        "id": "dodge-to-g1",
+        "preSkills": [
+          "dodge"
+        ],
+        "input": "Attack",
+        "requiredTags": [
+          1001
+        ],
+        "priority": 5,
+        "toSkill": "g1"
+      }
+    ],
+    "actors": [
+      {
+        "id": "fighter",
+        "role": "player",
+        "team": 1,
+        "hp": 100,
+        "attack": 10,
+        "defense": 0,
+        "moveSpeed": 5,
+        "energy": 100,
+        "recovery": 10,
+        "view": "fighter",
+        "dodgeSkill": "dodge",
+        "slots": [
+          "g1",
+          "g2"
+        ]
+      },
+      {
+        "id": "stake",
+        "role": "target",
+        "team": 2,
+        "hp": 100,
+        "attack": 10,
+        "defense": 0,
+        "moveSpeed": 5,
+        "energy": 100,
+        "recovery": 10,
+        "view": "stake"
+      },
+      {
+        "id": "melee_ai",
+        "role": "ai",
+        "team": 2,
+        "hp": 100,
+        "attack": 10,
+        "defense": 0,
+        "moveSpeed": 5,
+        "energy": 100,
+        "recovery": 10,
+        "view": "melee_ai",
+        "ai": "puncher",
+        "skillId": "g1"
+      },
+      {
+        "id": "melee_ai_narrow",
+        "role": "ai",
+        "team": 2,
+        "hp": 100,
+        "attack": 10,
+        "defense": 0,
+        "moveSpeed": 5,
+        "energy": 100,
+        "recovery": 10,
+        "view": "melee_ai",
+        "ai": "puncher",
+        "skillId": "g1",
+        "acquireRadius": 2.5
+      },
+      {
+        "id": "melee_guard",
+        "role": "ai",
+        "team": 2,
+        "hp": 100,
+        "attack": 10,
+        "defense": 0,
+        "moveSpeed": 5,
+        "energy": 100,
+        "recovery": 10,
+        "view": "melee_guard",
+        "ai": "guard",
+        "skillId": "g1",
+        "leashRange": 5,
+        "patrolRadius": 1.5
+      },
+      {
+        "id": "ranged_ai",
+        "role": "ai",
+        "team": 2,
+        "hp": 100,
+        "attack": 10,
+        "defense": 0,
+        "moveSpeed": 5,
+        "energy": 100,
+        "recovery": 10,
+        "view": "ranged_ai",
+        "ai": "ranged",
+        "skillId": "homing",
+        "attackRange": 4
+      }
+    ],
+    "cues": [
+      {
+        "id": 101,
+        "key": "fx_g1_slash",
+        "kind": "cube",
+        "lifetime": 0.4
+      },
+      {
+        "id": 102,
+        "key": "fx_g2",
+        "kind": "cube",
+        "lifetime": 0.3
+      },
+      {
+        "id": 201,
+        "key": "fx_fireball_hit",
+        "kind": "cube",
+        "lifetime": 0.5
+      },
+      {
+        "id": 202,
+        "key": "fx_fire_ground",
+        "kind": "cube",
+        "lifetime": 2
+      }
+    ]
+  }
+}

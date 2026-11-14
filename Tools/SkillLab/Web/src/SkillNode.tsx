@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import type { Node, NodeProps } from '@xyflow/react';
 import type { GraphNode, Field, SummonBlueprint,BuffDefinition } from './model';
 import { kinds, portName, parameterValue, nodeOutputs,effectKinds } from './model';
-type Data = GraphNode & { counts?:Record<string,number>;blueprints?: SummonBlueprint[];buffs?:BuffDefinition[];changeKind:(id:string,kind:string)=>void; change: (id: string, key: string, value: string | number | boolean) => void; toggle: (id: string, enabled: boolean) => void; remove: (id: string) => void };
+type Data = GraphNode & { authoredTimeline?:boolean;counts?:Record<string,number>;blueprints?: SummonBlueprint[];buffs?:BuffDefinition[];changeKind:(id:string,kind:string)=>void; change: (id: string, key: string, value: string | number | boolean) => void; toggle: (id: string, enabled: boolean) => void; remove: (id: string) => void };
 export type EditorNode = Node<Data & Record<string, unknown>, 'skill'>;
 function Parameter({ field, value, change }: { field: Field; value: string | number | boolean; change: (value: string | number | boolean) => void }) {
   return <label className="parameter nodrag nowheel"><span>{field.label}<small>{field.unit}</small></span>
@@ -29,7 +29,8 @@ export function SkillNode({ data, selected }: NodeProps<EditorNode>) {
       {data.kind === 'projectile' && <div className="module-label">效果传递 <b>投射物</b></div>}
       {data.kind === 'projectile' && <label className="enable-row nodrag"><span>无限穿透</span><input aria-label="无限穿透" type="checkbox" checked={data.parameters.maxHits===0} onChange={e=>data.change(data.id,'maxHits',e.target.checked?0:1)}/></label>}
       {data.kind === 'damage' && <div className="module-label">效果结算 <b>伤害结算</b></div>}
-      {schema.fields.filter(field => !field.when || field.when(data.parameters)).map(field => <Parameter key={field.key} field={field.key==='blueprint'?{...field,options:[['','选择蓝图'],...(data.blueprints??[]).map(b=>[b.id,b.name??b.id] as [string,string])]}:field.key==='buff'?{...field,options:[['','选择Buff'],...(data.buffs??[]).map(b=>[b.id,b.name??b.id] as [string,string])]}:field} value={parameterValue(field,data.parameters)} change={value => data.change(data.id,field.key,value)} />)}
+      {data.kind==='cast'&&data.authoredTimeline&&<small>时序由右侧显式时间轴管理</small>}
+      {schema.fields.filter(field => (!field.when || field.when(data.parameters))&&(!data.authoredTimeline||data.kind!=='cast'||['cost','cooldown'].includes(field.key))).map(field => <Parameter key={field.key} field={field.key==='blueprint'?{...field,options:[['','选择蓝图'],...(data.blueprints??[]).map(b=>[b.id,b.name??b.id] as [string,string])]}:field.key==='buff'?{...field,options:[['','选择Buff'],...(data.buffs??[]).map(b=>[b.id,b.name??b.id] as [string,string])]}:field} value={parameterValue(field,data.parameters)} change={value => data.change(data.id,field.key,value)} />)}
     </div>
   </div>;
 }

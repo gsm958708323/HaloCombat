@@ -42,7 +42,7 @@ namespace Combat.Core
     }
 
     [Serializable]
-    public sealed class TimelineSO
+    public sealed class TimelineDefinition
     {
         public static readonly HitProfileBake G1Melee = new HitProfileBake
         {
@@ -56,9 +56,9 @@ namespace Combat.Core
         public TimelineClip[] Clips = Array.Empty<TimelineClip>();
         public TimelinePayload[] Payloads = Array.Empty<TimelinePayload>();
 
-        public static TimelineSO G1()
+        public static TimelineDefinition G1()
         {
-            return new TimelineSO
+            return new TimelineDefinition
             {
                 Id = TimelineId.TL_G1,
                 Duration = 0.55f,
@@ -88,9 +88,9 @@ namespace Combat.Core
             };
         }
 
-        public static TimelineSO G2()
+        public static TimelineDefinition G2()
         {
-            return new TimelineSO
+            return new TimelineDefinition
             {
                 Id = TimelineId.TL_G2,
                 Duration = 0.40f,
@@ -114,9 +114,9 @@ namespace Combat.Core
             };
         }
 
-        public static TimelineSO Dodge()
+        public static TimelineDefinition Dodge()
         {
-            return new TimelineSO
+            return new TimelineDefinition
             {
                 Id = TimelineId.TL_Dodge,
                 Duration = 0.40f,
@@ -130,9 +130,9 @@ namespace Combat.Core
             };
         }
 
-        public static TimelineSO Homing()
+        public static TimelineDefinition Homing()
         {
-            return new TimelineSO
+            return new TimelineDefinition
             {
                 Id = TimelineId.TL_Homing,
                 Duration = 0.20f,
@@ -150,16 +150,16 @@ namespace Combat.Core
 
     public sealed class TimelineLibrary
     {
-        readonly Dictionary<int, TimelineSO> _map = new Dictionary<int, TimelineSO>(32);
+        readonly Dictionary<int, TimelineDefinition> _map = new Dictionary<int, TimelineDefinition>(32);
 
-        public void Register(TimelineSO so)
+        public void Register(TimelineDefinition so)
         {
             if (so == null || !so.Id.IsValid)
-                throw new ArgumentException("Invalid TimelineSO");
+                throw new ArgumentException("Invalid TimelineDefinition");
             _map[so.Id.Value] = so;
         }
 
-        public bool TryGet(TimelineId id, out TimelineSO so)
+        public bool TryGet(TimelineId id, out TimelineDefinition so)
             => _map.TryGetValue(id.Value, out so);
     }
 

@@ -164,7 +164,7 @@ namespace Combat.Core
         }
     }
 
-    public sealed class ComboTableSO
+    public sealed class ComboTableDefinition
     {
         public ComboEntry[] Entries = Array.Empty<ComboEntry>();
 
@@ -214,12 +214,12 @@ namespace Combat.Core
 
     public sealed class ComboComp : Comp
     {
-        readonly ComboTableSO _table;
+        readonly ComboTableDefinition _table;
         InputBufferComp _input;
         TagComp _tags;
         SkillDirectorComp _director;
 
-        public ComboComp(ComboTableSO table)
+        public ComboComp(ComboTableDefinition table)
         {
             _table = table ?? throw new ArgumentNullException(nameof(table));
         }

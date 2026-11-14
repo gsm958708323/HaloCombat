@@ -43,6 +43,7 @@ internal static class PreviewChecks
         CheckProjectileMotion(document);
         CheckDamageEvents(document);
         ProjectFileChecks.Run(root).GetAwaiter().GetResult();
+        RuntimeContentChecks.Run(root);
         Console.WriteLine("PASS: JSON roundtrip, real Core cast/spawn/damage, cooldown/resource rejection, deterministic reset, invalid fields/references/cycles.");
     }
     static void CheckDamageEvents(SkillProjectDocument source)

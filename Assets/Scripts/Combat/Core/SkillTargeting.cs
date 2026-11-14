@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Combat.Core
 {
-    public enum SkillTargetMode { Point, Entity, Nearest, Random, Direction, Self }
+    public enum SkillTargetMode { Point, Entity, Nearest, Random, Direction, Self, Facing }
 
     public static class SkillTargeting
     {
@@ -14,6 +14,8 @@ namespace Combat.Core
             if (definition.TargetMode == SkillTargetMode.Self)
             { aim = new SkillAim(caster.Id, origin, input.Yaw); return true; }
             if (definition.TargetMode == SkillTargetMode.Point) return input.HasPoint;
+            if(definition.TargetMode==SkillTargetMode.Facing)
+            {aim=new SkillAim(EntityId.Invalid,origin,input.Yaw,false);return true;}
             if (definition.TargetMode == SkillTargetMode.Direction)
             {
                 float yaw = caster.World.Random.Next01() * 360;

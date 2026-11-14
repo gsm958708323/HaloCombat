@@ -4,7 +4,7 @@ namespace Combat.Core
 {
     public sealed class BakedCombatData
     {
-        public ComboTableSO Combo;
+        public ComboTableDefinition Combo;
         public TimelineLibrary Timelines;
         public ProjectileCatalog Projectiles;
         public AoeCatalog Aoes;

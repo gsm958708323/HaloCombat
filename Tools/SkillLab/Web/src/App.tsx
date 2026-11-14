@@ -15,9 +15,11 @@ import type { ContentAction } from './ContentDialog';
 import { GraphConnections } from './GraphConnections';
 import { useProjectDocument } from './useProjectDocument';
 import { useGraphAuthoring } from './useGraphAuthoring';
-import { copyGraph, definitionAllocator, duplicateContent, emptyProject, numberAllocator, selectGraph } from './authoring/contentEdits';
+import { copyGraph, definitionAllocator, duplicateContent, emptyProject, numberAllocator, selectGraph,remapTimeline } from './authoring/contentEdits';
 import type { ContentKind, ContentReference, GraphKey } from './authoring/contentEdits';
 import { mergeProjects } from './authoring/mergeProjects';
+import { TimelineProperties } from './TimelineProperties';
+import { RuntimeProperties } from './RuntimeProperties';
 
 const nodeTypes={skill:SkillNode};
 function Workbench() {
@@ -58,8 +60,9 @@ function Workbench() {
     try{
       if(template==='copy'&&skill){const p=editor.current.current!;const result=duplicateContent(p,'skill',skill.id,newName.trim());editor.endGroup();editor.edit(selectGraph(result.project,result.id));setNewName(null);return;}
       const source=await api<Project>('/templates/'+encodeURIComponent(template),undefined,'GET');const p=editor.current.current;if(!p)return;
-      const runtimeId=numberAllocator(p.skills.map(s=>s.runtimeId));const definitionId=definitionAllocator(p);
-      const copy=(s:Skill,id:string,name=s.name):Skill=>({...clone(s),...copyGraph(s.nodes,s.edges,definitionId),id,runtimeId:runtimeId(),name});
+      const runtimeId=numberAllocator(p.skills.flatMap(s=>[s.runtimeId,s.timeline?.runtimeId??0]));const definitionId=definitionAllocator(p);
+      const copy=(s:Skill,id:string,name=s.name):Skill=>{const copied=copyGraph(s.nodes,s.edges,definitionId),number=runtimeId();return {...clone(s),...copied,id,runtimeId:number,name,
+        timeline:s.timeline?remapTimeline(s.timeline,new Map(s.nodes.map((n,i)=>[n.id,copied.nodes[i].id])),number):undefined};};
       const prototype=source.skills.find(s=>s.id===template)!;
       const dependencies=source.skills.filter(s=>s.id!==template&&!p.skills.some(v=>v.id===s.id)).map(s=>copy(s,s.id));
       const blueprints=source.summonBlueprints?.filter(b=>!p.summonBlueprints?.some(v=>v.id===b.id)).map(clone)??[];
@@ -83,6 +86,7 @@ function Workbench() {
     catch(error){setMessage(String(error));}
   }
   function locate(ref:ContentReference){
+    if(ref.kind==='actor'||ref.kind==='combo'){setContentAction(null);requestAnimationFrame(()=>{const section=window.document.querySelector('.runtime-properties');section?.setAttribute('open','');section?.scrollIntoView({block:'center'});});return;}
     setContentAction(null);select(ref.kind==='skill'?ref.id:skill?.id??'',ref.kind==='buff'?ref.id:'');
     if(ref.kind==='blueprint')requestAnimationFrame(()=>{const target=window.document.querySelector<HTMLElement>('[data-blueprint-id="'+CSS.escape(ref.id)+'"]');target?.closest('details')?.setAttribute('open','');target?.scrollIntoView({block:'center'});});
     else if(ref.nodeId)requestAnimationFrame(()=>void graphEditor.flow.fitView({nodes:[{id:ref.nodeId!}],padding:.3}));
@@ -118,8 +122,10 @@ function Workbench() {
     <header className="app-header"><div className="brand"><span>S / L</span><strong>技能实验室</strong><small>HaloCombat</small></div>
       <div className="header-actions"><details className="project-menu"><summary>工程 ▾</summary><div><label>工程名称<input aria-label="工程名称" value={project.name??''} onChange={event=>editor.edit(p=>({...p,name:event.target.value}))}/></label><small>{project.skills.length} 技能 · {project.buffs?.length??0} Buff · {project.summonBlueprints?.length??0} 蓝图</small>
         <button onClick={()=>{setNewProjectName('新工程');setProjectTemplate('empty');}}>新建工程</button><button disabled={editor.saving} onClick={()=>void editor.load().catch(e=>setMessage(String(e)))}>重新载入磁盘</button><p>手动保存。刷新恢复最近磁盘版本。</p></div></details>
+        <button onClick={()=>void api<Project>('/runtime',undefined,'GET').then(value=>{editor.endGroup();editor.edit(value);setMessage('已打开正式JSON内容，可撤销返回原工程');}).catch(error=>setMessage(String(error)))}>打开正式内容</button>
         <small className={editor.dirty?'unsaved':''} role="status">{editor.saveStatus}</small><button disabled={editor.saving} onClick={()=>void editor.save()}><Save size={13}/>保存</button>
         <button disabled={!skill} onClick={()=>void publish('f6')}>发布到 F6</button><button disabled={!skill} onClick={()=>void publish('f7')}>发布到 F7</button>
+        {project.runtime&&<button onClick={()=>void api<{message:string}>('/runtime/publish',project).then(result=>setMessage(result.message)).catch(error=>setMessage(String(error)))}>发布正式内容</button>}
         <button onClick={download}><Download size={13}/>导出</button><button onClick={()=>fileInput.current?.click()}><Upload size={13}/>导入</button>
         <input ref={fileInput} type="file" accept=".json,application/json" hidden onChange={event=>{const file=event.target.files?.[0];if(file)void importFile(file);event.target.value='';}}/>
       </div></header>
@@ -146,9 +152,11 @@ function Workbench() {
         <small className="canvas-help">Shift 框选 · Ctrl C / V 复制粘贴 · Delete 删除 · Ctrl Z 撤销</small>
       </div><aside className="properties">{buff?<><BuffProperties buff={buff} change={value=>editor.edit(p=>({...p,buffs:p.buffs?.map(b=>b.id===value.id?value:b)}))}/><small>当前预览技能：{skill?.name??'无'}</small></>:skill?<>
         <h3>▾ 技能属性</h3><p className="type-summary">{castMode} · {transfers}</p><label className="category-field">分类<input aria-label="技能分类" value={skill.category??''} onChange={event=>editor.edit(p=>({...p,skills:p.skills.map(s=>s.id===skill.id?{...s,category:event.target.value}:s)}))}/></label>
-        {skill.nodes.filter(n=>n.enabled!==false).map(node=><section key={node.id}><h4>{kinds[node.kind]?.title??node.kind}</h4>{kinds[node.kind]?.fields.filter(f=>!f.when||f.when(node.parameters)).map(f=><div className="property" key={f.key}><span>{f.label}</span><b>{f.key==='buff'?(project.buffs?.find(b=>b.id===node.parameters.buff)?.name??String(node.parameters.buff)):f.options?.find(([v])=>v===parameterValue(f,node.parameters))?.[1]??String(parameterValue(f,node.parameters))}{f.unit}</b></div>)}</section>)}
+        <TimelineProperties skill={skill} change={timeline=>graphEditor.editGraph(g=>({...g,timeline}))}/>
+        {skill.nodes.filter(n=>n.enabled!==false).map(node=><section key={node.id}><h4>{kinds[node.kind]?.title??node.kind}</h4>{kinds[node.kind]?.fields.filter(f=>(!f.when||f.when(node.parameters))&&(!skill.timeline||node.kind!=='cast'||['cost','cooldown'].includes(f.key))).map(f=><div className="property" key={f.key}><span>{f.label}</span><b>{f.key==='buff'?(project.buffs?.find(b=>b.id===node.parameters.buff)?.name??String(node.parameters.buff)):f.options?.find(([v])=>v===parameterValue(f,node.parameters))?.[1]??String(parameterValue(f,node.parameters))}{f.unit}</b></div>)}</section>)}
         <SummonBlueprints project={project} update={editor.edit} action={setContentAction} duplicate={id=>duplicate('blueprint',id)}/></>:<p>空工程可保存或导出。</p>}
         {graph&&<GraphConnections graph={graph} change={update=>{editor.endGroup();graphEditor.editGraph(update);}}/>}
+        <RuntimeProperties project={project} update={editor.edit}/>
       </aside></div></section>
     </div><footer className={message.startsWith('Error')?'error':''} role="status">{message}<span>JSON 工程 · 真实 C# 预览</span></footer>
     {contentAction&&<ContentDialog key={contentAction.kind+contentAction.id+contentAction.mode} project={project} action={contentAction} close={()=>setContentAction(null)} edit={change=>{editor.endGroup();editor.edit(change);setMessage('内容与引用已更新，可撤销恢复');}} locate={locate}/>}

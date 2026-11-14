@@ -17,6 +17,7 @@ namespace Combat.Config
         public bool ShouldSerializeBuffs()=>Buffs==null||Buffs.Length>0;
         public PreviewDocument Preview { get; set; } = new PreviewDocument();
         [JsonProperty(NullValueHandling=NullValueHandling.Ignore)] public SkillEditorDocument Editor {get;set;}
+        [JsonProperty(NullValueHandling=NullValueHandling.Ignore)] public RuntimeContentDocument Runtime {get;set;}
     }
     public sealed class SkillGraphDocument
     {
@@ -26,6 +27,7 @@ namespace Combat.Config
         public string Category { get; set; } = "自定义";
         public SkillNodeDocument[] Nodes { get; set; } = Array.Empty<SkillNodeDocument>();
         public SkillEdgeDocument[] Edges { get; set; } = Array.Empty<SkillEdgeDocument>();
+        [JsonProperty(NullValueHandling=NullValueHandling.Ignore)] public TimelineDocument Timeline {get;set;}
     }
     public sealed class SkillNodeDocument
     {

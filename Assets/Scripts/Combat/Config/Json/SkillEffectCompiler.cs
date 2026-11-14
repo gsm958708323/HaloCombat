@@ -26,6 +26,13 @@ namespace Combat.Config
             foreach (var next in _graph.Outputs(node, port, "execute")) effects.AddRange(Compile(next,allowSpatial));
             return effects.ToArray();
         }
+        public IEffect[] Entries(string[] ids,string path)
+        {
+            if(ids==null||ids.Length>256)throw new ContentValidationException(path,"Expected at most256 effect entry identities.");
+            var result=new List<IEffect>();
+            for(int i=0;i<ids.Length;i++)result.AddRange(Compile(_graph.Entry(ids[i],path+"["+i+"]"),false));
+            return result.ToArray();
+        }
 
         IEffect[] Compile(SkillNodeDocument node,bool allowSpatial)
         {
@@ -51,22 +58,24 @@ namespace Combat.Config
                     effects.AddRange(Outputs(node,"next",allowSpatial));break;
                 case "delivery": effects.Add(Delivery(node, path)); break;
                 case "damage":
-                    var d = new NodeParameters(node, path, "flat", "coefficient", "critChance", "critMultiplier", "ignoreDefense", "hitstopFrames", "scope", "center", "radius", "maxTargets","scaleByStacks","notifyHurt","damageType","includeBonuses");
+                    var d = new NodeParameters(node, path, "flat", "coefficient", "critChance", "critMultiplier", "ignoreDefense", "hitstopFrames", "scope", "center", "radius", "maxTargets","scaleByStacks","notifyHurt","damageType","includeBonuses","critFromAttribute","snapshotAttack","canCrit");
                     IEffect damage = new DamageEffect
                     {
-                        Flat = d.Number("flat", 80, 0, 10000000), Coeff = d.Number("coefficient", 0, 0, 100000), CanCrit = true,
+                        Flat = d.Number("flat", 80, 0, 10000000), Coeff = d.Number("coefficient", 0, 0, 100000), CanCrit = d.Boolean("canCrit",true),
                         CritMul = d.Number("critMultiplier", 1.8f, 1, 100), CritChance = d.Number("critChance", .15f, 0, 1),
                         HitstopFrames = d.Integer("hitstopFrames", 0, 0, 1000), IgnoreDef = d.Boolean("ignoreDefense", false),
-                        ScaleByBuffStacks=d.Boolean("scaleByStacks",false),FireOnHurted=d.Boolean("notifyHurt",true),
+                        ScaleByBuffStacks=d.Boolean("scaleByStacks",false),FireOnHurted=d.Boolean("notifyHurt",true),UseSnapshotAtk=d.Boolean("snapshotAttack",true),
                         Kind=d.Choice("damageType","physical","physical","elemental")=="physical"?DamageKind.Physical:DamageKind.Elemental,IncludeBonuses=d.Boolean("includeBonuses",true)
                     };
+                    if(d.Boolean("critFromAttribute",false))((DamageEffect)damage).CritChance=-1;
                     if (d.Choice("scope", "target", "target", "area") == "area")
                         damage = new CircleEffects(new[] { damage }, Center(d), d.Number("radius", 3, .01f, 100), d.Integer("maxTargets", 0, 0, 128));
                     effects.Add(damage); effects.AddRange(Outputs(node, "next",allowSpatial));
                     break;
                 case "cue":
-                    var cue = new NodeParameters(node, path, "id");
-                    effects.Add(new PlayCueEffect(cue.Integer("id", 1, 1, 1000000), "Skill"));
+                    var cue = new NodeParameters(node, path, "id","name");
+                    _content.RequiredCues.Add(cue.Integer("id",1,1,1000000));
+                    effects.Add(new PlayCueEffect(cue.Integer("id", 1, 1, 1000000), cue.Text("name","Skill")));
                     effects.AddRange(Outputs(node, "next",allowSpatial));
                     break;
                 case "buff":
@@ -78,7 +87,7 @@ namespace Combat.Config
                     string filter=dispel.Choice("mode","buff","buff","group","tag","source");
                     int key=filter=="buff"?Buff(dispel.Text("buff"),path+".parameters.buff").BuffId:filter=="group"?dispel.Integer("group",1,1,1000000):0;
                     var mode=filter=="buff"?DispelMode.ByBuffId:filter=="group"?DispelMode.ByMutexGroup:filter=="tag"?DispelMode.ByTag:DispelMode.BySource;
-                    effects.Add(new TargetEffects(new IEffect[]{new DispelEffect(mode,key,new TagId(dispel.Integer("tag",1,1,1000000)),dispel.Integer("maxCount",0,0,128))},dispel.Choice("recipient","target","target","self")=="self"));
+                    effects.Add(new TargetEffects(new IEffect[]{new DispelEffect(mode,key,new TagId(dispel.Integer("tag",filter=="tag"?1:0,filter=="tag"?1:0,1000000)),dispel.Integer("maxCount",0,0,128))},dispel.Choice("recipient","target","target","self")=="self"));
                     effects.AddRange(Outputs(node,"next",allowSpatial));break;
                 case "heal":
                     var heal=new NodeParameters(node,path,"amount");effects.Add(new HealEffect {Amount=heal.Number("amount",10,0,10000000)});
@@ -111,8 +120,9 @@ namespace Combat.Config
         {
             var p=new NodeParameters(node,path,"speed","range","lifetime","radius","maxHits","homingRate",
                 "multi","count","spread","chain","chainCount","chainRadius","chainMode","homingRetarget","homingRadius",
-                "trajectory","acceleration","maxSpeed","returnAfter","returnSpeed","catchRadius","launchHeight","verticalSpeed","gravity","restitution","groundBounces","wallBounces");
+                "trajectory","acceleration","maxSpeed","returnAfter","returnSpeed","catchRadius","launchHeight","verticalSpeed","gravity","restitution","groundBounces","wallBounces","spawnForward","snapshotAttack","hostileMask","cueId","homingMaxTurn");
             CheckId(node,path,_projectiles,"projectile");
+            int projectileCue=p.Integer("cueId",0,0,1000000);if(projectileCue>0)_content.RequiredCues.Add(projectileCue);
             int maxHits=p.Integer("maxHits",1,0,10000);
             int chainCount=p.Integer("chainCount",2,1,64);
             float chainRadius=p.Number("chainRadius",6,.01f,1000);
@@ -131,20 +141,22 @@ namespace Combat.Config
                 ReturnAfter=trajectory=="return"?returnAfter:-1,ReturnSpeed=returnSpeed,CatchRadius=catchRadius,Bounce=trajectory=="bounce"?bounce:null,WallBounces=walls};
             _content.Projectiles.Register(new ProjectileDefinition
             {
-                SpecId=node.RuntimeId,Speed=speed,Range=p.Number("range",24,.1f,1000),Lifetime=p.Number("lifetime",120,.001f,3600),Motion=motion,
+                SpecId=node.RuntimeId,Speed=speed,Range=p.Number("range",24,0,1000),Lifetime=p.Number("lifetime",120,.001f,3600),Motion=motion,
+                SpawnForward=p.Number("spawnForward",.4f,0,100),SnapshotAtk=p.Boolean("snapshotAttack",true),HostileMask=p.Integer("hostileMask",0,0,int.MaxValue),CueId=projectileCue,HomingMaxTurn=p.Number("homingMaxTurn",0,0,10000),
                 HitRadius=p.Number("radius",.18f,.01f,100),MaxHits=maxHits,Chain=chain,
                 HomingRate=p.Number("homingRate",0,0,10000),HomingRetarget=p.Boolean("homingRetarget",false),HomingAcquireRadius=p.Number("homingRadius",12,.01f,1000),
                 OnHit=Outputs(node,"hit"),OnWall=Outputs(node,"wall"),OnRange=Outputs(node,"range"),OnExpire=Outputs(node,"lifetime"),OnEnd=Outputs(node,"expire"),
                 OnBounce=Outputs(node,"bounce"),OnReturned=Outputs(node,"returned"),OnGround=Outputs(node,"ground")
             });
             int count=p.Integer("count",3,1,64);float spread=p.Number("spread",45,0,360);
-            return new SpawnProjectileEffect(node.RuntimeId,p.Boolean("multi",false)?count:1,spread);
+            bool multiple=p.Boolean("multi",false);
+            return new SpawnProjectileEffect(node.RuntimeId,multiple?count:1,multiple?spread:0);
         }
 
         IEffect Delivery(SkillNodeDocument node, string path)
         {
             var p = new NodeParameters(node, path, "mode", "recipient", "center", "radius", "maxTargets", "persistent", "duration", "interval", "pulseOnSpawn",
-                "shape","length","width","angle","startup","activeDuration","movementMode","distance","speed","hitRadius","pierce","blueprint","count","spacing","maxAlive");
+                "shape","length","width","angle","startup","activeDuration","movementMode","distance","speed","hitRadius","pierce","blueprint","count","spacing","maxAlive","permanent","cueId","hostileMask");
             string mode = p.Choice("mode", "target", "target", "area","ray","summon");
             if(mode=="summon")
             {
@@ -156,7 +168,7 @@ namespace Combat.Config
                 _content.Summons.Register(new SummonDefinition
                 {
                     SpecId=node.RuntimeId,BlueprintId=key,OriginContentKey=_graph.ContentKey,Count=p.Integer("count",1,1,16),Spacing=p.Number("spacing",1,0,20),
-                    Lifetime=p.Number("duration",3,.02f,120),MaxAlive=p.Integer("maxAlive",4,1,64),CollisionRadius=blueprint.CollisionRadius,
+                    Lifetime=p.Boolean("permanent",false)?0:p.Number("duration",3,.02f,120),MaxAlive=p.Integer("maxAlive",4,1,64),CollisionRadius=blueprint.CollisionRadius,
                     AcquireRadius=blueprint.AcquireRadius,FollowRange=blueprint.FollowRange,
                     OnSpawn=Outputs(node,"apply"),OnExpire=Outputs(node,"expire"),OnRemoved=Outputs(node,"removed")
                 });
@@ -179,6 +191,7 @@ namespace Combat.Config
             int maximum = p.Integer("maxTargets", 0, 0, 128);
             if (!persistent) return new CircleEffects(apply, center, radius, maximum);
             CheckId(node, path, _aoes, "area");
+            int areaCue=p.Integer("cueId",0,0,1000000);if(areaCue>0)_content.RequiredCues.Add(areaCue);
             var enter = Outputs(node, "enter"); var exit = Outputs(node, "exit"); var stay = Outputs(node, "stay");
             var expire = Outputs(node, "expire");
             if (apply.Length + enter.Length + exit.Length + stay.Length + expire.Length == 0)
@@ -186,7 +199,8 @@ namespace Combat.Config
             _content.Aoes.Register(new AoeDefinition
             {
                 SpecId = node.RuntimeId, Radius = radius, Duration = p.Number("duration", 2, .02f, 120),
-                PulseInterval = p.Number("interval", .5f, .001f, 60), PulseOnSpawn = p.Boolean("pulseOnSpawn", true), MaxTargets = maximum,
+                PulseInterval = p.Number("interval", .5f, 0, 60), PulseOnSpawn = p.Boolean("pulseOnSpawn", true), MaxTargets = maximum,
+                CueId=areaCue,HostileMask=p.Integer("hostileMask",0,0,int.MaxValue),
                 TrackOccupancy = enter.Length + exit.Length + stay.Length > 0,
                 OnPulse = apply, OnEnter = enter, OnExit = exit, OnStay = stay, OnExpire = expire
             });
@@ -225,7 +239,7 @@ namespace Combat.Config
         }
 
         static EffectCenter Center(NodeParameters parameters)
-            => (EffectCenter)Array.IndexOf(new[] { "point", "target", "source" }, parameters.Choice("center", "point", "point", "target", "source"));
+            => (EffectCenter)Array.IndexOf(new[] { "point", "target", "source","auto" }, parameters.Choice("center", "point", "point", "target", "source","auto"));
         DurationSpec Buff(string id,string path)
         {
             if(!_content.Buffs.TryGet(id,out var buff))throw new ContentValidationException(path,"Unknown Buff identity: "+id);

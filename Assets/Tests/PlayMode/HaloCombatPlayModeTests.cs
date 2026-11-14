@@ -29,8 +29,8 @@ namespace Combat.Tests
                 AssertNoMissingScripts();
                 var runner = Object.FindFirstObjectByType<CombatRunner>();
                 Assert.That(runner, Is.Not.Null, ScenePaths[i]);
-                Assert.That(runner.IsUsingSoDatabase, Is.True, ScenePaths[i]);
-                Assert.That(runner.Database, Is.Not.Null, ScenePaths[i]);
+                Assert.That(runner.ContentFile,Is.EqualTo(UnityRuntimeContent.DefaultFile),ScenePaths[i]);
+                Assert.That(runner.LastLoadError,Is.Null,ScenePaths[i]);
                 // Assert.That(runner.Lesson, Is.Not.Null, ScenePaths[i]);
                 Assert.That(Object.FindFirstObjectByType<CombatLessonDirector>(), Is.Not.Null, ScenePaths[i]);
                 Assert.That(Object.FindFirstObjectByType<CombatLessonVfx>(), Is.Not.Null, ScenePaths[i]);

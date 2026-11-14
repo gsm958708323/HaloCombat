@@ -11,8 +11,7 @@ namespace Combat.Unity
         public enum SceneKind { V1, V2, V3, V4 }
 
         [SerializeField] SceneKind _scene = SceneKind.V1;
-        [SerializeField] CombatDatabaseAsset _database;
-        [SerializeField] bool _useSoDatabase;
+        [SerializeField] string _contentFile=UnityRuntimeContent.DefaultFile;
         [SerializeField] float _logicHz = 50f;
         [SerializeField] bool _pauseLogic;
         [SerializeField] bool _enableCombatKeys = true;
@@ -32,8 +31,8 @@ namespace Combat.Unity
 
         public CombatWorld World => _world;
         public SceneKind Scene => _scene;
-        public CombatDatabaseAsset Database => _database;
-        public bool IsUsingSoDatabase => _useSoDatabase && _database != null;
+        public string ContentFile=>_contentFile;
+        public string LastLoadError {get;private set;}
         public EntityId PlayerId => _player;
         public CombatLesson Lesson => _lesson;
         public bool LessonAuto => _lessonAuto;
@@ -46,11 +45,10 @@ namespace Combat.Unity
         }
 
         public void Configure(SceneKind scene) => _scene = scene;
-        public void Configure(SceneKind scene, CombatDatabaseAsset database, bool useSoDatabase = true)
+        public void Configure(SceneKind scene, string contentFile)
         {
             _scene = scene;
-            _database = database;
-            _useSoDatabase = useSoDatabase;
+            _contentFile=contentFile;
         }
 
         public bool TryGetPlayer(out Actor player)
@@ -121,34 +119,27 @@ namespace Combat.Unity
 
         public void BuildWorld()
         {
+            // Build and validate the candidate before releasing the current session.
+            RuntimeProjectLoader loaded;
+            try {loaded=UnityRuntimeContent.Load(_contentFile);UnityRuntimeContent.RequireActors(loaded,_scene==SceneKind.V1?new[]{"fighter"}:_scene==SceneKind.V4?new[]{"fighter","stake","melee_guard"}:new[]{"fighter","stake"});}
+            catch(System.Exception error) when(error is System.IO.IOException||error is System.UnauthorizedAccessException||error is ContentValidationException)
+            {LastLoadError=error.Message;if(_world==null)throw;return;}
+            var baked=loaded.Content.Runtime.Data;
+            var candidate=loaded.CreateWorld(new SeededRandom(1));LastLoadError=null;
             if (_router != null && _world != null) _router.Unbind(_world.Events);
             _views?.ReleaseAll();
+            _world?.Shutdown();
 
             float dt = 1f / Mathf.Max(1f, _logicHz);
             _clock = new SimulationClock(dt, 4);
-            ICombatContent content = _useSoDatabase && _database != null
-                ? (ICombatContent)new SoCombatContent(_database)
-                : new CodeCombatContent();
-            var baked = content.Bake();
-            var report = CombatValidator.Validate(baked);
-            if (report.HasError) Debug.LogError(report.ToString(), this);
+            _world = candidate;
 
-            _world = new CombatWorld(
-                new FighterActorFactory(baked),
-                new IntentQueue(),
-                new EventBus(),
-                new CombatTime(),
-                new SeededRandom(1),
-                baked.Cues,
-                baked.Motor);
-            baked.Install(_world);
-
-            _views = new ViewRegistry(new UnityViewFactory());
+            _views = new ViewRegistry(new UnityViewFactory(loaded.Content.Runtime.Actors));
             _overlay = new UnityHitstopOverlay();
             _router = new PresentationRouter(
                 _world,
                 _views,
-                new UnityCuePlayer(_database != null ? _database.Cues : null),
+                new UnityCuePlayer(baked.Cues),
                 new UnityFloater(),
                 _overlay,
                 null);
@@ -347,6 +338,7 @@ namespace Combat.Unity
         {
             if (_router != null && _world != null) _router.Unbind(_world.Events);
             _views?.ReleaseAll();
+            _world?.Shutdown();
         }
     }
 }

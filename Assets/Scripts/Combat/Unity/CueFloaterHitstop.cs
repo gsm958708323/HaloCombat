@@ -7,12 +7,24 @@ namespace Combat.Unity
 {
     public sealed class UnityCuePlayer : ICuePlayer
     {
-        readonly CueLibraryAsset _assets;
-        public UnityCuePlayer(CueLibraryAsset assets) => _assets = assets;
+        readonly CueLibrary _cues;
+        readonly System.Collections.Generic.Dictionary<int,GameObject> _prefabs=new System.Collections.Generic.Dictionary<int,GameObject>();
+        readonly System.Collections.Generic.Dictionary<int,AudioClip> _sounds=new System.Collections.Generic.Dictionary<int,AudioClip>();
+        public UnityCuePlayer(CueLibrary cues)
+        {
+            _cues=cues??throw new System.ArgumentNullException(nameof(cues));
+            foreach(var cue in cues.All)
+            {
+                if(cue.PresentationKind=="prefab")_prefabs.Add(cue.CueId,Resources.Load<GameObject>(cue.ResourceKey));
+                if(!string.IsNullOrEmpty(cue.SfxKey))_sounds.Add(cue.CueId,Resources.Load<AudioClip>(cue.SfxKey));
+            }
+        }
 
         public void Play(EvCue e)
         {
-            GameObject prefab = _assets != null ? _assets.FindPrefab(e.CueId) : null;
+            if(!_cues.TryGet(e.CueId,out var definition))throw new System.InvalidOperationException("Unknown cue "+e.CueId);
+            _prefabs.TryGetValue(e.CueId,out var prefab);
+            if(definition.PresentationKind=="prefab"&&prefab==null)throw new System.InvalidOperationException("Missing cue prefab "+definition.ResourceKey);
             var gameObject = prefab != null
                 ? Object.Instantiate(prefab)
                 : GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -24,7 +36,8 @@ namespace Combat.Unity
             }
 
             gameObject.name = "Cue_" + e.CueId;
-            Object.Destroy(gameObject, 0.45f);
+            if(_sounds.TryGetValue(e.CueId,out var sound))AudioSource.PlayClipAtPoint(sound,gameObject.transform.position);
+            Object.Destroy(gameObject, definition.LifeTime);
         }
     }
 
