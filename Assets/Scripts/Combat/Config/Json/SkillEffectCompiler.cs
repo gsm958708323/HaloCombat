@@ -48,6 +48,12 @@ namespace Combat.Config
             var effects = new List<IEffect>();
             switch (node.Kind)
             {
+                case "construct":
+                    effects.Add(ConstructNodeCompiler.Compile(node,path,_content,port=>Outputs(node,port)));break;
+                case "construct-chain":
+                    var chainObjects=new NodeParameters(node,path,"group","radius","damage");
+                    effects.Add(new ChainConstructsEffect(chainObjects.Text("group","barrel"),chainObjects.Number("radius",2.2f,.01f,100),chainObjects.Number("damage",9999,0,10000000)));
+                    effects.AddRange(Outputs(node,"next",allowSpatial));break;
                 case "projectile":
                     effects.Add(Projectile(node,path));break;
                 case "split":
@@ -73,9 +79,11 @@ namespace Combat.Config
                     effects.Add(damage); effects.AddRange(Outputs(node, "next",allowSpatial));
                     break;
                 case "cue":
-                    var cue = new NodeParameters(node, path, "id","name");
+                    var cue = new NodeParameters(node, path, "id","name","center");
                     _content.RequiredCues.Add(cue.Integer("id",1,1,1000000));
-                    effects.Add(new PlayCueEffect(cue.Integer("id", 1, 1, 1000000), cue.Text("name","Skill")));
+                    string cueCenter=cue.Choice("center","source","source","point","target");
+                    effects.Add(cueCenter=="source"?(IEffect)new PlayCueEffect(cue.Integer("id", 1, 1, 1000000),cue.Text("name","Skill")):
+                        new PlayPositionedCueEffect(cue.Integer("id",1,1,1000000),cue.Text("name","Skill"),cueCenter=="point"?EffectCenter.Point:EffectCenter.Target));
                     effects.AddRange(Outputs(node, "next",allowSpatial));
                     break;
                 case "buff":
@@ -196,7 +204,7 @@ namespace Combat.Config
             if (mode == "target") return new TargetEffects(apply, p.Choice("recipient", "target", "target", "self") == "self");
             var center = Center(p); float radius = p.Number("radius", 3, .01f, 100);
             int maximum = p.Integer("maxTargets", 0, 0, 128);
-            if (!persistent) return new CircleEffects(apply, center, radius, maximum);
+            if (!persistent) return new CircleEffects(apply, center, radius, maximum,p.Integer("hostileMask",0,0,int.MaxValue));
             CheckId(node, path, _aoes, "area");
             int areaCue=p.Integer("cueId",0,0,1000000);if(areaCue>0)_content.RequiredCues.Add(areaCue);
             var enter = Outputs(node, "enter"); var exit = Outputs(node, "exit"); var stay = Outputs(node, "stay");

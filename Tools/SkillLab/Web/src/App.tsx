@@ -39,7 +39,7 @@ function Workbench() {
   const preview=usePreview(project,skill?.id??'',setMessage);preview.skill.current=skill?.id??'';
   const mode=String(skill?.nodes.find(n=>n.kind==='cast'&&n.enabled!==false)?.parameters.mode??'instant');
   const castMode=({instant:'瞬发',channel:'引导',charge:'蓄力'} as Record<string,string>)[mode]??mode;
-  const transfers=[...new Set(skill?.nodes.filter(n=>n.enabled!==false&&(n.kind==='projectile'||n.kind==='delivery')).map(deliveryLabel))].join(' / ')||'效果';
+  const transfers=[...new Set(skill?.nodes.filter(n=>n.enabled!==false&&(n.kind==='projectile'||n.kind==='delivery'||n.kind==='construct')).map(deliveryLabel))].join(' / ')||'效果';
   function select(skillId:string,buffId=''){editor.endGroup();editor.edit(p=>selectGraph(p,skillId,buffId),false);setLibrary(false);}
   async function openCreate(){
     try{const available=examples.length?examples:(await api<Project>('/examples',undefined,'GET')).skills;setExamples(available);setTemplate(skill?'copy':available[0]?.id??'');setNewName('');}

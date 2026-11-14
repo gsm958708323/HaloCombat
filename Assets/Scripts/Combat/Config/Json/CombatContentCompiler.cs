@@ -11,6 +11,7 @@ namespace Combat.Config
         public ProjectileCatalog Projectiles { get; } = new ProjectileCatalog();
         public AoeCatalog Aoes { get; } = new AoeCatalog();
         public SummonCatalog Summons { get; } = new SummonCatalog();
+        public ConstructCatalog Constructs {get;}=new ConstructCatalog();
         public SummonBlueprintCatalog Blueprints {get;}=new SummonBlueprintCatalog();
         public ContentDependencies Dependencies {get;}=new ContentDependencies();
         public BuffCatalog Buffs {get;}=new BuffCatalog();

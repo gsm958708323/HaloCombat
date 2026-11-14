@@ -76,7 +76,7 @@ export function numberAllocator(values:number[],floor=0) {
 export const definitionAllocator=(p:Project)=>numberAllocator(allGraphs(p).flatMap(({graph})=>graph.nodes.map(n=>n.runtimeId??0)),4000);
 export function copyGraph(nodes:GraphNode[],edges:GraphEdge[],definitionId:()=>number,newId:()=>string=()=>crypto.randomUUID()) {
   const ids=new Map(nodes.map(n=>[n.id,newId()]));
-  return {nodes:nodes.map(n=>({...clone(n),id:ids.get(n.id)!,runtimeId:n.kind==='projectile'||n.kind==='delivery'?definitionId():n.runtimeId})),
+  return {nodes:nodes.map(n=>({...clone(n),id:ids.get(n.id)!,runtimeId:n.kind==='projectile'||n.kind==='delivery'||n.kind==='construct'?definitionId():n.runtimeId})),
     edges:edges.filter(e=>ids.has(e.source)&&ids.has(e.target)).map(e=>({...e,id:newId(),source:ids.get(e.source)!,target:ids.get(e.target)!}))};
 }
 export function duplicateContent(p:Project,kind:ContentKind,id:string,name?:string,newId:()=>string=()=>crypto.randomUUID()) {

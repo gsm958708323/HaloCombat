@@ -43,12 +43,12 @@ namespace Combat.Config
             }
             foreach(int cue in content.RequiredCues)if(!cueIds.Contains(cue))Fail("$.runtime.cues["+cue+"]","Referenced Cue is missing.");
             var data=new BakedCombatData{Combo=new ComboTableDefinition{Entries=combo.ToArray()},Timelines=content.Timelines,Projectiles=content.Projectiles,Aoes=content.Aoes,
-                Summons=content.Summons,Cues=cues,Motor=new MotorConfig{Gravity=m.Gravity,JumpSpeed=m.JumpSpeed,AirSteer=m.AirSteer,GroundY=m.GroundY,StickDeadzone=m.StickDeadzone}};
+                Summons=content.Summons,Constructs=content.Constructs,Cues=cues,Motor=new MotorConfig{Gravity=m.Gravity,JumpSpeed=m.JumpSpeed,AirSteer=m.AirSteer,GroundY=m.GroundY,StickDeadzone=m.StickDeadzone}};
             var actors=new Dictionary<string,RuntimeActorDefinition>();
             foreach(var actor in source.Actors)
             {
                 if(actor==null)Fail(path+".actors","Null actor.");string p=path+".actors["+actor.Id+"]";
-                if(string.IsNullOrWhiteSpace(actor.Id)||actor.Id=="projectile"||actor.Id=="aoe"||actors.ContainsKey(actor.Id))Fail(p+".id","Missing, reserved or duplicate actor identity.");
+                if(string.IsNullOrWhiteSpace(actor.Id)||actor.Id=="projectile"||actor.Id=="aoe"||actor.Id=="construct"||actors.ContainsKey(actor.Id))Fail(p+".id","Missing, reserved or duplicate actor identity.");
                 if(Array.IndexOf(new[]{"player","target","ai","summon"},actor.Role)<0)Fail(p+".role","Unknown actor role.");
                 N(actor.Hp,.001f,1000000000,p+".hp");N(actor.Attack,0,10000000,p+".attack");N(actor.Defense,0,10000000,p+".defense");N(actor.MoveSpeed,0,1000,p+".moveSpeed");
                 N(actor.Shield,0,1000000000,p+".shield");N(actor.CritRate,0,1,p+".critRate");N(actor.DamageDealt,0,1000,p+".damageDealt");N(actor.DamageTaken,0,1000,p+".damageTaken");N(actor.CollisionRadius,0,100,p+".collisionRadius");

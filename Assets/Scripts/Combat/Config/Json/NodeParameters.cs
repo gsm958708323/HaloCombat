@@ -27,8 +27,10 @@ namespace Combat.Config
         }
         public int Integer(string name, int fallback, int min, int max)
         {
-            float number = Number(name, fallback, min, max);
-            if (number != Math.Floor(number)) Fail(name, "Integer is required.");
+            if(!_values.TryGetValue(name,out var token))return fallback;
+            if(token.Type!=JTokenType.Integer&&token.Type!=JTokenType.Float)Fail(name,"Integer is required.");
+            double number=token.Value<double>();
+            if(double.IsNaN(number)||double.IsInfinity(number)||number<min||number>max||number!=Math.Floor(number))Fail(name,"Expected integer in ["+min+","+max+"].");
             return (int)number;
         }
         public bool Boolean(string name, bool fallback)

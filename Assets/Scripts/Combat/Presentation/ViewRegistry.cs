@@ -17,7 +17,7 @@ namespace Combat.Presentation
         {
             if (_map.ContainsKey(e.Id.Index))
                 ReleaseIndex(e.Id.Index);
-            var view = _factory != null ? _factory.Create(e.BlueprintId) : null;
+            var view = _factory != null ? _factory.Create(e.ViewKey??e.BlueprintId) : null;
             if (view == null) return;
             view.Bind(e.Id, e.BlueprintId);
             _map[e.Id.Index] = view;

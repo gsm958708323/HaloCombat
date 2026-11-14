@@ -118,12 +118,14 @@ namespace Combat.Core
         public readonly EntityId Id;
         public readonly string BlueprintId;
         public readonly EntityId Owner;
+        public readonly string ViewKey;
 
-        public EvEntitySpawn(EntityId id, string blueprintId, EntityId owner)
+        public EvEntitySpawn(EntityId id, string blueprintId, EntityId owner,string viewKey=null)
         {
             Id = id;
             BlueprintId = blueprintId ?? string.Empty;
             Owner = owner;
+            ViewKey=viewKey;
         }
     }
 
@@ -132,11 +134,14 @@ namespace Combat.Core
         public readonly int CueId;
         public readonly EntityId Source;
         public readonly string Name;
-        public EvCue(int cueId, EntityId source, string name)
+        public readonly SimVec3 Point;
+        public readonly bool HasPoint;
+        public EvCue(int cueId, EntityId source, string name,SimVec3? point=null)
         {
             CueId = cueId;
             Source = source;
             Name = name ?? string.Empty;
+            Point=point??default;HasPoint=point.HasValue;
         }
     }
 

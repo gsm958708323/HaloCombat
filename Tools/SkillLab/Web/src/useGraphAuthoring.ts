@@ -84,7 +84,7 @@ export function useGraphAuthoring(document:ReturnType<typeof useProjectDocument>
   }
   function add(kind:string){
     const p=document.current.current;if(!p||!key.id)return;document.endGroup();
-    const position=flow.screenToFlowPosition({x:window.innerWidth*.55,y:250});const runtimeId=kind==='projectile'||kind==='delivery'?definitionAllocator(p)():0;
+    const position=flow.screenToFlowPosition({x:window.innerWidth*.55,y:250});const runtimeId=kind==='projectile'||kind==='delivery'||kind==='construct'?definitionAllocator(p)():0;
     editGraph(g=>({...g,nodes:[...g.nodes,{id:crypto.randomUUID(),kind,runtimeId,enabled:true,position,parameters:Object.fromEntries(kinds[kind].fields.map(f=>[f.key,f.initial]))}]}));
   }
   function copy(){

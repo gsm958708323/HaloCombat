@@ -1129,6 +1129,197 @@
           }
         ]
       }
+    },
+    {
+      "id": "arena-barrel",
+      "runtimeId": 2008,
+      "name": "木桶连锁爆炸",
+      "category": "正式内容",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "parameters": {
+            "mode": "facing",
+            "range": 20
+          },
+          "position": {
+            "x": 0,
+            "y": 80
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "parameters": {
+            "mode": "instant",
+            "cost": 0,
+            "cooldown": 0
+          },
+          "position": {
+            "x": 300,
+            "y": 80
+          }
+        },
+        {
+          "id": "barrel",
+          "kind": "construct",
+          "parameters": {
+            "hp": 5,
+            "radius": 0.25,
+            "team": 0,
+            "group": "barrel",
+            "view": "barrel",
+            "damageCap": 1,
+            "decayPeriod": 5,
+            "decayDamage": 1,
+            "center": "source",
+            "forwardOffset": 0.55,
+            "count": 1,
+            "spacing": 1,
+            "maxAlive": 64,
+            "cleanupWithOwner": false
+          },
+          "position": {
+            "x": 600,
+            "y": 80
+          },
+          "runtimeId": 5001
+        },
+        {
+          "id": "blast",
+          "kind": "delivery",
+          "parameters": {
+            "mode": "area",
+            "center": "point",
+            "radius": 2.2,
+            "hostileMask": 4
+          },
+          "position": {
+            "x": 900,
+            "y": 80
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "parameters": {
+            "flat": 0,
+            "coefficient": 0.15,
+            "critChance": 0.05,
+            "critMultiplier": 1.8,
+            "canCrit": true,
+            "notifyHurt": false
+          },
+          "position": {
+            "x": 1200,
+            "y": 80
+          }
+        },
+        {
+          "id": "chain",
+          "kind": "construct-chain",
+          "parameters": {
+            "group": "barrel",
+            "radius": 2.2,
+            "damage": 9999
+          },
+          "position": {
+            "x": 900,
+            "y": 460
+          }
+        },
+        {
+          "id": "explosion",
+          "kind": "cue",
+          "parameters": {
+            "id": 4206,
+            "name": "BarrelExplosion",
+            "center": "point"
+          },
+          "position": {
+            "x": 900,
+            "y": 740
+          }
+        },
+        {
+          "id": "hit-cue",
+          "kind": "cue",
+          "parameters": {
+            "id": 4204,
+            "name": "BarrelHit",
+            "center": "target"
+          },
+          "position": {
+            "x": 1500,
+            "y": 80
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "death-blast",
+          "source": "barrel",
+          "sourcePort": "death",
+          "target": "blast",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "blast-damage",
+          "source": "blast",
+          "sourcePort": "apply",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "death-chain",
+          "source": "barrel",
+          "sourcePort": "death",
+          "target": "chain",
+          "targetPort": "execute",
+          "order": 1
+        },
+        {
+          "id": "death-cue",
+          "source": "barrel",
+          "sourcePort": "death",
+          "target": "explosion",
+          "targetPort": "execute",
+          "order": 2
+        },
+        {
+          "id": "hit-cue",
+          "source": "damage",
+          "sourcePort": "next",
+          "target": "hit-cue",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ],
+      "timeline": {
+        "runtimeId": 3008,
+        "duration": 0.5,
+        "clips": [],
+        "payloads": [
+          {
+            "id": "spawn-barrel",
+            "time": 0.1,
+            "effects": [
+              "barrel"
+            ]
+          }
+        ]
+      }
     }
   ],
   "buffs": [
@@ -1483,6 +1674,36 @@
         ],
         "priority": 10,
         "toSkill": "arena-ammo-shot"
+      },
+      {
+        "id": "arena-construct-root",
+        "preSkills": [],
+        "input": "ArenaConstruct",
+        "requiredTags": [],
+        "priority": 0,
+        "toSkill": "arena-barrel"
+      },
+      {
+        "id": "arena-construct-cancel",
+        "preSkills": [
+          "g1",
+          "g2",
+          "dodge",
+          "homing",
+          "aura",
+          "summon-melee",
+          "arena-ammo-shot",
+          "arena-reload-ammo",
+          "arena-tracked-shot",
+          "arena-projectile-warp",
+          "arena-barrel"
+        ],
+        "input": "ArenaConstruct",
+        "requiredTags": [
+          1001
+        ],
+        "priority": 10,
+        "toSkill": "arena-barrel"
       }
     ],
     "actors": [
@@ -1657,6 +1878,18 @@
         "key": "fx_fire_ground",
         "kind": "cube",
         "lifetime": 2
+      },
+      {
+        "id": 4204,
+        "key": "BarrelHit",
+        "kind": "cube",
+        "lifetime": 0.45
+      },
+      {
+        "id": 4206,
+        "key": "BarrelExplosion",
+        "kind": "cube",
+        "lifetime": 0.45
       }
     ],
     "arena": {
@@ -1692,7 +1925,7 @@
         },
         {
           "action": "Fire5",
-          "input": "ArenaSummon"
+          "input": "ArenaConstruct"
         },
         {
           "action": "Roll",

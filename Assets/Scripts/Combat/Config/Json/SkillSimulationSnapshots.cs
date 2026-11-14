@@ -44,6 +44,9 @@ namespace Combat.Config
         public float? Energy {get;internal set;}
         public int? Ammo {get;internal set;}
         public string TrackingKey {get;internal set;}
+        public string Group {get;internal set;}
+        public float? DamageCap {get;internal set;}
+        public float? NextDecay {get;internal set;}
         public int CastId {get;internal set;}
         public int Generation {get;internal set;}
         public int ChainsLeft {get;internal set;}
@@ -156,6 +159,7 @@ namespace Combat.Config
         public int Splits {get;internal set;}
         public int Areas { get; internal set; }
         public int Summons {get;internal set;}
+        public int Constructs {get;internal set;}
     }
 
     public sealed class SkillCastResult

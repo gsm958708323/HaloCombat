@@ -56,6 +56,7 @@ namespace Combat.Core
             float afterCritical=afterDefense*(crit?(CritMul>0?CritMul:2):1);
             float deal=IncludeBonuses&&source!=null&&source.TryGetComp<AttributeSet>(out var outgoing)?outgoing.GetFinal(AttrId.DmgDealMul):1;
             float final=Math.Max(0,afterCritical*deal*attributes.GetFinal(AttrId.DmgTakenMul));
+            if(target.TryGetComp<IncomingDamagePolicyComp>(out var incoming))final=Math.Max(0,incoming.Filter(source,final,ctx));
             float absorbed=Math.Min(Math.Max(0,attributes.GetBase(AttrId.Shield)),final);
             float lost=Math.Min(hp,Math.Max(0,final-absorbed)),overkill=Math.Max(0,final-absorbed-lost);
             attributes.SetBase(AttrId.Shield,Math.Max(0,attributes.GetBase(AttrId.Shield)-absorbed));

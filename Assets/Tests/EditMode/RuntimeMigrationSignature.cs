@@ -20,7 +20,10 @@ namespace Combat.Tests
             // The fixture describes the three migrated Attack transitions. Arena input rows
             // added later are validated by Arena tests and must not overwrite these originals.
             var originalCombo=new ComboTableDefinition{Entries=data.Combo.Entries.Where(e=>e.Input==InputToken.Attack).ToArray()};
-            return new JObject{{"combo",Shape(originalCombo)},{"timelines",timelines},{"projectiles",projectiles},{"areas",areas},{"summon",Shape(summon)},{"motor",Shape(data.Motor)},{"cues",Shape(data.Cues)}};
+            // Only these four Cues existed in the migration baseline. Arena Cue values
+            // added later are exercised by its actual spawn/death presentation tests.
+            var originalCues=new CueLibrary();foreach(int id in new[]{101,102,201,202}){if(!data.Cues.TryGet(id,out var cue))throw new InvalidOperationException("Missing migrated Cue "+id);originalCues.Register(cue);}
+            return new JObject{{"combo",Shape(originalCombo)},{"timelines",timelines},{"projectiles",projectiles},{"areas",areas},{"summon",Shape(summon)},{"motor",Shape(data.Motor)},{"cues",Shape(originalCues)}};
         }
         static JToken Shape(object value,int depth=0)
         {
@@ -41,6 +44,8 @@ namespace Combat.Tests
                 if(value is DamageEffect damage&&!damage.CanCrit&&field.Name=="CritChance")continue;
                 // The pre-tracking fixture has no tracking metadata; live routing is tested separately.
                 if(value is ProjectileDefinition&&field.Name=="TrackingKey"&&string.IsNullOrEmpty((string)field.GetValue(value)))continue;
+                // The old circle wrapper used implicit hostility; zero preserves that rule.
+                if(value is CircleEffects&&field.Name=="_mask"&&(int)field.GetValue(value)==0)continue;
                 fields[field.Name]=Shape(field.GetValue(value),depth+1);
             }
             return fields;

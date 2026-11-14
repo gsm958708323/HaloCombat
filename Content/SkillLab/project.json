@@ -3888,6 +3888,217 @@
           }
         ]
       }
+    },
+    {
+      "id": "barrel-chain",
+      "runtimeId": 2039,
+      "name": "木桶连锁爆炸",
+      "category": "可破坏物",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          },
+          "position": {
+            "x": 0,
+            "y": 80
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "parameters": {
+            "mode": "instant",
+            "cost": 0,
+            "cooldown": 0,
+            "delay": 0.1,
+            "duration": 0.5
+          },
+          "position": {
+            "x": 300,
+            "y": 80
+          }
+        },
+        {
+          "id": "barrel",
+          "kind": "construct",
+          "parameters": {
+            "hp": 5,
+            "radius": 0.25,
+            "team": 0,
+            "group": "barrel",
+            "view": "barrel",
+            "damageCap": 1,
+            "decayPeriod": 5,
+            "decayDamage": 1,
+            "center": "point",
+            "forwardOffset": 0,
+            "count": 3,
+            "spacing": 1,
+            "maxAlive": 64,
+            "cleanupWithOwner": false
+          },
+          "position": {
+            "x": 600,
+            "y": 80
+          },
+          "runtimeId": 6018
+        },
+        {
+          "id": "blast",
+          "kind": "delivery",
+          "parameters": {
+            "mode": "area",
+            "center": "point",
+            "radius": 2.2,
+            "hostileMask": 4
+          },
+          "position": {
+            "x": 900,
+            "y": 80
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "parameters": {
+            "flat": 0,
+            "coefficient": 0.15,
+            "critChance": 0.05,
+            "critMultiplier": 1.8,
+            "canCrit": true,
+            "notifyHurt": false
+          },
+          "position": {
+            "x": 1200,
+            "y": 80
+          }
+        },
+        {
+          "id": "chain",
+          "kind": "construct-chain",
+          "parameters": {
+            "group": "barrel",
+            "radius": 2.2,
+            "damage": 9999
+          },
+          "position": {
+            "x": 900,
+            "y": 460
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "death-blast",
+          "source": "barrel",
+          "sourcePort": "death",
+          "target": "blast",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "blast-damage",
+          "source": "blast",
+          "sourcePort": "apply",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "death-chain",
+          "source": "barrel",
+          "sourcePort": "death",
+          "target": "chain",
+          "targetPort": "execute",
+          "order": 1
+        },
+        {
+          "id": "cast-barrel",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "barrel",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "detonate-constructs",
+      "runtimeId": 2040,
+      "name": "范围引爆木桶",
+      "category": "可破坏物",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          },
+          "position": {
+            "x": 0,
+            "y": 80
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "parameters": {
+            "mode": "instant",
+            "cost": 0,
+            "cooldown": 0,
+            "delay": 0,
+            "duration": 0.02
+          },
+          "position": {
+            "x": 300,
+            "y": 80
+          }
+        },
+        {
+          "id": "ignite",
+          "kind": "construct-chain",
+          "parameters": {
+            "group": "barrel",
+            "radius": 2.2,
+            "damage": 9999
+          },
+          "position": {
+            "x": 600,
+            "y": 80
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-ignite",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "ignite",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
     }
   ],
   "preview": {

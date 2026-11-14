@@ -26,6 +26,10 @@ namespace Combat.Core
         int _castIds;
         int _damageIds;
         readonly SkillEventRouter _skillEvents;
+        readonly ConstructDeathQueue _constructDeaths=new ConstructDeathQueue();
+        public ConstructCatalog Constructs {get;private set;}=new ConstructCatalog();
+        public void ReplaceConstructs(ConstructCatalog definitions){if(definitions!=null)Constructs=definitions;}
+        internal void QueueConstructDeath(ConstructComp body)=>_constructDeaths.Enqueue(body);
         int _hitstopPending;
         int _hitstopLeft;
 
@@ -112,13 +116,16 @@ namespace Combat.Core
                 owner = aoe.OwnerId;
             else if (actor.TryGetComp<SummonComp>(out var summon) && summon.OwnerId.IsValid)
                 owner = summon.OwnerId;
-            _events.Publish(new EvEntitySpawn(id, blueprintId, owner));
+            else if(actor.TryGetComp<ConstructComp>(out var construct))owner=construct.OwnerId;
+            string view=actor.TryGetComp<ConstructComp>(out var body)?body.Def?.View:null;
+            _events.Publish(new EvEntitySpawn(id, blueprintId, owner,view));
         }
         public bool TryGetActor(EntityId id, out Actor actor) => _registry.TryGet(id, out actor);
         public void RequestDespawn(EntityId id)
         {
             if(TryGetActor(id,out var actor)&&actor.TryGetComp<SummonComp>(out var summon)&&summon.Def!=null&&!summon.Ending)
             {summon.End(SummonEventKind.Removed);return;}
+            if(actor!=null&&actor.TryGetComp<ConstructComp>(out var construct)&&construct.Def!=null&&!construct.Ending){construct.Remove();return;}
             CleanupByOwner(id);
             _registry.RequestDespawn(id);
             actor?.SetActive(false);
@@ -187,6 +194,7 @@ namespace Combat.Core
                 {
                     summon.End(SummonEventKind.OwnerRemoved);
                 }
+                else if(a.TryGetComp<ConstructComp>(out var construct)&&construct.OwnerId==owner&&construct.Def.CleanupWithOwner)construct.Remove(true);
             }
         }
 

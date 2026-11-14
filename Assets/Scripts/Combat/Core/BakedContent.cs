@@ -9,6 +9,7 @@ namespace Combat.Core
         public ProjectileCatalog Projectiles;
         public AoeCatalog Aoes;
         public SummonCatalog Summons;
+        public ConstructCatalog Constructs;
         public CueLibrary Cues;
         public MotorConfig Motor;
         public int ContentSerial;
@@ -17,6 +18,7 @@ namespace Combat.Core
         {
             if (world == null) throw new ArgumentNullException(nameof(world));
             world.ReplaceCatalogs(Projectiles, Aoes, Summons);
+            world.ReplaceConstructs(Constructs);
             world.ReplaceCues(Cues);
         }
     }

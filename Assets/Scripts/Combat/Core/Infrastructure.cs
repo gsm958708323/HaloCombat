@@ -82,7 +82,6 @@ namespace Combat.Core
     public sealed class EventBus
     {
         readonly Dictionary<Type, List<Delegate>> _handlers = new Dictionary<Type, List<Delegate>>(32);
-        readonly List<Delegate> _snapshot = new List<Delegate>(16);
 
         public void Subscribe<T>(Action<T> handler)
         {
@@ -109,11 +108,12 @@ namespace Combat.Core
         {
             if (!_handlers.TryGetValue(typeof(T), out var list) || list.Count == 0)
                 return;
-            _snapshot.Clear();
-            _snapshot.AddRange(list);
-            for (int i = 0; i < _snapshot.Count; i++)
+            // Handlers can publish another event before this dispatch finishes. A local
+            // snapshot keeps that nested dispatch from replacing the remaining listeners.
+            var snapshot=list.ToArray();
+            for (int i = 0; i < snapshot.Length; i++)
             {
-                if (_snapshot[i] is Action<T> action)
+                if (snapshot[i] is Action<T> action)
                     action(evt);
             }
         }
@@ -121,7 +121,6 @@ namespace Combat.Core
         public void Clear()
         {
             _handlers.Clear();
-            _snapshot.Clear();
         }
     }
 

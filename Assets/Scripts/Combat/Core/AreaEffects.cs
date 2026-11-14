@@ -38,12 +38,13 @@ namespace Combat.Core
         readonly EffectCenter _center;
         readonly float _radius;
         readonly int _maximum;
-        public CircleEffects(IEffect[] effects, EffectCenter center, float radius, int maximum = 0)
-        { _effects = effects; _center = center; _radius = radius; _maximum = maximum; }
+        readonly int _mask;
+        public CircleEffects(IEffect[] effects, EffectCenter center, float radius, int maximum = 0,int hostileMask=0)
+        { _effects = effects; _center = center; _radius = radius; _maximum = maximum;_mask=hostileMask; }
         public void Apply(ref EffectContext context)
         {
             if (context.World == null || !EffectPosition.TryResolve(context, _center, out var point)) return;
-            var targets = AreaTargets.Query(context.World, point, _radius, context.Source, 0, _maximum);
+            var targets = AreaTargets.Query(context.World, point, _radius, context.Source, _mask, _maximum);
             context.World.Events.Publish(new EvAreaResolved(context.Source != null ? context.Source.Id : EntityId.Invalid, point, _radius, targets.Length));
             foreach (var id in targets)
             {

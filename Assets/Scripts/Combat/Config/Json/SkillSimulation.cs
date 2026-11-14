@@ -20,7 +20,7 @@ namespace Combat.Config
         readonly Dictionary<string, EntityId> _sceneActors = new Dictionary<string, EntityId>();
         readonly CombatWorld _world;
         readonly EntityId _caster;
-        int _eventSequence, _steps, _casts, _spawned, _hits, _spawnedAreas,_spawnedSummons;
+        int _eventSequence, _steps, _casts, _spawned, _hits, _spawnedAreas,_spawnedSummons,_spawnedConstructs;
         float _damage;
         int _chains,_splits;
         bool _disposed;
@@ -33,6 +33,7 @@ namespace Combat.Config
             SkillSceneValidation.Validate(preview);
             _world = new CombatWorld(new SkillSimulationFactory(content, preview), random: new SeededRandom(preview.Seed), cues: content.Runtime?.Data.Cues??content.Cues,motor:content.Runtime?.Data.Motor,obstacles:SkillSceneValidation.Obstacles(preview),skillEvents:content.SkillEvents);
             _world.ReplaceCatalogs(content.Projectiles, content.Aoes, content.Summons);
+            _world.ReplaceConstructs(content.Constructs);
             _world.Events.Subscribe<EvEntitySpawn>(OnSpawn);
             _world.Events.Subscribe<EvDamage>(OnDamage);
             _world.Events.Subscribe<EvSkillEvent>(e=>Record(e.Rejected?"skill-event-rejected":"skill-"+e.Kind.ToString().ToLowerInvariant(),Name(e.Source),Name(e.Target),e.Origin,e.Damage));
@@ -42,6 +43,7 @@ namespace Combat.Config
             _world.Events.Subscribe<EvSkillStarted>(e=>
             {_casts++;_content.Skills.TryGet(e.Skill,out var skill);Record("cast",Name(e.Source),skill?.Name??e.Skill.ToString());});
             _world.Events.Subscribe<EvSummonLifecycle>(e=>Record("summon-"+e.Kind.ToString().ToLowerInvariant(),Name(e.Owner),e.Detail??Name(e.Id)));
+            _world.Events.Subscribe<EvConstructLifecycle>(e=>Record("construct-"+e.Kind.ToString().ToLowerInvariant(),Name(e.Owner),e.Detail+" / "+Name(e.Id),e.Origin));
             _world.Events.Subscribe<EvEntityCleanup>(OnCleanup);
             _world.Events.Subscribe<EvAreaResolved>(OnArea);
             _world.Events.Subscribe<EvSpatialVolume>(OnVolume);
@@ -200,18 +202,19 @@ namespace Combat.Config
             {
                 var p = a.GetComp<TransformComp>().Position;
                 a.TryGetComp<AttributeSet>(out var attr); a.TryGetComp<ProjectileComp>(out var projectile); a.TryGetComp<AoeComp>(out var area);
-                a.TryGetComp<SummonComp>(out var summon);string blueprint=summon?.Def?.BlueprintId;
+                a.TryGetComp<SummonComp>(out var summon);a.TryGetComp<ConstructComp>(out var construct);string blueprint=summon?.Def?.BlueprintId??construct?.Def?.View;
                 _content.Blueprints.TryGet(blueprint,out var actorBlueprint);
-                var owner=projectile?.OwnerId??area?.OwnerId??summon?.OwnerId??EntityId.Invalid;
+                var owner=projectile?.OwnerId??area?.OwnerId??summon?.OwnerId??construct?.OwnerId??EntityId.Invalid;
                 return new SkillActorSnapshot
                 {
                     Id = HitboxComp.Pack(a.Id).ToString(), Name = Name(a.Id), Kind = _kinds[HitboxComp.Pack(a.Id)], X = p.X,Y=p.Y, Z = p.Z,
                     Hp = attr?.GetBase(AttrId.Hp), MaxHp = attr?.GetFinal(AttrId.MaxHp), Radius = projectile?.Def?.HitRadius ?? area?.Def?.Radius ?? (a.TryGetComp<LocomotionComp>(out var locomotion)?locomotion.CollisionRadius:.4f),
                     Remaining = projectile!=null?(float?)Math.Max(0,projectile.Def.Lifetime-projectile.Age):area?.Def != null ? (float?)Math.Max(0, area.Def.Duration - area.Age) : summon!=null&&summon.Lifetime>0?(float?)Math.Max(0,summon.Lifetime-summon.Age):null,
                     Dead = a.TryGetComp<TagComp>(out var tags) && tags.Has(CommonTags.Dead),
-                    Owner=owner.IsValid?Name(owner):null,Blueprint=blueprint,Skill=projectile!=null?SkillName(projectile.Family.Origin):actorBlueprint?.SkillKey,Energy=a.TryGetComp<EnergyComp>(out var energy)?(float?)energy.Current:null,
+                    Owner=owner.IsValid?Name(owner):null,Blueprint=blueprint,Skill=projectile!=null?SkillName(projectile.Family.Origin):construct!=null?SkillName(construct.Origin):actorBlueprint?.SkillKey,Energy=a.TryGetComp<EnergyComp>(out var energy)?(float?)energy.Current:null,
+                    Group=construct?.Def?.Group,DamageCap=construct?.Def?.DamageCap,NextDecay=construct?.NextDecay,
                     Ammo=a.TryGetComp<AmmoComp>(out var ammo)?(int?)ammo.Current:null,TrackingKey=projectile?.Def?.TrackingKey,
-                    CastId=projectile?.Family.Origin.CastId??0,Generation=projectile?.Generation??0,ChainsLeft=projectile?.ChainsLeft??0,
+                    CastId=projectile?.Family.Origin.CastId??construct?.Origin.CastId??0,Generation=projectile?.Generation??0,ChainsLeft=projectile?.ChainsLeft??0,
                     Distance=projectile!=null?(float?)projectile.Distance:null,Range=projectile!=null&&!double.IsInfinity(projectile.RangeLimit)?(float?)projectile.RangeLimit:null,
                     Speed=projectile!=null?(float?)ProjectileKinematics.Speed(projectile):null,VerticalSpeed=projectile?.Def.Motion?.Bounce!=null?(float?)projectile.VerticalSpeed:null,
                     Returning=projectile?.Returning??false,GroundBouncesLeft=projectile?.GroundBouncesLeft??0,WallBouncesLeft=projectile?.WallBouncesLeft??0,
@@ -231,7 +234,7 @@ namespace Combat.Config
                 Channeling = cast?.IsChanneling ?? false,
                 Charging = cast?.IsCharging ?? false, ChargeProgress = cast?.ChargeProgress ?? 0, CastPower = cast?.CastPower ?? 1,
                 Cooldowns = _content.Skills.All.ToDictionary(s => s.Key, s => cast?.CooldownLeft(s.Id) ?? 0),
-                Statistics = new SkillStatistics { Damage = _damage, Hits = _hits, Casts = _casts, Projectiles = _spawned, Areas = _spawnedAreas,Summons=_spawnedSummons,Chains=_chains,Splits=_splits }
+                Statistics = new SkillStatistics { Damage = _damage, Hits = _hits, Casts = _casts, Projectiles = _spawned, Areas = _spawnedAreas,Summons=_spawnedSummons,Constructs=_spawnedConstructs,Chains=_chains,Splits=_splits }
             };
         }
 
@@ -239,6 +242,8 @@ namespace Combat.Config
         {
             _kinds[HitboxComp.Pack(e.Id)]=e.BlueprintId;
             if(e.BlueprintId=="projectile")_spawned++;if(e.BlueprintId=="aoe")_spawnedAreas++;
+            if(e.BlueprintId=="construct")
+            { _spawnedConstructs++;if(_world.TryGetActor(e.Id,out var actor))_names[HitboxComp.Pack(e.Id)]=(actor.GetComp<ConstructComp>().Def.Group)+"#"+e.Id.Index; }
             if(e.BlueprintId=="summon")
             {
                 _spawnedSummons++;

@@ -78,6 +78,11 @@ namespace Combat.Unity
                 _core = Part(PrimitiveType.Sphere, "TargetCore", new Vector3(0f, 1.35f, 0f), Vector3.one * 0.16f, accent, true);
                 _ring = Part(PrimitiveType.Cylinder, "TargetRing", new Vector3(0f, 0.02f, 0f), new Vector3(1.3f, 0.015f, 1.3f), accent, true);
             }
+            else if(model=="barrel"||model=="crate")
+            {
+                Part(model=="barrel"?PrimitiveType.Cylinder:PrimitiveType.Cube,"DestructibleBody",new Vector3(0,.35f,0),new Vector3(.5f,model=="barrel"?.35f:.7f,.5f),new Color(.45f,.22f,.08f),false);
+                _ring=Part(PrimitiveType.Cylinder,"Band",new Vector3(0,.54f,0),new Vector3(.53f,.025f,.53f),new Color(.25f,.28f,.31f),false);
+            }
             else
             {
                 bool small = model == "summon";
@@ -134,6 +139,7 @@ namespace Combat.Unity
             if(_root!=null)go.transform.SetParent(_root,false);
             var view=go.AddComponent<UnityActorView>();
             if(_actors!=null&&_actors.TryGetValue(blueprintId,out var definition))view.ConfigureModel(definition.View);
+            else view.ConfigureModel(blueprintId);
             return view;
         }
     }

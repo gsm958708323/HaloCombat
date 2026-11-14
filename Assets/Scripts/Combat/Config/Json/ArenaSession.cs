@@ -27,7 +27,7 @@ namespace Combat.Config
         public bool Paused {get;private set;}
         public bool Training {get;}
         public int SpawnedEnemies {get;private set;}
-        public int EnemyCount=>World.RegistryActive().Count(a=>a.Id!=PlayerId&&a.TryGetComp<HealthComp>(out _)&&a.TryGetComp<TeamComp>(out var t)&&t.TeamId==_content.Runtime.Actors[Definition.Enemy].Team&&!a.GetComp<TagComp>().Has(CommonTags.Dead)&&!a.TryGetComp<SummonComp>(out _));
+        public int EnemyCount=>World.RegistryActive().Count(a=>a.Id!=PlayerId&&a.TryGetComp<HealthComp>(out _)&&a.TryGetComp<TeamComp>(out var t)&&t.TeamId==_content.Runtime.Actors[Definition.Enemy].Team&&!a.GetComp<TagComp>().Has(CommonTags.Dead)&&!a.TryGetComp<SummonComp>(out _)&&!a.TryGetComp<ConstructComp>(out _));
         public IReadOnlyDictionary<string,SkillNodeId> Slots=>_slots;
         public ArenaSession(CombatContentSnapshot content,bool training=false,IReadOnlyDictionary<string,SkillNodeId> slots=null)
         {

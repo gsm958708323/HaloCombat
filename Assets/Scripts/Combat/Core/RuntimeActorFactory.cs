@@ -25,6 +25,7 @@ namespace Combat.Core
         {_data=data;_skills=skills;_actors=actors;}
         public Actor Create(in ActorSpawnSpec spec)
         {
+            if(spec.BlueprintId=="construct")return ConstructActor.Create();
             var actor=new Actor();actor.AddComp(new TransformComp());actor.AddComp(new TagComp());
             if(spec.BlueprintId=="projectile"||spec.BlueprintId=="aoe")
             {actor.AddComp(new TeamComp(0));if(spec.BlueprintId=="projectile")actor.AddComp(new ProjectileComp());else actor.AddComp(new AoeComp());return actor;}

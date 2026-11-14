@@ -10,6 +10,14 @@ const ids=()=>{let number=0;return ()=> 'generated-'+ ++number;};
 const skillKey={kind:'skill',id:'basic-shot'};
 const runtime=()=>JSON.parse(fs.readFileSync(path.resolve(__dirname,'../../../../Assets/StreamingAssets/Combat/project.json'),'utf8'));
 
+test('copying and pasting a construct preserve lifecycle branches with fresh definition identities',()=>{
+  const p=example(),source=p.skills.find(s=>s.id==='barrel-chain'),key={kind:'skill',id:source.id};
+  const original=source.nodes.find(n=>n.kind==='construct');const copy=edits.duplicateContent(p,'skill',source.id,'copy',ids()).project.skills.at(-1);
+  const body=copy.nodes.find(n=>n.kind==='construct');assert.notEqual(body.runtimeId,original.runtimeId);assert(copy.edges.some(e=>e.source===body.id&&e.sourcePort==='death'));
+  const pasted=graph.pasteSelection(p,key,graph.copySelection(source,[original.id]),{x:100,y:100},ids());
+  const second=pasted.project.skills.find(s=>s.id===key.id).nodes.at(-1);assert.notEqual(second.runtimeId,original.runtimeId);assert.equal(second.parameters.hp,5);
+});
+
 test('skill rename and delete update ammunition fallback and projectile recast references',()=>{
   const p=example();assert(edits.referencesTo(p,'skill','reload-ammo').some(r=>r.field==='fallbackSkill'));
   let next=edits.renameContent(p,'skill','reload-ammo','magazine-reload');assert.equal(next.skills.find(s=>s.id==='ammo-shot').nodes.find(n=>n.kind==='cast').parameters.fallbackSkill,'magazine-reload');
@@ -172,5 +180,5 @@ test('real transformed project is exported for the C# compiler and HTTP validati
   let p=example();p=edits.renameContent(p,'skill','basic-shot','authoring-basic');p=edits.renameContent(p,'buff','burn','authoring-burn');p=edits.renameContent(p,'blueprint','echo-gunner','authoring-summon');
   const duplicate=edits.duplicateContent(p,'skill','authoring-basic','作者复制验证',ids());p=edits.selectGraph(duplicate.project,duplicate.id);
   const output=path.resolve(__dirname,'../../.local/verification');fs.mkdirSync(output,{recursive:true});fs.writeFileSync(path.join(output,'authoring-transformed.json'),JSON.stringify(p,null,2));
-  assert.equal(p.skills.length,39);
+  assert.equal(p.skills.length,41);
 });

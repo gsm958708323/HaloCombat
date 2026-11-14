@@ -40,7 +40,8 @@ namespace Combat.Unity
 
             gameObject.name = "Cue_" + e.CueId;
             if(_root!=null)gameObject.transform.SetParent(_root,false);
-            if(_world!=null&&_world.TryGetActor(e.Source,out var actor)){var p=actor.GetComp<TransformComp>().Position;gameObject.transform.position=new Vector3(p.X,p.Y,p.Z);}
+            if(e.HasPoint)gameObject.transform.position=new Vector3(e.Point.X,e.Point.Y,e.Point.Z);
+            else if(_world!=null&&_world.TryGetActor(e.Source,out var actor)){var p=actor.GetComp<TransformComp>().Position;gameObject.transform.position=new Vector3(p.X,p.Y,p.Z);}
             if(_sounds.TryGetValue(e.CueId,out var sound))AudioSource.PlayClipAtPoint(sound,gameObject.transform.position);
             Object.Destroy(gameObject, definition.LifeTime);
         }

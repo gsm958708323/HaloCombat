@@ -10,7 +10,7 @@ namespace Combat.Unity
         readonly Dictionary<string, GameObject> _objects = new Dictionary<string, GameObject>();
         readonly List<Material> _materials = new List<Material>();
         SkillLabRunner _runner;
-        Material _caster, _target, _projectile, _area,_obstacle,_summon;
+        Material _caster, _target, _projectile, _area,_obstacle,_summon,_construct;
         int _generation = -1;
 
         void Awake()
@@ -22,6 +22,7 @@ namespace Combat.Unity
             _area = Material(new Color(.3f, .35f, .55f));
             _obstacle=Material(new Color(.35f,.4f,.43f));
             _summon=Material(new Color(.24f,.8f,.44f));
+            _construct=Material(new Color(.65f,.3f,.1f));
         }
 
         Material Material(Color color)
@@ -106,7 +107,7 @@ namespace Combat.Unity
             var visual = GameObject.CreatePrimitive(actor.Kind == "projectile" ? PrimitiveType.Sphere : PrimitiveType.Cylinder);
             visual.name = actor.Kind + "_" + actor.Name;
             visual.transform.SetParent(transform, false);
-            visual.GetComponent<Renderer>().sharedMaterial = actor.Kind == "caster" ? _caster : actor.Kind == "projectile" ? _projectile : actor.Kind == "aoe" ? _area : actor.Kind=="summon"?_summon:_target;
+            visual.GetComponent<Renderer>().sharedMaterial = actor.Kind == "caster" ? _caster : actor.Kind == "projectile" ? _projectile : actor.Kind == "aoe" ? _area : actor.Kind=="summon"?_summon:actor.Kind=="construct"?_construct:_target;
             Destroy(visual.GetComponent<Collider>());
             return visual;
         }

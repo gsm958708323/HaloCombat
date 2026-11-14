@@ -14,7 +14,7 @@ namespace Combat.Config
                 var d=documents[i];string path="$.summonBlueprints["+i+"]";
                 if(d==null)throw new ContentValidationException(path,"Blueprint is required.");
                 if(string.IsNullOrWhiteSpace(d.Id)||!ids.Add(d.Id))throw new ContentValidationException(path+".id","Expected unique nonempty identity.");
-                if(d.Id=="caster"||d.Id=="target"||d.Id=="projectile"||d.Id=="aoe")throw new ContentValidationException(path+".id","Blueprint identity is reserved for runtime bodies.");
+                if(d.Id=="caster"||d.Id=="target"||d.Id=="projectile"||d.Id=="aoe"||d.Id=="construct")throw new ContentValidationException(path+".id","Blueprint identity is reserved for runtime bodies.");
                 if(d.SkillId==null||!skills.TryGetValue(d.SkillId,out var skill))throw new ContentValidationException(path+".skillId","Unknown attack skill: "+d.SkillId);
                 var value=new SummonBlueprint
                 {

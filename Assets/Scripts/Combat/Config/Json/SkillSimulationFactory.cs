@@ -12,6 +12,7 @@ namespace Combat.Config
 
         public Actor Create(in ActorSpawnSpec spec)
         {
+            if(spec.BlueprintId=="construct")return ConstructActor.Create();
             var actor = new Actor();
             actor.AddComp(new TransformComp()); actor.AddComp(new TagComp());
             actor.AddComp(new TeamComp(spec.BlueprintId == "caster" ? 1 : 2));
