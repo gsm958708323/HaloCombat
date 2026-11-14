@@ -8,6 +8,7 @@ namespace Combat.Config
         internal static string Skill(string id)=>"skill:"+id;
         internal static string Buff(string id)=>"buff:"+id;
         internal static string Timeline(string id)=>"timeline:"+id;
+        internal static string Projectile(string id)=>"projectile:"+id;
         readonly Dictionary<string,HashSet<string>> _edges=new Dictionary<string,HashSet<string>>();
         internal void Register(string key)=>_edges.Add(key,new HashSet<string>());
         internal void Add(string source,string target)=>_edges[source].Add(target);
@@ -19,7 +20,7 @@ namespace Combat.Config
         int Depth(string key,HashSet<string> visiting,Dictionary<string,int> depths)
         {
             if(depths.TryGetValue(key,out int known))return known;
-            string path=key.StartsWith("buff:")?"$.buffs["+key.Substring(5)+"]":key.StartsWith("timeline:")?"$.timelines["+key.Substring(9)+"]":"$.skills["+key.Substring(6)+"]";
+            string path=key.StartsWith("buff:")?"$.buffs["+key.Substring(5)+"]":key.StartsWith("timeline:")?"$.timelines["+key.Substring(9)+"]":key.StartsWith("projectile:")?"$.projectiles["+key.Substring(11)+"]":"$.skills["+key.Substring(6)+"]";
             if(!visiting.Add(key))throw new ContentValidationException(path,"Recursive skill/Buff dependency is not allowed.");
             int depth=0;
             foreach(string target in _edges[key])depth=System.Math.Max(depth,1+Depth(target,visiting,depths));
@@ -48,6 +49,7 @@ namespace Combat.Config
                 FormatVersion=source.FormatVersion,Id=source.Id,Name=source.Name,Preview=source.Preview,
                 Skills=source.Skills.Where(s=>keys.Contains(ContentDependencies.Skill(s.Id))).ToArray(),
                 Timelines=source.Timelines.Where(t=>keys.Contains(ContentDependencies.Timeline(t.Id))).ToArray(),
+                Projectiles=source.Projectiles.Where(p=>keys.Contains(ContentDependencies.Projectile(p.Id))).ToArray(),
                 SummonBlueprints=source.SummonBlueprints.Where(b=>blueprints.Contains(b.Id)).ToArray(),
                 Buffs=source.Buffs.Where(b=>keys.Contains(ContentDependencies.Buff(b.Id))).ToArray()
             };

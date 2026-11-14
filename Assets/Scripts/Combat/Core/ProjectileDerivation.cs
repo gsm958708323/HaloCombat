@@ -53,6 +53,7 @@ namespace Combat.Core
         public EntityId Projectile {get;}
         public EntityId Owner {get;}
         public int Generation {get;}
+        public int HitIndex {get;}
         public float RemainingRange {get;}
         public SimVec3 Point {get;}
         public float Yaw {get;}
@@ -62,7 +63,7 @@ namespace Combat.Core
         internal ProjectileHitContext(Actor actor,ProjectileComp body,SimVec3 point,float yaw,float attack)
         {
             Projectile=actor.Id;Owner=body.OwnerId;Definition=body.Def;Family=body.Family;
-            Generation=body.Generation;RemainingRange=(float)Math.Max(0,body.RangeLimit-body.Distance);
+            Generation=body.Generation;HitIndex=body.HitCount;RemainingRange=(float)Math.Max(0,body.RangeLimit-body.Distance);
             Point=point;Yaw=yaw;Attack=attack;Power=body.Power;_visited=body.Visited();
             _verticalSpeed=body.VerticalSpeed;
         }

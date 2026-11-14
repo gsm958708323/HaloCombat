@@ -37,9 +37,7 @@ namespace Combat.Core
                     !projectile.TryGetComp<TeamComp>(out var shotTeam)||team.TeamId!=shotTeam.TeamId)continue;
                 var transform=projectile.GetComp<TransformComp>();float radius=body.Radius+shot.Def.HitRadius;
                 if(SpatialGeometry.DistanceSquared(center,transform.Position)>radius*radius)continue;
-                var forward=LocomotionComp.ForwardFromYaw(transform.YawDegrees);float speed=(float)ProjectileKinematics.Speed(shot);
-                var velocity=new SimVec3(forward.X*speed,0,forward.Z*speed);
-                body.Absorb(velocity);shot.Exhausted=true;
+                body.Absorb(shot.Velocity);shot.Exhausted=true;
                 var absorbed=new EvAoeAbsorbed(area.Id,projectile.Id,body.OwnerId,body.AbsorbedProjectiles,body.Radius,body.Velocity,body.Origin);
                 var ended=new EvProjectileEnded(shot.OwnerId,projectile.Id,ProjectileEndReason.Absorbed,transform.Position);
                 world.RequestDespawn(projectile.Id);projectile.SetActive(false);

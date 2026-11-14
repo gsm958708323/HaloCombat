@@ -50,7 +50,7 @@ namespace Combat.Core
                 transform.Position=obstacle.Blocked?obstacle.Point:spawn;transform.YawDegrees=intent.Yaw;
                 SpawnAoeEffect.CopyTeam(owner,projectile);
                 float attack=def.SnapshotAtk?intent.SnapshotAtk:owner.TryGetComp<AttributeSet>(out var attributes)?attributes.GetFinal(AttrId.Atk):0;
-                var body=projectile.GetComp<ProjectileComp>();body.Setup(def,intent.Owner,attack,intent.Target,intent.Power,seed);
+                var body=projectile.GetComp<ProjectileComp>();body.Setup(def,intent.Owner,attack,intent.Target,intent.Power,seed,intent.Origin.Y);
                 if(owner.TryGetComp<TrackedProjectilesComp>(out var tracker))tracker.Track(def.TrackingKey,id);
                 _world.PublishSpawn(id,"projectile");
                 if(obstacle.Blocked){Wall(projectile,body,obstacle);if(body.Exhausted)alive--;}
@@ -62,10 +62,14 @@ namespace Combat.Core
             // Newly emitted children are only drained at the next tick.
             foreach(var projectile in _world.RegistryActive())
             {
-                if(!projectile.IsActive||_world.IsActorStopped(projectile)||!projectile.TryGetComp<ProjectileComp>(out var body)||body.Def==null||body.Exhausted)continue;
+                if(!projectile.IsActive||!projectile.TryGetComp<ProjectileComp>(out var body)||body.Def==null||body.Exhausted)continue;
+                if(_world.IsActorStopped(projectile)){body.Velocity=SimVec3.Zero;continue;}
                 _world.TryGetActor(body.OwnerId,out var owner);
                 Steer(body,projectile.GetComp<TransformComp>(),dt,owner);
+                var previous=projectile.GetComp<TransformComp>().Position;
                 Move(projectile,body,owner,dt);
+                if(projectile.IsActive&&!body.Exhausted&&dt>0)
+                {var position=projectile.GetComp<TransformComp>().Position;body.Velocity=new SimVec3((position.X-previous.X)/dt,(position.Y-previous.Y)/dt,(position.Z-previous.Z)/dt);}
             }
         }
 
@@ -132,11 +136,11 @@ namespace Combat.Core
                 double tailDistance=Math.Max(0,distance*limit-spentDistance);
                 double tailTime=limit<1?ProjectileKinematics.Time(body,tailDistance,elapsed-spentTime):Math.Max(0,elapsed-spentTime);
                 ProjectileKinematics.Advance(body,transform,transform.Position,direction,tailTime,tailDistance);timeLeft-=tailTime;
-                if(obstacle.Blocked&&obstacle.Fraction<=catchFraction){if(Wall(projectile,body,obstacle))continue;return;}
+                if(obstacle.Blocked&&obstacle.Fraction<=catchFraction){if(Wall(projectile,body,obstacle,timeLeft))continue;return;}
                 if(catchFraction<=1){Terminate(projectile,body,ProjectileEndReason.Returned);return;}
                 if(body.Distance+.000001>=body.RangeLimit){Terminate(projectile,body,ProjectileEndReason.Range);return;}
                 if(body.Age+.000001>=def.Lifetime){Terminate(projectile,body,ProjectileEndReason.Lifetime);return;}
-                if(groundTime<=elapsed+.00000001){if(!Ground(projectile,body,owner))return;continue;}
+                if(groundTime<=elapsed+(motion?.ScheduledBounce!=null?.0000001:.00000001)){if(!Ground(projectile,body,owner))return;continue;}
             }
         }
 
@@ -197,22 +201,48 @@ namespace Combat.Core
         }
         bool Ground(Actor projectile,ProjectileComp body,Actor owner)
         {
+            if(body.Def.Motion.ScheduledBounce!=null)
+            {
+                var phases=body.Def.Motion.ScheduledBounce.Phases;int index=phases.Length-body.GroundBouncesLeft;
+                if(index<phases.Length)body.Age=Math.Max(body.Age,phases[index]);
+                var pose=projectile.GetComp<TransformComp>();var ground=new SimVec3(pose.Position.X,body.GroundY,pose.Position.Z);pose.Position=ground;
+                body.GroundBouncesLeft=Math.Max(0,body.GroundBouncesLeft-1);body.VerticalSpeed=0;
+                BounceEffects(projectile,body,owner,"ground-bounce",ground);return projectile.IsActive&&!body.Exhausted;
+            }
             var transform=projectile.GetComp<TransformComp>();var point=transform.Position;point=new SimVec3(point.X,_world.Motor.GroundY,point.Z);transform.Position=point;
             double speed=Math.Max(0,-body.VerticalSpeed)*body.Def.Motion.Bounce.Restitution;
             if(body.GroundBouncesLeft<=0||speed<.0001){Terminate(projectile,body,ProjectileEndReason.Ground);return false;}
             body.GroundBouncesLeft--;body.VerticalSpeed=speed;
             BounceEffects(projectile,body,owner,"ground-bounce",point);return projectile.IsActive&&!body.Exhausted;
         }
-        bool Wall(Actor projectile,ProjectileComp body,ObstacleHit obstacle)
+        bool Wall(Actor projectile,ProjectileComp body,ObstacleHit obstacle,double wait=0)
         {
             var transform=projectile.GetComp<TransformComp>();var direction=LocomotionComp.ForwardFromYaw(transform.YawDegrees);
             bool reflect=body.WallBouncesLeft>0&&SpatialGeometry.DistanceSquared(default,obstacle.Normal)>.5f;
             _world.Events.Publish(new EvObstacleHit(body.OwnerId,projectile.Id,obstacle.Id,transform.Position,obstacle.Normal,reflect?"projectile-bounce":"projectile"));
+            if(!reflect&&!body.Def.RemoveOnObstacle)
+            {
+                WaitAtObstacle(projectile,body,Math.Max(0,wait));
+                return false;
+            }
             if(!reflect){Terminate(projectile,body,ProjectileEndReason.Wall);return false;}
             body.WallBouncesLeft--;float dot=direction.X*obstacle.Normal.X+direction.Z*obstacle.Normal.Z;
             transform.YawDegrees=LocomotionComp.YawFromStick(new SimVec3(direction.X-2*dot*obstacle.Normal.X,0,direction.Z-2*dot*obstacle.Normal.Z));
             var point=transform.Position;transform.Position=new SimVec3(point.X+obstacle.Normal.X*.0001f,point.Y,point.Z+obstacle.Normal.Z*.0001f);
             _world.TryGetActor(body.OwnerId,out var owner);BounceEffects(projectile,body,owner,"wall-bounce",point);return projectile.IsActive&&!body.Exhausted;
+        }
+        void WaitAtObstacle(Actor projectile,ProjectileComp body,double wait)
+        {
+            var transform=projectile.GetComp<TransformComp>();_world.TryGetActor(body.OwnerId,out var owner);
+            while(wait>.000000001&&projectile.IsActive&&!body.Exhausted)
+            {
+                double ground=ProjectileKinematics.GroundTime(body,transform,_world.Motor.GroundY);
+                if(ground<=.00000001){if(!Ground(projectile,body,owner))return;continue;}
+                double time=Math.Min(wait,Math.Min(ground,Math.Max(0,body.Def.Lifetime-body.Age)));
+                ProjectileKinematics.Advance(body,transform,transform.Position,SimVec3.Zero,time,0);wait-=time;
+                if(body.Age+.000001>=body.Def.Lifetime){Terminate(projectile,body,ProjectileEndReason.Lifetime);return;}
+                if(ground<=time+(body.Def.Motion?.ScheduledBounce!=null?.0000001:.00000001)&&!Ground(projectile,body,owner))return;
+            }
         }
         void BounceEffects(Actor projectile,ProjectileComp body,Actor owner,string kind,SimVec3 point)
         {

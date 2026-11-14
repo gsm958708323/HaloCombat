@@ -29,7 +29,7 @@ namespace Combat.Tests
         public void JsonRoundtripRetainsFourClipKindsAndStableTimelineIdentities()
         {
             var p=Project();var clone=SkillProjectJson.Read(SkillProjectJson.Write(p));var content=CombatContentCompiler.Compile(clone);
-            Assert.AreEqual(15,content.Skills.All.Count());Assert.AreEqual(6,content.Skills.All.Count(s=>s.Id.Value<2000));Assert.IsTrue(content.Timelines.TryGet(TimelineId.TL_G1,out var g1));
+            Assert.AreEqual(19,content.Skills.All.Count());Assert.AreEqual(6,content.Skills.All.Count(s=>s.Id.Value<2000));Assert.IsTrue(content.Timelines.TryGet(TimelineId.TL_G1,out var g1));
             Assert.AreEqual(.55f,g1.Duration);Assert.AreEqual(3,g1.Clips.Length);Assert.AreEqual(.18f,g1.Payloads[0].Time);
             Assert.IsTrue(content.Timelines.TryGet(TimelineId.TL_Dodge,out var dodge));Assert.IsTrue(dodge.Clips.Any(c=>c.Kind==ClipKind.IFrame));
         }

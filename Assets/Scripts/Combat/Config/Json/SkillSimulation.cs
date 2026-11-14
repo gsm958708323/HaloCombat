@@ -242,7 +242,7 @@ namespace Combat.Config
                     Ammo=a.TryGetComp<AmmoComp>(out var ammo)?(int?)ammo.Current:null,TrackingKey=projectile?.Def?.TrackingKey,
                     CastId=projectile?.Family.Origin.CastId??area?.Origin.CastId??construct?.Origin.CastId??(director!=null&&director.IsPlaying?director.CurrentOrigin.CastId:0),Generation=projectile?.Generation??0,ChainsLeft=projectile?.ChainsLeft??0,
                     Distance=projectile!=null?(float?)projectile.Distance:null,Range=projectile!=null&&!double.IsInfinity(projectile.RangeLimit)?(float?)projectile.RangeLimit:null,
-                    Speed=projectile!=null?(float?)ProjectileKinematics.Speed(projectile):null,VerticalSpeed=projectile?.Def.Motion?.Bounce!=null?(float?)projectile.VerticalSpeed:null,
+                    Speed=projectile!=null?(float?)ProjectileKinematics.Speed(projectile):null,VerticalSpeed=projectile?.Def.Motion?.Bounce!=null||projectile?.Def.Motion?.ScheduledBounce!=null?(float?)projectile.VerticalSpeed:null,
                     Returning=projectile?.Returning??false,GroundBouncesLeft=projectile?.GroundBouncesLeft??0,WallBouncesLeft=projectile?.WallBouncesLeft??0,
                     AbsorbedProjectiles=area?.AbsorbedProjectiles??0,AreaVelocityX=area?.Velocity.X,AreaVelocityZ=area?.Velocity.Z,
                     Buffs=a.TryGetComp<BuffComp>(out var buffs)?buffs.Snapshot().Select(b=>new SkillBuffSnapshot{InstanceId=b.InstanceId,Id=b.Key??b.BuffId.ToString(),Name=b.Name??b.Key??b.BuffId.ToString(),

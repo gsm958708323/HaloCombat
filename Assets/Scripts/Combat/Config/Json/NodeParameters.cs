@@ -39,6 +39,19 @@ namespace Combat.Config
             if (value.Type != JTokenType.Boolean) Fail(name, "Boolean is required.");
             return value.Value<bool>();
         }
+        public float[] Times(string name,float[] fallback)
+        {
+            if(!_values.TryGetValue(name,out var value))return (float[])fallback.Clone();
+            if(!(value is JArray values)||values.Count<1||values.Count>32)throw new ContentValidationException(_path+"."+name,"Expected1..32 ascending times.");
+            var result=new float[values.Count];float previous=0;
+            for(int i=0;i<values.Count;i++)
+            {
+                var token=values[i];if(token.Type!=JTokenType.Integer&&token.Type!=JTokenType.Float)Fail(name,"Expected numeric times.");
+                double time=token.Value<double>();if(double.IsNaN(time)||double.IsInfinity(time)||time<=previous+.0000001||time>3600)Fail(name,"Expected strictly increasing positive times up to3600 seconds.");
+                result[i]=(float)time;previous=result[i];
+            }
+            return result;
+        }
         public string Choice(string name, string fallback, params string[] allowed)
         {
             if (!_values.TryGetValue(name, out var value)) return fallback;

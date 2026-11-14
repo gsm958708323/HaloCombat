@@ -37,6 +37,8 @@ namespace Combat.Core
         public int HitstopFrames;
         public int SourceHitstopFrames,TargetHitstopFrames;
         public HitFeedbackLevel Feedback;
+        public bool FeedbackHitstop;
+        public bool InheritSkillFeedback=true;
         public DamageKind Kind;
         public void Apply(ref EffectContext ctx)
         {
@@ -67,17 +69,19 @@ namespace Combat.Core
             attributes.SetBase(AttrId.Hp,hp-lost);
             bool killed=lost>0&&hp-lost<=0;
             var feedback=Feedback;
-            if(feedback==HitFeedbackLevel.None&&ctx.World.TryGetActor(ctx.Origin.Caster,out var caster)&&caster.TryGetComp<SkillCastComp>(out var skills))feedback=skills.FeedbackFor(ctx.Origin.Skill);
+            if(feedback==HitFeedbackLevel.None&&InheritSkillFeedback&&ctx.World.TryGetActor(ctx.Origin.Caster,out var caster)&&caster.TryGetComp<SkillCastComp>(out var skills))feedback=skills.FeedbackFor(ctx.Origin.Skill);
             var result=new DamageResult(source?.Id??EntityId.Invalid,target.Id,ctx.Origin,ctx.World.NextDamageHitId(),Kind,basis,scaled,afterDefense,afterCritical,final,absorbed,lost,overkill,crit,killed,feedback);
             ctx.Damage=result;
             ctx.World.Events.Publish(new EvDamage(result.Source,target.Id,absorbed+lost,crit,absorbed,killed,ctx.Origin,result));
             if(HitstopFrames>0&&absorbed+lost>0)
             {ctx.World.RequestHitstop(HitstopFrames);ctx.World.Events.Publish(new EvHitstop(result.Source,target.Id,HitstopFrames));}
-            if(lost>0&&(SourceHitstopFrames>0||TargetHitstopFrames>0))
+            int sourceFrames=FeedbackHitstop?Math.Max(SourceHitstopFrames,HitFeedbackTiming.Source(feedback)):SourceHitstopFrames;
+            int targetFrames=FeedbackHitstop?Math.Max(TargetHitstopFrames,HitFeedbackTiming.Target(feedback,ctx.ProjectileHit?.HitIndex??1)):TargetHitstopFrames;
+            if(lost>0&&(sourceFrames>0||targetFrames>0))
             {
-                if(SourceHitstopFrames>0)ctx.World.RequestActorHitstop(result.Source,SourceHitstopFrames);
-                if(TargetHitstopFrames>0)ctx.World.RequestActorHitstop(target.Id,TargetHitstopFrames);
-                ctx.World.Events.Publish(new EvHitstop(result.Source,target.Id,SourceHitstopFrames,TargetHitstopFrames));
+                if(sourceFrames>0)ctx.World.RequestActorHitstop(result.Source,sourceFrames);
+                if(targetFrames>0)ctx.World.RequestActorHitstop(target.Id,targetFrames);
+                ctx.World.Events.Publish(new EvHitstop(result.Source,target.Id,sourceFrames,targetFrames));
             }
             if(killed&&target.TryGetComp<StateMachineComp>(out var fsm))
                 fsm.TryEnter(ActivityId.Dead,new ActivityEnterArgs{Reason="Kill",Killer=result.Source});

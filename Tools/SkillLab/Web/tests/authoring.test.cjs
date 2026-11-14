@@ -187,7 +187,7 @@ test('real transformed project is exported for the C# compiler and HTTP validati
   let p=example();p=edits.renameContent(p,'skill','basic-shot','authoring-basic');p=edits.renameContent(p,'buff','burn','authoring-burn');p=edits.renameContent(p,'blueprint','echo-gunner','authoring-summon');
   const duplicate=edits.duplicateContent(p,'skill','authoring-basic','作者复制验证',ids());p=edits.selectGraph(duplicate.project,duplicate.id);
   const output=path.resolve(__dirname,'../../.local/verification');fs.mkdirSync(output,{recursive:true});fs.writeFileSync(path.join(output,'authoring-transformed.json'),JSON.stringify(p,null,2));
-  assert.equal(p.skills.length,47);
+  assert.equal(p.skills.length,49);
 });
 
 
@@ -230,7 +230,7 @@ test('duplicating a bound skill shares its action while duplicating the action a
   const p=runtime(),copy=edits.duplicateContent(p,'skill','arena-combo-second','copy',ids());
   assert.equal(copy.project.skills.at(-1).timelineRef,'arena-confirmed-shot');assert.equal(copy.project.timelines.length,1);
   const other=edits.duplicateContent(p,'timeline','arena-confirmed-shot','new action',ids()),action=other.project.timelines.at(-1),original=p.timelines[0];
-  assert.notEqual(action.timeline.runtimeId,original.timeline.runtimeId);assert.notEqual(action.nodes[0].runtimeId,original.nodes[0].runtimeId);
+  assert.notEqual(action.timeline.runtimeId,original.timeline.runtimeId);assert.equal(action.nodes[0].parameters.projectile,original.nodes[0].parameters.projectile);
   assert(action.timeline.payloads[0].effects.every(id=>action.nodes.some(n=>n.id===id)));
 });
 test('shared action rename rewrites users and editor identity and deletion requires explicit replacement',()=>{
@@ -242,8 +242,8 @@ test('shared action rename rewrites users and editor identity and deletion requi
 test('merge rebinds imported shared users and their Buff effects only to imported definitions',()=>{
   const p=runtime(),next=mergeProjects(p,p,ids()),action=next.timelines.at(-1),users=next.skills.slice(p.skills.length).filter(s=>s.timelineRef);
   assert.notEqual(action.id,p.timelines[0].id);assert.equal(users.length,2);assert(users.every(s=>s.timelineRef===action.id));
-  const buff=next.buffs.slice(p.buffs.length).find(b=>b.name===p.buffs.find(b=>b.id==='arena-vulnerability').name);assert.equal(action.nodes.find(n=>n.kind==='buff').parameters.buff,buff.id);
-  const renamed=edits.renameContent(next,'buff',buff.id,'new-vulnerability');assert.equal(renamed.timelines.at(-1).nodes.find(n=>n.kind==='buff').parameters.buff,'new-vulnerability');
+  const projectile=next.projectiles.find(v=>v.id===action.nodes[0].parameters.projectile);const buff=next.buffs.slice(p.buffs.length).find(b=>b.name===p.buffs.find(b=>b.id==='arena-vulnerability').name);assert.equal(projectile.nodes.find(n=>n.kind==='buff').parameters.buff,buff.id);
+  const renamed=edits.renameContent(next,'buff',buff.id,'new-vulnerability');assert.equal(renamed.projectiles.find(v=>v.id===projectile.id).nodes.find(n=>n.kind==='buff').parameters.buff,'new-vulnerability');
 });
 test('shared graph pasting skips cast roots and keeps effect entries in their own graph',()=>{
   const p=runtime(),key={kind:'timeline',id:'arena-confirmed-shot'},source=p.skills.find(s=>s.id==='arena-controlled-shot');
@@ -258,4 +258,36 @@ test('binding a shared action preserves independent skill lifecycle handlers and
   const bound=timelineEdits.bindTimeline(p,'g1','arena-confirmed-shot').skills.find(s=>s.id==='g1');
   assert.equal(bound.timelineRef,'arena-confirmed-shot');assert.equal(bound.timeline,undefined);assert(bound.nodes.some(n=>n.id==='local-events'));assert(bound.nodes.some(n=>n.id==='slash-cue'));
   assert(!bound.nodes.some(n=>n.id==='fireball'));assert(bound.edges.some(e=>e.id==='local-hit'));assert.equal(bound.nodes.find(n=>n.kind==='cast').parameters.cooldown,s.nodes.find(n=>n.kind==='cast').parameters.cooldown);
+});
+
+
+const projectileEdits=require('../../.local/web-checks/authoring/projectileEdits.js');
+test('extracting a projectile moves its whole effect branch and preserves timing and emission parameters',()=>{
+  const p=example(),s=p.skills.find(s=>s.id==='spread-shot'),root=s.nodes.find(n=>n.kind==='projectile'),before=JSON.stringify(p);
+  const result=projectileEdits.extractProjectile(p,{kind:'skill',id:s.id},root.id,()=> 'shared-spread');const def=result.project.projectiles.find(d=>d.id===result.id),source=result.project.skills.find(v=>v.id===s.id);
+  assert.equal(def.root,root.id);assert.equal(def.nodes[0].runtimeId,root.runtimeId);assert.equal(def.nodes[0].parameters.multi,undefined);
+  const ref=source.nodes.find(n=>n.id===root.id);assert.equal(ref.kind,'projectile-ref');assert.equal(ref.parameters.count,root.parameters.count);assert.equal(ref.parameters.spread,root.parameters.spread);
+  assert(def.nodes.some(n=>n.kind==='damage'));assert(!source.nodes.some(n=>n.kind==='damage'));assert.equal(JSON.stringify(p),before);
+});
+test('extraction rejects effect branches also referenced from outside or by another timeline entry',()=>{
+  const p=runtime(),s=p.skills.find(s=>s.id==='arena-controlled-shot'),root=s.nodes.find(n=>n.kind==='projectile'),damage=s.nodes.find(n=>n.kind==='damage');
+  s.timeline.payloads[0].effects.push(damage.id);assert.throws(()=>projectileEdits.extractProjectile(p,{kind:'skill',id:s.id},root.id,ids()),/时间轴/);
+  s.timeline.payloads[0].effects.pop();s.edges.push({id:'external',source:'cast',sourcePort:'cast',target:damage.id,targetPort:'execute',order:0});assert.throws(()=>projectileEdits.extractProjectile(p,{kind:'skill',id:s.id},root.id,ids()),/其他节点/);
+});
+test('shared projectile rename rewrites timelines and skills; duplicate definitions get fresh root IDs',()=>{
+  const p=runtime(),renamed=edits.renameContent(p,'projectile','arena-normal-projectile','shared-normal');
+  assert(edits.referencesTo(renamed,'projectile','shared-normal').length>=2);assert.throws(()=>edits.deleteContent(renamed,'projectile','shared-normal'),/替代引用/);
+  const copy=edits.duplicateContent(renamed,'projectile','shared-normal','copy',ids()),old=renamed.projectiles.find(d=>d.id==='shared-normal'),other=copy.project.projectiles.at(-1);
+  assert.notEqual(other.root,old.root);assert.notEqual(other.nodes.find(n=>n.id===other.root).runtimeId,old.nodes.find(n=>n.id===old.root).runtimeId);
+  const gone=edits.deleteContent(copy.project,'projectile','shared-normal',copy.id);assert(edits.referencesTo(gone,'projectile',copy.id).length>=2);
+});
+test('merging shared projectiles rebinds every imported use to its own imported definition',()=>{
+  const p=runtime(),next=mergeProjects(p,p,ids()),imported=next.projectiles.slice(p.projectiles.length),all=new Set(imported.map(d=>d.id));
+  assert(next.skills.slice(p.skills.length).flatMap(s=>s.nodes).filter(n=>n.kind==='projectile-ref').every(n=>all.has(n.parameters.projectile)));
+  assert(next.timelines.slice(p.timelines.length).flatMap(s=>s.nodes).filter(n=>n.kind==='projectile-ref').every(n=>all.has(n.parameters.projectile)));
+  assert(imported.every(d=>d.nodes.some(n=>n.id===d.root)));assert.equal(new Set(next.projectiles.map(d=>d.nodes.find(n=>n.id===d.root).runtimeId)).size,next.projectiles.length);
+});
+test('root deletion is protected and scheduled numeric time arrays are independent after copying',()=>{
+  const p=runtime(),d=p.projectiles[0],next=graph.deleteSelection(p,{kind:'projectile',id:d.id},[d.root],[]);assert(next.projectiles[0].nodes.some(n=>n.id===d.root));
+  const q=example(),s=q.skills.find(s=>s.id==='phase-bounce'),copy=edits.duplicateContent(q,'skill',s.id,'copy',ids()).project.skills.at(-1);copy.nodes.find(n=>n.kind==='projectile').parameters.groundPhases[0]=.5;assert.equal(s.nodes.find(n=>n.kind==='projectile').parameters.groundPhases[0],1);
 });

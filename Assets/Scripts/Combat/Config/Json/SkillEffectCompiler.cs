@@ -56,6 +56,11 @@ namespace Combat.Config
                     effects.AddRange(Outputs(node,"next",allowSpatial));break;
                 case "projectile":
                     effects.Add(Projectile(node,path));break;
+                case "projectile-ref":
+                    var reference=new NodeParameters(node,path,"projectile","count","spread");string projectileKey=reference.Text("projectile");
+                    if(!_content.SharedProjectiles.TryGetValue(projectileKey,out int spec))throw new ContentValidationException(path+".parameters.projectile","Unknown shared projectile.");
+                    _content.Dependencies.Add(_graph.ContentKey,ContentDependencies.Projectile(projectileKey));
+                    effects.Add(new SpawnProjectileEffect(spec,reference.Integer("count",1,1,64),reference.Number("spread",0,0,360)));break;
                 case "split":
                     var split=new NodeParameters(node,path,"count","spread","generations","powerMultiplier","rangeMode","range");
                     effects.Add(new SplitProjectileEffect(split.Integer("count",3,1,32),split.Number("spread",60,0,360),
@@ -64,7 +69,7 @@ namespace Combat.Config
                     effects.AddRange(Outputs(node,"next",allowSpatial));break;
                 case "delivery": effects.Add(Delivery(node, path)); break;
                 case "damage":
-                    var d = new NodeParameters(node, path, "flat", "coefficient", "critChance", "critMultiplier", "ignoreDefense", "hitstopFrames", "scope", "center", "radius", "maxTargets","scaleByStacks","notifyHurt","damageType","includeBonuses","critFromAttribute","snapshotAttack","canCrit","sourceHitstopFrames","targetHitstopFrames","feedback");
+                    var d = new NodeParameters(node, path, "flat", "coefficient", "critChance", "critMultiplier", "ignoreDefense", "hitstopFrames", "scope", "center", "radius", "maxTargets","scaleByStacks","notifyHurt","damageType","includeBonuses","critFromAttribute","snapshotAttack","canCrit","sourceHitstopFrames","targetHitstopFrames","feedback","feedbackHitstop");
                     IEffect damage = new DamageEffect
                     {
                         Flat = d.Number("flat", 80, 0, 10000000), Coeff = d.Number("coefficient", 0, 0, 100000), CanCrit = d.Boolean("canCrit",true),
@@ -72,6 +77,8 @@ namespace Combat.Config
                         HitstopFrames = d.Integer("hitstopFrames", 0, 0, 1000), IgnoreDef = d.Boolean("ignoreDefense", false),
                         SourceHitstopFrames=d.Integer("sourceHitstopFrames",0,0,1000),TargetHitstopFrames=d.Integer("targetHitstopFrames",0,0,1000),
                         Feedback=Feedback(d),
+                        FeedbackHitstop=d.Boolean("feedbackHitstop",false),
+                        InheritSkillFeedback=d.Choice("feedback","skill","skill","none","light","confirm","heavy","finisher")=="skill",
                         ScaleByBuffStacks=d.Boolean("scaleByStacks",false),FireOnHurted=d.Boolean("notifyHurt",true),UseSnapshotAtk=d.Boolean("snapshotAttack",true),
                         Kind=d.Choice("damageType","physical","physical","elemental")=="physical"?DamageKind.Physical:DamageKind.Elemental,IncludeBonuses=d.Boolean("includeBonuses",true)
                     };
@@ -142,32 +149,36 @@ namespace Combat.Config
         {
             var p=new NodeParameters(node,path,"speed","range","lifetime","radius","maxHits","homingRate",
                 "multi","count","spread","chain","chainCount","chainRadius","chainMode","homingRetarget","homingRadius",
-                "trajectory","acceleration","maxSpeed","returnAfter","returnSpeed","catchRadius","launchHeight","verticalSpeed","gravity","restitution","groundBounces","wallBounces","spawnForward","snapshotAttack","hostileMask","cueId","homingMaxTurn","trackingKey","rampTime","sameTargetDelay","passInvulnerable");
+                "trajectory","acceleration","maxSpeed","returnAfter","returnSpeed","catchRadius","launchHeight","verticalSpeed","gravity","restitution","groundBounces","wallBounces","spawnForward","snapshotAttack","hostileMask","cueId","homingMaxTurn","trackingKey","rampTime","sameTargetDelay","passInvulnerable","returnCurve","groundPhases","bounceHeight","removeOnObstacle");
             CheckId(node,path,_projectiles,"projectile");
             int projectileCue=p.Integer("cueId",0,0,1000000);if(projectileCue>0)_content.RequiredCues.Add(projectileCue);
-            int maxHits=p.Integer("maxHits",1,0,10000);
+            int maxHits=p.Integer("maxHits",1,0,1000000);
             int chainCount=p.Integer("chainCount",2,1,64);
             float chainRadius=p.Number("chainRadius",6,.01f,1000);
             var chainMode=p.Choice("chainMode","nearest","nearest","random");
             var chain=p.Boolean("chain",false)?new ProjectileChainDefinition {ExtraChains=chainCount,Radius=chainRadius,Mode=chainMode=="random"?ChainTargetMode.Random:ChainTargetMode.Nearest}:null;
             if(chain!=null&&maxHits==0)throw new ContentValidationException(path+".parameters.maxHits","Chain needs a finite per-segment hit budget; unlimited piercing has no segment endpoint.");
             float speed=p.Number("speed",12,.1f,1000);
-            string trajectory=p.Choice("trajectory","linear","linear","accelerate","return","bounce","ramp");
+            string trajectory=p.Choice("trajectory","linear","linear","accelerate","return","bounce","ramp","phase-bounce");
             float acceleration=p.Number("acceleration",6,-1000,1000),maxSpeed=p.Number("maxSpeed",60,.1f,1000);
             float returnAfter=p.Number("returnAfter",.6f,0,3600),returnSpeed=p.Number("returnSpeed",12,.1f,1000),catchRadius=p.Number("catchRadius",.4f,.01f,10);
             var bounce=new ProjectileBounceDefinition {LaunchHeight=p.Number("launchHeight",.5f,0,100),VerticalSpeed=p.Number("verticalSpeed",5,0,100),
                 Gravity=p.Number("gravity",20,.1f,1000),Restitution=p.Number("restitution",.6f,0,1),Count=p.Integer("groundBounces",2,0,32)};
             int walls=p.Integer("wallBounces",0,0,64);
+            bool sine=p.Choice("returnCurve","constant","constant","sine")=="sine";
+            if(trajectory=="return"&&sine&&returnAfter<=0)throw new ContentValidationException(path+".parameters.returnAfter","Sine return requires a positive turn time.");
+            var phases=trajectory=="phase-bounce"?new ScheduledBounceDefinition{Height=p.Number("bounceHeight",1,0,100),Phases=p.Times("groundPhases",new[]{1f,1.6667f,1.999f})}:null;
             if(trajectory=="accelerate"&&maxSpeed<speed)throw new ContentValidationException(path+".parameters.maxSpeed","Maximum speed cannot be less than initial speed.");
             var motion=trajectory=="linear"&&walls==0?null:new ProjectileMotionDefinition {Acceleration=trajectory=="accelerate"?acceleration:0,MaxSpeed=trajectory=="accelerate"?maxSpeed:1000,
-                ReturnAfter=trajectory=="return"?returnAfter:-1,ReturnSpeed=returnSpeed,CatchRadius=catchRadius,Bounce=trajectory=="bounce"?bounce:null,WallBounces=walls,RampTime=trajectory=="ramp"?p.Number("rampTime",5,.001f,3600):0};
+                ReturnAfter=trajectory=="return"?returnAfter:-1,ReturnSpeed=returnSpeed,CatchRadius=catchRadius,Bounce=trajectory=="bounce"?bounce:null,SineReturn=trajectory=="return"&&sine,ScheduledBounce=phases,WallBounces=walls,RampTime=trajectory=="ramp"?p.Number("rampTime",5,.001f,3600):0};
             _content.Projectiles.Register(new ProjectileDefinition
             {
                 SpecId=node.RuntimeId,Speed=speed,Range=p.Number("range",24,0,1000),Lifetime=p.Number("lifetime",120,.001f,3600),Motion=motion,TrackingKey=p.OptionalIdentity("trackingKey"),
                 SpawnForward=p.Number("spawnForward",.4f,0,100),SnapshotAtk=p.Boolean("snapshotAttack",true),HostileMask=p.Integer("hostileMask",0,0,int.MaxValue),CueId=projectileCue,HomingMaxTurn=p.Number("homingMaxTurn",0,0,10000),
                 HitRadius=p.Number("radius",.18f,.01f,100),MaxHits=maxHits,Chain=chain,
                 SameTargetDelay=p.Number("sameTargetDelay",0,0,3600),PassInvulnerable=p.Boolean("passInvulnerable",false),
-                HomingRate=p.Number("homingRate",0,0,10000),HomingRetarget=p.Boolean("homingRetarget",false),HomingAcquireRadius=p.Number("homingRadius",12,.01f,1000),
+                RemoveOnObstacle=p.Boolean("removeOnObstacle",true),
+                HomingRate=p.Number("homingRate",0,0,36000),HomingRetarget=p.Boolean("homingRetarget",false),HomingAcquireRadius=p.Number("homingRadius",12,.01f,1000),
                 OnHit=Outputs(node,"hit"),OnWall=Outputs(node,"wall"),OnRange=Outputs(node,"range"),OnExpire=Outputs(node,"lifetime"),OnEnd=Outputs(node,"expire"),
                 OnBounce=Outputs(node,"bounce"),OnReturned=Outputs(node,"returned"),OnGround=Outputs(node,"ground")
             });
@@ -269,7 +280,8 @@ namespace Combat.Config
 
         static EffectCenter Center(NodeParameters parameters)
             => (EffectCenter)Array.IndexOf(new[] { "point", "target", "source","auto" }, parameters.Choice("center", "point", "point", "target", "source","auto"));
-        static HitFeedbackLevel Feedback(NodeParameters p)=>(HitFeedbackLevel)Array.IndexOf(new[]{"none","light","confirm","heavy","finisher"},p.Choice("feedback","none","none","light","confirm","heavy","finisher"));
+        static HitFeedbackLevel Feedback(NodeParameters p)
+        {string value=p.Choice("feedback","skill","skill","none","light","confirm","heavy","finisher");return value=="skill"?HitFeedbackLevel.None:(HitFeedbackLevel)Array.IndexOf(new[]{"none","light","confirm","heavy","finisher"},value);}
         DurationSpec Buff(string id,string path)
         {
             if(!_content.Buffs.TryGet(id,out var buff))throw new ContentValidationException(path,"Unknown Buff identity: "+id);

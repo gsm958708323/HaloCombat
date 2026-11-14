@@ -1,6 +1,11 @@
 namespace Combat.Core
 {
     public enum HitFeedbackLevel : byte {None,Light,ComboConfirm,Heavy,Finisher}
+    public static class HitFeedbackTiming
+    {
+        public static int Source(HitFeedbackLevel level)=>level==HitFeedbackLevel.Finisher?2:level==HitFeedbackLevel.Light||level==HitFeedbackLevel.ComboConfirm?1:0;
+        public static int Target(HitFeedbackLevel level,int hitIndex)=>level==HitFeedbackLevel.Finisher?4:level==HitFeedbackLevel.Heavy?3:level==HitFeedbackLevel.ComboConfirm&&hitIndex>=2?3:level==HitFeedbackLevel.Light||level==HitFeedbackLevel.ComboConfirm?2:0;
+    }
     public readonly struct EvHurt
     {
         public readonly EntityId Source,Target;

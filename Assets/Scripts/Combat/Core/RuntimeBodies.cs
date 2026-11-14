@@ -24,6 +24,7 @@ namespace Combat.Core
         public string TrackingKey;
         public float SameTargetDelay;
         public bool PassInvulnerable;
+        public bool RemoveOnObstacle=true;
         public IEffect[] OnHit = Array.Empty<IEffect>();
         public IEffect[] OnExpire = Array.Empty<IEffect>();
         public IEffect[] OnWall = Array.Empty<IEffect>();
@@ -101,13 +102,15 @@ namespace Combat.Core
         public bool Returning { get; set; }
         public double VerticalSpeed { get; set; }
         public double SampledSpeed {get;internal set;}
+        public float GroundY {get;private set;}
+        public SimVec3 Velocity {get;internal set;}
         public int GroundBouncesLeft { get; set; }
         public int WallBouncesLeft { get; set; }
         public int HitCount { get; set; }
         public bool Exhausted { get; set; }
         public EntityId HomingTarget { get; set; }
 
-        public void Setup(ProjectileDefinition def, EntityId owner, float snapshotAtk, EntityId homingTarget = default, float power = 1,ProjectileSeed seed=null)
+        public void Setup(ProjectileDefinition def, EntityId owner, float snapshotAtk, EntityId homingTarget = default, float power = 1,ProjectileSeed seed=null,float groundY=0)
         {
             Def = def;
             OwnerId = owner;
@@ -119,7 +122,7 @@ namespace Combat.Core
             ChainsLeft=def.Chain?.ExtraChains??0;LegHits=0;
             Returning=false;VerticalSpeed=seed?.VerticalSpeed??def.Motion?.Bounce?.VerticalSpeed??0;
             SampledSpeed=0;
-            GroundBouncesLeft=def.Motion?.Bounce?.Count??0;WallBouncesLeft=def.Motion?.WallBounces??0;
+            GroundBouncesLeft=def.Motion?.ScheduledBounce?.Phases.Length??def.Motion?.Bounce?.Count??0;WallBouncesLeft=def.Motion?.WallBounces??0;GroundY=groundY;Velocity=SimVec3.Zero;
             Age = 0f;
             Distance = 0;
             HitCount = 0;
@@ -152,6 +155,7 @@ namespace Combat.Core
             Exhausted = true;
             Power = 1;
             Family=null;
+            GroundY=0;SampledSpeed=0;Velocity=SimVec3.Zero;
         }
     }
 

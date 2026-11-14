@@ -4653,6 +4653,214 @@
         }
       ],
       "timelineRef": "shared-impact-shot"
+    },
+    {
+      "id": "sampled-return",
+      "runtimeId": 2047,
+      "name": "正弦采样回旋弹",
+      "category": "弹体采样运动",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "projectile",
+          "kind": "projectile",
+          "runtimeId": 6504,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "speed": 5,
+            "range": 0,
+            "radius": 0.5,
+            "homingRate": 0,
+            "maxHits": 0,
+            "returnAfter": 1,
+            "catchRadius": 0.4,
+            "returnSpeed": 5,
+            "trajectory": "return",
+            "sameTargetDelay": 0.5,
+            "passInvulnerable": true,
+            "returnCurve": "sine",
+            "lifetime": 10,
+            "removeOnObstacle": false
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 80,
+            "coefficient": 0,
+            "critChance": 0,
+            "critMultiplier": 1.8,
+            "ignoreDefense": false,
+            "hitstopFrames": 0
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "projectile",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "projectile",
+          "sourcePort": "hit",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "phase-bounce",
+      "runtimeId": 2048,
+      "name": "落地点时间表弹跳",
+      "category": "弹体采样运动",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "projectile",
+          "kind": "projectile",
+          "runtimeId": 6505,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "speed": 3,
+            "range": 0,
+            "radius": 0.18,
+            "maxHits": 1,
+            "homingRate": 0,
+            "trajectory": "phase-bounce",
+            "groundPhases": [
+              1,
+              1.6667,
+              1.999
+            ],
+            "bounceHeight": 1,
+            "lifetime": 2,
+            "spawnForward": 0.4
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 80,
+            "coefficient": 0,
+            "critChance": 0.15,
+            "critMultiplier": 1.8,
+            "ignoreDefense": false,
+            "hitstopFrames": 0
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "projectile",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "projectile",
+          "sourcePort": "hit",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
     }
   ],
   "preview": {
@@ -4992,6 +5200,52 @@
       "nodes": [
         {
           "id": "projectile",
+          "kind": "projectile-ref",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "projectile": "shared-impact-projectile",
+            "count": 1,
+            "spread": 0
+          },
+          "runtimeId": 0
+        }
+      ],
+      "edges": [],
+      "timeline": {
+        "runtimeId": 3045,
+        "duration": 0.65,
+        "clips": [
+          {
+            "id": "cancel",
+            "kind": "cancel",
+            "start": 0.25,
+            "end": 0.65,
+            "effects": []
+          }
+        ],
+        "payloads": [
+          {
+            "id": "shot",
+            "time": 0.22,
+            "effects": [
+              "projectile"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "projectiles": [
+    {
+      "id": "shared-impact-projectile",
+      "name": "共享命中弹体",
+      "root": "projectile",
+      "nodes": [
+        {
+          "id": "projectile",
           "kind": "projectile",
           "position": {
             "x": 0,
@@ -5058,29 +5312,7 @@
           "targetPort": "execute",
           "order": 0
         }
-      ],
-      "timeline": {
-        "runtimeId": 3045,
-        "duration": 0.65,
-        "clips": [
-          {
-            "id": "cancel",
-            "kind": "cancel",
-            "start": 0.25,
-            "end": 0.65,
-            "effects": []
-          }
-        ],
-        "payloads": [
-          {
-            "id": "shot",
-            "time": 0.22,
-            "effects": [
-              "projectile"
-            ]
-          }
-        ]
-      }
+      ]
     }
   ]
 }

@@ -819,69 +819,23 @@
             "cost": 0,
             "cooldown": 0,
             "ammoCost": 1,
-            "fallbackSkill": "arena-reload-ammo"
+            "fallbackSkill": "arena-reload-ammo",
+            "hitFeedback": "light"
           }
         },
         {
           "id": "projectile",
-          "kind": "projectile",
+          "kind": "projectile-ref",
           "position": {
             "x": 600,
             "y": 80
           },
           "parameters": {
-            "speed": 6,
-            "range": 0,
-            "lifetime": 10,
-            "radius": 0.1,
-            "maxHits": 1,
-            "spawnForward": 0.4
+            "projectile": "arena-normal-projectile",
+            "count": 1,
+            "spread": 0
           },
-          "runtimeId": 4001
-        },
-        {
-          "id": "damage",
-          "kind": "damage",
-          "position": {
-            "x": 900,
-            "y": 80
-          },
-          "parameters": {
-            "flat": 0,
-            "coefficient": 1,
-            "canCrit": true,
-            "critChance": 0.05,
-            "critMultiplier": 1.8,
-            "notifyHurt": false,
-            "sourceHitstopFrames": 1,
-            "targetHitstopFrames": 2,
-            "feedback": "light"
-          }
-        },
-        {
-          "id": "damage-hurt",
-          "kind": "hurt-feedback",
-          "parameters": {
-            "level": "light",
-            "requireHpDamage": true
-          },
-          "position": {
-            "x": 1200,
-            "y": 320
-          }
-        },
-        {
-          "id": "vulnerable",
-          "kind": "buff",
-          "position": {
-            "x": 1500,
-            "y": 80
-          },
-          "parameters": {
-            "buff": "arena-vulnerability",
-            "recipient": "target",
-            "stacks": 1
-          }
+          "runtimeId": 0
         }
       ],
       "edges": [
@@ -891,30 +845,6 @@
           "sourcePort": "target",
           "target": "cast",
           "targetPort": "target",
-          "order": 0
-        },
-        {
-          "id": "hit-damage",
-          "source": "projectile",
-          "sourcePort": "hit",
-          "target": "damage",
-          "targetPort": "execute",
-          "order": 0
-        },
-        {
-          "id": "damage-hurt-edge",
-          "source": "damage",
-          "sourcePort": "next",
-          "target": "damage-hurt",
-          "targetPort": "execute",
-          "order": 0
-        },
-        {
-          "id": "damage-hurt-next-vulnerable",
-          "source": "damage-hurt",
-          "sourcePort": "next",
-          "target": "vulnerable",
-          "targetPort": "execute",
           "order": 0
         }
       ],
@@ -1765,6 +1695,308 @@
         }
       ],
       "timelineRef": "arena-confirmed-shot"
+    },
+    {
+      "id": "arena-double-shot",
+      "runtimeId": 2011,
+      "name": "双发射击",
+      "category": "Arena 原技能",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "facing",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 300,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 0,
+            "cooldown": 0,
+            "ammoCost": 0,
+            "hitFeedback": "none"
+          }
+        },
+        {
+          "id": "projectile",
+          "kind": "projectile-ref",
+          "position": {
+            "x": 600,
+            "y": 80
+          },
+          "parameters": {
+            "projectile": "arena-normal-projectile",
+            "count": 1,
+            "spread": 0
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        }
+      ],
+      "timeline": {
+        "runtimeId": 3012,
+        "duration": 0.48,
+        "animation": "Fire",
+        "clips": [],
+        "payloads": [
+          {
+            "id": "shot-0",
+            "time": 0.08,
+            "effects": [
+              "projectile"
+            ]
+          },
+          {
+            "id": "shot-1",
+            "time": 0.19,
+            "effects": [
+              "projectile"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "arena-homing-shot",
+      "runtimeId": 2004,
+      "name": "原追踪射击",
+      "category": "Arena 原技能",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "facing",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 300,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 0,
+            "cooldown": 0,
+            "ammoCost": 2,
+            "hitFeedback": "none"
+          }
+        },
+        {
+          "id": "projectile",
+          "kind": "projectile-ref",
+          "position": {
+            "x": 600,
+            "y": 80
+          },
+          "parameters": {
+            "projectile": "arena-homing-projectile",
+            "count": 1,
+            "spread": 0
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        }
+      ],
+      "timeline": {
+        "runtimeId": 3004,
+        "duration": 0.5,
+        "animation": "Fire",
+        "clips": [],
+        "payloads": [
+          {
+            "id": "shot-0",
+            "time": 0.1,
+            "effects": [
+              "projectile"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "arena-enemy-shot",
+      "runtimeId": 2010,
+      "name": "敌方射击",
+      "category": "Arena 原技能",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "facing",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 300,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 0,
+            "cooldown": 0,
+            "ammoCost": 0,
+            "hitFeedback": "none"
+          }
+        },
+        {
+          "id": "projectile",
+          "kind": "projectile-ref",
+          "position": {
+            "x": 600,
+            "y": 80
+          },
+          "parameters": {
+            "projectile": "arena-enemy-projectile",
+            "count": 1,
+            "spread": 0
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        }
+      ],
+      "timeline": {
+        "runtimeId": 3010,
+        "duration": 0.5,
+        "animation": "Fire",
+        "clips": [],
+        "payloads": [
+          {
+            "id": "shot-0",
+            "time": 0.1,
+            "effects": [
+              "projectile"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "arena-returning-shot",
+      "runtimeId": 2005,
+      "name": "正弦回旋弹",
+      "category": "Arena 原技能",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "facing",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 300,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 0,
+            "cooldown": 0,
+            "ammoCost": 0,
+            "hitFeedback": "heavy"
+          }
+        },
+        {
+          "id": "projectile",
+          "kind": "projectile-ref",
+          "position": {
+            "x": 600,
+            "y": 80
+          },
+          "parameters": {
+            "projectile": "arena-returning-projectile",
+            "count": 1,
+            "spread": 0
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        }
+      ],
+      "timeline": {
+        "runtimeId": 3005,
+        "duration": 0.5,
+        "animation": "Fire",
+        "clips": [],
+        "payloads": [
+          {
+            "id": "shot-0",
+            "time": 0.1,
+            "effects": [
+              "projectile"
+            ]
+          }
+        ],
+        "controlTags": [
+          1013
+        ]
+      }
     }
   ],
   "buffs": [
@@ -1884,6 +2116,57 @@
         }
       ],
       "edges": []
+    },
+    {
+      "id": "arena-return-burn",
+      "runtimeId": 5102,
+      "name": "回旋灼烧",
+      "permanent": false,
+      "duration": 3,
+      "interval": 0.5,
+      "stack": "add",
+      "maxStacks": 3,
+      "mutexGroup": 0,
+      "tags": [],
+      "modifiers": [],
+      "nodes": [
+        {
+          "id": "events",
+          "kind": "buff-events",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {}
+        },
+        {
+          "id": "period",
+          "kind": "damage",
+          "position": {
+            "x": 300,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 0,
+            "coefficient": 0.06,
+            "canCrit": false,
+            "snapshotAttack": true,
+            "scaleByStacks": true,
+            "notifyHurt": false,
+            "feedback": "none"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "events-period-period",
+          "source": "events",
+          "sourcePort": "period",
+          "target": "period",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
     }
   ],
   "summonBlueprints": [
@@ -1971,7 +2254,7 @@
       },
       {
         "preSkills": [],
-        "toSkill": "g2",
+        "toSkill": "arena-returning-shot",
         "id": "ArenaArea",
         "requiredTags": [],
         "input": "ArenaArea",
@@ -2003,7 +2286,7 @@
       },
       {
         "preSkills": [],
-        "toSkill": "homing",
+        "toSkill": "arena-homing-shot",
         "id": "ArenaHoming",
         "requiredTags": [],
         "input": "ArenaHoming",
@@ -2244,6 +2527,18 @@
         ],
         "priority": 10,
         "toSkill": "arena-combo-finisher"
+      },
+      {
+        "id": "arena-confirmed-return",
+        "input": "ArenaArea",
+        "preSkills": [
+          "arena-ammo-shot"
+        ],
+        "requiredTags": [
+          1017
+        ],
+        "priority": 10,
+        "toSkill": "arena-returning-shot"
       }
     ],
     "actors": [
@@ -2370,7 +2665,7 @@
         "collisionRadius": 0.25,
         "energy": 100,
         "recovery": 10,
-        "skillId": "homing",
+        "skillId": "arena-enemy-shot",
         "ai": "ranged",
         "acquireRadius": 40,
         "attackRange": 4,
@@ -2546,6 +2841,149 @@
       "nodes": [
         {
           "id": "projectile",
+          "kind": "projectile-ref",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "projectile": "arena-confirmed-projectile",
+            "count": 1,
+            "spread": 0
+          },
+          "runtimeId": 0
+        }
+      ],
+      "edges": [],
+      "timeline": {
+        "runtimeId": 3013,
+        "duration": 0.65,
+        "animation": "Fire",
+        "clips": [
+          {
+            "id": "cancel",
+            "kind": "cancel",
+            "start": 0.25,
+            "end": 0.65,
+            "effects": []
+          }
+        ],
+        "payloads": [
+          {
+            "id": "shot",
+            "time": 0.22,
+            "effects": [
+              "projectile"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "projectiles": [
+    {
+      "id": "arena-normal-projectile",
+      "name": "普通弹体",
+      "root": "projectile",
+      "nodes": [
+        {
+          "id": "projectile",
+          "kind": "projectile",
+          "position": {
+            "x": 600,
+            "y": 80
+          },
+          "parameters": {
+            "speed": 6,
+            "range": 0,
+            "lifetime": 10,
+            "radius": 0.1,
+            "maxHits": 1,
+            "spawnForward": 0.4,
+            "sameTargetDelay": 0.1,
+            "passInvulnerable": true
+          },
+          "runtimeId": 4001
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 900,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 0,
+            "coefficient": 1,
+            "canCrit": true,
+            "critChance": 0.05,
+            "critMultiplier": 1.8,
+            "notifyHurt": false,
+            "sourceHitstopFrames": 0,
+            "targetHitstopFrames": 2,
+            "feedbackHitstop": true
+          }
+        },
+        {
+          "id": "damage-hurt",
+          "kind": "hurt-feedback",
+          "parameters": {
+            "level": "damage",
+            "requireHpDamage": true
+          },
+          "position": {
+            "x": 1200,
+            "y": 320
+          }
+        },
+        {
+          "id": "vulnerable",
+          "kind": "buff",
+          "position": {
+            "x": 1500,
+            "y": 80
+          },
+          "parameters": {
+            "buff": "arena-vulnerability",
+            "recipient": "target",
+            "stacks": 1
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "hit-damage",
+          "source": "projectile",
+          "sourcePort": "hit",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "damage-hurt-edge",
+          "source": "damage",
+          "sourcePort": "next",
+          "target": "damage-hurt",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "damage-hurt-next-vulnerable",
+          "source": "damage-hurt",
+          "sourcePort": "next",
+          "target": "vulnerable",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "arena-confirmed-projectile",
+      "name": "确认连段弹体",
+      "root": "projectile",
+      "nodes": [
+        {
+          "id": "projectile",
           "kind": "projectile",
           "position": {
             "x": 0,
@@ -2633,30 +3071,263 @@
           "targetPort": "execute",
           "order": 0
         }
+      ]
+    },
+    {
+      "id": "arena-enemy-projectile",
+      "name": "敌方普通弹",
+      "root": "projectile",
+      "nodes": [
+        {
+          "id": "projectile",
+          "kind": "projectile",
+          "position": {
+            "x": 600,
+            "y": 80
+          },
+          "parameters": {
+            "speed": 6,
+            "range": 0,
+            "lifetime": 10,
+            "radius": 0.1,
+            "maxHits": 1,
+            "spawnForward": 0.4,
+            "sameTargetDelay": 0.1,
+            "passInvulnerable": true,
+            "homingRate": 0,
+            "homingRadius": 12
+          },
+          "runtimeId": 4002
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 900,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 0,
+            "coefficient": 1,
+            "canCrit": true,
+            "critChance": 0.05,
+            "critMultiplier": 1.8,
+            "notifyHurt": false,
+            "sourceHitstopFrames": 0,
+            "targetHitstopFrames": 2,
+            "feedbackHitstop": true
+          }
+        },
+        {
+          "id": "damage-hurt",
+          "kind": "hurt-feedback",
+          "parameters": {
+            "level": "damage",
+            "requireHpDamage": true
+          },
+          "position": {
+            "x": 1200,
+            "y": 320
+          }
+        }
       ],
-      "timeline": {
-        "runtimeId": 3013,
-        "duration": 0.65,
-        "animation": "Fire",
-        "clips": [
-          {
-            "id": "cancel",
-            "kind": "cancel",
-            "start": 0.25,
-            "end": 0.65,
-            "effects": []
+      "edges": [
+        {
+          "id": "hit-damage",
+          "source": "projectile",
+          "sourcePort": "hit",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "damage-hurt-edge",
+          "source": "damage",
+          "sourcePort": "next",
+          "target": "damage-hurt",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "arena-homing-projectile",
+      "name": "原追踪弹",
+      "root": "projectile",
+      "nodes": [
+        {
+          "id": "projectile",
+          "kind": "projectile",
+          "position": {
+            "x": 600,
+            "y": 80
+          },
+          "parameters": {
+            "speed": 3,
+            "range": 0,
+            "lifetime": 100,
+            "radius": 0.1,
+            "maxHits": 1,
+            "spawnForward": 0.4,
+            "sameTargetDelay": 0.1,
+            "passInvulnerable": true,
+            "homingRate": 36000,
+            "homingRadius": 14
+          },
+          "runtimeId": 4006
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 900,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 0,
+            "coefficient": 1,
+            "canCrit": true,
+            "critChance": 0.05,
+            "critMultiplier": 1.8,
+            "notifyHurt": false,
+            "sourceHitstopFrames": 0,
+            "targetHitstopFrames": 2,
+            "feedbackHitstop": true
           }
-        ],
-        "payloads": [
-          {
-            "id": "shot",
-            "time": 0.22,
-            "effects": [
-              "projectile"
-            ]
+        },
+        {
+          "id": "damage-hurt",
+          "kind": "hurt-feedback",
+          "parameters": {
+            "level": "damage",
+            "requireHpDamage": true
+          },
+          "position": {
+            "x": 1200,
+            "y": 320
           }
-        ]
-      }
+        }
+      ],
+      "edges": [
+        {
+          "id": "hit-damage",
+          "source": "projectile",
+          "sourcePort": "hit",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "damage-hurt-edge",
+          "source": "damage",
+          "sourcePort": "next",
+          "target": "damage-hurt",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "arena-returning-projectile",
+      "name": "正弦回旋弹体",
+      "root": "projectile",
+      "nodes": [
+        {
+          "id": "projectile",
+          "kind": "projectile",
+          "position": {
+            "x": 600,
+            "y": 80
+          },
+          "parameters": {
+            "speed": 5,
+            "range": 0,
+            "lifetime": 10,
+            "radius": 0.5,
+            "maxHits": 99999,
+            "spawnForward": 0.4,
+            "sameTargetDelay": 0.5,
+            "passInvulnerable": true,
+            "trajectory": "return",
+            "returnCurve": "sine",
+            "returnAfter": 1,
+            "returnSpeed": 5,
+            "catchRadius": 0.75,
+            "removeOnObstacle": false
+          },
+          "runtimeId": 4003
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 900,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 0,
+            "coefficient": 1,
+            "canCrit": true,
+            "critChance": 0.05,
+            "critMultiplier": 1.8,
+            "notifyHurt": false,
+            "sourceHitstopFrames": 0,
+            "targetHitstopFrames": 2,
+            "feedbackHitstop": true
+          }
+        },
+        {
+          "id": "damage-hurt",
+          "kind": "hurt-feedback",
+          "parameters": {
+            "level": "damage",
+            "requireHpDamage": true
+          },
+          "position": {
+            "x": 1200,
+            "y": 320
+          }
+        },
+        {
+          "id": "return-burn",
+          "kind": "buff",
+          "position": {
+            "x": 1500,
+            "y": 80
+          },
+          "parameters": {
+            "buff": "arena-return-burn",
+            "recipient": "target",
+            "stacks": 1
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "hit-damage",
+          "source": "projectile",
+          "sourcePort": "hit",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "damage-hurt-edge",
+          "source": "damage",
+          "sourcePort": "next",
+          "target": "damage-hurt",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hurt-next-return-burn",
+          "source": "damage-hurt",
+          "sourcePort": "next",
+          "target": "return-burn",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
     }
   ]
 }

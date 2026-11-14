@@ -63,11 +63,11 @@ namespace Combat.Tests
         [Test]
         public void PublicationContainsTheExactSharedActionBuffAndFallbackClosure()
         {
-            var p=Formal();var pub=SkillPublicationJson.Create(p,"arena-combo-second");var read=SkillPublicationJson.Read(SkillPublicationJson.Write(pub));
+            var p=Formal();Shared(p).Nodes[0].Position.X=123;var pub=SkillPublicationJson.Create(p,"arena-combo-second");var read=SkillPublicationJson.Read(SkillPublicationJson.Write(pub));
             CollectionAssert.AreEquivalent(new[]{"arena-combo-second","arena-reload-ammo"},read.Document.Project.Skills.Select(s=>s.Id));
             Assert.AreEqual("arena-confirmed-shot",read.Document.Project.Timelines.Single().Id);Assert.AreEqual("arena-vulnerability",read.Document.Project.Buffs.Single().Id);
             Assert.IsTrue(read.Content.Projectiles.TryGet(4012,out _));Assert.IsFalse(read.Content.Projectiles.TryGet(4001,out _));Assert.AreEqual(2,read.Content.Skills.All.Count());
-            Assert.IsTrue(pub.Project.Timelines.Single().Nodes.All(n=>n.Position.X==0&&n.Position.Y==0));Assert.Greater(Shared(p).Nodes.Max(n=>n.Position.X),0);
+            Assert.IsTrue(pub.Project.Timelines.Single().Nodes.All(n=>n.Position.X==0&&n.Position.Y==0));Assert.AreEqual(123,Shared(p).Nodes[0].Position.X);
         }
         [Test]
         public void TimelineLayoutDoesNotChangeAPublicationRevisionButSemanticEditsDo()

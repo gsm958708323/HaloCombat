@@ -19,6 +19,7 @@ namespace Combat.Config
         public SkillEventCatalog SkillEvents {get;}=new SkillEventCatalog();
         public RuntimeContentSnapshot Runtime {get;internal set;}
         internal HashSet<int> RequiredCues {get;}=new HashSet<int>();
+        internal Dictionary<string,int> SharedProjectiles {get;}=new Dictionary<string,int>();
     }
 
     public static class CombatContentCompiler
@@ -31,6 +32,11 @@ namespace Combat.Config
             SkillSceneValidation.Validate(project.Preview);
             if (project.Skills == null || project.Skills.Length == 0 || project.Skills.Length > 512) Fail("$.skills", "Expected 1 to 512 skills.");
             var content = new CombatContentSnapshot();
+            foreach(var projectile in project.Projectiles)
+            {
+                var root=System.Array.Find(projectile.Nodes,n=>n.Id==projectile.Root);
+                content.SharedProjectiles.Add(projectile.Id,root.RuntimeId);content.Dependencies.Register(ContentDependencies.Projectile(projectile.Id));
+            }
             var keys = new HashSet<string>(); var numbers = new HashSet<int>();
             var skillIds=new Dictionary<string,SkillNodeId>();
             var timelineIds=new HashSet<int>();
@@ -51,6 +57,12 @@ namespace Combat.Config
             BuffCompiler.Register(project.Buffs,content);
             var projectileIds = new HashSet<int>(); var aoeIds = new HashSet<int>();var summonIds=new HashSet<int>();
             var shared=new Dictionary<string,TimelineDefinition>();
+            foreach(var projectile in project.Projectiles)
+            {
+                string path="$.projectiles["+projectile.Id+"]";
+                var graph=new EffectGraphIndex(ContentDependencies.Projectile(projectile.Id),projectile.Nodes,projectile.Edges,path,true);
+                new SkillEffectCompiler(graph,content,projectileIds,aoeIds,summonIds).Entries(new[]{projectile.Root},path+".root");graph.CheckComplete();
+            }
             foreach(var timeline in project.Timelines)
             {
                 string path="$.timelines["+timeline.Id+"]";

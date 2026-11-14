@@ -50,12 +50,15 @@ namespace Combat.Tests
                 // feedback. Nonzero values still participate in the strict comparison.
                 if(value is DamageEffect&&(field.Name=="SourceHitstopFrames"||field.Name=="TargetHitstopFrames")&&(int)field.GetValue(value)==0)continue;
                 if(value is DamageEffect&&field.Name=="Feedback"&&(HitFeedbackLevel)field.GetValue(value)==HitFeedbackLevel.None)continue;
+                if(value is DamageEffect&&field.Name=="FeedbackHitstop"&&!(bool)field.GetValue(value))continue;
+                if(value is DamageEffect&&field.Name=="InheritSkillFeedback"&&(bool)field.GetValue(value))continue;
                 // The pre-tracking fixture has no tracking metadata; live routing is tested separately.
                 if(value is ProjectileDefinition&&field.Name=="TrackingKey"&&string.IsNullOrEmpty((string)field.GetValue(value)))continue;
                 // Static baseline definitions predate moving-area/contact extensions;
                 // only neutral defaults are excluded, with behavior covered independently.
                 if(value is ProjectileDefinition&&field.Name=="SameTargetDelay"&&(float)field.GetValue(value)==0)continue;
                 if(value is ProjectileDefinition&&field.Name=="PassInvulnerable"&&!(bool)field.GetValue(value))continue;
+                if(value is ProjectileDefinition&&field.Name=="RemoveOnObstacle"&&(bool)field.GetValue(value))continue;
                 if(value is SpawnAoeEffect&&field.Name=="_forwardOffset"&&(float)field.GetValue(value)==0)continue;
                 if(value is AoeDefinition area)
                 {

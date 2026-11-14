@@ -13,6 +13,8 @@ namespace Combat.Config
         public SkillGraphDocument[] Skills { get; set; } = Array.Empty<SkillGraphDocument>();
         public SharedTimelineDocument[] Timelines {get;set;}=Array.Empty<SharedTimelineDocument>();
         public bool ShouldSerializeTimelines()=>Timelines==null||Timelines.Length>0;
+        public SharedProjectileDocument[] Projectiles {get;set;}=Array.Empty<SharedProjectileDocument>();
+        public bool ShouldSerializeProjectiles()=>Projectiles==null||Projectiles.Length>0;
         public SummonBlueprintDocument[] SummonBlueprints {get;set;}=Array.Empty<SummonBlueprintDocument>();
         public bool ShouldSerializeSummonBlueprints()=>SummonBlueprints==null||SummonBlueprints.Length>0;
         public BuffDocument[] Buffs {get;set;}=Array.Empty<BuffDocument>();
@@ -39,6 +41,14 @@ namespace Combat.Config
         public SkillNodeDocument[] Nodes {get;set;}=Array.Empty<SkillNodeDocument>();
         public SkillEdgeDocument[] Edges {get;set;}=Array.Empty<SkillEdgeDocument>();
         public TimelineDocument Timeline {get;set;}=new TimelineDocument();
+    }
+    public sealed class SharedProjectileDocument
+    {
+        public string Id {get;set;}
+        public string Name {get;set;}
+        public string Root {get;set;}
+        public SkillNodeDocument[] Nodes {get;set;}=Array.Empty<SkillNodeDocument>();
+        public SkillEdgeDocument[] Edges {get;set;}=Array.Empty<SkillEdgeDocument>();
     }
     public sealed class SkillNodeDocument
     {

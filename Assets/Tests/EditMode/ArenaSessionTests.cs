@@ -58,7 +58,7 @@ namespace Combat.Tests
         public void ExplicitPressTakesPriorityOverHeldPrimary()
         {
             using(var s=Session(true))
-            {s.Start();s.ApplyInput(Input(true,"Homing"));s.Advance();Assert.AreEqual(SkillNodeId.Ranged,Player(s).GetComp<SkillDirectorComp>().CurrentSkill);}
+            {s.Start();s.ApplyInput(Input(true,"Homing"));s.Advance();Assert.AreEqual(new SkillNodeId(2004),Player(s).GetComp<SkillDirectorComp>().CurrentSkill);}
         }
         [Test]
         public void MultiplePressesUseHistoricalPriorityAndDoNotOverwriteTheFirstCommand()
