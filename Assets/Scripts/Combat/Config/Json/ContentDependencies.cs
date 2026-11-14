@@ -42,13 +42,16 @@ namespace Combat.Config
         {
             var keys=content.Dependencies.Closure(root);
             var blueprints=new HashSet<string>(content.Summons.All.Where(d=>keys.Contains(d.OriginContentKey??"")).Select(d=>d.BlueprintId));
-            return new SkillProjectDocument
+            var selected=new SkillProjectDocument
             {
                 FormatVersion=source.FormatVersion,Id=source.Id,Name=source.Name,Preview=source.Preview,
                 Skills=source.Skills.Where(s=>keys.Contains(ContentDependencies.Skill(s.Id))).ToArray(),
                 SummonBlueprints=source.SummonBlueprints.Where(b=>blueprints.Contains(b.Id)).ToArray(),
                 Buffs=source.Buffs.Where(b=>keys.Contains(ContentDependencies.Buff(b.Id))).ToArray()
             };
+            // A selected closure owns its graph data. Templates still need authoring positions.
+            selected=SkillProjectJson.Read(SkillProjectJson.Write(selected));
+            return selected;
         }
     }
 }

@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import type { Node, NodeProps } from '@xyflow/react';
 import type { GraphNode, Field, SummonBlueprint,BuffDefinition } from './model';
 import { kinds, portName, parameterValue, nodeOutputs,effectKinds } from './model';
-type Data = GraphNode & { blueprints?: SummonBlueprint[];buffs?:BuffDefinition[];changeKind:(id:string,kind:string)=>void; change: (id: string, key: string, value: string | number | boolean) => void; toggle: (id: string, enabled: boolean) => void; remove: (id: string) => void };
+type Data = GraphNode & { counts?:Record<string,number>;blueprints?: SummonBlueprint[];buffs?:BuffDefinition[];changeKind:(id:string,kind:string)=>void; change: (id: string, key: string, value: string | number | boolean) => void; toggle: (id: string, enabled: boolean) => void; remove: (id: string) => void };
 export type EditorNode = Node<Data & Record<string, unknown>, 'skill'>;
 function Parameter({ field, value, change }: { field: Field; value: string | number | boolean; change: (value: string | number | boolean) => void }) {
   return <label className="parameter nodrag nowheel"><span>{field.label}<small>{field.unit}</small></span>
@@ -21,7 +21,7 @@ export function SkillNode({ data, selected }: NodeProps<EditorNode>) {
     <div className="node-heading"><strong>{schema.title}</strong>{data.kind!=='buff-events'&&<button className="nodrag icon-button" aria-label={`删除${schema.title}节点`} onClick={() => data.remove(data.id)}>×</button>}</div>
     <div className="node-ports">
       {schema.inputs.map(port => <div className="port-row" key={port}><Handle type="target" id={port} position={Position.Left} /><span>{portName(port)}</span></div>)}
-      {ports.map(([port,label]) => <div className="port-row output" key={port}><span>{label}</span><Handle type="source" id={port} position={Position.Right} /></div>)}
+      {ports.map(([port,label]) => <div className="port-row output" key={port}><span>{label} <small aria-label={`${label}连接数`}>{data.counts?.[port]??0}</small></span><Handle type="source" id={port} position={Position.Right} /></div>)}
     </div>
     <div className="node-fields">
       {effectKinds.some(([kind])=>kind===data.kind)&&<label className="parameter nodrag nowheel"><span>结算类型</span><select aria-label="结算类型" value={data.kind} onChange={e=>data.changeKind(data.id,e.target.value)}>{effectKinds.map(([key,name])=><option key={key} value={key}>{name}</option>)}</select></label>}

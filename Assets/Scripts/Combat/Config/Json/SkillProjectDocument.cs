@@ -16,6 +16,7 @@ namespace Combat.Config
         public BuffDocument[] Buffs {get;set;}=Array.Empty<BuffDocument>();
         public bool ShouldSerializeBuffs()=>Buffs==null||Buffs.Length>0;
         public PreviewDocument Preview { get; set; } = new PreviewDocument();
+        [JsonProperty(NullValueHandling=NullValueHandling.Ignore)] public SkillEditorDocument Editor {get;set;}
     }
     public sealed class SkillGraphDocument
     {

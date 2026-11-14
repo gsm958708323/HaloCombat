@@ -9,6 +9,8 @@ namespace Combat.Config
     {
         public static SkillProjectDocument Read(string text) => SkillJsonCodec.Read<SkillProjectDocument>(text);
         public static string Write(SkillProjectDocument value) => SkillJsonCodec.Write(value);
+        public static SkillProjectDocument SelectTemplate(SkillProjectDocument source,string skillId)
+            =>SkillContentClosure.Select(source,CombatContentCompiler.Compile(source),skillId);
     }
 
     internal static class SkillJsonCodec

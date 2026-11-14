@@ -22,6 +22,7 @@ namespace Combat.Config
     {
         public static CombatContentSnapshot Compile(SkillProjectDocument project)
         {
+            SkillProjectStructure.ValidateRuntimeStructure(project);
             if (project == null || project.FormatVersion != 1) Fail("$.formatVersion", "Only version 1 is supported.");
             if (string.IsNullOrWhiteSpace(project.Id)) Fail("$.id", "Project id is required.");
             SkillSceneValidation.Validate(project.Preview);

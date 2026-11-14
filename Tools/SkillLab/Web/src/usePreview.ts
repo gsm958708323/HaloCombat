@@ -23,6 +23,7 @@ export function usePreview(project: Project | null, selected: string, report: (m
   const projectRef = useRef(project); projectRef.current = project;
   const semanticKey = JSON.stringify([selected, project && {
     ...project,
+    editor: undefined,
     skills: project.skills.map(s => ({ ...s, nodes: s.nodes.map(n => ({ ...n, position: undefined })) })),
     buffs: project.buffs?.map(b => ({ ...b, nodes: b.nodes.map(n => ({ ...n, position: undefined })) })),
   }]);
@@ -47,13 +48,14 @@ export function usePreview(project: Project | null, selected: string, report: (m
     const old = session.current; session.current = '';
     setAppliedKey(''); setError(''); sessionKey.current = '';
     setPlaying(false); setContinuous(false); setState(null); latestState.current = null; accumulator.current = 0; held.current = false;
+    if(old)void api('/preview/'+old,undefined,'DELETE').catch(()=>{});
+    if(!document.skills.length){setError('工程中暂无技能，请先新建技能');return;}
     try {
       const result = await api<{ id: string; state: PreviewState }>('/preview', document);
       if (generation !== version.current || key !== semanticRef.current) { await api('/preview/' + result.id, undefined, 'DELETE'); return; }
       session.current = result.id; sessionKey.current = key; setAppliedKey(key); setState(result.state); latestState.current = result.state;
-      if (old) await api('/preview/' + old, undefined, 'DELETE');
       reportRef.current('真实 C# 预览已就绪');
-    } catch (error) { if (old) await api('/preview/' + old, undefined, 'DELETE').catch(() => {}); if(generation===version.current){setError(String(error));reportRef.current(String(error));} }
+    } catch (error) { if(generation===version.current){setError(String(error));reportRef.current(String(error));} }
   }, []);
   useEffect(() => {
     ++version.current;

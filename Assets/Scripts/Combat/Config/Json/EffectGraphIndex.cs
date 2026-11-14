@@ -14,6 +14,7 @@ namespace Combat.Config
         readonly Dictionary<string, SkillNodeDocument> _nodes = new Dictionary<string, SkillNodeDocument>();
         readonly HashSet<string> _used = new HashSet<string>();
         static readonly HashSet<string> Kinds=new HashSet<string>{"target","cast","projectile","split","damage","cue","delivery","buff","dispel","heal","buff-events","skill-events","after-damage","impact"};
+        internal static bool KnownKind(string kind)=>kind!=null&&Kinds.Contains(kind);
         public EffectGraphIndex(string contentKey,SkillNodeDocument[] nodes,SkillEdgeDocument[] edges, string path,bool buffGraph=false)
         {
             ContentKey=contentKey;Nodes=nodes;Edges=edges; Path=path;BuffGraph=buffGraph;

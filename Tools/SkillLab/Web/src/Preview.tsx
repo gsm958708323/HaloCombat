@@ -17,9 +17,11 @@ export function Preview({ preview, project, update }: { preview: ReturnType<type
   const [filter,setFilter] = useState('all');
   const [instances,setInstances] = useState(false);
   const [applying,setApplying] = useState(false);
+  const latestProject=useRef(project);latestProject.current=project;
   async function applyConfiguration(){
     setApplying(true);
-    try{const p=JSON.parse(text) as Project;await api('/validate',p);update(p);setError('');}
+    const before=latestProject.current;
+    try{const p=JSON.parse(text) as Project;await api('/validate',p);if(latestProject.current!==before)throw new Error('校验期间工程已更改，请重新应用配置');update(p);setError('');}
     catch(e){setError(String(e));}
     finally{setApplying(false);}
   }
@@ -41,7 +43,7 @@ export function Preview({ preview, project, update }: { preview: ReturnType<type
       {configuration?<div className="configuration"><div><button disabled={applying} onClick={()=>void applyConfiguration()}>{applying?'校验中…':'应用当前工程配置'}</button><button onClick={()=>void navigator.clipboard.writeText(text)}>复制</button></div><textarea aria-label="工程 JSON" spellCheck={false} value={text} onChange={e=>setText(e.target.value)}/>{error&&<p role="alert">{error}</p>}</div>:<>
       <div className="preview-controls"><button className="primary" disabled={!preview.ready} onPointerDown={e=>{e.currentTarget.setPointerCapture(e.pointerId);void preview.cast();}} onPointerUp={()=>void preview.release()} onPointerCancel={()=>void preview.cancel()} onBlur={()=>void preview.cancel()} onKeyDown={e=>{if(!e.repeat&&(e.key===' '||e.key==='Enter')){e.preventDefault();void preview.cast();}}} onKeyUp={e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();void preview.release();}}}><Crosshair size={13}/>施放</button><button disabled={!preview.ready} onClick={()=>preview.setPlaying(!preview.playing)}>{preview.playing?<Pause size={12}/>:<Play size={12}/>} {preview.playing?'暂停':'播放'}</button><button disabled={!preview.ready||preview.playing} onClick={()=>void preview.step()}><SkipForward size={12}/>逐帧</button><button onClick={()=>void preview.reset()}><RotateCcw size={12}/>重置</button><button disabled={!preview.ready} onClick={()=>void preview.interrupt()}>打断</button></div>
       <div className="preview-options"><label><input type="checkbox" disabled={!preview.ready} checked={preview.continuous} onChange={e=>preview.setContinuous(e.target.checked)}/>连续施放</label><select aria-label="播放速度" value={preview.speed} onChange={e=>preview.setSpeed(Number(e.target.value))}>{[.25,.5,1,2].map(n=><option key={n} value={n}>{n}×</option>)}</select><span>{state?.time.toFixed(2)??'0.00'} s</span></div>
-      <div className="preview-readiness" role="status">{preview.ready?'当前配置已应用':preview.error?'配置无效：'+preview.error:'正在校验并应用配置…'}</div>
+      <div className="preview-readiness" role="status">{!project.skills.length?'空工程：新建技能后可运行预览':preview.ready?'当前配置已应用':preview.error?'配置无效：'+preview.error:'正在校验并应用配置…'}</div>
       <div className="preview-settings"><SceneResources project={project} update={update}/>
       <SceneObstacles project={project} update={update}/>
       <SceneActorProperties project={project} update={update}/></div>

@@ -24,6 +24,7 @@ var projectFile=Path.Combine(dataDirectory,"project.json");
 var exampleFile=Path.Combine(root,"Content/SkillLab/project.json");
 if(!File.Exists(projectFile))File.Copy(exampleFile,projectFile);
 var jsonLock=new SemaphoreSlim(1);
+var projectStore=new ProjectFileStore(projectFile);
 app.Use(async(context,next)=>
 {
     // Local tool: reject cross-site writes, including requests from a public site's loopback fetch.
@@ -33,18 +34,32 @@ app.Use(async(context,next)=>
     try{await next();}
     catch(ContentValidationException error){context.Response.StatusCode=400;await context.Response.WriteAsJsonAsync(new{error=error.Message,path=error.Path});}
     catch(Newtonsoft.Json.JsonException error){context.Response.StatusCode=400;await context.Response.WriteAsJsonAsync(new{error=error.Message});}
+    catch(ProjectVersionException error){context.Response.StatusCode=error.StatusCode;await context.Response.WriteAsJsonAsync(new{error=error.Message});}
+    catch(Exception error) when(error is IOException or UnauthorizedAccessException)
+    {context.Response.StatusCode=500;await context.Response.WriteAsJsonAsync(new{error="磁盘操作失败："+error.Message});}
 });
-app.MapGet("/api/project",()=>Results.Text(File.ReadAllText(projectFile),"application/json"));
+app.MapGet("/api/project",async(HttpContext context)=>
+{
+    var snapshot=await projectStore.Read();context.Response.Headers.ETag=snapshot.ETag;context.Response.Headers.CacheControl="no-store";
+    return Results.Text(snapshot.Json,"application/json");
+});
 app.MapGet("/api/examples",()=>Results.Text(File.ReadAllText(exampleFile),"application/json"));
 app.MapGet("/api/templates/{id}",(string id)=>
-{var project=SkillProjectJson.Read(File.ReadAllText(exampleFile));return Results.Text(SkillProjectJson.Write(SkillPublicationJson.Create(project,id).Project),"application/json");});
+{var project=SkillProjectJson.Read(File.ReadAllText(exampleFile));return Results.Text(SkillProjectJson.Write(SkillProjectJson.SelectTemplate(project,id)),"application/json");});
 app.MapPost("/api/project",async(HttpContext context)=>
 {
-    var document=await ReadProject(context);CombatContentCompiler.Compile(document);
-    await jsonLock.WaitAsync();
-    try {var temporary=projectFile+".tmp";await File.WriteAllTextAsync(temporary,SkillProjectJson.Write(document));File.Move(temporary,projectFile,true);}
-    finally{jsonLock.Release();}
+    var document=await ReadProject(context);
+    var snapshot=await projectStore.Save(document,context.Request.Headers.IfMatch);
+    context.Response.Headers.ETag=snapshot.ETag;
     return Results.Ok(new{saved=true});
+});
+app.MapPost("/api/document/validate",async(HttpContext context)=>
+{var project=await ReadProject(context);SkillProjectStructure.Validate(project);return Results.Ok(new{valid=true});});
+app.MapGet("/api/publications",async()=>
+{
+    await jsonLock.WaitAsync();
+    try {var directory=Path.Combine(root,"Assets/StreamingAssets/Combat");return Results.Ok(new[]{PublicationInspection.Read(directory,"f6"),PublicationInspection.Read(directory,"f7")});}
+    finally{jsonLock.Release();}
 });
 app.MapPost("/api/validate",async(HttpContext context)=>
 {var project=await ReadProject(context);CombatContentCompiler.Compile(project);return Results.Ok(new{valid=true});});
