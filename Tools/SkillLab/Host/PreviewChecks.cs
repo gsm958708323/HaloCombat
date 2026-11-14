@@ -47,6 +47,7 @@ internal static class PreviewChecks
         AmmoRecastChecks.Run(root);
         ConstructChecks.Run(root);
         ActorFeedbackChecks.Run(root);
+        ComboChecks.Run(root);
         Console.WriteLine("PASS: JSON roundtrip, real Core cast/spawn/damage, cooldown/resource rejection, deterministic reset, invalid fields/references/cycles.");
     }
     static void CheckDamageEvents(SkillProjectDocument source)

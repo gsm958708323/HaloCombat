@@ -64,14 +64,16 @@ namespace Combat.Core
         public float Radius { get; private set; }
         public SimVec3 LocalOffset { get; private set; }
         public IEffect[] BakedOnHit { get; private set; } = Array.Empty<IEffect>();
+        public SkillOrigin Origin {get;private set;}
 
-        public void Open(IEffect[] onHit, float radius, in SimVec3 localOffset)
+        public void Open(IEffect[] onHit, float radius, in SimVec3 localOffset,SkillOrigin origin=default)
         {
             Close();
             IsOpen = true;
             BakedOnHit = onHit ?? Array.Empty<IEffect>();
             Radius = radius > 0f ? radius : 0.8f;
             LocalOffset = localOffset;
+            Origin=origin;
             _recorded.Clear();
         }
 
@@ -81,6 +83,7 @@ namespace Combat.Core
             BakedOnHit = Array.Empty<IEffect>();
             Radius = 0f;
             LocalOffset = SimVec3.Zero;
+            Origin=default;
             _recorded.Clear();
         }
 
@@ -140,117 +143,6 @@ namespace Combat.Core
         }
     }
 
-    [Serializable]
-    public struct ComboEntry
-    {
-        public SkillNodeId[] PreSkills;
-        public InputToken Input;
-        public int[] RequiredTags;
-        public int Priority;
-        public SkillNodeId ToSkill;
-        public TimelineId Timeline;
-    }
-
-    public readonly struct ComboResolveResult
-    {
-        public readonly SkillNodeId ToSkill;
-        public readonly TimelineId Timeline;
-        public readonly int Priority;
-        public ComboResolveResult(SkillNodeId toSkill, TimelineId timeline, int priority)
-        {
-            ToSkill = toSkill;
-            Timeline = timeline;
-            Priority = priority;
-        }
-    }
-
-    public sealed class ComboTableDefinition
-    {
-        public ComboEntry[] Entries = Array.Empty<ComboEntry>();
-
-        public bool TryResolve(SkillNodeId currentSkill, in InputToken input, TagComp tags, out ComboResolveResult result)
-        {
-            ComboEntry? best = null;
-            int bestPri = int.MinValue;
-            for (int i = 0; i < Entries.Length; i++)
-            {
-                var e = Entries[i];
-                if (!e.Input.Equals(input)) continue;
-                if (!PreMatches(e.PreSkills, currentSkill)) continue;
-                if (!TagsMatch(e.RequiredTags, tags)) continue;
-                if (e.Priority < bestPri) continue;
-                best = e;
-                bestPri = e.Priority;
-            }
-
-            if (best.HasValue)
-            {
-                var e = best.Value;
-                result = new ComboResolveResult(e.ToSkill, e.Timeline, e.Priority);
-                return true;
-            }
-
-            result = default;
-            return false;
-        }
-
-        static bool PreMatches(SkillNodeId[] pres, SkillNodeId current)
-        {
-            if (pres == null || pres.Length == 0)
-                return !current.IsValid;
-            for (int i = 0; i < pres.Length; i++)
-                if (pres[i] == current) return true;
-            return false;
-        }
-
-        static bool TagsMatch(int[] required, TagComp tags)
-        {
-            if (required == null || required.Length == 0) return true;
-            for (int i = 0; i < required.Length; i++)
-                if (!tags.Has(new TagId(required[i]))) return false;
-            return true;
-        }
-    }
-
-    public sealed class ComboComp : Comp
-    {
-        readonly ComboTableDefinition _table;
-        InputBufferComp _input;
-        TagComp _tags;
-        SkillDirectorComp _director;
-
-        public ComboComp(ComboTableDefinition table)
-        {
-            _table = table ?? throw new ArgumentNullException(nameof(table));
-        }
-
-        protected override void OnAttach()
-        {
-            _input = Self.GetComp<InputBufferComp>();
-            _tags = Self.GetComp<TagComp>();
-            _director = Self.GetComp<SkillDirectorComp>();
-        }
-
-        protected override void OnDetach()
-        {
-            _input = null;
-            _tags = null;
-            _director = null;
-        }
-
-        public bool TryResolve(out ComboResolveResult result)
-        {
-            result = default;
-            if (_input == null || !_input.TryPeek(out var token))
-                return false;
-            var current = _director != null ? _director.CurrentSkill : SkillNodeId.None;
-            if (!_table.TryResolve(current, token, _tags, out result))
-                return false;
-            _input.Consume();
-            return true;
-        }
-    }
-
     public sealed class SkillDirectorComp : Comp
     {
         readonly TimelineLibrary _library;
@@ -259,6 +151,10 @@ namespace Combat.Core
         TagComp _tags;
         LocomotionComp _loco;
         SkillNodeId _currentSkill = SkillNodeId.None;
+        TagLease _comboConfirm;
+        public bool HasComboConfirmation=>_comboConfirm!=null;
+        public bool CanStartSkill=>Self!=null&&Self.World!=null&&!Self.World.IsActorStopped(Self)&&
+            (_tags==null||!_tags.Has(CommonTags.Dead)&&!_tags.Has(CommonTags.Stunned)&&!_tags.Has(CommonTags.Downed)&&!_tags.Has(CommonTags.Silence));
 
         public SkillNodeId CurrentSkill => _currentSkill;
         public SkillOrigin CurrentOrigin { get; private set; }
@@ -293,11 +189,7 @@ namespace Combat.Core
             Func<float, float> advanceBudget = null, Func<int, bool> payPulse = null, Func<SkillAim?> aimResolver = null,
             ChargeDefinition charge = null,float power=1)
         {
-            if(Self.World!=null&&Self.World.IsActorStopped(Self))return false;
-            if (_tags != null &&
-                (_tags.Has(CommonTags.Dead) || _tags.Has(CommonTags.Stunned) ||
-                 _tags.Has(CommonTags.Downed) || _tags.Has(CommonTags.Silence)))
-                return false;
+            if(!CanStartSkill)return false;
             if (!_library.TryGet(timelineId, out var so))
                 throw new InvalidOperationException("Missing timeline " + timelineId);
 
@@ -306,7 +198,8 @@ namespace Combat.Core
 
             _loco?.RequestSnapYaw();
             if (_player.IsPlaying)
-                _player.Stop();
+                Stop(DirectorStopReason.Replaced);
+            else ConsumeComboConfirm("Replaced");
 
             _currentSkill = skill;
             CurrentOrigin = new SkillOrigin(skill,Self.World.NextCastId(),caster:Self.Id);
@@ -318,6 +211,7 @@ namespace Combat.Core
 
         public void Stop(DirectorStopReason reason)
         {
+            ConsumeComboConfirm(reason.ToString());
             var skill = _currentSkill;
             bool wasPlaying = _player.IsPlaying;
             _player.Stop();
@@ -350,6 +244,7 @@ namespace Combat.Core
             if (!_player.IsPlaying)
             {
                 var skill = _currentSkill;
+                ConsumeComboConfirm("Finished");
                 _currentSkill = SkillNodeId.None;
                 var aim=_player.LastAim;var origin=CurrentOrigin;float power=_player.Power;
                 var reason=_player.EndReason;
@@ -363,6 +258,19 @@ namespace Combat.Core
                         Point=aim.Point,HasPoint=aim.HasPoint,Dir=LocomotionComp.ForwardFromYaw(aim.Yaw),HasDir=aim.HasPoint});
                 }
             }
+        }
+        public void GrantComboConfirm(Actor target,in SkillOrigin origin)
+        {
+            if(!IsPlaying||_comboConfirm!=null||Self==null||!Self.IsActive||_tags==null||origin.CastId<=0||
+                origin.CastId!=CurrentOrigin.CastId||origin.Skill!=CurrentOrigin.Skill||origin.Caster!=Self.Id||
+                target==null||!target.IsActive||target.World!=Self.World||target.GetComp<TagComp>().Has(CommonTags.Dead)||
+                !Self.TryGetComp<TeamComp>(out var team)||!target.TryGetComp<TeamComp>(out var other)||!team.IsHostileTo(other))return;
+            _comboConfirm=_tags.Acquire(CommonTags.ComboConfirm);Self.World.Events.Publish(new EvComboConfirmation(Self.Id,target.Id,origin,"Granted"));
+        }
+        public void ConsumeComboConfirm(string reason="Lookup")
+        {
+            if(_comboConfirm==null)return;_comboConfirm.Dispose();_comboConfirm=null;
+            Self?.World?.Events.Publish(new EvComboConfirmation(Self.Id,EntityId.Invalid,CurrentOrigin,reason));
         }
     }
 
@@ -424,7 +332,7 @@ namespace Combat.Core
 
             if (!_combo.TryResolve(out var resolved))
                 return;
-            _director.Play(resolved.ToSkill, resolved.Timeline);
+            if(_director.Play(resolved.ToSkill, resolved.Timeline))_combo.ConsumeInput();
         }
     }
 }

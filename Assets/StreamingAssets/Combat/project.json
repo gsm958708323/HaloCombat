@@ -1773,6 +1773,38 @@
         ],
         "priority": 10,
         "toSkill": "arena-barrel"
+      },
+      {
+        "id": "confirmed-root",
+        "input": "ConfirmAttack",
+        "preSkills": [],
+        "requiredTags": [],
+        "priority": 0,
+        "toSkill": "g1"
+      },
+      {
+        "id": "confirmed-g1-g2",
+        "input": "ConfirmAttack",
+        "preSkills": [
+          "g1"
+        ],
+        "requiredTags": [
+          1017
+        ],
+        "priority": 10,
+        "toSkill": "g2"
+      },
+      {
+        "id": "confirmed-g2-g1",
+        "input": "ConfirmAttack",
+        "preSkills": [
+          "g2"
+        ],
+        "requiredTags": [
+          1017
+        ],
+        "priority": 10,
+        "toSkill": "g1"
       }
     ],
     "actors": [

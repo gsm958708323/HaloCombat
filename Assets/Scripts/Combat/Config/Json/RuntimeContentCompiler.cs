@@ -22,15 +22,7 @@ namespace Combat.Config
             if(source.Actors.Length>256||source.Combos.Length>1024||source.Cues.Length>512)Fail(path,"Runtime collection size is invalid.");
             var m=source.Motor;N(m.Gravity,-1000,-.01f,path+".motor.gravity");N(m.JumpSpeed,.01f,100,path+".motor.jumpSpeed");
             N(m.AirSteer,0,1,path+".motor.airSteer");N(m.GroundY,-1000,1000,path+".motor.groundY");N(m.StickDeadzone,0,1,path+".motor.stickDeadzone");
-            var keys=new HashSet<string>();var combo=new List<ComboEntry>();
-            foreach(var row in source.Combos)
-            {
-                if(row==null)Fail(path+".combos","Null row.");string p=path+".combos["+row.Id+"]";Identity(row.Id,keys,p);
-                if(string.IsNullOrWhiteSpace(row.Input)||row.RequiredTags==null||row.RequiredTags.Any(t=>t<=0)||row.PreSkills==null)Fail(p,"Invalid input, tags or predecessor array.");
-                var to=Skill(content,row.ToSkill,p+".toSkill");
-                combo.Add(new ComboEntry{Input=new InputToken(row.Input),Priority=row.Priority,RequiredTags=(int[])row.RequiredTags.Clone(),
-                    PreSkills=row.PreSkills.Select(id=>Skill(content,id,p+".preSkills").Id).ToArray(),ToSkill=to.Id,Timeline=to.Timeline});
-            }
+            var combo=RuntimeComboCompiler.Compile(source.Combos,(id,p)=>Skill(content,id,p));
             var cues=new CueLibrary();var cueIds=new HashSet<int>();
             foreach(var cue in source.Cues)
             {
@@ -42,7 +34,7 @@ namespace Combat.Config
                 cues.Register(new CueDef{CueId=cue.Id,PrefabKey=cue.Key,SfxKey=cue.Sound??"",LifeTime=cue.Lifetime,PresentationKind=cue.Kind,ResourceKey=cue.Resource});
             }
             foreach(int cue in content.RequiredCues)if(!cueIds.Contains(cue))Fail("$.runtime.cues["+cue+"]","Referenced Cue is missing.");
-            var data=new BakedCombatData{Combo=new ComboTableDefinition{Entries=combo.ToArray()},Timelines=content.Timelines,Projectiles=content.Projectiles,Aoes=content.Aoes,
+            var data=new BakedCombatData{Combo=new ComboTableDefinition{Entries=combo},Timelines=content.Timelines,Projectiles=content.Projectiles,Aoes=content.Aoes,
                 Summons=content.Summons,Constructs=content.Constructs,Cues=cues,Motor=new MotorConfig{Gravity=m.Gravity,JumpSpeed=m.JumpSpeed,AirSteer=m.AirSteer,GroundY=m.GroundY,StickDeadzone=m.StickDeadzone}};
             var actors=new Dictionary<string,RuntimeActorDefinition>();
             foreach(var actor in source.Actors)
@@ -87,7 +79,6 @@ namespace Combat.Config
         }
         static SkillDefinition Skill(CombatContentSnapshot content,string key,string path)
         {foreach(var skill in content.Skills.All)if(skill.Key==key)return skill;throw new ContentValidationException(path,"Unknown skill: "+key);}
-        static void Identity(string id,HashSet<string> keys,string path){if(string.IsNullOrWhiteSpace(id)||!keys.Add(id))Fail(path,"Missing or duplicate identity.");}
         static void N(float v,float min,float max,string path)=>AuthoredTimelineCompiler.Number(v,min,max,path);
         static void Fail(string path,string reason)=>throw new ContentValidationException(path,reason);
     }

@@ -95,6 +95,7 @@ export function usePreview(project: Project | null, selected: string, report: (m
   }, [playing,ready,speed,continuous,run]);
   return { state, ready, error, playing, setPlaying, speed, setSpeed, continuous, setContinuous, reset, aim, skill, release, cancel,
     cast: () => { held.current = true; return run({ kind: 'cast', skillId: skill.current, ...aim.current }); },
+    input:(input:string)=>run({kind:'input',input,...aim.current}),
     move: (x:number,z:number) => run({ kind:'move',x,z }), interrupt: () => run({ kind:'interrupt' }),
     remove: (entityId:string)=>run({kind:'remove',entityId}),
     removeBuff:(actorId:string,instanceId:number)=>run({kind:'remove-buff',actorId,instanceId}),

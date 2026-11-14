@@ -43,7 +43,7 @@ namespace Combat.Core
             if(definition.Role=="player")
             {
                 actor.AddComp(new InputBufferComp());actor.AddComp(new ComboComp(_data.Combo));actor.AddComp(new PlayerAimComp());
-                actor.AddComp(new RuntimePlayerDriverComp(_data.Combo,definition.DodgeSkill));var slots=new LoadoutComp();actor.AddComp(slots);
+                actor.AddComp(new RuntimePlayerDriverComp(definition.DodgeSkill));var slots=new LoadoutComp();actor.AddComp(slots);
                 for(int i=0;i<definition.Slots.Length;i++)if(_skills.TryGet(definition.Slots[i],out var skill))slots.EquipSkill((SkillSlot)i,skill.Id,skill.Timeline);
             }
             else
@@ -63,8 +63,8 @@ namespace Combat.Core
 
     public sealed class RuntimePlayerDriverComp : Comp
     {
-        readonly ComboTableDefinition _combo;readonly SkillNodeId _dodge;
-        public RuntimePlayerDriverComp(ComboTableDefinition combo,SkillNodeId dodge){_combo=combo;_dodge=dodge;}
+        readonly SkillNodeId _dodge;
+        public RuntimePlayerDriverComp(SkillNodeId dodge){_dodge=dodge;}
         public override bool WantsTick=>true;
         public override void Tick(float dt)
         {
@@ -82,7 +82,7 @@ namespace Combat.Core
             if(token==Season2Tokens.Dodge)selected=_dodge;
             else
             {
-                if(!_combo.TryResolve(Self.GetComp<SkillDirectorComp>().CurrentSkill,token,tags,out var result))return;
+                if(!Self.GetComp<ComboComp>().TryResolveCurrent(token,out var result))return;
                 selected=result.ToSkill;
             }
             var transform=Self.GetComp<TransformComp>();

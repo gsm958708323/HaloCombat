@@ -19,6 +19,8 @@ dotnet run --project Combat.csproj -- json Assets/StreamingAssets/Combat/project
 
 `CodeCombatContent`与独立Demo仍是教学测试样例，不是正式运行入口的后备。
 
+网页“连招输入与接续”可编辑正式Combo表，并在同一预览会话发送实际令牌；命中确认按完整Skill/CastId绑定，接触敌方无敌/护盾/0伤害仍可获得，取消窗与施放守卫生效，失败输入保留。ConfirmAttack示例用于G1命中后接G2，历史Arena十三技能的完整连段/数值仍继续迁移，见[确认连招验收](docs/验证/2026-11-15-confirmed-combos.md)。
+
 `Assets/Scenes/Arena.unity`是可直接运行的JSON入口，也位于Build Settings首位。WASD/方向键移动，鼠标瞄准，按住左键/1重复主攻击；2/右键、3/中键、5/鼠标侧键、Space/Q/E走JSON的输入绑定。Esc暂停，HUD可重开/切换训练模式。F5明确重载，F6/F7使用同一正式玩家的消耗/冷却/状态守卫；槽必须从当前正式工程发布，其他工程的槽会报错并保留当前局。首次启动只读正式文件，避免未关联的旧调试槽阻止进入。
 
 当前Arena复用已迁移技能和内置模型；Fire1弹药主攻击/换弹、Fire4追踪弹重施放、Fire5木桶链爆，以及来源/目标独立顿帧和受伤反馈已经接入JSON。历史13技能其余内容、原资源/动画和角色成长值仍需迁移，不能将本入口称为旧玩法/美术完整复刻。验收边界见[JSON Arena记录](docs/验证/2026-11-15-json-arena.md)、[弹药与重施放](docs/验证/2026-11-15-ammo-and-recasts.md)、[可破坏物](docs/验证/2026-11-15-constructs.md)和[独立顿帧验收](docs/验证/2026-11-15-actor-feedback.md)。

@@ -52,6 +52,9 @@ namespace Combat.Config
         public double LogicalTime {get;internal set;}
         public string HurtLevel {get;internal set;}
         public float? HurtAge {get;internal set;}
+        public bool ComboConfirmed {get;internal set;}
+        public string CurrentSkill {get;internal set;}
+        public string BufferedInput {get;internal set;}
         public int CastId {get;internal set;}
         public int Generation {get;internal set;}
         public int ChainsLeft {get;internal set;}

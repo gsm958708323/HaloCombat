@@ -39,6 +39,8 @@ namespace Combat.Config
             _world.Events.Subscribe<EvDamage>(OnDamage);
             _world.Events.Subscribe<EvHurt>(e=>{_hurts[HitboxComp.Pack(e.Target)]=(e.Feedback,_steps);Record("hurt",Name(e.Target),e.Feedback.ToString().ToLowerInvariant(),e.Origin);});
             _world.Events.Subscribe<EvHitstop>(e=>Record("hitstop",Name(e.Source),e.Scope==HitstopScope.World?"World "+e.Frames+" frames":"Source "+e.SourceFrames+" / target "+e.TargetFrames));
+            _world.Events.Subscribe<EvComboConfirmation>(e=>Record("combo-confirmation",Name(e.Source),e.Result,e.Origin));
+            _world.Events.Subscribe<EvComboResolved>(e=>Record(e.Resolved?"combo-resolved":"combo-unmatched",Name(e.Source),e.Input+" -> "+(e.Entry??"None")+(e.ConsumedConfirmation?" / confirmation consumed":""),e.Origin));
             _world.Events.Subscribe<EvSkillEvent>(e=>Record(e.Rejected?"skill-event-rejected":"skill-"+e.Kind.ToString().ToLowerInvariant(),Name(e.Source),Name(e.Target),e.Origin,e.Damage));
             _world.Events.Subscribe<EvHeal>(e=>Record("heal",Name(e.Target),e.Amount.ToString("F1",System.Globalization.CultureInfo.InvariantCulture)));
             _world.Events.Subscribe<EvShield>(e=>Record("shield",Name(e.Target),e.Amount.ToString("F1",System.Globalization.CultureInfo.InvariantCulture),e.Origin));
@@ -96,6 +98,7 @@ namespace Combat.Config
             var origin = caster.GetComp<TransformComp>().Position;
             var point = new SimVec3(x, 0, z);
             float heading = LocomotionComp.YawFromStick(new SimVec3(point.X - origin.X, 0, point.Z - origin.Z));
+            if(caster.TryGetComp<PlayerAimComp>(out var aiming)){aiming.Valid=true;aiming.Aim=new SkillAim(EntityId.Invalid,point,heading);}
             var cast = caster.GetComp<SkillCastComp>();
             bool accepted = cast.TryCast(skill.Id, new SkillAim(EntityId.Invalid, point, heading));
             if(!accepted)Record("rejected",skill.Name,cast.LastRejection);
@@ -107,11 +110,21 @@ namespace Combat.Config
             EnsureAlive();
             if (_world.TryGetActor(_caster, out var caster)) caster.GetComp<SkillCastComp>().Release();
         }
+        public void Input(string action,float x,float z)
+        {
+            EnsureAlive();if(_content.Runtime==null)throw new ContentValidationException("$.runtime.combos","Combo input requires runtime content.");
+            if(string.IsNullOrWhiteSpace(action)||action.Length>128)throw new ContentValidationException("$.input","Expected an input identity up to128 characters.");
+            Aim(x,z);
+            if(!_world.TryGetActor(_caster,out var caster)||caster.GetComp<TagComp>().Has(CommonTags.Dead))return;
+            caster.GetComp<InputBufferComp>().Push(new InputToken(action));Record("input",Name(_caster),action);
+        }
 
         public void CancelInput()
         {
             EnsureAlive(); _movement = SimVec3.Zero;
             if (_world.TryGetActor(_caster, out var caster)) caster.GetComp<SkillCastComp>().CancelHeld();
+            if(caster!=null&&caster.TryGetComp<InputBufferComp>(out var input))input.Clear();
+            if(caster!=null&&caster.TryGetComp<PlayerAimComp>(out var state)){state.Valid=false;state.PrimaryHeld=false;}
         }
 
         public void RequestHitstop(int frames)
@@ -142,8 +155,9 @@ namespace Combat.Config
             if (!SkillSceneValidation.Finite(x) || !SkillSceneValidation.Finite(z)) throw new ContentValidationException("$.aim", "Aim must be finite.");
             if (!_world.TryGetActor(_caster, out var caster)) return;
             var origin = caster.GetComp<TransformComp>().Position;
-            caster.GetComp<SkillCastComp>().UpdateAim(new SkillAim(EntityId.Invalid, new SimVec3(x, 0, z),
-                LocomotionComp.YawFromStick(new SimVec3(x - origin.X, 0, z - origin.Z))));
+            var aim=new SkillAim(EntityId.Invalid,new SimVec3(x,0,z),LocomotionComp.YawFromStick(new SimVec3(x-origin.X,0,z-origin.Z)));
+            caster.GetComp<SkillCastComp>().UpdateAim(aim);
+            if(caster.TryGetComp<PlayerAimComp>(out var state)){state.Valid=true;state.Aim=aim;}
         }
 
         public void Move(float x, float z)
@@ -209,6 +223,7 @@ namespace Combat.Config
                 _content.Blueprints.TryGet(blueprint,out var actorBlueprint);
                 var owner=projectile?.OwnerId??area?.OwnerId??summon?.OwnerId??construct?.OwnerId??EntityId.Invalid;
                 bool hurt=_hurts.TryGetValue(HitboxComp.Pack(a.Id),out var reaction);
+                a.TryGetComp<SkillDirectorComp>(out var director);
                 return new SkillActorSnapshot
                 {
                     Id = HitboxComp.Pack(a.Id).ToString(), Name = Name(a.Id), Kind = _kinds[HitboxComp.Pack(a.Id)], X = p.X,Y=p.Y, Z = p.Z,
@@ -218,8 +233,10 @@ namespace Combat.Config
                     Owner=owner.IsValid?Name(owner):null,Blueprint=blueprint,Skill=projectile!=null?SkillName(projectile.Family.Origin):construct!=null?SkillName(construct.Origin):actorBlueprint?.SkillKey,Energy=a.TryGetComp<EnergyComp>(out var energy)?(float?)energy.Current:null,
                     Group=construct?.Def?.Group,DamageCap=construct?.Def?.DamageCap,NextDecay=construct?.NextDecay,
                     Stopped=_world.IsActorStopped(a),HitstopFrames=a.Time.HitstopLeft,LogicalTime=a.Time.Time,HurtLevel=hurt?reaction.Level.ToString().ToLowerInvariant():null,HurtAge=hurt?(float?)(_steps-reaction.Step)*Step:null,
+                    ComboConfirmed=director?.HasComboConfirmation??false,CurrentSkill=director!=null&&director.IsPlaying?SkillName(director.CurrentOrigin):null,
+                    BufferedInput=a.TryGetComp<InputBufferComp>(out var buffer)&&buffer.TryPeek(out var token)?token.Action:null,
                     Ammo=a.TryGetComp<AmmoComp>(out var ammo)?(int?)ammo.Current:null,TrackingKey=projectile?.Def?.TrackingKey,
-                    CastId=projectile?.Family.Origin.CastId??construct?.Origin.CastId??0,Generation=projectile?.Generation??0,ChainsLeft=projectile?.ChainsLeft??0,
+                    CastId=projectile?.Family.Origin.CastId??construct?.Origin.CastId??(director!=null&&director.IsPlaying?director.CurrentOrigin.CastId:0),Generation=projectile?.Generation??0,ChainsLeft=projectile?.ChainsLeft??0,
                     Distance=projectile!=null?(float?)projectile.Distance:null,Range=projectile!=null&&!double.IsInfinity(projectile.RangeLimit)?(float?)projectile.RangeLimit:null,
                     Speed=projectile!=null?(float?)ProjectileKinematics.Speed(projectile):null,VerticalSpeed=projectile?.Def.Motion?.Bounce!=null?(float?)projectile.VerticalSpeed:null,
                     Returning=projectile?.Returning??false,GroundBouncesLeft=projectile?.GroundBouncesLeft??0,WallBouncesLeft=projectile?.WallBouncesLeft??0,

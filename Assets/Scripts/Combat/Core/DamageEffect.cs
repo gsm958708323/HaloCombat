@@ -43,6 +43,7 @@ namespace Combat.Core
             ctx.Damage=null;var target=ctx.Target;var source=ctx.Source;
             if(ctx.World==null||target==null||!target.IsActive||target.GetComp<TagComp>().Has(CommonTags.Dead))return;
             var attributes=target.GetComp<AttributeSet>();float hp=attributes.GetBase(AttrId.Hp);if(hp<=0)return;
+            if(source!=null&&source.TryGetComp<SkillDirectorComp>(out var director))director.GrantComboConfirm(target,ctx.Origin);
             if(target.GetComp<TagComp>().Has(CommonTags.Invincible)||(target.TryGetComp<HealthComp>(out var health)&&health.InIFrame))
             {ctx.World.Events.Publish(new EvImmune(target.Id,source?.Id??EntityId.Invalid));return;}
             float attack=UseSnapshotAtk?ctx.SnapshotAtk:source!=null&&source.TryGetComp<AttributeSet>(out var live)?live.GetFinal(AttrId.Atk):ctx.SnapshotAtk;

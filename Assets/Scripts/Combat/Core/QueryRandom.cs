@@ -134,7 +134,7 @@ namespace Combat.Core
                     if (!box.TryRecord(victim.Id)) continue;
                     var point = victim.TryGetComp<TransformComp>(out var vtf) ? vtf.Position : center;
                     _world.Intents.Post(new ApplyEffectsIntent(
-                        box.BakedOnHit, attacker.Id, victim.Id, snapshotAtk, 0, point, true));
+                        box.BakedOnHit, attacker.Id, victim.Id, snapshotAtk, 0, point, true,origin:box.Origin));
                 }
             }
         }

@@ -32,6 +32,8 @@ namespace Combat.Config
                 actor.AddComp(new BehaviorTreeComp(SummonBehavior.Create(blueprint.Skill,blueprint.HoldDuration),board=>
                 {board.AcquireRadius=blueprint.AcquireRadius;board.AttackRange=blueprint.AttackRange;board.FollowRange=blueprint.FollowRange;}));
             }
+            if(spec.BlueprintId=="caster"&&_content.Runtime!=null)
+            {actor.AddComp(new InputBufferComp());actor.AddComp(new ComboComp(_content.Runtime.Data.Combo));actor.AddComp(new PlayerAimComp());actor.AddComp(new RuntimePlayerDriverComp(SkillNodeId.None));}
             actor.AddComp(new SkillDirectorComp(_content.Timelines));
             if (spec.BlueprintId == "caster"||summoned)
             {

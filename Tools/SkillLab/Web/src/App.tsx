@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { ReactFlow, ReactFlowProvider, Background, BackgroundVariant } from '@xyflow/react';
 import { Plus, Save, Download, Upload, Undo2, Redo2, Maximize, Workflow } from 'lucide-react';
 import { api, clone, kinds, parameterValue, deliveryLabel } from './model';
+import {ComboProperties} from './ComboProperties';
 import type { Project, Skill, BuffDefinition } from './model';
 import { SkillNode } from './SkillNode';
 import type { EditorNode } from './SkillNode';
@@ -157,6 +158,7 @@ function Workbench() {
         <SummonBlueprints project={project} update={editor.edit} action={setContentAction} duplicate={id=>duplicate('blueprint',id)}/></>:<p>空工程可保存或导出。</p>}
         {graph&&<GraphConnections graph={graph} change={update=>{editor.endGroup();graphEditor.editGraph(update);}}/>}
         <RuntimeProperties project={project} update={editor.edit}/>
+        <ComboProperties project={project} update={editor.edit}/>
       </aside></div></section>
     </div><footer className={message.startsWith('Error')?'error':''} role="status">{message}<span>JSON 工程 · 真实 C# 预览</span></footer>
     {contentAction&&<ContentDialog key={contentAction.kind+contentAction.id+contentAction.mode} project={project} action={contentAction} close={()=>setContentAction(null)} edit={change=>{editor.endGroup();editor.edit(change);setMessage('内容与引用已更新，可撤销恢复');}} locate={locate}/>}

@@ -79,6 +79,7 @@ namespace Combat.Core
         public static readonly TagId Silence = new TagId(1008);
         public static readonly TagId Invincible = new TagId(1009);
         public static readonly TagId Downed = new TagId(1010);
+        public static readonly TagId ComboConfirm = new TagId(1017);
     }
 
     public readonly struct SkillNodeId : IEquatable<SkillNodeId>

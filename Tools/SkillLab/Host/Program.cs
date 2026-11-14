@@ -92,6 +92,7 @@ app.MapPost("/api/preview/{id}/command",async(string id,HttpContext context)=>
         var kind=command.Value<string>("kind");
         object result=null;
         if(kind=="step")session.Advance(command.Value<int?>("steps")??1);
+        else if(kind=="input")session.Input(command.Value<string>("input"),command.Value<float?>("x")??0,command.Value<float?>("z")??0);
         else if(kind=="cast")result=session.Cast(command.Value<string>("skillId"),command.Value<float?>("x")??0,command.Value<float?>("z")??0);
         else if(kind=="release")
         {if(command["x"]!=null&&command["z"]!=null)session.Aim(command.Value<float>("x"),command.Value<float>("z"));session.Release();}

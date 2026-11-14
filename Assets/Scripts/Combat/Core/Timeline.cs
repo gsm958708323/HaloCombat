@@ -253,7 +253,7 @@ namespace Combat.Core
             rt.Self.GetComp<HitboxComp>().Open(
                 rt.Clip.OnHit,
                 rt.Clip.HitRadius,
-                new SimVec3(rt.Clip.HitOffsetX, rt.Clip.HitOffsetY, rt.Clip.HitOffsetZ));
+                new SimVec3(rt.Clip.HitOffsetX, rt.Clip.HitOffsetY, rt.Clip.HitOffsetZ),rt.Origin);
         }
 
         public void Tick(in ClipRuntime rt, float dt) { }

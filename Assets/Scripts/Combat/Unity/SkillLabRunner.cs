@@ -79,6 +79,8 @@ namespace Combat.Unity
         }
 
         public void SetMovement(float x, float z) => _publication.Simulation?.Move(x, z);
+        public void SubmitInput(string action,float x,float z)
+        {if(_publication.Simulation==null)return;_publication.Simulation.Input(action,x,z);Snapshot=_publication.Simulation.Snapshot();}
         public void RemoveEntity(string id)
         {_publication.Simulation?.Remove(id);if(_publication.Simulation!=null)Snapshot=_publication.Simulation.Snapshot();}
         public bool RemoveBuff(string actorId,int instanceId)
