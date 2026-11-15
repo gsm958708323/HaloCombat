@@ -86,7 +86,7 @@ namespace Combat.Tests
         {
             using(var f=new Fixture())
             {
-                var input=f.Source.GetComp<InputBufferComp>();input.Push(new InputToken("NoCombo"));var energy=f.Source.GetComp<EnergyComp>();energy.TrySpend(50);f.Source.GetComp<HealthComp>().BeginIFrame(.2f);
+                var input=f.Source.GetComp<InputBufferComp>();input.SetBufferWindow(.2f);input.Push(new InputToken("NoCombo"));var energy=f.Source.GetComp<EnergyComp>();energy.TrySpend(50);f.Source.GetComp<HealthComp>().BeginIFrame(.2f);
                 var buff=new DurationSpec{BuffId=999,Duration=.3f,TickInterval=.1f,OnPeriod=Array.Empty<IEffect>()};f.Source.GetComp<BuffComp>().Apply(buff,f.Source);var before=f.Source.GetComp<BuffComp>().Snapshot().Single().Remaining;
                 f.World.RequestActorHitstop(f.Source.Id,20);f.Tick(20);Assert.AreEqual(50,energy.Current);Assert.IsTrue(input.TryPeek(out _));Assert.IsTrue(f.Source.GetComp<HealthComp>().InIFrame);Assert.AreEqual(before,f.Source.GetComp<BuffComp>().Snapshot().Single().Remaining);
                 f.Tick(11);Assert.IsFalse(input.TryPeek(out _));Assert.Greater(energy.Current,50);Assert.IsFalse(f.Source.GetComp<HealthComp>().InIFrame);

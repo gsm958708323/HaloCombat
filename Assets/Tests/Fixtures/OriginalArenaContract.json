@@ -1,0 +1,1282 @@
+{
+  "revision": "fae78727dd7a6d6f8c4f8dd7c2a6c8814183058a",
+  "source": "Assets/Combat/Config/Authored/Arena",
+  "notes": [
+    "Axis transform: old local forward Z becomes current X; old local X becomes negative Z.",
+    "Dormant AD4101 and AD4103 are not part of this reachable skill audit.",
+    "Legacy Buff expiry cleanup is compared with the new explicit removed port.",
+    "Teleport routing operation has a separate behavioral audit; Skill2011 is independently preserved."
+  ],
+  "skills": [
+    {
+      "id": 2001,
+      "timeline": 3001,
+      "ammo": 1,
+      "fallback": 2009
+    },
+    {
+      "id": 2002,
+      "timeline": 3002,
+      "ammo": 0,
+      "fallback": 0
+    },
+    {
+      "id": 2003,
+      "timeline": 3003,
+      "ammo": 3,
+      "fallback": 0
+    },
+    {
+      "id": 2004,
+      "timeline": 3004,
+      "ammo": 2,
+      "fallback": 0
+    },
+    {
+      "id": 2005,
+      "timeline": 3005,
+      "ammo": 0,
+      "fallback": 0
+    },
+    {
+      "id": 2006,
+      "timeline": 3006,
+      "ammo": 0,
+      "fallback": 0
+    },
+    {
+      "id": 2007,
+      "timeline": 3007,
+      "ammo": 0,
+      "fallback": 0
+    },
+    {
+      "id": 2008,
+      "timeline": 3008,
+      "ammo": 0,
+      "fallback": 0
+    },
+    {
+      "id": 2009,
+      "timeline": 3009,
+      "ammo": 0,
+      "fallback": 0
+    },
+    {
+      "id": 2010,
+      "timeline": 3010,
+      "ammo": 0,
+      "fallback": 0
+    },
+    {
+      "id": 2011,
+      "timeline": 3012,
+      "ammo": 0,
+      "fallback": 0
+    },
+    {
+      "id": 2012,
+      "timeline": 3013,
+      "ammo": 2,
+      "fallback": 2009
+    },
+    {
+      "id": 2013,
+      "timeline": 3013,
+      "ammo": 3,
+      "fallback": 2009
+    }
+  ],
+  "timelines": [
+    {
+      "id": 3001,
+      "duration": 0.8,
+      "animation": "Fire",
+      "controls": [],
+      "scale": false,
+      "clips": [
+        {
+          "kind": 1,
+          "start": 0.5,
+          "end": 0.8,
+          "moveX": 0,
+          "moveY": 0,
+          "moveZ": 0,
+          "steer": 0
+        }
+      ],
+      "payloads": [
+        {
+          "time": 0.1,
+          "effects": [
+            {
+              "kind": "cue",
+              "id": 4201,
+              "center": "source",
+              "anchor": "Muzzle",
+              "playback": "once",
+              "key": "",
+              "tiers": false,
+              "maxTier": 0
+            },
+            {
+              "kind": "projectile",
+              "id": 4001
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3002,
+      "duration": 0.9,
+      "animation": "Roll",
+      "controls": [
+        1011,
+        1012
+      ],
+      "scale": false,
+      "clips": [
+        {
+          "kind": 4,
+          "start": 0.1,
+          "end": 0.8,
+          "moveX": 0,
+          "moveY": 0,
+          "moveZ": 0,
+          "steer": 0
+        },
+        {
+          "kind": 2,
+          "start": 0.2,
+          "end": 0.8,
+          "moveX": 2,
+          "moveY": 0,
+          "moveZ": 0,
+          "steer": 0
+        }
+      ],
+      "payloads": [
+        {
+          "time": 0,
+          "effects": [
+            {
+              "kind": "cue",
+              "id": 4203,
+              "center": "source",
+              "anchor": "Body",
+              "playback": "start",
+              "key": "roll_fire",
+              "tiers": false,
+              "maxTier": 0
+            }
+          ]
+        },
+        {
+          "time": 0.1,
+          "effects": [
+            {
+              "kind": "buff",
+              "id": 5104,
+              "stacks": 1,
+              "recipient": "self"
+            }
+          ]
+        },
+        {
+          "time": 0.8,
+          "effects": [
+            {
+              "kind": "cue",
+              "id": 4203,
+              "center": "source",
+              "anchor": "Body",
+              "playback": "stop",
+              "key": "roll_fire",
+              "tiers": false,
+              "maxTier": 0
+            },
+            {
+              "kind": "cue",
+              "id": 4208,
+              "center": "source",
+              "anchor": "Body",
+              "playback": "once",
+              "key": "",
+              "tiers": false,
+              "maxTier": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3003,
+      "duration": 0.5,
+      "animation": "Fire",
+      "controls": [],
+      "scale": false,
+      "clips": [],
+      "payloads": [
+        {
+          "time": 0.1,
+          "effects": [
+            {
+              "kind": "cue",
+              "id": 4201,
+              "center": "source",
+              "anchor": "Muzzle",
+              "playback": "once",
+              "key": "",
+              "tiers": false,
+              "maxTier": 0
+            },
+            {
+              "kind": "area",
+              "id": 4102
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3004,
+      "duration": 0.5,
+      "animation": "Fire",
+      "controls": [],
+      "scale": false,
+      "clips": [],
+      "payloads": [
+        {
+          "time": 0.1,
+          "effects": [
+            {
+              "kind": "cue",
+              "id": 4201,
+              "center": "source",
+              "anchor": "Muzzle",
+              "playback": "once",
+              "key": "",
+              "tiers": false,
+              "maxTier": 0
+            },
+            {
+              "kind": "projectile",
+              "id": 4006
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3005,
+      "duration": 0.5,
+      "animation": "Fire",
+      "controls": [
+        1013
+      ],
+      "scale": false,
+      "clips": [],
+      "payloads": [
+        {
+          "time": 0.1,
+          "effects": [
+            {
+              "kind": "cue",
+              "id": 4202,
+              "center": "source",
+              "anchor": "Head",
+              "playback": "once",
+              "key": "",
+              "tiers": false,
+              "maxTier": 0
+            },
+            {
+              "kind": "projectile",
+              "id": 4003
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3006,
+      "duration": 0.5,
+      "animation": "Fire",
+      "controls": [],
+      "scale": false,
+      "clips": [],
+      "payloads": [
+        {
+          "time": 0.1,
+          "effects": [
+            {
+              "kind": "cue",
+              "id": 4201,
+              "center": "source",
+              "anchor": "Muzzle",
+              "playback": "once",
+              "key": "",
+              "tiers": false,
+              "maxTier": 0
+            },
+            {
+              "kind": "projectile",
+              "id": 4004
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3007,
+      "duration": 0.5,
+      "animation": "Fire",
+      "controls": [],
+      "scale": false,
+      "clips": [],
+      "payloads": [
+        {
+          "time": 0.1,
+          "effects": [
+            {
+              "kind": "projectile",
+              "id": 4005
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3008,
+      "duration": 0.5,
+      "animation": "Fire",
+      "controls": [],
+      "scale": false,
+      "clips": [],
+      "payloads": [
+        {
+          "time": 0.1,
+          "effects": [
+            {
+              "kind": "barrel"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3009,
+      "duration": 1.15,
+      "animation": "Reload",
+      "controls": [],
+      "scale": false,
+      "clips": [],
+      "payloads": [
+        {
+          "time": 1.1,
+          "effects": [
+            {
+              "kind": "refill",
+              "amount": 60
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3010,
+      "duration": 0.5,
+      "animation": "Fire",
+      "controls": [],
+      "scale": false,
+      "clips": [],
+      "payloads": [
+        {
+          "time": 0.1,
+          "effects": [
+            {
+              "kind": "projectile",
+              "id": 4002
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3012,
+      "duration": 0.48,
+      "animation": "Fire",
+      "controls": [],
+      "scale": false,
+      "clips": [],
+      "payloads": [
+        {
+          "time": 0.08,
+          "effects": [
+            {
+              "kind": "cue",
+              "id": 4201,
+              "center": "source",
+              "anchor": "Muzzle",
+              "playback": "once",
+              "key": "",
+              "tiers": false,
+              "maxTier": 0
+            },
+            {
+              "kind": "projectile",
+              "id": 4001
+            }
+          ]
+        },
+        {
+          "time": 0.19,
+          "effects": [
+            {
+              "kind": "cue",
+              "id": 4201,
+              "center": "source",
+              "anchor": "Muzzle",
+              "playback": "once",
+              "key": "",
+              "tiers": false,
+              "maxTier": 0
+            },
+            {
+              "kind": "projectile",
+              "id": 4001
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3013,
+      "duration": 0.65,
+      "animation": "Fire",
+      "controls": [],
+      "scale": false,
+      "clips": [
+        {
+          "kind": 1,
+          "start": 0.25,
+          "end": 0.65,
+          "moveX": 0,
+          "moveY": 0,
+          "moveZ": 0,
+          "steer": 0
+        }
+      ],
+      "payloads": [
+        {
+          "time": 0.22,
+          "effects": [
+            {
+              "kind": "cue",
+              "id": 4206,
+              "center": "source",
+              "anchor": "Muzzle",
+              "playback": "once",
+              "key": "",
+              "tiers": false,
+              "maxTier": 0
+            },
+            {
+              "kind": "projectile",
+              "id": 4012
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "projectiles": [
+    {
+      "id": 4001,
+      "speed": 6,
+      "lifetime": 10,
+      "radius": 0.1,
+      "maxHits": 1,
+      "spawnForward": 0.4,
+      "sameTargetDelay": 0.1,
+      "removeOnObstacle": true,
+      "view": "buff_projectile_normal_view",
+      "homingRate": 0,
+      "homingRadius": 12,
+      "hit": [
+        {
+          "kind": "damage",
+          "coefficient": 1,
+          "flat": 0,
+          "canCrit": true,
+          "ignoreDefense": false,
+          "scaleByStacks": false,
+          "notifyHurt": false,
+          "sourceStop": 0,
+          "targetStop": 2,
+          "critChance": 0.05,
+          "critMultiplier": 1.8
+        },
+        {
+          "kind": "hurt",
+          "requireHpDamage": false
+        },
+        {
+          "kind": "cue",
+          "id": 4204,
+          "center": "target",
+          "anchor": "Body",
+          "playback": "once",
+          "key": "",
+          "tiers": false,
+          "maxTier": 0
+        },
+        {
+          "kind": "buff",
+          "id": 5101,
+          "stacks": 1,
+          "recipient": "target"
+        }
+      ],
+      "lifetimeEffects": [
+        {
+          "kind": "cue",
+          "id": 4204,
+          "center": "point",
+          "anchor": "",
+          "playback": "once",
+          "key": "",
+          "tiers": false,
+          "maxTier": 0
+        }
+      ],
+      "wall": [],
+      "returned": []
+    },
+    {
+      "id": 4002,
+      "speed": 6,
+      "lifetime": 10,
+      "radius": 0.1,
+      "maxHits": 1,
+      "spawnForward": 0.4,
+      "sameTargetDelay": 0.1,
+      "removeOnObstacle": true,
+      "view": "buff_projectile_enemy_view",
+      "homingRate": 0,
+      "homingRadius": 12,
+      "hit": [
+        {
+          "kind": "damage",
+          "coefficient": 1,
+          "flat": 0,
+          "canCrit": true,
+          "ignoreDefense": false,
+          "scaleByStacks": false,
+          "notifyHurt": false,
+          "sourceStop": 0,
+          "targetStop": 2,
+          "critChance": 0.05,
+          "critMultiplier": 1.8
+        },
+        {
+          "kind": "hurt",
+          "requireHpDamage": false
+        },
+        {
+          "kind": "cue",
+          "id": 4204,
+          "center": "target",
+          "anchor": "Body",
+          "playback": "once",
+          "key": "",
+          "tiers": false,
+          "maxTier": 0
+        }
+      ],
+      "lifetimeEffects": [
+        {
+          "kind": "cue",
+          "id": 4204,
+          "center": "point",
+          "anchor": "",
+          "playback": "once",
+          "key": "",
+          "tiers": false,
+          "maxTier": 0
+        }
+      ],
+      "wall": [],
+      "returned": []
+    },
+    {
+      "id": 4003,
+      "speed": 5,
+      "lifetime": 10,
+      "radius": 0.5,
+      "maxHits": 99999,
+      "spawnForward": 0.4,
+      "sameTargetDelay": 0.5,
+      "removeOnObstacle": false,
+      "view": "buff_projectile_boomerang_view",
+      "homingRate": 0,
+      "homingRadius": 12,
+      "hit": [
+        {
+          "kind": "damage",
+          "coefficient": 1,
+          "flat": 0,
+          "canCrit": true,
+          "ignoreDefense": false,
+          "scaleByStacks": false,
+          "notifyHurt": false,
+          "sourceStop": 0,
+          "targetStop": 2,
+          "critChance": 0.05,
+          "critMultiplier": 1.8
+        },
+        {
+          "kind": "hurt",
+          "requireHpDamage": false
+        },
+        {
+          "kind": "cue",
+          "id": 4204,
+          "center": "target",
+          "anchor": "Body",
+          "playback": "once",
+          "key": "",
+          "tiers": false,
+          "maxTier": 0
+        },
+        {
+          "kind": "buff",
+          "id": 5102,
+          "stacks": 1,
+          "recipient": "target"
+        }
+      ],
+      "lifetimeEffects": [],
+      "wall": [],
+      "returned": [
+        {
+          "kind": "cue",
+          "id": 4202,
+          "center": "source",
+          "anchor": "Body",
+          "playback": "once",
+          "key": "",
+          "tiers": false,
+          "maxTier": 0
+        }
+      ]
+    },
+    {
+      "id": 4004,
+      "speed": 6,
+      "lifetime": 3,
+      "radius": 0.1,
+      "maxHits": 1,
+      "spawnForward": 0.4,
+      "sameTargetDelay": 0,
+      "removeOnObstacle": true,
+      "view": "buff_projectile_teleport_view",
+      "homingRate": 0,
+      "homingRadius": 12,
+      "hit": [
+        {
+          "kind": "damage",
+          "coefficient": 0.6,
+          "flat": 0,
+          "canCrit": false,
+          "ignoreDefense": false,
+          "scaleByStacks": false,
+          "notifyHurt": false,
+          "sourceStop": 0,
+          "targetStop": 2
+        },
+        {
+          "kind": "hurt",
+          "requireHpDamage": false
+        },
+        {
+          "kind": "cue",
+          "id": 4204,
+          "center": "target",
+          "anchor": "Body",
+          "playback": "once",
+          "key": "",
+          "tiers": false,
+          "maxTier": 0
+        }
+      ],
+      "lifetimeEffects": [
+        {
+          "kind": "cue",
+          "id": 4207,
+          "center": "point",
+          "anchor": "",
+          "playback": "once",
+          "key": "",
+          "tiers": false,
+          "maxTier": 0
+        }
+      ],
+      "wall": [],
+      "returned": []
+    },
+    {
+      "id": 4005,
+      "speed": 3,
+      "lifetime": 2,
+      "radius": 0.1,
+      "maxHits": 1,
+      "spawnForward": 0.4,
+      "sameTargetDelay": 0,
+      "removeOnObstacle": true,
+      "view": "buff_projectile_bomb_view",
+      "homingRate": 0,
+      "homingRadius": 12,
+      "hit": [
+        {
+          "kind": "area",
+          "id": 4104
+        }
+      ],
+      "lifetimeEffects": [
+        {
+          "kind": "area",
+          "id": 4104
+        },
+        {
+          "kind": "area",
+          "id": 4105
+        }
+      ],
+      "wall": [
+        {
+          "kind": "area",
+          "id": 4104
+        }
+      ],
+      "returned": []
+    },
+    {
+      "id": 4006,
+      "speed": 3,
+      "lifetime": 100,
+      "radius": 0.1,
+      "maxHits": 1,
+      "spawnForward": 0.4,
+      "sameTargetDelay": 0.1,
+      "removeOnObstacle": true,
+      "view": "buff_projectile_normal_view",
+      "homingRate": 36000,
+      "homingRadius": 14,
+      "hit": [
+        {
+          "kind": "damage",
+          "coefficient": 1,
+          "flat": 0,
+          "canCrit": true,
+          "ignoreDefense": false,
+          "scaleByStacks": false,
+          "notifyHurt": false,
+          "sourceStop": 0,
+          "targetStop": 2,
+          "critChance": 0.05,
+          "critMultiplier": 1.8
+        },
+        {
+          "kind": "hurt",
+          "requireHpDamage": false
+        },
+        {
+          "kind": "cue",
+          "id": 4204,
+          "center": "target",
+          "anchor": "Body",
+          "playback": "once",
+          "key": "",
+          "tiers": false,
+          "maxTier": 0
+        }
+      ],
+      "lifetimeEffects": [
+        {
+          "kind": "cue",
+          "id": 4204,
+          "center": "point",
+          "anchor": "",
+          "playback": "once",
+          "key": "",
+          "tiers": false,
+          "maxTier": 0
+        }
+      ],
+      "wall": [],
+      "returned": []
+    },
+    {
+      "id": 4012,
+      "speed": 10,
+      "lifetime": 3,
+      "radius": 0.16,
+      "maxHits": 4,
+      "spawnForward": 0.45,
+      "sameTargetDelay": 0.15,
+      "removeOnObstacle": true,
+      "view": "buff_projectile_normal_view",
+      "homingRate": 0,
+      "homingRadius": 12,
+      "hit": [
+        {
+          "kind": "damage",
+          "coefficient": 1.35,
+          "flat": 0,
+          "canCrit": true,
+          "ignoreDefense": false,
+          "scaleByStacks": false,
+          "notifyHurt": false,
+          "sourceStop": 2,
+          "targetStop": 4,
+          "critChance": 0.05,
+          "critMultiplier": 1.8
+        },
+        {
+          "kind": "cue",
+          "id": 4206,
+          "center": "target",
+          "anchor": "Body",
+          "playback": "once",
+          "key": "",
+          "tiers": false,
+          "maxTier": 0
+        },
+        {
+          "kind": "buff",
+          "id": 5101,
+          "stacks": 1,
+          "recipient": "target"
+        }
+      ],
+      "lifetimeEffects": [],
+      "wall": [],
+      "returned": []
+    }
+  ],
+  "buffs": [
+    {
+      "id": 5101,
+      "duration": 4,
+      "interval": 0,
+      "maxStacks": 1,
+      "stack": 0,
+      "apply": [
+        {
+          "kind": "cue",
+          "id": 4211,
+          "center": "target",
+          "anchor": "Body",
+          "playback": "start",
+          "key": "buff_5101",
+          "tiers": false,
+          "maxTier": 0
+        }
+      ],
+      "period": [],
+      "removed": [
+        {
+          "kind": "cue",
+          "id": 4211,
+          "center": "target",
+          "anchor": "Body",
+          "playback": "stop",
+          "key": "buff_5101",
+          "tiers": false,
+          "maxTier": 0
+        }
+      ]
+    },
+    {
+      "id": 5102,
+      "duration": 3,
+      "interval": 0.5,
+      "maxStacks": 3,
+      "stack": 1,
+      "apply": [
+        {
+          "kind": "cue",
+          "id": 4210,
+          "center": "target",
+          "anchor": "Body",
+          "playback": "start",
+          "key": "buff_5102",
+          "tiers": true,
+          "maxTier": 3
+        }
+      ],
+      "period": [
+        {
+          "kind": "damage",
+          "coefficient": 0.06,
+          "flat": 0,
+          "canCrit": false,
+          "ignoreDefense": false,
+          "scaleByStacks": true,
+          "notifyHurt": false,
+          "sourceStop": 0,
+          "targetStop": 0
+        }
+      ],
+      "removed": [
+        {
+          "kind": "cue",
+          "id": 4210,
+          "center": "target",
+          "anchor": "Body",
+          "playback": "stop",
+          "key": "buff_5102",
+          "tiers": true,
+          "maxTier": 3
+        }
+      ]
+    },
+    {
+      "id": 5103,
+      "duration": 2,
+      "interval": 0.4,
+      "maxStacks": 1,
+      "stack": 0,
+      "apply": [
+        {
+          "kind": "cue",
+          "id": 4209,
+          "center": "target",
+          "anchor": "Body",
+          "playback": "start",
+          "key": "buff_5103",
+          "tiers": false,
+          "maxTier": 0
+        }
+      ],
+      "period": [
+        {
+          "kind": "damage",
+          "coefficient": 0.05,
+          "flat": 0,
+          "canCrit": false,
+          "ignoreDefense": false,
+          "scaleByStacks": false,
+          "notifyHurt": false,
+          "sourceStop": 0,
+          "targetStop": 0
+        }
+      ],
+      "removed": [
+        {
+          "kind": "cue",
+          "id": 4209,
+          "center": "target",
+          "anchor": "Body",
+          "playback": "stop",
+          "key": "buff_5103",
+          "tiers": false,
+          "maxTier": 0
+        }
+      ]
+    },
+    {
+      "id": 5104,
+      "duration": 0.7,
+      "interval": 0,
+      "maxStacks": 1,
+      "stack": 0,
+      "apply": [
+        {
+          "kind": "cue",
+          "id": 4212,
+          "center": "target",
+          "anchor": "Body",
+          "playback": "start",
+          "key": "buff_5104",
+          "tiers": false,
+          "maxTier": 0
+        }
+      ],
+      "period": [],
+      "removed": [
+        {
+          "kind": "cue",
+          "id": 4212,
+          "center": "target",
+          "anchor": "Body",
+          "playback": "stop",
+          "key": "buff_5104",
+          "tiers": false,
+          "maxTier": 0
+        }
+      ]
+    }
+  ],
+  "areas": [
+    {
+      "id": 4102,
+      "radius": 0.25,
+      "duration": 100,
+      "interval": 0.45,
+      "pulseOnSpawn": true,
+      "occupancy": true,
+      "moveSpeed": 0.1,
+      "absorb": true,
+      "force": 0.05,
+      "radiusScale": 0.05,
+      "view": "buff_aoe_monkey_view",
+      "pulse": [],
+      "enter": [
+        {
+          "kind": "damage",
+          "coefficient": 0.2,
+          "flat": 0,
+          "canCrit": true,
+          "ignoreDefense": false,
+          "scaleByStacks": false,
+          "notifyHurt": false,
+          "sourceStop": 0,
+          "targetStop": 2,
+          "critChance": 0.05,
+          "critMultiplier": 1.8
+        },
+        {
+          "kind": "hurt",
+          "requireHpDamage": false
+        },
+        {
+          "kind": "cue",
+          "id": 4204,
+          "center": "target",
+          "anchor": "Body",
+          "playback": "once",
+          "key": "",
+          "tiers": false,
+          "maxTier": 0
+        }
+      ],
+      "stay": [],
+      "exit": [],
+      "expire": []
+    },
+    {
+      "id": 4104,
+      "radius": 1.5,
+      "duration": 0.02,
+      "interval": 0.45,
+      "pulseOnSpawn": true,
+      "occupancy": false,
+      "moveSpeed": 0,
+      "absorb": false,
+      "force": 0,
+      "radiusScale": 0,
+      "view": "",
+      "pulse": [
+        {
+          "kind": "damage",
+          "coefficient": 0.1,
+          "flat": 0,
+          "canCrit": true,
+          "ignoreDefense": false,
+          "scaleByStacks": false,
+          "notifyHurt": false,
+          "sourceStop": 0,
+          "targetStop": 3,
+          "critChance": 0.05,
+          "critMultiplier": 1.8
+        },
+        {
+          "kind": "hurt",
+          "requireHpDamage": false
+        },
+        {
+          "kind": "cue",
+          "id": 4204,
+          "center": "target",
+          "anchor": "Body",
+          "playback": "once",
+          "key": "",
+          "tiers": false,
+          "maxTier": 0
+        }
+      ],
+      "enter": [],
+      "stay": [],
+      "exit": [],
+      "expire": [
+        {
+          "kind": "cue",
+          "id": 4206,
+          "center": "point",
+          "anchor": "",
+          "playback": "once",
+          "key": "",
+          "tiers": false,
+          "maxTier": 0
+        }
+      ]
+    },
+    {
+      "id": 4105,
+      "radius": 0.1,
+      "duration": 3,
+      "interval": 0.45,
+      "pulseOnSpawn": true,
+      "occupancy": false,
+      "moveSpeed": 0,
+      "absorb": false,
+      "force": 0,
+      "radiusScale": 0,
+      "view": "buff_aoe_stayingbomb_view",
+      "pulse": [],
+      "enter": [],
+      "stay": [],
+      "exit": [],
+      "expire": [
+        {
+          "kind": "area",
+          "id": 4104
+        },
+        {
+          "kind": "area",
+          "id": 4106
+        }
+      ]
+    },
+    {
+      "id": 4106,
+      "radius": 2,
+      "duration": 3,
+      "interval": 0.5,
+      "pulseOnSpawn": true,
+      "occupancy": false,
+      "moveSpeed": 0,
+      "absorb": false,
+      "force": 0,
+      "radiusScale": 0,
+      "view": "buff_aoe_burn_view",
+      "pulse": [
+        {
+          "kind": "buff",
+          "id": 5103,
+          "stacks": 1,
+          "recipient": "target"
+        }
+      ],
+      "enter": [],
+      "stay": [],
+      "exit": [],
+      "expire": []
+    }
+  ],
+  "combos": [
+    {
+      "pre": [
+        2001
+      ],
+      "action": "Fire1",
+      "tags": [
+        1017
+      ],
+      "priority": 10,
+      "target": 2012
+    },
+    {
+      "pre": [
+        2012
+      ],
+      "action": "Fire1",
+      "tags": [
+        1017
+      ],
+      "priority": 10,
+      "target": 2013
+    },
+    {
+      "pre": [
+        2001
+      ],
+      "action": "Fire2",
+      "tags": [
+        1017
+      ],
+      "priority": 5,
+      "target": 2005
+    },
+    {
+      "pre": [
+        2012
+      ],
+      "action": "Fire3",
+      "tags": [
+        1017
+      ],
+      "priority": 5,
+      "target": 2007
+    },
+    {
+      "pre": [],
+      "action": "Fire1",
+      "tags": [],
+      "priority": 0,
+      "target": 2001
+    },
+    {
+      "pre": [],
+      "action": "Roll",
+      "tags": [],
+      "priority": 0,
+      "target": 2002
+    },
+    {
+      "pre": [],
+      "action": "Monkey",
+      "tags": [],
+      "priority": 0,
+      "target": 2003
+    },
+    {
+      "pre": [],
+      "action": "Homing",
+      "tags": [],
+      "priority": 0,
+      "target": 2004
+    },
+    {
+      "pre": [],
+      "action": "Fire2",
+      "tags": [],
+      "priority": 0,
+      "target": 2005
+    },
+    {
+      "pre": [],
+      "action": "Fire4",
+      "tags": [],
+      "priority": 0,
+      "target": 2006
+    },
+    {
+      "pre": [],
+      "action": "Fire3",
+      "tags": [],
+      "priority": 0,
+      "target": 2007
+    },
+    {
+      "pre": [],
+      "action": "Fire5",
+      "tags": [],
+      "priority": 0,
+      "target": 2008
+    }
+  ]
+}

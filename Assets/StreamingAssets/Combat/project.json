@@ -1007,7 +1007,8 @@
             "trajectory": "ramp",
             "trackingKey": "warp",
             "rampTime": 5,
-            "view": "buff_projectile_teleport_view"
+            "view": "buff_projectile_teleport_view",
+            "passInvulnerable": true
           },
           "runtimeId": 4004
         },
@@ -1033,7 +1034,7 @@
           "kind": "hurt-feedback",
           "parameters": {
             "level": "none",
-            "requireHpDamage": true
+            "requireHpDamage": false
           },
           "position": {
             "x": 1200,
@@ -1052,6 +1053,33 @@
           "position": {
             "x": 600,
             "y": 760
+          }
+        },
+        {
+          "id": "hit-cue",
+          "kind": "cue",
+          "parameters": {
+            "id": 4204,
+            "name": "OriginalCue4204",
+            "center": "target",
+            "anchor": "Body"
+          },
+          "position": {
+            "x": 1400,
+            "y": 520
+          }
+        },
+        {
+          "id": "expiry-cue",
+          "kind": "cue",
+          "parameters": {
+            "id": 4207,
+            "name": "OriginalCue4207",
+            "center": "point"
+          },
+          "position": {
+            "x": 900,
+            "y": 1000
           }
         }
       ],
@@ -1077,6 +1105,22 @@
           "source": "damage",
           "sourcePort": "next",
           "target": "damage-hurt",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "damage-hurt-next-hit-cue",
+          "source": "damage-hurt",
+          "sourcePort": "next",
+          "target": "hit-cue",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "projectile-lifetime-expiry-cue",
+          "source": "projectile",
+          "sourcePort": "lifetime",
+          "target": "expiry-cue",
           "targetPort": "execute",
           "order": 0
         }
@@ -1301,7 +1345,7 @@
           "kind": "hurt-feedback",
           "parameters": {
             "level": "heavy",
-            "requireHpDamage": true
+            "requireHpDamage": false
           },
           "position": {
             "x": 1500,
@@ -1563,7 +1607,8 @@
             "notifyHurt": false,
             "sourceHitstopFrames": 0,
             "targetHitstopFrames": 2,
-            "feedback": "light"
+            "feedback": "skill",
+            "feedbackHitstop": true
           }
         },
         {
@@ -1574,8 +1619,8 @@
             "y": 80
           },
           "parameters": {
-            "level": "light",
-            "requireHpDamage": true
+            "level": "damage",
+            "requireHpDamage": false
           }
         },
         {
@@ -1589,7 +1634,8 @@
             "mode": "instant",
             "cost": 0,
             "cooldown": 0,
-            "ammoCost": 3
+            "ammoCost": 3,
+            "hitFeedback": "heavy"
           }
         },
         {
@@ -1604,6 +1650,20 @@
             "name": "MuzzleFlash",
             "center": "source",
             "anchor": "Muzzle"
+          }
+        },
+        {
+          "id": "hit-cue",
+          "kind": "cue",
+          "parameters": {
+            "id": 4204,
+            "name": "OriginalCue4204",
+            "center": "target",
+            "anchor": "Body"
+          },
+          "position": {
+            "x": 1400,
+            "y": 520
           }
         }
       ],
@@ -1629,6 +1689,14 @@
           "source": "damage",
           "sourcePort": "next",
           "target": "hurt",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hurt-next-hit-cue",
+          "source": "hurt",
+          "sourcePort": "next",
+          "target": "hit-cue",
           "targetPort": "execute",
           "order": 0
         }
@@ -2518,7 +2586,7 @@
             "flat": 0,
             "coefficient": 0.06,
             "canCrit": false,
-            "snapshotAttack": true,
+            "snapshotAttack": false,
             "scaleByStacks": true,
             "notifyHurt": false,
             "feedback": "none"
@@ -2534,7 +2602,9 @@
             "anchor": "Body",
             "playback": "start",
             "instanceKey": "buff_5102",
-            "stopWithCast": false
+            "stopWithCast": false,
+            "stacksAsTier": true,
+            "maxTier": 3
           },
           "position": {
             "x": 600,
@@ -2550,7 +2620,9 @@
             "center": "target",
             "anchor": "Body",
             "playback": "stop",
-            "instanceKey": "buff_5102"
+            "instanceKey": "buff_5102",
+            "stacksAsTier": true,
+            "maxTier": 3
           },
           "position": {
             "x": 900,
@@ -2662,6 +2734,108 @@
           "source": "events",
           "sourcePort": "removed",
           "target": "stop",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "arena-ground-burn",
+      "runtimeId": 5103,
+      "name": "地面燃烧",
+      "permanent": false,
+      "duration": 2,
+      "interval": 0.4,
+      "stack": "refresh",
+      "maxStacks": 1,
+      "mutexGroup": 0,
+      "tags": [],
+      "modifiers": [],
+      "nodes": [
+        {
+          "id": "events",
+          "kind": "buff-events",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {}
+        },
+        {
+          "id": "period",
+          "kind": "damage",
+          "position": {
+            "x": 300,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 0,
+            "coefficient": 0.05,
+            "canCrit": false,
+            "snapshotAttack": false,
+            "scaleByStacks": false,
+            "notifyHurt": false,
+            "feedback": "none"
+          }
+        },
+        {
+          "id": "status-visual",
+          "kind": "cue",
+          "parameters": {
+            "id": 4209,
+            "name": "StatusVisual",
+            "center": "target",
+            "anchor": "Body",
+            "playback": "start",
+            "instanceKey": "buff_5103",
+            "stopWithCast": false,
+            "stacksAsTier": false
+          },
+          "position": {
+            "x": 600,
+            "y": 850
+          }
+        },
+        {
+          "id": "status-visual-stop",
+          "kind": "cue",
+          "parameters": {
+            "id": 4209,
+            "name": "StatusVisual",
+            "center": "target",
+            "anchor": "Body",
+            "playback": "stop",
+            "instanceKey": "buff_5103",
+            "stacksAsTier": false
+          },
+          "position": {
+            "x": 900,
+            "y": 850
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "events-period-period",
+          "source": "events",
+          "sourcePort": "period",
+          "target": "period",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "events-apply-status-visual-1",
+          "source": "events",
+          "sourcePort": "apply",
+          "target": "status-visual",
+          "targetPort": "execute",
+          "order": 1
+        },
+        {
+          "id": "events-removed-status-visual-stop-0",
+          "source": "events",
+          "sourcePort": "removed",
+          "target": "status-visual-stop",
           "targetPort": "execute",
           "order": 0
         }
@@ -2885,27 +3059,6 @@
         "toSkill": "arena-tracked-shot"
       },
       {
-        "id": "arena-tracked-cancel",
-        "preSkills": [
-          "g1",
-          "g2",
-          "dodge",
-          "homing",
-          "aura",
-          "summon-melee",
-          "arena-ammo-shot",
-          "arena-reload-ammo",
-          "arena-tracked-shot",
-          "arena-projectile-warp"
-        ],
-        "input": "ArenaTracked",
-        "requiredTags": [
-          1001
-        ],
-        "priority": 10,
-        "toSkill": "arena-tracked-shot"
-      },
-      {
         "id": "arena-primary-root",
         "preSkills": [],
         "input": "ArenaPrimary",
@@ -2914,53 +3067,11 @@
         "toSkill": "arena-ammo-shot"
       },
       {
-        "id": "arena-primary-cancel",
-        "preSkills": [
-          "g1",
-          "g2",
-          "dodge",
-          "homing",
-          "aura",
-          "summon-melee",
-          "arena-reload-ammo",
-          "arena-tracked-shot",
-          "arena-projectile-warp"
-        ],
-        "input": "ArenaPrimary",
-        "requiredTags": [
-          1001
-        ],
-        "priority": 10,
-        "toSkill": "arena-ammo-shot"
-      },
-      {
         "id": "arena-construct-root",
         "preSkills": [],
         "input": "ArenaConstruct",
         "requiredTags": [],
         "priority": 0,
-        "toSkill": "arena-barrel"
-      },
-      {
-        "id": "arena-construct-cancel",
-        "preSkills": [
-          "g1",
-          "g2",
-          "dodge",
-          "homing",
-          "aura",
-          "summon-melee",
-          "arena-ammo-shot",
-          "arena-reload-ammo",
-          "arena-tracked-shot",
-          "arena-projectile-warp",
-          "arena-barrel"
-        ],
-        "input": "ArenaConstruct",
-        "requiredTags": [
-          1001
-        ],
-        "priority": 10,
         "toSkill": "arena-barrel"
       },
       {
@@ -3167,7 +3278,8 @@
           "hpPerSpawn": 0,
           "attackPerSpawn": 0,
           "attackRandomRange": 20
-        }
+        },
+        "inputBufferSeconds": 0.8
       },
       {
         "id": "arena-enemy",
@@ -3704,7 +3816,7 @@
           "kind": "hurt-feedback",
           "parameters": {
             "level": "damage",
-            "requireHpDamage": true
+            "requireHpDamage": false
           },
           "position": {
             "x": 1200,
@@ -3722,6 +3834,33 @@
             "buff": "arena-vulnerability",
             "recipient": "target",
             "stacks": 1
+          }
+        },
+        {
+          "id": "hit-cue",
+          "kind": "cue",
+          "parameters": {
+            "id": 4204,
+            "name": "OriginalCue4204",
+            "center": "target",
+            "anchor": "Body"
+          },
+          "position": {
+            "x": 1400,
+            "y": 520
+          }
+        },
+        {
+          "id": "expiry-cue",
+          "kind": "cue",
+          "parameters": {
+            "id": 4204,
+            "name": "OriginalCue4204",
+            "center": "point"
+          },
+          "position": {
+            "x": 900,
+            "y": 1000
           }
         }
       ],
@@ -3743,10 +3882,26 @@
           "order": 0
         },
         {
-          "id": "damage-hurt-next-vulnerable",
+          "id": "damage-hurt-next-hit-cue",
           "source": "damage-hurt",
           "sourcePort": "next",
+          "target": "hit-cue",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-cue-next-vulnerable",
+          "source": "hit-cue",
+          "sourcePort": "next",
           "target": "vulnerable",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "projectile-lifetime-expiry-cue",
+          "source": "projectile",
+          "sourcePort": "lifetime",
+          "target": "expiry-cue",
           "targetPort": "execute",
           "order": 0
         }
@@ -3797,18 +3952,6 @@
           }
         },
         {
-          "id": "hurt",
-          "kind": "hurt-feedback",
-          "position": {
-            "x": 600,
-            "y": 80
-          },
-          "parameters": {
-            "level": "damage",
-            "requireHpDamage": true
-          }
-        },
-        {
           "id": "vulnerable",
           "kind": "buff",
           "position": {
@@ -3819,6 +3962,20 @@
             "buff": "arena-vulnerability",
             "recipient": "target",
             "stacks": 1
+          }
+        },
+        {
+          "id": "hit-cue",
+          "kind": "cue",
+          "parameters": {
+            "id": 4206,
+            "name": "OriginalCue4206",
+            "center": "target",
+            "anchor": "Body"
+          },
+          "position": {
+            "x": 600,
+            "y": 80
           }
         }
       ],
@@ -3832,16 +3989,16 @@
           "order": 0
         },
         {
-          "id": "damage-next-hurt",
+          "id": "damage-next-hit-cue",
           "source": "damage",
           "sourcePort": "next",
-          "target": "hurt",
+          "target": "hit-cue",
           "targetPort": "execute",
           "order": 0
         },
         {
-          "id": "hurt-next-vulnerable",
-          "source": "hurt",
+          "id": "hit-cue-next-vulnerable",
+          "source": "hit-cue",
           "sourcePort": "next",
           "target": "vulnerable",
           "targetPort": "execute",
@@ -3900,11 +4057,38 @@
           "kind": "hurt-feedback",
           "parameters": {
             "level": "damage",
-            "requireHpDamage": true
+            "requireHpDamage": false
           },
           "position": {
             "x": 1200,
             "y": 320
+          }
+        },
+        {
+          "id": "hit-cue",
+          "kind": "cue",
+          "parameters": {
+            "id": 4204,
+            "name": "OriginalCue4204",
+            "center": "target",
+            "anchor": "Body"
+          },
+          "position": {
+            "x": 1400,
+            "y": 520
+          }
+        },
+        {
+          "id": "expiry-cue",
+          "kind": "cue",
+          "parameters": {
+            "id": 4204,
+            "name": "OriginalCue4204",
+            "center": "point"
+          },
+          "position": {
+            "x": 900,
+            "y": 1000
           }
         }
       ],
@@ -3922,6 +4106,22 @@
           "source": "damage",
           "sourcePort": "next",
           "target": "damage-hurt",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "damage-hurt-next-hit-cue",
+          "source": "damage-hurt",
+          "sourcePort": "next",
+          "target": "hit-cue",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "projectile-lifetime-expiry-cue",
+          "source": "projectile",
+          "sourcePort": "lifetime",
+          "target": "expiry-cue",
           "targetPort": "execute",
           "order": 0
         }
@@ -3978,11 +4178,38 @@
           "kind": "hurt-feedback",
           "parameters": {
             "level": "damage",
-            "requireHpDamage": true
+            "requireHpDamage": false
           },
           "position": {
             "x": 1200,
             "y": 320
+          }
+        },
+        {
+          "id": "hit-cue",
+          "kind": "cue",
+          "parameters": {
+            "id": 4204,
+            "name": "OriginalCue4204",
+            "center": "target",
+            "anchor": "Body"
+          },
+          "position": {
+            "x": 1400,
+            "y": 520
+          }
+        },
+        {
+          "id": "expiry-cue",
+          "kind": "cue",
+          "parameters": {
+            "id": 4204,
+            "name": "OriginalCue4204",
+            "center": "point"
+          },
+          "position": {
+            "x": 900,
+            "y": 1000
           }
         }
       ],
@@ -4000,6 +4227,22 @@
           "source": "damage",
           "sourcePort": "next",
           "target": "damage-hurt",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "damage-hurt-next-hit-cue",
+          "source": "damage-hurt",
+          "sourcePort": "next",
+          "target": "hit-cue",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "projectile-lifetime-expiry-cue",
+          "source": "projectile",
+          "sourcePort": "lifetime",
+          "target": "expiry-cue",
           "targetPort": "execute",
           "order": 0
         }
@@ -4060,7 +4303,7 @@
           "kind": "hurt-feedback",
           "parameters": {
             "level": "damage",
-            "requireHpDamage": true
+            "requireHpDamage": false
           },
           "position": {
             "x": 1200,
@@ -4078,6 +4321,34 @@
             "buff": "arena-return-burn",
             "recipient": "target",
             "stacks": 1
+          }
+        },
+        {
+          "id": "hit-cue",
+          "kind": "cue",
+          "parameters": {
+            "id": 4204,
+            "name": "OriginalCue4204",
+            "center": "target",
+            "anchor": "Body"
+          },
+          "position": {
+            "x": 1400,
+            "y": 520
+          }
+        },
+        {
+          "id": "return-cue",
+          "kind": "cue",
+          "parameters": {
+            "id": 4202,
+            "name": "OriginalCue4202",
+            "center": "source",
+            "anchor": "Body"
+          },
+          "position": {
+            "x": 900,
+            "y": 1000
           }
         }
       ],
@@ -4099,10 +4370,26 @@
           "order": 0
         },
         {
-          "id": "hurt-next-return-burn",
+          "id": "damage-hurt-next-hit-cue",
           "source": "damage-hurt",
           "sourcePort": "next",
+          "target": "hit-cue",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-cue-next-return-burn",
+          "source": "hit-cue",
+          "sourcePort": "next",
           "target": "return-burn",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "projectile-returned-return-cue",
+          "source": "projectile",
+          "sourcePort": "returned",
+          "target": "return-cue",
           "targetPort": "execute",
           "order": 0
         }
@@ -4253,7 +4540,7 @@
             "canCrit": true,
             "notifyHurt": false,
             "targetHitstopFrames": 3,
-            "feedback": "none"
+            "feedback": "heavy"
           },
           "position": {
             "x": 300,
@@ -4264,8 +4551,8 @@
           "id": "hurt",
           "kind": "hurt-feedback",
           "parameters": {
-            "level": "light",
-            "requireHpDamage": true
+            "level": "damage",
+            "requireHpDamage": false
           },
           "position": {
             "x": 600,
@@ -4278,7 +4565,8 @@
           "parameters": {
             "id": 4204,
             "name": "BombHit",
-            "center": "target"
+            "center": "target",
+            "anchor": "Body"
           },
           "position": {
             "x": 900,
@@ -4432,7 +4720,7 @@
           "id": "burn",
           "kind": "buff",
           "parameters": {
-            "buff": "arena-return-burn",
+            "buff": "arena-ground-burn",
             "stacks": 1,
             "recipient": "target"
           },

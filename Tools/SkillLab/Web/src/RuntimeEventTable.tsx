@@ -4,7 +4,7 @@ const labels={cast:'施放',input:'输入','combo-confirmation':'命中确认','
 export function RuntimeEventTable({events,inspectSource,inspectEntity,ready}:{events:RunEvent[];inspectSource:(source:AuthorNodeSource)=>void;inspectEntity:(id:string)=>void;ready:boolean}) {
   return <table className="event-table"><thead><tr><th>时间</th><th>事件</th><th>来源</th><th>结果 / 定位</th></tr></thead><tbody>{events.map(e=><tr key={e.sequence}>
     <td>{e.time.toFixed(2)}s<small className="event-trace"> #{e.step}</small></td><td className={e.damage?'gold':''}>{e.kind==='execute'?'节点执行':(labels as Record<string,string>)[e.kind]??e.kind}</td><td>{e.source}</td>
-    <td>{e.result}<div className="event-location">{e.node&&<button disabled={!ready} title={e.node.graphKind+':'+e.node.graphId+' / '+e.node.nodeId} aria-label={'定位事件'+e.sequence+'的节点'} onClick={()=>inspectSource(e.node!)}>{e.node.graphName||e.node.graphId} / {e.node.nodeId}</button>}
+    <td>{e.damage&&(e.kind==='damage'||e.kind==='critical')?(e.damage.absorbed+e.damage.hpLost).toLocaleString('zh-CN',{maximumFractionDigits:3})+' → '+e.damage.target:e.result}<div className="event-location">{e.node&&<button disabled={!ready} title={e.node.graphKind+':'+e.node.graphId+' / '+e.node.nodeId} aria-label={'定位事件'+e.sequence+'的节点'} onClick={()=>inspectSource(e.node!)}>{e.node.graphName||e.node.graphId} / {e.node.nodeId}</button>}
     {([['sourceId','来源'],['targetId','目标'],['bodyId','实体']] as const).map(([key,label])=>e[key]&&<button key={key} disabled={!ready} onClick={()=>inspectEntity(e[key]!)} aria-label={'定位事件'+e.sequence+'的'+label}>{label}</button>)}</div>
     {e.castId>0&&<small className="event-trace">{e.skill} · Cast {e.castId}{e.executionId>0?' · 执行 '+e.executionId:''}</small>}</td>
   </tr>)}</tbody></table>;

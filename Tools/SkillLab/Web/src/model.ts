@@ -8,7 +8,7 @@ export interface AuthoredTimeline {runtimeId:number;duration:number;clips:Timeli
 export interface RuntimeCombo {id:string;preSkills:string[];input:string;requiredTags:number[];priority:number;toSkill:string}
 export interface SpawnStats {hpPerSpawn:number;attackPerSpawn:number;attackRandomRange:number;moveSpeedCurve?:{base:number;randomRange:number;scale:number;divisor:number;offset:number}}
 export interface WanderTiming {firstTurn:number;turnIntervalMin:number;turnIntervalMax:number;turnAngle:number;firstShot:number;shotIntervalMin:number;shotIntervalMax:number}
-export interface RuntimeActor {id:string;role:string;team:number;skillId?:string;dodgeSkill?:string;slots?:string[];view:string;ai?:string;spawnStats?:SpawnStats;wander?:WanderTiming;[key:string]:unknown}
+export interface RuntimeActor {id:string;role:string;team:number;skillId?:string;dodgeSkill?:string;slots?:string[];view:string;ai?:string;spawnStats?:SpawnStats;wander?:WanderTiming;inputBufferSeconds?:number;[key:string]:unknown}
 export interface ArenaSettings {player:string;enemy:string;trainingTarget:string;seed:number;maxEnemies:number;spawnPeriod:number;cleanupDelay:number;halfWidth:number;halfDepth:number;spawnDistance:number;playerX:number;playerZ:number;playerYaw:number;cameraDistance:number;cameraHeight:number;cameraFov:number;cameraFocusHeight:number;bindings:{action:string;input:string}[];obstacles?:ObstacleView[]}
 export interface RuntimeView {id:string;resource:string;scale:number;yawOffset:number;kind?:'actor'|'body';spinSpeed?:number;states:Record<string,string>}
 export interface RuntimeContent {motor:{gravity:number;jumpSpeed:number;airSteer:number;groundY:number;stickDeadzone:number};combos:RuntimeCombo[];actors:RuntimeActor[];cues:{id:number;key:string;kind:string;resource?:string;sound?:string;lifetime:number}[];views?:RuntimeView[];arena?:ArenaSettings}
@@ -158,6 +158,8 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
     {key:'anchor',label:'角色表现锚点',type:'text',initial:'',when:p=>p.center!=='point'},
     {key:'instanceKey',label:'循环实例键',type:'text',initial:'',when:p=>p.playback==='start'||p.playback==='stop'},
     {key:'stopWithCast',label:'施法结束自动停止',type:'check',initial:true,when:p=>p.playback==='start'},
+    {key:'stacksAsTier',label:'按Buff层数分级',type:'check',initial:false,when:p=>p.playback==='start'||p.playback==='stop'},
+    {key:'maxTier',label:'表现层数上限',min:1,max:128,step:1,initial:3,when:p=>!!p.stacksAsTier},
     {key:'center',label:'表现位置',type:'select',initial:'source',options:[['source','效果来源'],['point','事件 / 指定点'],['target','当前目标']]}] },
   buff:{title:'施加 Buff',color:'#5c7e68',inputs:['execute'],outputs:[['next','继续']],fields:[
     {key:'buff',label:'Buff定义',type:'select',initial:'',options:[]},

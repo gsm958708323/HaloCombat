@@ -14,6 +14,7 @@ namespace Combat.Core
         public float AcquireRadius,AttackRange,FollowRange,LeashRange,PatrolRadius;
         public int Ammo,InitialAmmo;
         public float ActionSpeed=1;
+        public float InputBufferSeconds=.2f;
         public ActorSpawnStats SpawnStats;
         public bool KeepAssignedTarget;
     }
@@ -46,7 +47,7 @@ namespace Combat.Core
             actor.AddComp(new AmmoComp(definition.Ammo,definition.InitialAmmo));actor.AddComp(new TrackedProjectilesComp());
             if(definition.Role=="player")
             {
-                actor.AddComp(new InputBufferComp());actor.AddComp(new ComboComp(_data.Combo));actor.AddComp(new PlayerAimComp());
+                actor.AddComp(new InputBufferComp(definition.InputBufferSeconds));actor.AddComp(new ComboComp(_data.Combo));actor.AddComp(new PlayerAimComp());
                 actor.AddComp(new RuntimePlayerDriverComp(definition.DodgeSkill));var slots=new LoadoutComp();actor.AddComp(slots);
                 for(int i=0;i<definition.Slots.Length;i++)if(_skills.TryGet(definition.Slots[i],out var skill))slots.EquipSkill((SkillSlot)i,skill.Id,skill.Timeline);
             }

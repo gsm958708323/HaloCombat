@@ -46,6 +46,7 @@ namespace Combat.Config
         public float CollisionRadius {get;set;}
         public float Energy {get;set;}=100;
         public float Recovery {get;set;}=10;
+        [System.ComponentModel.DefaultValue(.2f),JsonProperty(DefaultValueHandling=DefaultValueHandling.Ignore)]public float InputBufferSeconds {get;set;}=.2f;
         [System.ComponentModel.DefaultValue(0),JsonProperty(DefaultValueHandling=DefaultValueHandling.Ignore)] public int Ammo {get;set;}
         [JsonProperty(NullValueHandling=NullValueHandling.Ignore)] public int? InitialAmmo {get;set;}
         public string SkillId {get;set;}

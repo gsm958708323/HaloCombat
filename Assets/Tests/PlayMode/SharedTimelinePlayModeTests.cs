@@ -54,7 +54,7 @@ namespace Combat.Tests
                 Assert.IsTrue(_lab.CastSlot("f6",4,0).Accepted);reference.Simulation.Cast("arena-combo-second",4,0);_lab.StepLogicForTests(40);reference.Simulation.Advance(40);
                 Assert.IsTrue(_lab.CastSlot("f7",4,0).Accepted);reference.Simulation.Cast("arena-combo-finisher",4,0);_lab.StepLogicForTests(40);reference.Simulation.Advance(40);
                 Assert.AreEqual(55,_lab.Snapshot.Ammo);Assert.AreEqual(2,_lab.Snapshot.Statistics.Hits);Assert.IsTrue(JToken.DeepEquals(JToken.FromObject(reference.Simulation.Snapshot()),JToken.FromObject(_lab.Snapshot)));
-                CollectionAssert.AreEqual(new[]{"comboconfirm","finisher"},_lab.Snapshot.Events.Where(e=>e.Kind=="hurt").Select(e=>e.Result));yield return null;LogAssert.NoUnexpectedReceived();
+                Assert.IsFalse(_lab.Snapshot.Events.Any(e=>e.Kind=="hurt"),"Original PD4012 has no HurtFeedback effect; its graded damage and hit Cue remain separate.");yield return null;LogAssert.NoUnexpectedReceived();
             }
         }
         [UnityTest]

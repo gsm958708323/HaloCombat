@@ -13,6 +13,7 @@ export function ActorSpawnProperties({project,update}:{project:Project;update:(c
   const stats=actor.spawnStats,wandering=actor.ai==='wander-shooter';
   return <details className="actor-spawn-properties"><summary>角色生成与 AI · {actors.length}</summary>
     <label>角色<select aria-label="生成规则角色" value={actor.id} onChange={e=>setSelected(e.target.value)}>{actors.map(a=><option key={a.id} value={a.id}>{a.id}</option>)}</select></label>
+    {actor.role==='player'&&number('输入缓冲时间（秒）',actor.inputBufferSeconds??.2,.01,10,.02,v=>edit(a=>({...a,inputBufferSeconds:v})))}
     <p>只在生成时采样。敌人成长按累计生成序号递增，重开从0开始；现有角色在明确重载后更新。</p>
     <label>生成数值采样<input aria-label="生成数值采样" type="checkbox" checked={!!stats} onChange={e=>edit(a=>({...a,spawnStats:e.target.checked?{hpPerSpawn:0,attackPerSpawn:0,attackRandomRange:0}:undefined}))}/></label>
     {stats&&<>{([['hpPerSpawn','每次生成生命增长',0,1000000,.1],['attackPerSpawn','每次生成攻击增长',0,1000000,.1],['attackRandomRange','攻击整数随机范围',0,1000000,1]] as const).map(([key,label,min,max,step])=>number(label,stats[key],min,max,step,v=>edit(a=>({...a,spawnStats:{...a.spawnStats!,[key]:v}}))))}

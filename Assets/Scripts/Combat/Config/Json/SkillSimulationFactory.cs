@@ -34,7 +34,10 @@ namespace Combat.Config
                 {board.AcquireRadius=blueprint.AcquireRadius;board.AttackRange=blueprint.AttackRange;board.FollowRange=blueprint.FollowRange;}));
             }
             if(spec.BlueprintId=="caster"&&_content.Runtime!=null)
-            {actor.AddComp(new InputBufferComp());actor.AddComp(new ComboComp(_content.Runtime.Data.Combo));actor.AddComp(new PlayerAimComp());actor.AddComp(new RuntimePlayerDriverComp(SkillNodeId.None));}
+            {
+                var runtime=_content.Runtime;float window=runtime.Arena!=null?runtime.Actors[runtime.Arena.Player].InputBufferSeconds:.2f;
+                actor.AddComp(new InputBufferComp(window));actor.AddComp(new ComboComp(runtime.Data.Combo));actor.AddComp(new PlayerAimComp());actor.AddComp(new RuntimePlayerDriverComp(SkillNodeId.None));
+            }
             actor.AddComp(new SkillDirectorComp(_content.Timelines));
             if (spec.BlueprintId == "caster"||summoned)
             {

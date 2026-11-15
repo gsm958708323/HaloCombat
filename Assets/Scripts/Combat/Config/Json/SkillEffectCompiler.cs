@@ -93,7 +93,7 @@ namespace Combat.Config
                     effects.Add(damage); effects.AddRange(Outputs(node, "next",allowSpatial));
                     break;
                 case "cue":
-                    var cue = new NodeParameters(node, path, "id","name","center","playback","instanceKey","stopWithCast","anchor");
+                    var cue = new NodeParameters(node, path, "id","name","center","playback","instanceKey","stopWithCast","anchor","stacksAsTier","maxTier");
                     _content.RequiredCues.Add(cue.Integer("id",1,1,1000000));
                     string cueCenter=cue.Choice("center","source","source","point","target");
                     string playback=cue.Choice("playback","once","once","start","stop"),instanceKey=cue.OptionalIdentity("instanceKey");
@@ -101,8 +101,10 @@ namespace Combat.Config
                     if(playback=="once"&&!string.IsNullOrEmpty(instanceKey))throw new ContentValidationException(path+".parameters.instanceKey","One-shot Cue has no instance key.");
                     int cueId=cue.Integer("id",1,1,1000000);string cueName=cue.Text("name","Skill");
                     bool stopWithCast=cue.Boolean("stopWithCast",true);
+                    bool tiers=cue.Boolean("stacksAsTier",false);int maxTier=cue.Integer("maxTier",3,1,128);
+                    if(tiers&&playback=="once")throw new ContentValidationException(path+".parameters.stacksAsTier","Tiered Cue requires keyed start or stop playback.");
                     string anchor=cue.OptionalIdentity("anchor");if(anchor.Length>0&&cueCenter=="point")throw new ContentValidationException(path+".parameters.anchor","Anchors need an entity center.");
-                    effects.Add(playback!="once"||anchor.Length>0?new CuePlaybackEffect(cueId,cueName,cueCenter=="target"?EffectCenter.Target:EffectCenter.Source,(CuePlayback)Array.IndexOf(new[]{"once","start","stop"},playback),instanceKey,stopWithCast,anchor):
+                    effects.Add(playback!="once"||anchor.Length>0?new CuePlaybackEffect(cueId,cueName,cueCenter=="target"?EffectCenter.Target:EffectCenter.Source,(CuePlayback)Array.IndexOf(new[]{"once","start","stop"},playback),instanceKey,stopWithCast,anchor,tiers,maxTier):
                         cueCenter=="source"?(IEffect)new PlayCueEffect(cueId,cueName):new PlayPositionedCueEffect(cueId,cueName,cueCenter=="point"?EffectCenter.Point:EffectCenter.Target));
                     effects.AddRange(Outputs(node, "next",allowSpatial));
                     break;

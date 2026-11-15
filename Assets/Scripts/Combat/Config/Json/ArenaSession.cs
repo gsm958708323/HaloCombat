@@ -12,7 +12,6 @@ namespace Combat.Config
         static readonly string[] Priority={"Roll","Fire4","Monkey","Homing","Fire5","Fire3","Fire2","Fire1"};
         readonly CombatContentSnapshot _content;
         readonly Dictionary<string,InputToken> _bindings;
-        readonly Queue<InputToken> _presses=new Queue<InputToken>();
         readonly List<(EntityId id,double at)> _corpses=new List<(EntityId,double)>();
         readonly Dictionary<string,SkillNodeId> _slots;
         readonly Dictionary<string,int> _slotCasts=new Dictionary<string,int>();
@@ -67,10 +66,10 @@ namespace Combat.Config
             var state=player.GetComp<PlayerAimComp>();bool wasHeld=state.PrimaryHeld;state.PrimaryHeld=frame.PrimaryHeld;
             state.Valid=frame.AimValid;if(frame.AimValid)state.Aim=frame.Aim;
             if(wasHeld&&!frame.PrimaryHeld){ReleaseOwned(player,state.PrimaryCastId);state.PrimaryCastId=0;}
-            int accepted=0;
+            int accepted=0;var input=player.GetComp<InputBufferComp>();
             foreach(string action in Priority)
-                if(frame.Pressed!=null&&Array.IndexOf(frame.Pressed,action)>=0&&_bindings.TryGetValue(action,out var token)&&accepted++<3)
-                {if(_presses.Count==3)_presses.Dequeue();_presses.Enqueue(token);}
+                if(frame.Pressed!=null&&Array.IndexOf(frame.Pressed,action)>=0&&_bindings.TryGetValue(action,out var token)&&accepted++<InputBufferComp.Capacity)
+                input.Push(token);
         }
         public bool CastSlot(string slot)
         {
@@ -86,7 +85,7 @@ namespace Combat.Config
         {if(castId>0&&player.GetComp<SkillDirectorComp>().CurrentOrigin.CastId==castId)player.GetComp<SkillCastComp>().Release();}
         public void CancelInput()
         {
-            _presses.Clear();_slotCasts.Clear();_moveX=_moveZ=0;
+            _slotCasts.Clear();_moveX=_moveZ=0;
             if(_disposed||!World.TryGetActor(PlayerId,out var player))return;
             player.GetComp<InputBufferComp>().Clear();var aiming=player.GetComp<PlayerAimComp>();aiming.PrimaryHeld=false;aiming.Valid=false;aiming.PrimaryCastId=0;
             player.GetComp<LocomotionComp>().RequestMoveIntent(0,0);player.GetComp<SkillCastComp>().CancelHeld();
@@ -102,7 +101,6 @@ namespace Combat.Config
                 {
                     var move=player.GetComp<LocomotionComp>();move.RequestMoveIntent(_moveX,_moveZ);
                     var aim=player.GetComp<PlayerAimComp>();if(aim.Valid)move.RequestAimYaw(aim.Aim.Yaw);
-                    var input=player.GetComp<InputBufferComp>();if(!input.TryPeek(out _)&&_presses.Count>0)input.Push(_presses.Dequeue());
                 }
                 World.Tick(Step);if(PlayerDead)break;
                 _spawnAge+=Step;

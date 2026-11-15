@@ -15,6 +15,7 @@ namespace Combat.Unity
         ParticleSystem[] _particles;
         double _time;
         public int CastId=>_cast;
+        public bool StopWithCast=>_stopWithCast;
         public void Initialize(CombatWorld world,EvCue cue,Action removed,Transform attachment=null)
         {
             _world=world;_anchor=cue.Source;_caster=cue.Origin.Caster;_cast=cue.Origin.CastId;_stopWithCast=cue.StopWithCast;_removed=removed;

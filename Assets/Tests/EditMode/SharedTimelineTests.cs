@@ -134,7 +134,7 @@ namespace Combat.Tests
                 f.Input();f.Ready(2001);f.Input();Assert.AreEqual(2012,f.Director.CurrentSkill.Value);f.Ready(2012);f.Input();Assert.AreEqual(2013,f.Director.CurrentSkill.Value);
                 f.Tick(40);Assert.AreEqual(54,f.Player.GetComp<AmmoComp>().Current);CollectionAssert.AreEqual(new[]{50f,84.375f,84.375f},f.Damage.Select(d=>d.HpLost));
                 CollectionAssert.AreEqual(new[]{HitFeedbackLevel.Light,HitFeedbackLevel.ComboConfirm,HitFeedbackLevel.Finisher},f.Damage.Select(d=>d.Feedback));
-                CollectionAssert.AreEqual(new[]{HitFeedbackLevel.Light,HitFeedbackLevel.ComboConfirm,HitFeedbackLevel.Finisher},f.Hurt.Select(d=>d.Feedback));Assert.AreEqual(1.25f,f.Target.GetComp<AttributeSet>().GetFinal(AttrId.DmgTakenMul));
+                CollectionAssert.AreEqual(new[]{HitFeedbackLevel.Light},f.Hurt.Select(d=>d.Feedback),"PD4012 has damage/Cue/Buff; the original asset has no HurtFeedback entry.");Assert.AreEqual(1.25f,f.Target.GetComp<AttributeSet>().GetFinal(AttrId.DmgTakenMul));
             }
         }
         [Test]

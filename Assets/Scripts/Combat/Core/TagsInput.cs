@@ -57,14 +57,17 @@ namespace Combat.Core
 
     public sealed class InputBufferComp : Comp
     {
+        public const int Capacity=3;
+        readonly Queue<Entry> _queue=new Queue<Entry>(Capacity);
+        struct Entry {public InputToken Token;public double Time;}
         ActorTime _time;
-        InputToken _buffered;
-        bool _hasBuffered;
-        double _bufferedLogicalTime;
         float _bufferWindow = 0.2f;
 
+        public InputBufferComp(float bufferSeconds=.2f){SetBufferWindow(bufferSeconds);}
+
         public float LastPushTime { get; private set; }
-        public bool HasBuffered => _hasBuffered && IsValidNow();
+        public bool HasBuffered {get{Expire();return _queue.Count>0;}}
+        public int Count {get{Expire();return _queue.Count;}}
 
         public void SetBufferWindow(float seconds)
             => _bufferWindow = seconds > 0f ? seconds : 0.01f;
@@ -76,59 +79,36 @@ namespace Combat.Core
 
         protected override void OnDetach()
         {
-            ClearBufferedOnly();
+            Clear();LastPushTime=0;
             _time = null;
         }
 
         public void Push(in InputToken token)
         {
             if (!token.IsValid || _time == null) return;
-            _buffered = token;
-            _hasBuffered = true;
-            _bufferedLogicalTime = _time.Time;
+            Expire();if(_queue.Count==Capacity)_queue.Dequeue();
+            _queue.Enqueue(new Entry{Token=token,Time=_time.Time});
             LastPushTime = (float)_time.Time;
         }
 
         public bool TryPeek(out InputToken token)
         {
-            if (!TryGetValid(out token)) return false;
-            return true;
+            Expire();token=_queue.Count>0?_queue.Peek().Token:default;return _queue.Count>0;
         }
 
         public bool Consume()
         {
-            if (!TryGetValid(out _)) return false;
-            ClearBufferedOnly();
+            Expire();if(_queue.Count==0)return false;
+            _queue.Dequeue();
             return true;
         }
 
-        public void Clear() => ClearBufferedOnly();
-
-        void ClearBufferedOnly()
+        public void Clear()=>_queue.Clear();
+        void Expire()
         {
-            _hasBuffered = false;
-            _buffered = default;
-            _bufferedLogicalTime = 0f;
-        }
-
-        bool IsValidNow()
-        {
-            if (!_hasBuffered || _time == null) return false;
-            return (_time.Time - _bufferedLogicalTime) <= _bufferWindow;
-        }
-
-        bool TryGetValid(out InputToken token)
-        {
-            token = default;
-            if (!_hasBuffered) return false;
-            if (_time != null && _time.Time - _bufferedLogicalTime > _bufferWindow)
-            {
-                ClearBufferedOnly();
-                return false;
-            }
-
-            token = _buffered;
-            return true;
+            // Every press ages from reception, even while another press waits at the front.
+            // Actor time also preserves the original freeze during local hitstop.
+            while(_time!=null&&_queue.Count>0&&_time.Time-_queue.Peek().Time>_bufferWindow)_queue.Dequeue();
         }
     }
 }

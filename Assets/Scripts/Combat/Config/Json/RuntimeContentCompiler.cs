@@ -48,6 +48,7 @@ namespace Combat.Config
                 N(actor.Hp,.001f,1000000000,p+".hp");N(actor.Attack,0,10000000,p+".attack");N(actor.Defense,0,10000000,p+".defense");N(actor.MoveSpeed,0,1000,p+".moveSpeed");
                 N(actor.Shield,0,1000000000,p+".shield");N(actor.CritRate,0,1,p+".critRate");N(actor.DamageDealt,0,1000,p+".damageDealt");N(actor.DamageTaken,0,1000,p+".damageTaken");N(actor.CollisionRadius,0,100,p+".collisionRadius");
                 N(actor.ActionSpeed,0,100,p+".actionSpeed");
+                N(actor.InputBufferSeconds,.01f,10,p+".inputBufferSeconds");
                 N(actor.Energy,0,1000000,p+".energy");N(actor.Recovery,0,1000000,p+".recovery");
                 N(actor.Ammo,0,1000000,p+".ammo");N(actor.InitialAmmo??actor.Ammo,0,actor.Ammo,p+".initialAmmo");
                 N(actor.AcquireRadius,.001f,1000,p+".acquireRadius");N(actor.AttackRange,.001f,1000,p+".attackRange");N(actor.FollowRange,0,1000,p+".followRange");N(actor.LeashRange,0,1000,p+".leashRange");N(actor.PatrolRadius,0,1000,p+".patrolRadius");
@@ -56,7 +57,7 @@ namespace Combat.Config
                 if(string.IsNullOrWhiteSpace(actor.View)||!RuntimeViewCompiler.Builtin(actor.View)&&!views.ContainsKey(actor.View))Fail(p+".view","Unknown view key.");
                 if(views.TryGetValue(actor.View,out var actorView)&&actorView.Kind!="actor")Fail(p+".view","Character requires an actor view.");
                 var definition=new RuntimeActorDefinition{Id=actor.Id,Role=actor.Role,View=actor.View,Team=actor.Team,Hp=actor.Hp,Attack=actor.Attack,Defense=actor.Defense,MoveSpeed=actor.MoveSpeed,
-                    SpawnStats=ActorSpawnCompiler.Compile(actor.SpawnStats,p+".spawnStats"),KeepAssignedTarget=actor.Ai=="wander-shooter",
+                    SpawnStats=ActorSpawnCompiler.Compile(actor.SpawnStats,p+".spawnStats"),KeepAssignedTarget=actor.Ai=="wander-shooter",InputBufferSeconds=actor.InputBufferSeconds,
                     Shield=actor.Shield,CritRate=actor.CritRate,DamageDealt=actor.DamageDealt,DamageTaken=actor.DamageTaken,CollisionRadius=actor.CollisionRadius,Energy=actor.Energy,InitialEnergy=actor.Energy,Recovery=actor.Recovery,Ammo=actor.Ammo,InitialAmmo=actor.InitialAmmo??actor.Ammo,ActionSpeed=actor.ActionSpeed,
                     AcquireRadius=actor.AcquireRadius,AttackRange=actor.AttackRange,FollowRange=actor.FollowRange,LeashRange=actor.LeashRange,PatrolRadius=actor.PatrolRadius,
                     Slots=actor.Slots.Select(id=>Skill(content,id,p+".slots").Id).ToArray(),DodgeSkill=string.IsNullOrEmpty(actor.DodgeSkill)?SkillNodeId.None:Skill(content,actor.DodgeSkill,p+".dodgeSkill").Id};

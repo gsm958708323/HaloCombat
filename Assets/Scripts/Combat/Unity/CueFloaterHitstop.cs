@@ -31,7 +31,7 @@ namespace Combat.Unity
             var key=(e.Source,e.InstanceKey??"");
             if(e.Playback==CuePlayback.Stop)
             {
-                if(_loops.TryGetValue(key,out var existing)&&existing!=null&&(e.Origin.CastId==0||existing.CastId==e.Origin.CastId))existing.End();
+                if(_loops.TryGetValue(key,out var existing)&&existing!=null&&(!existing.StopWithCast||e.Origin.CastId==0||existing.CastId==e.Origin.CastId))existing.End();
                 return;
             }
             if(e.Playback==CuePlayback.Start&&_loops.TryGetValue(key,out var previous)&&previous!=null)previous.End();

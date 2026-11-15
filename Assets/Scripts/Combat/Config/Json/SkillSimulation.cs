@@ -289,7 +289,7 @@ namespace Combat.Config
             Record("spawn",Name(e.Id),e.BlueprintId,OriginOf(e.Id),node:ActorSource(spawned),sourceId:e.Owner,bodyId:e.Id);
         }
         void OnDamage(EvDamage e)
-        { if(e.Amount>0)_hits++; _damage += e.Amount; Record(e.IsCrit ? "critical" : "damage", Name(e.Source), e.Amount + " → " + Name(e.Target),e.Origin,e.Result); }
+        { if(e.Amount>0)_hits++; _damage += e.Amount; Record(e.IsCrit ? "critical" : "damage", Name(e.Source), Name(e.Target),e.Origin,e.Result); }
         static Dictionary<string,float> Attributes(AttributeSet attr)
         {
             var result=new Dictionary<string,float>();if(attr==null)return result;
