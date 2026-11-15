@@ -1,11 +1,18 @@
-import {useEffect,useState} from 'react';
+import {memo,useEffect,useRef,useState} from 'react';
 import type {AuthorNodeSource,PreviewState} from './model';
 import {runtimeEventFilters,runtimeEventView} from './authoring/runtimeEvents';
 import {RuntimeEventTable} from './RuntimeEventTable';
 import {RuntimeInstances} from './RuntimeInstances';
 import {DamageInspector} from './DamageInspector';
 
-export function RuntimePanel({state,sessionId,ready,inspectSource,inspectEntity,remove,removeBuff}:{state:PreviewState|null;sessionId:string;ready:boolean;inspectSource:(source:AuthorNodeSource)=>void;inspectEntity:(id:string)=>void;remove:(id:string)=>Promise<unknown>;removeBuff:(id:string,instance:number)=>Promise<unknown>}) {
+type PanelProps={state:PreviewState|null;sessionId:string;ready:boolean;inspectSource:(source:AuthorNodeSource)=>void;inspectEntity:(id:string)=>void;remove:(id:string)=>Promise<unknown>;removeBuff:(id:string,instance:number)=>Promise<unknown>};
+export function RuntimePanel(props:PanelProps){
+  const latest=useRef(props.state);latest.current=props.state;
+  const [display,setDisplay]=useState(props.state);
+  useEffect(()=>{setDisplay(latest.current);const timer=setInterval(()=>setDisplay(latest.current),200);return()=>clearInterval(timer);},[props.sessionId]);
+  return <RuntimePanelView {...props} state={display}/>;
+}
+const RuntimePanelView=memo(function RuntimePanelView({state,sessionId,ready,inspectSource,inspectEntity,remove,removeBuff}:PanelProps) {
   const [filter,setFilter]=useState('key'),[instances,setInstances]=useState(false),[since,setSince]=useState(0);
   useEffect(()=>setSince(0),[sessionId]);
   const view=runtimeEventView(state?.events??[],filter,since);
@@ -18,4 +25,4 @@ export function RuntimePanel({state,sessionId,ready,inspectSource,inspectEntity,
     <DamageInspector events={view.retained}/>{view.hidden>0&&<p className="runtime-empty">显示最近{view.rows.length}条，另有{view.hidden}条。</p>}
     <RuntimeEventTable events={view.rows} inspectSource={inspectSource} inspectEntity={inspectEntity} ready={ready}/>{!view.rows.length&&<p className="runtime-empty">当前筛选没有事件。</p>}
   </>}</div></section>;
-}
+});

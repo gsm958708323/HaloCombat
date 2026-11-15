@@ -8,7 +8,7 @@ import { SceneObstacles } from './SceneObstacles';
 import { SceneActorProperties } from './SceneActorProperties';
 import {RuntimePanel} from './RuntimePanel';
 import './preview-input.css';
-import { api } from './model';
+import {SkillConfiguration} from './SkillConfiguration';
 import {ComboInput} from './ComboInput';
 import './trace.css';
 import {ReplayControls} from './ReplayControls';
@@ -18,17 +18,6 @@ export function Preview({ preview, project, update,inspectSource,root }: { inspe
   useEffect(()=>setEntity(''),[preview.sessionId]);
   const inspected=preview.state?.actors.find(a=>a.id===entity);
   const [configuration,setConfiguration] = useState(false);
-  const [text,setText] = useState('');
-  const [error,setError] = useState('');
-  const [applying,setApplying] = useState(false);
-  const latestProject=useRef(project);latestProject.current=project;
-  async function applyConfiguration(){
-    setApplying(true);
-    const before=latestProject.current;
-    try{const p=JSON.parse(text) as Project;await api('/validate',p);if(latestProject.current!==before)throw new Error('校验期间工程已更改，请重新应用配置');update(p);setError('');}
-    catch(e){setError(String(e));}
-    finally{setApplying(false);}
-  }
   const moveKeys=useRef(new Set<string>());
   useEffect(()=>{
     const clear=()=>moveKeys.current.clear(),visibility=()=>{if(document.hidden)clear();};clear();
@@ -49,10 +38,10 @@ export function Preview({ preview, project, update,inspectSource,root }: { inspe
     <RuntimePanel state={state} sessionId={preview.sessionId} ready={preview.ready} inspectSource={inspectSource} inspectEntity={setEntity} remove={preview.remove} removeBuff={preview.removeBuff}/>
     <div className="preview-root">预览技能：{project.skills.find(s=>s.id===root)?.name??root}</div>
     {entity&&<div className="entity-focus" role="status">{inspected?('实体 '+inspected.name+' · '+entity):('实体已回收 · '+entity)}<button onClick={()=>setEntity('')}>取消定位</button></div>}
-    <section className="preview-panel"><div className="panel-title"><b>运行预览</b><span className="grow"/><button className={!configuration?'active':''} onClick={()=>setConfiguration(false)}>测试场景</button><button className={configuration?'active':''} onClick={()=>{setConfiguration(true);setText(JSON.stringify(project,null,2));}}>配置</button></div>
-      {configuration?<div className="configuration"><div><button disabled={applying} onClick={()=>void applyConfiguration()}>{applying?'校验中…':'应用当前工程配置'}</button><button onClick={()=>void navigator.clipboard.writeText(text)}>复制</button></div><textarea aria-label="工程 JSON" spellCheck={false} value={text} onChange={e=>setText(e.target.value)}/>{error&&<p role="alert">{error}</p>}</div>:<>
+    <section className="preview-panel"><div className="panel-title"><b>运行预览</b><span className="grow"/><button className={!configuration?'active':''} onClick={()=>setConfiguration(false)}>测试场景</button><button className={configuration?'active':''} onClick={()=>setConfiguration(true)}>配置</button></div>
+      {configuration?<SkillConfiguration key={root} project={project} skillId={root} update={update}/>:<>
       <div className="preview-controls"><button className="primary" disabled={!preview.ready} onPointerDown={e=>{e.currentTarget.setPointerCapture(e.pointerId);void preview.cast();}} onPointerUp={()=>void preview.release()} onPointerCancel={()=>void preview.cancel()} onBlur={()=>void preview.cancel()} onKeyDown={e=>{if(!e.repeat&&(e.key===' '||e.key==='Enter')){e.preventDefault();void preview.cast();}}} onKeyUp={e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();void preview.release();}}}><Crosshair size={13}/>施放</button><button disabled={!preview.ready} onClick={()=>preview.setPlaying(!preview.playing)}>{preview.playing?<Pause size={12}/>:<Play size={12}/>} {preview.playing?'暂停':'播放'}</button><button disabled={!preview.ready||preview.playing} onClick={()=>void preview.step()}><SkipForward size={12}/>逐帧</button><button disabled={preview.replaying||preview.placing} onClick={()=>void preview.reset()}><RotateCcw size={12}/>重置</button><button disabled={!preview.ready} onClick={()=>void preview.interrupt()}>打断</button></div>
-      <div className="preview-options"><label><input type="checkbox" disabled={!preview.ready} checked={preview.continuous} onChange={e=>preview.setContinuous(e.target.checked)}/>连续施放</label><select aria-label="播放速度" value={preview.speed} onChange={e=>preview.setSpeed(Number(e.target.value))}>{[.25,.5,1,2].map(n=><option key={n} value={n}>{n}×</option>)}</select><span>{state?.time.toFixed(2)??'0.00'} s</span></div>
+      <div className="preview-options"><label title="仅影响网页试验场；切换会重置预览"><input aria-label="无限弹药" type="checkbox" checked={preview.unlimitedAmmo} disabled={preview.replaying||preview.placing} onChange={e=>preview.setUnlimitedAmmo(e.target.checked)}/>无限弹药</label><label><input type="checkbox" disabled={!preview.ready} checked={preview.continuous} onChange={e=>preview.setContinuous(e.target.checked)}/>连续施放</label><select aria-label="播放速度" value={preview.speed} onChange={e=>preview.setSpeed(Number(e.target.value))}>{[.25,.5,1,2].map(n=><option key={n} value={n}>{n}×</option>)}</select><span>{state?.time.toFixed(2)??'0.00'} s</span></div>
       <div className="preview-readiness" role="status">{!project.skills.length?'空工程：新建技能后可运行预览':preview.ready?'当前配置已应用':preview.error?'配置无效：'+preview.error:'正在校验并应用配置…'}</div>
       <details className="preview-settings"><summary>预览设置 · 输入、复现与布置</summary><ComboInput project={project} ready={preview.ready} send={preview.input}/>
       <ReplayControls preview={preview} project={project} update={update}/>
@@ -61,7 +50,7 @@ export function Preview({ preview, project, update,inspectSource,root }: { inspe
       <SceneActorProperties project={project} update={update} selectedId={sceneActor} select={setSceneActor}/></details>
       {state?.charging&&<div className="charge-box"><div>蓄力 {Math.round(state.chargeProgress*100)}%<span>松开释放</span></div><progress aria-label="蓄力进度" max={1} value={state.chargeProgress}/></div>}
       <PreviewWorld project={project} preview={preview} inspected={inspected} update={update} select={setSceneActor} selectedId={sceneActor} onBlur={stopMovement}/>
-        <div className="energy-box"><div><b>{state?.channeling?'引导中 · 能量':state?.charging?'蓄力中 · 能量':'能量'}</b><span>{state?.energy.toFixed(0)??project.preview.initialEnergy??project.preview.energy} / {project.preview.energy}</span></div><progress max={project.preview.energy} value={state?.energy??project.preview.initialEnergy??project.preview.energy}/><small>弹药 {state?.ammo??project.preview.initialAmmo??project.preview.ammo??60} / {state?.ammoCapacity??project.preview.ammo??60}</small> · <small>冷却 {Math.max(0,state?.cooldowns[preview.skill.current]??0).toFixed(2)} s · {state?.actors.filter(a=>a.kind==='projectile').length??0} 个投射物 · {state?.castPower.toFixed(2)??'1.00'}×</small></div>
+        <div className="energy-box"><div><b>{state?.channeling?'引导中 · 能量':state?.charging?'蓄力中 · 能量':'能量'}</b><span>{state?.energy.toFixed(0)??project.preview.initialEnergy??project.preview.energy} / {project.preview.energy}</span></div><progress max={project.preview.energy} value={state?.energy??project.preview.initialEnergy??project.preview.energy}/><small>弹药 {preview.unlimitedAmmo?'∞':(state?.ammo??project.preview.initialAmmo??project.preview.ammo??60)} / {state?.ammoCapacity??project.preview.ammo??60}</small> · <small>冷却 {Math.max(0,state?.cooldowns[preview.skill.current]??0).toFixed(2)} s · {state?.actors.filter(a=>a.kind==='projectile').length??0} 个投射物 · {state?.castPower.toFixed(2)??'1.00'}×</small></div>
       <div className="statistics">{[['总伤害',state?.statistics.damage??0],['有效命中',state?.statistics.hits??0],['技能施行',state?.statistics.casts??0],['投射物',state?.statistics.projectiles??0],['连锁触发',state?.statistics.chains??0],['分裂触发',state?.statistics.splits??0]].map(([label,value])=><div key={String(label)}><small>{label}</small><strong>{number(Number(value))}</strong></div>)}</div>
       </>}
     </section>

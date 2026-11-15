@@ -401,3 +401,17 @@ test('root deletion is protected and scheduled numeric time arrays are independe
   const p=runtime(),d=p.projectiles[0],next=graph.deleteSelection(p,{kind:'projectile',id:d.id},[d.root],[]);assert(next.projectiles[0].nodes.some(n=>n.id===d.root));
   const q=example(),s=q.skills.find(s=>s.id==='phase-bounce'),copy=edits.duplicateContent(q,'skill',s.id,'copy',ids()).project.skills.at(-1);copy.nodes.find(n=>n.kind==='projectile').parameters.groundPhases[0]=.5;assert.equal(s.nodes.find(n=>n.kind==='projectile').parameters.groundPhases[0],1);
 });
+
+const {currentSkillJson,applySkillConfiguration}=require('../../.local/web-checks/authoring/skillConfiguration.js');
+test('current skill JSON excludes project data and layout; applying preserves other content and raw duplicate validation',()=>{
+  const source=JSON.parse(fs.readFileSync(path.resolve(__dirname,'../../../../Content/SkillLab/project.json'),'utf8'));
+  const text=currentSkillJson(source,'basic-shot'),value=JSON.parse(text);
+  assert.equal(value.id,'basic-shot');assert.equal(value.skills,undefined);assert.equal(value.preview,undefined);assert.equal(value.nodes[0].position,undefined);
+  value.nodes.find(n=>n.kind==='damage').parameters.flat=37;
+  const result=applySkillConfiguration(source,'basic-shot',JSON.stringify(value));
+  assert.equal(result.project.skills[0].nodes.find(n=>n.kind==='damage').parameters.flat,37);
+  assert.deepEqual(result.project.skills[0].nodes[0].position,source.skills[0].nodes[0].position);assert.equal(result.project.skills[1],source.skills[1]);assert.equal(result.project.preview,source.preview);
+  assert.throws(()=>applySkillConfiguration(source,'basic-shot',JSON.stringify({...value,id:'other'})),/id/);
+  const duplicated=text.replace('"id": "basic-shot"','"id": "basic-shot", "id": "basic-shot"');
+  assert(applySkillConfiguration(source,'basic-shot',duplicated).json.includes('"id": "basic-shot", "id": "basic-shot"'));
+});

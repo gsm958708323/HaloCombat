@@ -85,6 +85,7 @@ namespace Combat.Config
     }
     public sealed class PreviewDocument
     {
+        [DefaultValue(false),JsonProperty(DefaultValueHandling=DefaultValueHandling.Ignore)]public bool UnlimitedAmmo {get;set;}
         public int Seed { get; set; } = 1;
         public float Energy { get; set; } = 100;
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public float? InitialEnergy { get; set; }

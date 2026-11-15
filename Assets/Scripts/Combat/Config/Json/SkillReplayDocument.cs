@@ -21,6 +21,7 @@ namespace Combat.Config
     }
     public sealed class SkillReplayStatus
     {
+        public bool Enabled {get;internal set;}
         public int Inputs {get;internal set;}
         public int Steps {get;internal set;}
         public string Error {get;internal set;}

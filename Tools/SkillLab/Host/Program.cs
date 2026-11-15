@@ -82,9 +82,11 @@ app.MapPost("/api/validate",async(HttpContext context)=>
 {var project=await ReadProject(context);CombatContentCompiler.Compile(project);return Results.Ok(new{valid=true});});
 app.MapPost("/api/preview",async(HttpContext context)=>
 {
-    var project=await ReadProject(context);var content=CombatContentCompiler.Compile(project);
+    var project=await ReadProject(context);
+    project.Preview.UnlimitedAmmo=context.Request.Query["unlimitedAmmo"]!="false";
+    var content=CombatContentCompiler.Compile(project);
     if(sessions.Count>=16)return Results.Problem("Close unused preview sessions.",statusCode:409);
-    var session=new SkillSimulation(project,content);var id=Guid.NewGuid().ToString("N");sessions[id]=session;
+    var session=new SkillSimulation(project,content,context.Request.Query["recordInputs"]=="true");var id=Guid.NewGuid().ToString("N");sessions[id]=session;
     return Results.Ok(new{id,state=session.Snapshot(),recording=session.Recording});
 });
 app.MapPost("/api/preview/{id}/command",async(string id,HttpContext context)=>
@@ -96,6 +98,15 @@ app.MapPost("/api/preview/{id}/command",async(string id,HttpContext context)=>
     {
         var result=session.Execute(command);return Results.Ok(new{result,state=session.Snapshot(),recording=session.Recording});
     }
+});
+app.MapPost("/api/preview/{id}/commands",async(string id,HttpContext context)=>
+{
+    if(!sessions.TryGetValue(id,out var session))return Results.NotFound();
+    var text=await new StreamReader(context.Request.Body).ReadToEndAsync();
+    var raw=Newtonsoft.Json.Linq.JArray.Parse(text,new Newtonsoft.Json.Linq.JsonLoadSettings{DuplicatePropertyNameHandling=Newtonsoft.Json.Linq.DuplicatePropertyNameHandling.Error});
+    if(raw.Count<1||raw.Count>32)throw new ContentValidationException("$","Expected 1..32 preview commands.");
+    var commands=raw.Select(value=>SkillSimulationCommands.Read(value.ToString(Newtonsoft.Json.Formatting.None))).ToArray();
+    lock(session){foreach(var command in commands)session.Execute(command);return Results.Ok(new{state=session.Snapshot(),recording=session.Recording});}
 });
 app.MapGet("/api/preview/{id}/replay",(string id,HttpContext context)=>
 {

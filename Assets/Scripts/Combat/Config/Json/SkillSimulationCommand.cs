@@ -52,8 +52,10 @@ namespace Combat.Config
         public static void Validate(SkillSimulationCommand command)
         {
             if(command==null||command.Kind==null||!Fields.TryGetValue(command.Kind,out var fields))throw new ContentValidationException("$.kind","Unknown preview command.");
-            var raw=JObject.Parse(SkillJsonCodec.Write(command));
-            foreach(var property in raw.Properties())if(property.Name!="kind"&&!fields.Contains(property.Name))throw new ContentValidationException("$."+property.Name,"Field is not supported by this command.");
+            CheckField(fields,"skillId",command.SkillId!=null);CheckField(fields,"input",command.Input!=null);
+            CheckField(fields,"actorId",command.ActorId!=null);CheckField(fields,"entityId",command.EntityId!=null);
+            CheckField(fields,"x",command.X.HasValue);CheckField(fields,"z",command.Z.HasValue);
+            CheckField(fields,"steps",command.Steps.HasValue);CheckField(fields,"frames",command.Frames.HasValue);CheckField(fields,"instanceId",command.InstanceId.HasValue);
             if(command.X.HasValue&&!SkillSceneValidation.Finite(command.X.Value)||command.Z.HasValue&&!SkillSceneValidation.Finite(command.Z.Value))throw new ContentValidationException("$.aim","Coordinates must be finite.");
             if(command.X.HasValue!=command.Z.HasValue)throw new ContentValidationException("$.aim","Provide x and z together.");
             if((command.Kind=="aim"||command.Kind=="move"||command.Kind=="place")&&!command.X.HasValue)
@@ -66,5 +68,9 @@ namespace Combat.Config
             if(command.Kind=="step"&&(command.Steps??1)<1||command.Kind=="step"&&(command.Steps??1)>500)throw new ContentValidationException("$.steps","Expected1..500 steps.");
             if(command.Kind=="hitstop"&&((command.Frames??10)<0||(command.Frames??10)>1000))throw new ContentValidationException("$.frames","Expected0..1000 frames.");
         }
+        static void CheckField(string[] fields,string name,bool present)
+        {if(present&&!fields.Contains(name))throw new ContentValidationException("$."+name,"Field is not supported by this command.");}
+        internal static SkillSimulationCommand Copy(SkillSimulationCommand value)=>new SkillSimulationCommand
+        {Kind=value.Kind,SkillId=value.SkillId,Input=value.Input,ActorId=value.ActorId,EntityId=value.EntityId,X=value.X,Z=value.Z,Steps=value.Steps,Frames=value.Frames,InstanceId=value.InstanceId};
     }
 }

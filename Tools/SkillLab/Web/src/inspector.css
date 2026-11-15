@@ -1,0 +1,9 @@
+.node-inspector .node-fields{padding:10px 0;gap:12px}
+.node-identity{display:block;overflow-wrap:anywhere;margin-bottom:12px}
+.node-inspector .parameter>select{max-width:145px}
+.settings-dialog{width:min(760px,90vw);max-height:85vh;overflow:auto;display:block}
+.settings-dialog .settings-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.settings-dialog>div:not(.settings-heading){display:block}
+.settings-dialog>section,.settings-dialog>details{display:block;margin:12px 0}
+.settings-dialog label{font-size:11px}
+.configuration>small{display:block;margin:4px 8px}

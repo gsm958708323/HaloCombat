@@ -6,8 +6,8 @@ import {ComboProperties} from './ComboProperties';
 import type { Project, Skill, BuffDefinition } from './model';
 import { SkillNode } from './SkillNode';
 import type { EditorNode } from './SkillNode';
-import { usePreview } from './usePreview';
-import { Preview } from './Preview';
+import {PreviewSession} from './PreviewSession';
+import {NodeInspector} from './NodeInspector';
 import { SummonBlueprints } from './SummonBlueprints';
 import { BuffProperties } from './BuffProperties';
 import { SkillLibrary } from './SkillLibrary';
@@ -45,6 +45,7 @@ function Workbench() {
   const [pendingImport,setPendingImport]=useState<Project|null>(null);
   const [importing,setImporting]=useState(false);
   const [exporting,setExporting]=useState(false);
+  const [settings,setSettings]=useState<'graph'|'project'|'connections'|null>(null);
   const [previewRoot,setPreviewRoot]=useState<string|null>(null);
   const [traceFocus,setTraceFocus]=useState<{key:GraphKey;nodeId:string;request:number}|null>(null);
   const traceRequest=useRef(0);
@@ -56,7 +57,7 @@ function Workbench() {
   const key:GraphKey={kind:area?'area':projectile?'projectile':timeline?'timeline':buff?'buff':'skill',id:area?.id??projectile?.id??timeline?.id??buff?.id??skill?.id??''};
   const graphEditor=useGraphAuthoring(editor,key,setMessage,traceFocus);const graph=graphEditor.graph;
   const root=previewRoot&&project?.skills.some(s=>s.id===previewRoot)?previewRoot:skill?.id??'';
-  const preview=usePreview(project,root,setMessage,(p,id)=>{setPreviewRoot(id);setTraceFocus(null);editor.endGroup();editor.edit(selectGraph(prepareImportedLayout(p),id));});preview.skill.current=root;
+  function adoptReplay(p:Project,id:string){setPreviewRoot(id);setTraceFocus(null);editor.endGroup();editor.edit(selectGraph(prepareImportedLayout(p),id));}
   const mode=String(skill?.nodes.find(n=>n.kind==='cast'&&n.enabled!==false)?.parameters.mode??'instant');
   const castMode=skill?.nodes.find(n=>n.kind==='cast')?.parameters.execution==='operation'?'即时操作':({instant:'瞬发',channel:'引导',charge:'蓄力'} as Record<string,string>)[mode]??mode;
   const actionNodes=skill?.timelineRef?project?.timelines?.find(t=>t.id===skill.timelineRef)?.nodes:skill?.nodes;
@@ -64,7 +65,7 @@ function Workbench() {
   function select(skillId:string,buffId='',timelineId='',projectileId='',areaId=''){setPreviewRoot(null);setTraceFocus(null);editor.endGroup();editor.edit(p=>selectGraph(p,skillId,buffId,timelineId,projectileId,areaId),false);setLibrary(false);}
   function inspectSource(source:AuthorNodeSource){
     try{
-      const p=editor.current.current;if(!p||!preview.ready)return;const target=traceLocation(p,source);
+      const p=editor.current.current;if(!p)return;const target=traceLocation(p,source);
       setPreviewRoot(root);editor.edit(selectGraph(p,target.kind==='skill'?target.id:skill?.id??'',target.kind==='buff'?target.id:'',target.kind==='timeline'?target.id:'',target.kind==='projectile'?target.id:'',target.kind==='area'?target.id:''),false);
       setTraceFocus({key:target,nodeId:source.nodeId,request:++traceRequest.current});setMessage('已定位 '+source.graphId+' / '+source.nodeId+'；预览仍使用 '+root);
     }catch(error){setMessage(String(error));}
@@ -115,8 +116,9 @@ function Workbench() {
     catch(error){setMessage(String(error));}
   }
   function locate(ref:ContentReference){
-    if(ref.kind==='actor'||ref.kind==='combo'){setContentAction(null);requestAnimationFrame(()=>{const section=window.document.querySelector('.runtime-properties');section?.setAttribute('open','');section?.scrollIntoView({block:'center'});});return;}
+    if(ref.kind==='actor'||ref.kind==='combo'){setContentAction(null);setSettings('project');requestAnimationFrame(()=>{const section=window.document.querySelector('.runtime-properties');section?.setAttribute('open','');section?.scrollIntoView({block:'center'});});return;}
     setContentAction(null);select(ref.kind==='skill'?ref.id:skill?.id??'',ref.kind==='buff'?ref.id:'',ref.kind==='timeline'?ref.id:'',ref.kind==='projectile'?ref.id:'',ref.kind==='area'?ref.id:'');
+    if(ref.kind==='blueprint'){setSettings('project');}
     if(ref.kind==='blueprint')requestAnimationFrame(()=>{const target=window.document.querySelector<HTMLElement>('[data-blueprint-id="'+CSS.escape(ref.id)+'"]');target?.closest('details')?.setAttribute('open','');target?.scrollIntoView({block:'center'});});
     else if(ref.nodeId)requestAnimationFrame(()=>void graphEditor.flow.fitView({nodes:[{id:ref.nodeId!}],padding:.3}));
   }
@@ -152,10 +154,10 @@ function Workbench() {
         <button disabled={!skill} onClick={()=>void publish('f6')}>发布到 F6</button><button disabled={!skill} onClick={()=>void publish('f7')}>发布到 F7</button>
         <button onClick={()=>void api<{message:string}>('/publish/sync',editor.current.current).then(result=>setMessage(result.message)).catch(error=>setMessage(String(error)))}>同步两槽</button>
         {project.runtime&&<button onClick={()=>void api<{message:string}>('/runtime/publish',project).then(result=>setMessage(result.message)).catch(error=>setMessage(String(error)))}>发布正式内容</button>}
-        <button onClick={()=>setExporting(true)}><Download size={13}/>导出</button><button onClick={()=>setImporting(true)}><Upload size={13}/>导入</button>
+        <button onClick={()=>setSettings('project')}>工程设置</button><button onClick={()=>setExporting(true)}><Download size={13}/>导出</button><button onClick={()=>setImporting(true)}><Upload size={13}/>导入</button>
       </div></header>
     <nav className="app-navigation"><span className="active">技能</span><div/><small>{project.name} · {project.skills.length} 个技能</small></nav>
-    <div className="workspace"><Preview key={project.id} preview={preview} project={project} update={editor.edit} inspectSource={inspectSource} root={root}/>
+    <div className="workspace"><PreviewSession key={project.id} project={project} update={editor.edit} inspectSource={inspectSource} root={root} report={setMessage} adoptReplay={adoptReplay}/>
       <section className="editor-panel"><div className="editor-heading"><span>节点编辑</span><div className="popover-anchor"><button onClick={()=>setLibrary(!library)}>技能库 ▾</button>{library&&<SkillLibrary project={project} selected={skill?.id??''} select={id=>select(id)}/>}</div>
         <button onClick={()=>void openCreate()}><Plus size={12}/>新建</button><button onClick={()=>{if(buff)select(skill?.id??'');else if(project.buffs?.length)select(skill?.id??'',project.buffs[0].id);else newBuff();}}>{buff?'返回技能':'Buff定义'}</button>
         <button onClick={()=>{if(timeline)select(skill?.id??'');else if(project.timelines?.length)select(skill?.id??'','',project.timelines[0].id);else newShared();}}>{timeline?'返回技能':'共享时间轴'}</button>
@@ -170,7 +172,7 @@ function Workbench() {
         <span className="grow"/>{skill&&<><span className="badge">{castMode}</span><span className="badge">{transfers}</span></>}
       </div><div className="editor-body"><div className="graph-panel" tabIndex={0} aria-label="节点画布" onKeyDown={graphEditor.keyDown}>
         <div className="canvas-toolbar"><div className="popover-anchor"><button disabled={!graph} onClick={()=>setAdding(!adding)}><Plus size={12}/>添加</button>{adding&&<div className="node-menu">{Object.entries(kinds).filter(([kind])=>kind!=='buff-events'&&(!(buff||timeline||projectile)||!['target','cast','skill-events'].includes(kind))).map(([kind,schema])=><button key={kind} onClick={()=>{graphEditor.add(kind);setAdding(false);}}>{schema.title}</button>)}</div>}</div>
-          <button disabled={!graph} onClick={()=>void graphEditor.flow.fitView({padding:.15})}><Maximize size={12}/>适应</button><button disabled={!graph} onClick={graphEditor.layout}>自动排列</button>
+          <button disabled={!graph} onClick={()=>void graphEditor.flow.fitView({padding:.15})}><Maximize size={12}/>适应</button><button disabled={!graph} onClick={graphEditor.layout}>自动排列</button><button disabled={!graph} onClick={()=>setSettings('graph')}>{key.kind==='skill'?'技能设置':'定义设置'}</button><button disabled={!graph} onClick={()=>setSettings('connections')}>连线顺序</button>
           <button disabled={!graphEditor.selectedNodes.length} onClick={graphEditor.copy}>复制节点</button><button disabled={!graph||!graphEditor.canPaste} onClick={graphEditor.paste}>粘贴</button>
           <button aria-label="撤销" disabled={!editor.canUndo} onClick={editor.undo}><Undo2 size={13}/></button><button aria-label="重做" disabled={!editor.canRedo} onClick={editor.redo}><Redo2 size={13}/></button><span className="grow"/><small>{Math.round(graphEditor.zoom*100)}%</small>
         </div>
@@ -181,17 +183,19 @@ function Workbench() {
           <Background variant={BackgroundVariant.Dots} gap={18} size={1} color="#48565d"/></ReactFlow>:
           <div className="empty-project"><Workflow size={34}/><h2>工程中暂无技能</h2><p>创建技能后编辑节点并运行预览。</p><button className="primary" onClick={()=>void openCreate()}>新建技能</button></div>}
         <small className="canvas-help">Shift 框选 · Ctrl C / V 复制粘贴 · Delete 删除 · Ctrl Z 撤销</small>
-      </div><aside className="properties">{area?<><h3>共享区域定义</h3><p>本图保存范围、运动和生命周期效果；生成位置由引用节点配置。修改后重新发布使用者。</p><small>定义 ID {area.nodes.find(n=>n.id===area.root)?.runtimeId} · 当前预览技能：{skill?.name??'无'}</small></>:projectile?<><h3>共享弹体定义</h3><p>本图保存飞行、接触和终结行为；发射数量/散射由引用节点配置。修改后重新发布使用者。</p><small>定义 ID {projectile.nodes.find(n=>n.id===projectile.root)?.runtimeId} · 当前预览技能：{skill?.name??'无'}</small></>:timeline?<><h3>共享时间轴</h3><p>{project.skills.filter(s=>s.timelineRef===timeline.id).length} 个技能引用；修改后重新发布使用者。</p><TimelineProperties skill={timeline} change={value=>graphEditor.editGraph(g=>({...g,timeline:value}))}/><small>当前预览技能：{skill?.name??'无'}</small></>:buff?<><BuffProperties buff={buff} change={value=>editor.edit(p=>({...p,buffs:p.buffs?.map(b=>b.id===value.id?value:b)}))}/><small>当前预览技能：{skill?.name??'无'}</small></>:skill?<>
+      </div><NodeInspector node={graphEditor.nodes.find(n=>n.id===graphEditor.selectedNodes.at(-1))} count={graphEditor.selectedNodes.length}/></div></section>
+    </div><footer className={message.startsWith('Error')?'error':''} role="status">{message}<span>JSON 工程 · 真实 C# 预览</span></footer>
+    {settings&&<Dialog label={settings==='graph'?'当前定义设置':settings==='connections'?'连线顺序':'工程设置'} close={()=>setSettings(null)}><div className="modal settings-dialog"><div className="settings-heading"><h2>{settings==='graph'?'当前定义设置':settings==='connections'?'连线顺序':'工程设置'}</h2><button onClick={()=>setSettings(null)}>关闭</button></div>
+      {settings==='graph'&&<>{area?<><h3>共享区域定义</h3><p>本图保存范围、运动和生命周期效果；生成位置由引用节点配置。修改后重新发布使用者。</p><small>定义 ID {area.nodes.find(n=>n.id===area.root)?.runtimeId} · 当前预览技能：{skill?.name??'无'}</small></>:projectile?<><h3>共享弹体定义</h3><p>本图保存飞行、接触和终结行为；发射数量/散射由引用节点配置。修改后重新发布使用者。</p><small>定义 ID {projectile.nodes.find(n=>n.id===projectile.root)?.runtimeId} · 当前预览技能：{skill?.name??'无'}</small></>:timeline?<><h3>共享时间轴</h3><p>{project.skills.filter(s=>s.timelineRef===timeline.id).length} 个技能引用；修改后重新发布使用者。</p><TimelineProperties skill={timeline} change={value=>graphEditor.editGraph(g=>({...g,timeline:value}))}/><small>当前预览技能：{skill?.name??'无'}</small></>:buff?<><BuffProperties buff={buff} change={value=>editor.edit(p=>({...p,buffs:p.buffs?.map(b=>b.id===value.id?value:b)}))}/><small>当前预览技能：{skill?.name??'无'}</small></>:skill?<>
         <h3>▾ 技能属性</h3><p className="type-summary">{castMode} · {transfers}</p><label className="category-field">分类<input aria-label="技能分类" value={skill.category??''} onChange={event=>editor.edit(p=>({...p,skills:p.skills.map(s=>s.id===skill.id?{...s,category:event.target.value}:s)}))}/></label>
         <SharedTimelineControls project={project} skill={skill} update={editor.edit} open={id=>select(skill.id,'',id)} report={setMessage}/>
         <TimelineProperties skill={skill} change={timeline=>graphEditor.editGraph(g=>({...g,timeline}))}/>
         <SkillSummary project={project} skill={skill}/>
-        <SummonBlueprints project={project} update={editor.edit} action={setContentAction} duplicate={id=>duplicate('blueprint',id)}/></>:<p>空工程可保存或导出。</p>}
-        {graph&&<GraphConnections graph={graph} change={update=>{editor.endGroup();graphEditor.editGraph(update);}}/>}
-        <RuntimeProperties project={project} update={editor.edit}/>
-        <ComboProperties project={project} update={editor.edit}/>
-      </aside></div></section>
-    </div><footer className={message.startsWith('Error')?'error':''} role="status">{message}<span>JSON 工程 · 真实 C# 预览</span></footer>
+        </>:<p>空工程可保存或导出。</p>}
+</>}
+      {settings==='connections'&&graph&&<GraphConnections graph={graph} change={update=>{editor.endGroup();graphEditor.editGraph(update);}}/>}
+      {settings==='project'&&<><SummonBlueprints project={project} update={editor.edit} action={setContentAction} duplicate={id=>duplicate('blueprint',id)}/><RuntimeProperties project={project} update={editor.edit}/><ComboProperties project={project} update={editor.edit}/></>}
+    </div></Dialog>}
     {contentAction&&<ContentDialog key={contentAction.kind+contentAction.id+contentAction.mode} project={project} action={contentAction} close={()=>setContentAction(null)} edit={change=>{editor.endGroup();editor.edit(change);setMessage('内容与引用已更新，可撤销恢复');}} locate={locate}/>}
     {exporting&&<ExportDialog project={project} skillId={skill?.id??''} close={()=>setExporting(false)} report={setMessage}/>}
     {importing&&<ImportDialog close={()=>setImporting(false)} ready={value=>{setPendingImport(value);setImporting(false);}}/>}

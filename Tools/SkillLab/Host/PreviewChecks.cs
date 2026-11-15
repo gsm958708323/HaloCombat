@@ -56,6 +56,7 @@ internal static class PreviewChecks
         MotorPhaseChecks.Run(root);
         AuthorTraceChecks.Run(root);
         ReplayChecks.Run(root);
+        PreviewOptionsChecks.Run(root);
         BurstChecks.Run(root);
         ScenePlacementChecks.Run(root);
         ProjectilePolicyChecks.Run(root);
