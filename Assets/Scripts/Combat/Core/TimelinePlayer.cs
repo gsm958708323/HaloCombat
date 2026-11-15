@@ -112,7 +112,9 @@ namespace Combat.Core
             if (clips == null) return;
             for (int i = 0; i < clips.Length; i++)
             {
-                if (clips[i].OnPayload || _clipOpened[i] || clips[i].Start > _time) continue;
+                // Match payload/close comparisons: five 0.02f steps are a few nanoseconds
+                // below an authored 0.1f. Opening must not slip by a whole logic frame.
+                if (clips[i].OnPayload || _clipOpened[i] || clips[i].Start > _time + .000001) continue;
                 _clipOpened[i] = true;
                 var rt = new ClipRuntime
                 {

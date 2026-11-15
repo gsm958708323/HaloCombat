@@ -20,6 +20,7 @@ namespace Combat.Config
         public RuntimeContentSnapshot Runtime {get;internal set;}
         internal HashSet<int> RequiredCues {get;}=new HashSet<int>();
         internal Dictionary<string,int> SharedProjectiles {get;}=new Dictionary<string,int>();
+        internal Dictionary<string,int> SharedAreas {get;}=new Dictionary<string,int>();
     }
 
     public static class CombatContentCompiler
@@ -32,6 +33,11 @@ namespace Combat.Config
             SkillSceneValidation.Validate(project.Preview);
             if (project.Skills == null || project.Skills.Length == 0 || project.Skills.Length > 512) Fail("$.skills", "Expected 1 to 512 skills.");
             var content = new CombatContentSnapshot();
+            foreach(var area in project.Areas)
+            {
+                var root=System.Array.Find(area.Nodes,n=>n.Id==area.Root);
+                content.SharedAreas.Add(area.Id,root.RuntimeId);content.Dependencies.Register(ContentDependencies.Area(area.Id));
+            }
             foreach(var projectile in project.Projectiles)
             {
                 var root=System.Array.Find(projectile.Nodes,n=>n.Id==projectile.Root);
@@ -57,6 +63,12 @@ namespace Combat.Config
             BuffCompiler.Register(project.Buffs,content);
             var projectileIds = new HashSet<int>(); var aoeIds = new HashSet<int>();var summonIds=new HashSet<int>();
             var shared=new Dictionary<string,TimelineDefinition>();
+            foreach(var area in project.Areas)
+            {
+                string path="$.areas["+area.Id+"]";
+                var graph=new EffectGraphIndex(ContentDependencies.Area(area.Id),area.Nodes,area.Edges,path,true);
+                new SkillEffectCompiler(graph,content,projectileIds,aoeIds,summonIds).Entries(new[]{area.Root},path+".root");graph.CheckComplete();
+            }
             foreach(var projectile in project.Projectiles)
             {
                 string path="$.projectiles["+projectile.Id+"]";

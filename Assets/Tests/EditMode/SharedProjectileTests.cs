@@ -20,7 +20,7 @@ namespace Combat.Tests
         public void TwoRealAxesShareOneProjectileDefinitionAndKeepDifferentEmissionSchedules()
         {
             var p=Formal();var content=CombatContentCompiler.Compile(p);var basic=p.Skills.Single(s=>s.Id=="arena-ammo-shot");var burst=p.Skills.Single(s=>s.Id=="arena-double-shot");
-            Assert.AreEqual(5,p.Projectiles.Length);Assert.AreEqual(basic.Nodes.Single(n=>n.Kind=="projectile-ref").Parameters["projectile"],burst.Nodes.Single(n=>n.Kind=="projectile-ref").Parameters["projectile"]);
+            Assert.AreEqual(6,p.Projectiles.Length);Assert.AreEqual(basic.Nodes.Single(n=>n.Kind=="projectile-ref").Parameters["projectile"],burst.Nodes.Single(n=>n.Kind=="projectile-ref").Parameters["projectile"]);
             Assert.AreEqual(2011,burst.RuntimeId);Assert.AreEqual(3012,burst.Timeline.RuntimeId);Assert.AreEqual(.48f,burst.Timeline.Duration);CollectionAssert.AreEqual(new[]{.08f,.19f},burst.Timeline.Payloads.Select(t=>t.Time));
             Assert.IsTrue(content.Projectiles.TryGet(4001,out var bullet));Assert.AreEqual(6,bullet.Speed);Assert.AreEqual(.1f,bullet.HitRadius);Assert.AreEqual(.1f,bullet.SameTargetDelay);Assert.IsTrue(bullet.PassInvulnerable);
             Root(Definition(p)).Parameters["speed"]=9;Assert.AreEqual(6,bullet.Speed);

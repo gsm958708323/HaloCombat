@@ -67,7 +67,7 @@ namespace Combat.Config
             _world.Events.Subscribe<EvAoeAbsorbed>(e=>Record("area-absorbed",Name(e.Area),Name(e.Projectile)+" / count="+e.Count+" / radius="+e.Radius.ToString("F3",System.Globalization.CultureInfo.InvariantCulture),e.Origin));
             _world.Events.Subscribe<EvSkillEnded>(OnSkillEnded);
             _world.Events.Subscribe<EvSkillReleased>(e => Record("released", Name(e.Source), "Power " + e.Power.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
-            _world.Events.Subscribe<EvCue>(e => Record("cue", Name(e.Source), e.CueId.ToString()));
+            _world.Events.Subscribe<EvCue>(e => Record(e.Playback==CuePlayback.Once?"cue":"cue-"+e.Playback.ToString().ToLowerInvariant(), Name(e.Source), e.CueId+(e.InstanceKey==null?"":" / "+e.InstanceKey),e.Origin));
             _caster = Spawn("caster", preview.Caster);
             foreach (var target in preview.Targets) Spawn("target", target);
         }

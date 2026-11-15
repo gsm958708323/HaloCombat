@@ -1997,6 +1997,227 @@
           1013
         ]
       }
+    },
+    {
+      "id": "arena-bomb-shot",
+      "runtimeId": 2007,
+      "name": "弹跳与延迟炸弹",
+      "category": "Arena 原技能",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "parameters": {
+            "mode": "facing",
+            "range": 20
+          },
+          "position": {
+            "x": 0,
+            "y": 80
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "parameters": {
+            "mode": "instant",
+            "cost": 0,
+            "cooldown": 0
+          },
+          "position": {
+            "x": 300,
+            "y": 80
+          }
+        },
+        {
+          "id": "projectile",
+          "kind": "projectile-ref",
+          "parameters": {
+            "projectile": "arena-bomb-projectile",
+            "count": 1,
+            "spread": 0
+          },
+          "position": {
+            "x": 600,
+            "y": 80
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-target-cast-0",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        }
+      ],
+      "timeline": {
+        "runtimeId": 3007,
+        "duration": 0.5,
+        "animation": "Fire",
+        "clips": [],
+        "payloads": [
+          {
+            "id": "throw",
+            "time": 0.1,
+            "effects": [
+              "projectile"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "arena-roll",
+      "runtimeId": 2002,
+      "name": "原翻滚与减伤",
+      "category": "Arena 原技能",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "parameters": {
+            "mode": "facing",
+            "range": 20
+          },
+          "position": {
+            "x": 0,
+            "y": 80
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "parameters": {
+            "mode": "instant",
+            "cost": 0,
+            "cooldown": 0
+          },
+          "position": {
+            "x": 300,
+            "y": 80
+          }
+        },
+        {
+          "id": "roll-start",
+          "kind": "cue",
+          "parameters": {
+            "id": 4203,
+            "name": "RollFire",
+            "center": "source",
+            "playback": "start",
+            "instanceKey": "roll_fire",
+            "stopWithCast": true
+          },
+          "position": {
+            "x": 600,
+            "y": 80
+          }
+        },
+        {
+          "id": "guard",
+          "kind": "buff",
+          "parameters": {
+            "buff": "arena-roll-guard",
+            "stacks": 1,
+            "recipient": "self"
+          },
+          "position": {
+            "x": 600,
+            "y": 400
+          }
+        },
+        {
+          "id": "roll-stop",
+          "kind": "cue",
+          "parameters": {
+            "id": 4203,
+            "name": "RollFire",
+            "center": "source",
+            "playback": "stop",
+            "instanceKey": "roll_fire"
+          },
+          "position": {
+            "x": 600,
+            "y": 650
+          }
+        },
+        {
+          "id": "roll-end",
+          "kind": "cue",
+          "parameters": {
+            "id": 4208,
+            "name": "RollEnd",
+            "center": "source"
+          },
+          "position": {
+            "x": 900,
+            "y": 650
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-target-cast-0",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        }
+      ],
+      "timeline": {
+        "runtimeId": 3002,
+        "duration": 0.9,
+        "animation": "Roll",
+        "controlTags": [
+          1011,
+          1012
+        ],
+        "scaleWithActionSpeed": false,
+        "clips": [
+          {
+            "id": "iframe",
+            "kind": "iframe",
+            "start": 0.1,
+            "end": 0.8
+          },
+          {
+            "id": "move",
+            "kind": "move",
+            "start": 0.2,
+            "end": 0.8,
+            "moveX": 2,
+            "steer": 0
+          }
+        ],
+        "payloads": [
+          {
+            "id": "start",
+            "time": 0,
+            "effects": [
+              "roll-start"
+            ]
+          },
+          {
+            "id": "guard",
+            "time": 0.1,
+            "effects": [
+              "guard"
+            ]
+          },
+          {
+            "id": "end",
+            "time": 0.8,
+            "effects": [
+              "roll-stop",
+              "roll-end"
+            ]
+          }
+        ]
+      }
     }
   ],
   "buffs": [
@@ -2167,6 +2388,86 @@
           "order": 0
         }
       ]
+    },
+    {
+      "id": "arena-roll-guard",
+      "runtimeId": 5104,
+      "name": "翻滚减伤",
+      "permanent": false,
+      "duration": 0.7,
+      "interval": 0,
+      "stack": "refresh",
+      "maxStacks": 1,
+      "mutexGroup": 0,
+      "tags": [],
+      "modifiers": [
+        {
+          "attribute": "damageTaken",
+          "operation": "mul",
+          "value": 0.5,
+          "priority": 0
+        }
+      ],
+      "nodes": [
+        {
+          "id": "events",
+          "kind": "buff-events",
+          "parameters": {},
+          "position": {
+            "x": 0,
+            "y": 80
+          }
+        },
+        {
+          "id": "start",
+          "kind": "cue",
+          "parameters": {
+            "id": 4212,
+            "name": "RollGuard",
+            "center": "target",
+            "playback": "start",
+            "instanceKey": "buff_5104",
+            "stopWithCast": false
+          },
+          "position": {
+            "x": 300,
+            "y": 80
+          }
+        },
+        {
+          "id": "stop",
+          "kind": "cue",
+          "parameters": {
+            "id": 4212,
+            "name": "RollGuard",
+            "center": "target",
+            "playback": "stop",
+            "instanceKey": "buff_5104"
+          },
+          "position": {
+            "x": 600,
+            "y": 80
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "events-apply-start-0",
+          "source": "events",
+          "sourcePort": "apply",
+          "target": "start",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "events-removed-stop-0",
+          "source": "events",
+          "sourcePort": "removed",
+          "target": "stop",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
     }
   ],
   "summonBlueprints": [
@@ -2262,7 +2563,7 @@
       },
       {
         "preSkills": [],
-        "toSkill": "aura",
+        "toSkill": "arena-bomb-shot",
         "id": "ArenaAura",
         "requiredTags": [],
         "input": "ArenaAura",
@@ -2278,7 +2579,7 @@
       },
       {
         "preSkills": [],
-        "toSkill": "dodge",
+        "toSkill": "arena-roll",
         "id": "ArenaDodge",
         "requiredTags": [],
         "input": "ArenaDodge",
@@ -2324,7 +2625,7 @@
         "requiredTags": [
           1001
         ],
-        "toSkill": "aura"
+        "toSkill": "arena-bomb-shot"
       },
       {
         "preSkills": [
@@ -2358,7 +2659,7 @@
         "requiredTags": [
           1001
         ],
-        "toSkill": "dodge"
+        "toSkill": "arena-roll"
       },
       {
         "preSkills": [
@@ -2537,8 +2838,20 @@
         "requiredTags": [
           1017
         ],
-        "priority": 10,
+        "priority": 5,
         "toSkill": "arena-returning-shot"
+      },
+      {
+        "id": "ArenaSecond-confirm-bomb",
+        "preSkills": [
+          "arena-combo-second"
+        ],
+        "input": "ArenaAura",
+        "requiredTags": [
+          1017
+        ],
+        "priority": 5,
+        "toSkill": "arena-bomb-shot"
       }
     ],
     "actors": [
@@ -2643,7 +2956,7 @@
         "collisionRadius": 0.25,
         "energy": 100,
         "recovery": 10,
-        "dodgeSkill": "dodge",
+        "dodgeSkill": "arena-roll",
         "slots": [
           "g1",
           "g2",
@@ -2725,6 +3038,24 @@
         "key": "BarrelExplosion",
         "kind": "cube",
         "lifetime": 0.45
+      },
+      {
+        "id": 4203,
+        "key": "RollFire",
+        "kind": "cube",
+        "lifetime": 0.9
+      },
+      {
+        "id": 4208,
+        "key": "RollEnd",
+        "kind": "cube",
+        "lifetime": 0.4
+      },
+      {
+        "id": 4212,
+        "key": "RollGuard",
+        "kind": "cube",
+        "lifetime": 0.7
       }
     ],
     "arena": {
@@ -3324,6 +3655,348 @@
           "source": "damage-hurt",
           "sourcePort": "next",
           "target": "return-burn",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "arena-bomb-projectile",
+      "name": "原弹跳炸弹",
+      "root": "projectile",
+      "nodes": [
+        {
+          "id": "projectile",
+          "kind": "projectile",
+          "parameters": {
+            "speed": 3,
+            "range": 0,
+            "lifetime": 2,
+            "radius": 0.1,
+            "maxHits": 1,
+            "spawnForward": 0.4,
+            "snapshotAttack": true,
+            "passInvulnerable": true,
+            "trajectory": "phase-bounce",
+            "groundPhases": [
+              1,
+              1.6667,
+              1.999
+            ],
+            "bounceHeight": 1,
+            "removeOnObstacle": true
+          },
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "runtimeId": 4005
+        },
+        {
+          "id": "explosion",
+          "kind": "area-ref",
+          "parameters": {
+            "area": "arena-bomb-explosion",
+            "center": "auto",
+            "forwardOffset": 0
+          },
+          "position": {
+            "x": 300,
+            "y": 80
+          }
+        },
+        {
+          "id": "delayed",
+          "kind": "area-ref",
+          "parameters": {
+            "area": "arena-delayed-bomb",
+            "center": "auto",
+            "forwardOffset": 0
+          },
+          "position": {
+            "x": 300,
+            "y": 480
+          }
+        },
+        {
+          "id": "impact-explosion",
+          "kind": "area-ref",
+          "parameters": {
+            "area": "arena-bomb-explosion",
+            "center": "target",
+            "forwardOffset": 0
+          },
+          "position": {
+            "x": 600,
+            "y": 80
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "projectile-hit-impact-explosion-0",
+          "source": "projectile",
+          "sourcePort": "hit",
+          "target": "impact-explosion",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "projectile-wall-explosion-0",
+          "source": "projectile",
+          "sourcePort": "wall",
+          "target": "explosion",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "projectile-lifetime-explosion-0",
+          "source": "projectile",
+          "sourcePort": "lifetime",
+          "target": "explosion",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "projectile-lifetime-delayed-1",
+          "source": "projectile",
+          "sourcePort": "lifetime",
+          "target": "delayed",
+          "targetPort": "execute",
+          "order": 1
+        }
+      ]
+    }
+  ],
+  "areas": [
+    {
+      "id": "arena-bomb-explosion",
+      "name": "炸弹共用爆炸区",
+      "root": "area",
+      "nodes": [
+        {
+          "id": "area",
+          "kind": "delivery",
+          "parameters": {
+            "mode": "area",
+            "persistent": true,
+            "radius": 1.5,
+            "duration": 0.02,
+            "interval": 0.45,
+            "pulseOnSpawn": true,
+            "hostileMask": 0,
+            "removeOnObstacle": false
+          },
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "runtimeId": 4104
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "parameters": {
+            "flat": 0,
+            "coefficient": 0.1,
+            "critChance": 0.05,
+            "critMultiplier": 1.8,
+            "canCrit": true,
+            "notifyHurt": false,
+            "targetHitstopFrames": 3,
+            "feedback": "none"
+          },
+          "position": {
+            "x": 300,
+            "y": 80
+          }
+        },
+        {
+          "id": "hurt",
+          "kind": "hurt-feedback",
+          "parameters": {
+            "level": "light",
+            "requireHpDamage": true
+          },
+          "position": {
+            "x": 600,
+            "y": 80
+          }
+        },
+        {
+          "id": "hit-cue",
+          "kind": "cue",
+          "parameters": {
+            "id": 4204,
+            "name": "BombHit",
+            "center": "target"
+          },
+          "position": {
+            "x": 900,
+            "y": 80
+          }
+        },
+        {
+          "id": "explosion-cue",
+          "kind": "cue",
+          "parameters": {
+            "id": 4206,
+            "name": "BombExplosion",
+            "center": "point"
+          },
+          "position": {
+            "x": 300,
+            "y": 760
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "area-apply-damage-0",
+          "source": "area",
+          "sourcePort": "apply",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "damage-next-hurt-0",
+          "source": "damage",
+          "sourcePort": "next",
+          "target": "hurt",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hurt-next-hit-cue-0",
+          "source": "hurt",
+          "sourcePort": "next",
+          "target": "hit-cue",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "area-expire-explosion-cue-0",
+          "source": "area",
+          "sourcePort": "expire",
+          "target": "explosion-cue",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "arena-delayed-bomb",
+      "name": "延迟地面炸弹",
+      "root": "area",
+      "nodes": [
+        {
+          "id": "area",
+          "kind": "delivery",
+          "parameters": {
+            "mode": "area",
+            "persistent": true,
+            "radius": 0.1,
+            "duration": 3,
+            "interval": 0.45,
+            "pulseOnSpawn": true,
+            "removeOnObstacle": false
+          },
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "runtimeId": 4105
+        },
+        {
+          "id": "explosion",
+          "kind": "area-ref",
+          "parameters": {
+            "area": "arena-bomb-explosion",
+            "center": "auto",
+            "forwardOffset": 0
+          },
+          "position": {
+            "x": 300,
+            "y": 80
+          }
+        },
+        {
+          "id": "burn",
+          "kind": "area-ref",
+          "parameters": {
+            "area": "arena-bomb-fire",
+            "center": "auto",
+            "forwardOffset": 0
+          },
+          "position": {
+            "x": 300,
+            "y": 480
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "area-expire-explosion-0",
+          "source": "area",
+          "sourcePort": "expire",
+          "target": "explosion",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "area-expire-burn-1",
+          "source": "area",
+          "sourcePort": "expire",
+          "target": "burn",
+          "targetPort": "execute",
+          "order": 1
+        }
+      ]
+    },
+    {
+      "id": "arena-bomb-fire",
+      "name": "炸弹燃烧区",
+      "root": "area",
+      "nodes": [
+        {
+          "id": "area",
+          "kind": "delivery",
+          "parameters": {
+            "mode": "area",
+            "persistent": true,
+            "radius": 2,
+            "duration": 3,
+            "interval": 0.5,
+            "pulseOnSpawn": true,
+            "removeOnObstacle": false
+          },
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "runtimeId": 4106
+        },
+        {
+          "id": "burn",
+          "kind": "buff",
+          "parameters": {
+            "buff": "arena-return-burn",
+            "stacks": 1,
+            "recipient": "target"
+          },
+          "position": {
+            "x": 300,
+            "y": 80
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "area-apply-burn-0",
+          "source": "area",
+          "sourcePort": "apply",
+          "target": "burn",
           "targetPort": "execute",
           "order": 0
         }

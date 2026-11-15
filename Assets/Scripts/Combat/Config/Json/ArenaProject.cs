@@ -24,6 +24,7 @@ namespace Combat.Config
                 foreach(var value in pub.Project.Buffs){Check("buff:"+value.Id,value,shared);Document.Buffs=Document.Buffs.Where(b=>b.Id!=value.Id).Concat(new[]{value}).ToArray();}
                 foreach(var value in pub.Project.Timelines){Check("timeline:"+value.Id,value,shared);Document.Timelines=Document.Timelines.Where(t=>t.Id!=value.Id).Concat(new[]{value}).ToArray();}
                 foreach(var value in pub.Project.Projectiles){Check("projectile:"+value.Id,value,shared);Document.Projectiles=Document.Projectiles.Where(p=>p.Id!=value.Id).Concat(new[]{value}).ToArray();}
+                foreach(var value in pub.Project.Areas){Check("area:"+value.Id,value,shared);Document.Areas=Document.Areas.Where(a=>a.Id!=value.Id).Concat(new[]{value}).ToArray();}
                 foreach(var value in pub.Project.SummonBlueprints){Check("blueprint:"+value.Id,value,shared);Document.SummonBlueprints=Document.SummonBlueprints.Where(b=>b.Id!=value.Id).Concat(new[]{value}).ToArray();}
                 roots.Add(entry.Key,pub.SkillId);
             }

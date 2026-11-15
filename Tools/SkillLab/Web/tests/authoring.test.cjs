@@ -9,6 +9,36 @@ const example=()=>JSON.parse(fs.readFileSync(path.resolve(__dirname,'../../../..
 const ids=()=>{let number=0;return ()=> 'generated-'+ ++number;};
 const skillKey={kind:'skill',id:'basic-shot'};
 const runtime=()=>JSON.parse(fs.readFileSync(path.resolve(__dirname,'../../../../Assets/StreamingAssets/Combat/project.json'),'utf8'));
+const areaEdits=require('../../.local/web-checks/authoring/areaEdits.js');
+
+test('extracting an inline persistent area moves its lifecycle graph and retains placement at the caller',()=>{
+  const p=example(),s=p.skills.find(s=>s.nodes.some(n=>n.kind==='delivery'&&n.parameters.mode==='area'&&n.parameters.persistent===true));
+  const root=s.nodes.find(n=>n.kind==='delivery'&&n.parameters.mode==='area'&&n.parameters.persistent===true),before=structuredClone(p),history=new EditorHistory(p);
+  const result=areaEdits.extractArea(p,{kind:'skill',id:s.id},root.id,ids());history.edit(result.project);
+  const definition=result.project.areas.at(-1),reference=result.project.skills.find(v=>v.id===s.id).nodes.find(n=>n.id===root.id);
+  assert.equal(definition.nodes.find(n=>n.id===definition.root).runtimeId,root.runtimeId);assert.equal(reference.kind,'area-ref');assert.equal(reference.parameters.area,definition.id);
+  assert.equal(definition.nodes.find(n=>n.id===definition.root).parameters.center,undefined);assert.equal(result.project.editor.selectedArea,definition.id);history.undo();assert.deepEqual(history.current,before);
+});
+test('shared area rename replacement deletion and duplication keep typed references and fresh root identity',()=>{
+  const p=runtime(),id='arena-bomb-explosion',renamed=edits.renameContent(p,'area',id,'shared-blast');assert.equal(edits.referencesTo(renamed,'area','shared-blast').length,3);
+  assert.throws(()=>edits.deleteContent(renamed,'area','shared-blast'),/替代引用/);const copied=edits.duplicateContent(renamed,'area','shared-blast','copy',ids());
+  const old=renamed.areas.find(a=>a.id==='shared-blast'),next=copied.project.areas.at(-1);assert.notEqual(next.root,old.root);assert.notEqual(next.nodes.find(n=>n.id===next.root).runtimeId,old.nodes.find(n=>n.id===old.root).runtimeId);
+  const deleted=edits.deleteContent(copied.project,'area','shared-blast',copied.id);assert.equal(edits.referencesTo(deleted,'area',copied.id).length,3);
+});
+test('merging a bomb rebinds projectile and delayed area references to the imported area definitions',()=>{
+  const p=runtime(),merged=mergeProjects(p,p,ids()),areas=merged.areas.slice(p.areas.length),allowed=new Set(areas.map(a=>a.id));
+  const imported=[...areas,...merged.projectiles.slice(p.projectiles.length)];assert(imported.flatMap(a=>a.nodes).filter(n=>n.kind==='area-ref').every(n=>allowed.has(n.parameters.area)));
+  assert.equal(new Set(merged.areas.map(a=>a.nodes.find(n=>n.id===a.root).runtimeId)).size,merged.areas.length);
+});
+test('area roots resist deletion and imported graph roots cannot be pasted into their effect branches',()=>{
+  const p=runtime(),a=p.areas[0],key={kind:'area',id:a.id};assert(graph.deleteSelection(p,key,[a.root],[]).areas[0].nodes.some(n=>n.id===a.root));
+  const source=p.skills[0],clipboard=graph.copySelection(source,source.nodes.filter(n=>['cast','target'].includes(n.kind)).map(n=>n.id));assert.throws(()=>graph.pasteSelection(p,key,clipboard,{x:100,y:100},ids()),/根节点/);
+});
+test('area viewport rename and new definitions preserve existing graph selection metadata',()=>{
+  let p=runtime();p=edits.selectGraph(p,'arena-bomb-shot','','','','arena-bomb-explosion');p=edits.saveViewport(p,{kind:'area',id:'arena-bomb-explosion'},{x:20,y:30,zoom:.6});
+  p=edits.renameContent(p,'area','arena-bomb-explosion','blast');assert.equal(p.editor.selectedArea,'blast');assert.equal(p.editor.viewports.at(-1).id,'blast');
+  const result=areaEdits.newArea(p,'arena-bomb-shot',ids());assert.equal(result.project.editor.selectedArea,result.id);assert.equal(result.project.areas.at(-1).nodes[0].parameters.persistent,true);
+});
 
 test('copying and pasting a construct preserve lifecycle branches with fresh definition identities',()=>{
   const p=example(),source=p.skills.find(s=>s.id==='barrel-chain'),key={kind:'skill',id:source.id};

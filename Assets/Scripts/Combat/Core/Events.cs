@@ -129,6 +129,7 @@ namespace Combat.Core
         }
     }
 
+    public enum CuePlayback {Once,Start,Stop}
     public readonly struct EvCue
     {
         public readonly int CueId;
@@ -136,12 +137,17 @@ namespace Combat.Core
         public readonly string Name;
         public readonly SimVec3 Point;
         public readonly bool HasPoint;
-        public EvCue(int cueId, EntityId source, string name,SimVec3? point=null)
+        public readonly CuePlayback Playback;
+        public readonly string InstanceKey;
+        public readonly bool StopWithCast;
+        public readonly SkillOrigin Origin;
+        public EvCue(int cueId, EntityId source, string name,SimVec3? point=null,CuePlayback playback=CuePlayback.Once,string instanceKey=null,bool stopWithCast=false,SkillOrigin origin=default)
         {
             CueId = cueId;
             Source = source;
             Name = name ?? string.Empty;
             Point=point??default;HasPoint=point.HasValue;
+            Playback=playback;InstanceKey=instanceKey;StopWithCast=stopWithCast;Origin=origin;
         }
     }
 

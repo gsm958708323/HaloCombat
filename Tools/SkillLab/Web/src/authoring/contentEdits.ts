@@ -1,16 +1,17 @@
 import { clone } from '../model';
 import type { AuthoredTimeline,BuffDefinition, GraphEdge, GraphNode, GraphViewport, Project, Skill } from '../model';
 
-export type ContentKind = 'skill' | 'buff' | 'blueprint'|'timeline'|'projectile';
-export interface GraphKey { kind:'skill'|'buff'|'timeline'|'projectile';id:string }
+export type ContentKind = 'skill' | 'buff' | 'blueprint'|'timeline'|'projectile'|'area';
+export interface GraphKey { kind:'skill'|'buff'|'timeline'|'projectile'|'area';id:string }
 export type EditableGraph = Pick<Skill,'id'|'name'|'nodes'|'edges'|'timeline'|'timelineRef'>&{root?:string};
 export interface ContentReference { kind:ContentKind|'actor'|'combo';id:string;name:string;nodeId?:string;field:string }
-export const contentLabel = { skill:'技能',buff:'Buff',blueprint:'召唤蓝图',timeline:'共享时间轴',projectile:'共享弹体',actor:'角色',combo:'连招' };
-export const contentItems = (p:Project,kind:ContentKind) => kind==='skill'?p.skills:kind==='buff'?(p.buffs??[]):kind==='timeline'?(p.timelines??[]):kind==='projectile'?(p.projectiles??[]):(p.summonBlueprints??[]);
-export const graphOf = (p:Project,key:GraphKey):EditableGraph|undefined => key.kind==='skill'?p.skills.find(s=>s.id===key.id):key.kind==='timeline'?p.timelines?.find(t=>t.id===key.id):key.kind==='projectile'?p.projectiles?.find(t=>t.id===key.id):p.buffs?.find(b=>b.id===key.id);
-export const allGraphs = (p:Project) => [...p.skills.map(graph=>({kind:'skill' as const,graph})),...(p.buffs??[]).map(graph=>({kind:'buff' as const,graph})),...(p.timelines??[]).map(graph=>({kind:'timeline' as const,graph})),...(p.projectiles??[]).map(graph=>({kind:'projectile' as const,graph}))];
+export const contentLabel = { skill:'技能',buff:'Buff',blueprint:'召唤蓝图',timeline:'共享时间轴',projectile:'共享弹体',area:'共享区域',actor:'角色',combo:'连招' };
+export const contentItems = (p:Project,kind:ContentKind) => kind==='skill'?p.skills:kind==='buff'?(p.buffs??[]):kind==='timeline'?(p.timelines??[]):kind==='projectile'?(p.projectiles??[]):kind==='area'?(p.areas??[]):(p.summonBlueprints??[]);
+export const graphOf = (p:Project,key:GraphKey):EditableGraph|undefined => key.kind==='skill'?p.skills.find(s=>s.id===key.id):key.kind==='timeline'?p.timelines?.find(t=>t.id===key.id):key.kind==='projectile'?p.projectiles?.find(t=>t.id===key.id):key.kind==='area'?p.areas?.find(t=>t.id===key.id):p.buffs?.find(b=>b.id===key.id);
+export const allGraphs = (p:Project) => [...p.skills.map(graph=>({kind:'skill' as const,graph})),...(p.buffs??[]).map(graph=>({kind:'buff' as const,graph})),...(p.timelines??[]).map(graph=>({kind:'timeline' as const,graph})),...(p.projectiles??[]).map(graph=>({kind:'projectile' as const,graph})),...(p.areas??[]).map(graph=>({kind:'area' as const,graph}))];
 
 export function updateGraph(p:Project,key:GraphKey,change:(graph:EditableGraph)=>EditableGraph):Project {
+  if(key.kind==='area')return {...p,areas:p.areas?.map(t=>{if(t.id!==key.id)return t;const next=change(t);return {...t,...next,root:next.root??t.root};})};
   if(key.kind==='projectile')return {...p,projectiles:p.projectiles?.map(t=>{if(t.id!==key.id)return t;const next=change(t);return {...t,...next,root:next.root??t.root};})};
   if(key.kind==='timeline')return {...p,timelines:p.timelines?.map(t=>{if(t.id!==key.id)return t;const next=change(t);return {...t,...next,timeline:next.timeline??t.timeline};})};
   return key.kind==='skill'?{...p,skills:p.skills.map(s=>s.id===key.id?{...s,...change(s)}:s)}:
@@ -18,7 +19,7 @@ export function updateGraph(p:Project,key:GraphKey,change:(graph:EditableGraph)=
 }
 
 function referenceField(node:GraphNode,kind:ContentKind) {
-  return kind==='buff'&&(node.kind==='buff'||node.kind==='dispel')?'buff':kind==='blueprint'&&node.kind==='delivery'?'blueprint':kind==='projectile'&&node.kind==='projectile-ref'?'projectile':null;
+  return kind==='buff'&&(node.kind==='buff'||node.kind==='dispel')?'buff':kind==='blueprint'&&node.kind==='delivery'?'blueprint':kind==='projectile'&&node.kind==='projectile-ref'?'projectile':kind==='area'&&node.kind==='area-ref'?'area':null;
 }
 export function referencesTo(p:Project,kind:ContentKind,id:string):ContentReference[] {
   if(kind==='timeline')return p.skills.filter(s=>s.timelineRef===id).map(s=>({kind:'skill',id:s.id,name:s.name,field:'timelineRef'}));
@@ -38,11 +39,12 @@ function rewriteReferences(p:Project,kind:ContentKind,from:string,to:string):Pro
     actors:p.runtime.actors.map(a=>({...a,skillId:a.skillId===from?to:a.skillId,dodgeSkill:a.dodgeSkill===from?to:a.dodgeSkill,slots:a.slots?.map(id=>id===from?to:id)})),
     combos:p.runtime.combos.map(c=>({...c,toSkill:c.toSkill===from?to:c.toSkill,preSkills:c.preSkills.map(id=>id===from?to:id)}))}:undefined};
   const nodes=(items:GraphNode[])=>items.map(node=>{const field=referenceField(node,kind);return field&&node.parameters[field]===from?{...node,parameters:{...node.parameters,[field]:to}}:node;});
-  return {...p,skills:p.skills.map(s=>({...s,nodes:nodes(s.nodes)})),buffs:p.buffs?.map(b=>({...b,nodes:nodes(b.nodes)})),timelines:p.timelines?.map(t=>({...t,nodes:nodes(t.nodes)})),projectiles:p.projectiles?.map(t=>({...t,nodes:nodes(t.nodes)}))};
+  return {...p,skills:p.skills.map(s=>({...s,nodes:nodes(s.nodes)})),buffs:p.buffs?.map(b=>({...b,nodes:nodes(b.nodes)})),timelines:p.timelines?.map(t=>({...t,nodes:nodes(t.nodes)})),projectiles:p.projectiles?.map(t=>({...t,nodes:nodes(t.nodes)})),areas:p.areas?.map(t=>({...t,nodes:nodes(t.nodes)}))};
 }
 function mapContent(p:Project,kind:ContentKind,from:string,to:string):Project {
   return kind==='skill'?{...p,skills:p.skills.map(s=>s.id===from?{...s,id:to}:s)}:
     kind==='timeline'?{...p,timelines:p.timelines?.map(t=>t.id===from?{...t,id:to}:t)}:
+    kind==='area'?{...p,areas:p.areas?.map(t=>t.id===from?{...t,id:to}:t)}:
     kind==='projectile'?{...p,projectiles:p.projectiles?.map(t=>t.id===from?{...t,id:to}:t)}:
     kind==='buff'?{...p,buffs:p.buffs?.map(b=>b.id===from?{...b,id:to}:b)}:
     {...p,summonBlueprints:p.summonBlueprints?.map(b=>b.id===from?{...b,id:to}:b)};
@@ -59,6 +61,7 @@ export function renameContent(p:Project,kind:ContentKind,id:string,input:string)
     selectedBuff:kind==='buff'&&p.editor.selectedBuff===id?next:p.editor.selectedBuff,
     selectedTimeline:kind==='timeline'&&p.editor.selectedTimeline===id?next:p.editor.selectedTimeline,
     selectedProjectile:kind==='projectile'&&p.editor.selectedProjectile===id?next:p.editor.selectedProjectile,
+    selectedArea:kind==='area'&&p.editor.selectedArea===id?next:p.editor.selectedArea,
     viewports:p.editor.viewports?.map(v=>v.kind===kind&&v.id===id?{...v,id:next}:v)}};
   return result;
 }
@@ -70,6 +73,7 @@ export function deleteContent(p:Project,kind:ContentKind,id:string,replacement='
   let result=replacement?rewriteReferences(p,kind,id,replacement):p;
   result=kind==='skill'?{...result,skills:result.skills.filter(s=>s.id!==id)}:
     kind==='timeline'?{...result,timelines:result.timelines?.filter(t=>t.id!==id)}:
+    kind==='area'?{...result,areas:result.areas?.filter(t=>t.id!==id)}:
     kind==='projectile'?{...result,projectiles:result.projectiles?.filter(t=>t.id!==id)}:
     kind==='buff'?{...result,buffs:result.buffs?.filter(b=>b.id!==id)}:
     {...result,summonBlueprints:result.summonBlueprints?.filter(b=>b.id!==id)};
@@ -78,6 +82,7 @@ export function deleteContent(p:Project,kind:ContentKind,id:string,replacement='
     selectedBuff:kind==='buff'&&p.editor.selectedBuff===id?'':p.editor.selectedBuff,
     selectedTimeline:kind==='timeline'&&p.editor.selectedTimeline===id?undefined:p.editor.selectedTimeline,
     selectedProjectile:kind==='projectile'&&p.editor.selectedProjectile===id?undefined:p.editor.selectedProjectile,
+    selectedArea:kind==='area'&&p.editor.selectedArea===id?undefined:p.editor.selectedArea,
     viewports:p.editor.viewports?.filter(v=>v.kind!==kind||v.id!==id)}};
   return result;
 }
@@ -97,9 +102,10 @@ export function duplicateContent(p:Project,kind:ContentKind,id:string,name?:stri
   const nextId=newId();const title=name??source.name+' 副本';
   if(kind==='blueprint')return {id:nextId,project:{...p,summonBlueprints:[...(p.summonBlueprints??[]),{...clone(p.summonBlueprints!.find(b=>b.id===id)!),id:nextId,name:title}]}};
   const graph=graphOf(p,{kind,id})!;const copied=copyGraph(graph.nodes,graph.edges,definitionAllocator(p),newId);
-  if(kind==='projectile'){
-    const source=p.projectiles!.find(t=>t.id===id)!;const root=copied.nodes[source.nodes.findIndex(n=>n.id===source.root)].id;
-    return {id:nextId,project:{...p,projectiles:[...(p.projectiles??[]),{...clone(source),...copied,id:nextId,name:title,root}]}};
+  if(kind==='projectile'||kind==='area'){
+    const source=(kind==='area'?p.areas:p.projectiles)!.find(t=>t.id===id)!;const root=copied.nodes[source.nodes.findIndex(n=>n.id===source.root)].id;
+    const value={...clone(source),...copied,id:nextId,name:title,root};
+    return {id:nextId,project:kind==='area'?{...p,areas:[...(p.areas??[]),value]}:{...p,projectiles:[...(p.projectiles??[]),value]}};
   }
   if(kind==='timeline'){
     const source=p.timelines!.find(t=>t.id===id)!;const ids=new Map(source.nodes.map((n,i)=>[n.id,copied.nodes[i].id]));
@@ -119,8 +125,8 @@ export function remapTimeline(source:AuthoredTimeline,ids:Map<string,string>,run
   const map=(values:string[]|undefined)=>values?.map(id=>{const next=ids.get(id);if(!next)throw new Error('时间轴效果入口不存在：'+id);return next;})??[];
   return {...clone(source),runtimeId,clips:source.clips.map(c=>({...clone(c),effects:map(c.effects)})),payloads:source.payloads.map(p=>({...clone(p),effects:map(p.effects)}))};
 }
-export function selectGraph(p:Project,skillId:string,buffId='',timelineId='',projectileId=''):Project {
-  return {...p,editor:{...p.editor,selectedSkill:p.skills.some(s=>s.id===skillId)?skillId:(p.skills[0]?.id??''),selectedBuff:p.buffs?.some(b=>b.id===buffId)?buffId:'',selectedTimeline:p.timelines?.some(t=>t.id===timelineId)?timelineId:undefined,selectedProjectile:p.projectiles?.some(t=>t.id===projectileId)?projectileId:undefined}};
+export function selectGraph(p:Project,skillId:string,buffId='',timelineId='',projectileId='',areaId=''):Project {
+  return {...p,editor:{...p.editor,selectedSkill:p.skills.some(s=>s.id===skillId)?skillId:(p.skills[0]?.id??''),selectedBuff:p.buffs?.some(b=>b.id===buffId)?buffId:'',selectedTimeline:p.timelines?.some(t=>t.id===timelineId)?timelineId:undefined,selectedProjectile:p.projectiles?.some(t=>t.id===projectileId)?projectileId:undefined,selectedArea:p.areas?.some(t=>t.id===areaId)?areaId:undefined}};
 }
 export function saveViewport(p:Project,key:GraphKey,viewport:{x:number;y:number;zoom:number}):Project {
   const value:GraphViewport={...key,...viewport};

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Newtonsoft.Json.Linq;
 
 namespace Combat.Config
 {
@@ -19,12 +20,13 @@ namespace Combat.Config
             var blueprints=Identities(project.SummonBlueprints,b=>b.Id,"$.summonBlueprints",256);
             var timelines=Identities(project.Timelines,t=>t.Id,"$.timelines",512);
             var projectiles=Identities(project.Projectiles,p=>p.Id,"$.projectiles",512);
+            var areas=Identities(project.Areas,a=>a.Id,"$.areas",512);
             var skillNumbers=new HashSet<int>();var buffNumbers=new HashSet<int>();
             for(int i=0;i<project.Skills.Length;i++)
             {
                 var skill=project.Skills[i];string path="$.skills["+i+"]";
                 Number(skill.RuntimeId,skillNumbers,path+".runtimeId");
-                Graph(skill.Nodes,skill.Edges,path,false,buffs,blueprints,projectiles,checkRetainedReferences);
+                Graph(skill.Nodes,skill.Edges,path,false,buffs,blueprints,projectiles,areas,checkRetainedReferences);
                 foreach(var node in skill.Nodes)if(node.Kind=="cast")foreach(string field in new[]{"fallbackSkill","recastSkill"})Reference(node,field,skills,path+".nodes["+node.Id+"]");
                 TimelineReferences(skill.Timeline,skill.Nodes,path+".timeline");
                 if(skill.TimelineRef!=null)
@@ -37,7 +39,7 @@ namespace Combat.Config
             {
                 var buff=project.Buffs[i];string path="$.buffs["+i+"]";
                 Number(buff.RuntimeId,buffNumbers,path+".runtimeId");
-                Graph(buff.Nodes,buff.Edges,path,true,buffs,blueprints,projectiles,checkRetainedReferences);
+                Graph(buff.Nodes,buff.Edges,path,true,buffs,blueprints,projectiles,areas,checkRetainedReferences);
             }
             for(int i=0;i<project.SummonBlueprints.Length;i++)
                 if(!skills.Contains(project.SummonBlueprints[i].SkillId??""))Fail("$.summonBlueprints["+i+"].skillId","Unknown skill reference.");
@@ -45,20 +47,30 @@ namespace Combat.Config
             {
                 string path="$.timelines["+timeline.Id+"]";
                 if(timeline.Timeline==null)Fail(path+".timeline","Timeline is required.");
-                Graph(timeline.Nodes,timeline.Edges,path,true,buffs,blueprints,projectiles,checkRetainedReferences);
+                Graph(timeline.Nodes,timeline.Edges,path,true,buffs,blueprints,projectiles,areas,checkRetainedReferences);
                 if(timeline.Nodes.Any(n=>n.Kind=="buff-events"))Fail(path+".nodes","Shared timeline graph has no lifecycle root.");
                 TimelineReferences(timeline.Timeline,timeline.Nodes,path+".timeline");
             }
             foreach(var projectile in project.Projectiles)
             {
                 string path="$.projectiles["+projectile.Id+"]";
-                Graph(projectile.Nodes,projectile.Edges,path,true,buffs,blueprints,projectiles,checkRetainedReferences);
+                Graph(projectile.Nodes,projectile.Edges,path,true,buffs,blueprints,projectiles,areas,checkRetainedReferences);
                 var root=projectile.Nodes.SingleOrDefault(n=>n.Id==projectile.Root);
                 if(root==null||root.Kind!="projectile"||!root.Enabled)Fail(path+".root","Expected an enabled projectile definition node.");
                 if(projectile.Nodes.Any(n=>n.Kind=="buff-events"))Fail(path+".nodes","Projectile definition has no lifecycle root.");
                 foreach(string field in new[]{"multi","count","spread"})if(root.Parameters[field]!=null)Fail(path+".nodes["+root.Id+"].parameters."+field,"Emission parameters belong to projectile-ref.");
             }
-            Editor(project.Editor,skills,buffs,timelines,projectiles);
+            foreach(var area in project.Areas)
+            {
+                string path="$.areas["+area.Id+"]";
+                Graph(area.Nodes,area.Edges,path,true,buffs,blueprints,projectiles,areas,checkRetainedReferences);
+                var root=area.Nodes.SingleOrDefault(n=>n.Id==area.Root);
+                if(root==null||root.Kind!="delivery"||!root.Enabled||root.Parameters.Value<string>("mode")!="area"||root.Parameters.Value<bool?>("persistent")!=true)
+                    Fail(path+".root","Expected an enabled persistent area definition node.");
+                if(area.Nodes.Any(n=>n.Kind=="buff-events"))Fail(path+".nodes","Area definition has no Buff root.");
+                foreach(string field in new[]{"center","forwardOffset"})if(root.Parameters[field]!=null)Fail(path+".nodes["+root.Id+"].parameters."+field,"Placement parameters belong to area-ref.");
+            }
+            Editor(project.Editor,skills,buffs,timelines,projectiles,areas);
             RuntimeReferences(project.Runtime,skills);
         }
         static void TimelineReferences(TimelineDocument timeline,SkillNodeDocument[] nodes,string path)
@@ -97,7 +109,7 @@ namespace Combat.Config
             return keys;
         }
 
-        static void Graph(SkillNodeDocument[] nodes,SkillEdgeDocument[] edges,string path,bool buff,HashSet<string> buffs,HashSet<string> blueprints,HashSet<string> projectiles,bool checkRetainedReferences)
+        static void Graph(SkillNodeDocument[] nodes,SkillEdgeDocument[] edges,string path,bool buff,HashSet<string> buffs,HashSet<string> blueprints,HashSet<string> projectiles,HashSet<string> areas,bool checkRetainedReferences)
         {
             var nodeIds=Identities(nodes,n=>n.Id,path+".nodes",256);
             Identities(edges,e=>e.Id,path+".edges",1024);
@@ -115,6 +127,7 @@ namespace Combat.Config
                     if(node.Kind=="buff"||node.Kind=="dispel")Reference(node,"buff",buffs,p);
                     if(node.Kind=="delivery")Reference(node,"blueprint",blueprints,p);
                     if(node.Kind=="projectile-ref")Reference(node,"projectile",projectiles,p);
+                    if(node.Kind=="area-ref")Reference(node,"area",areas,p);
                 }
             }
             foreach(var edge in edges)
@@ -134,20 +147,21 @@ namespace Combat.Config
             if(!string.IsNullOrEmpty(id)&&!values.Contains(id))Fail(path+".parameters."+field,"Unknown shared reference: "+id);
         }
 
-        static void Editor(SkillEditorDocument editor,HashSet<string> skills,HashSet<string> buffs,HashSet<string> timelines,HashSet<string> projectiles)
+        static void Editor(SkillEditorDocument editor,HashSet<string> skills,HashSet<string> buffs,HashSet<string> timelines,HashSet<string> projectiles,HashSet<string> areas)
         {
             if(editor==null)return;
             if(!string.IsNullOrEmpty(editor.SelectedSkill)&&!skills.Contains(editor.SelectedSkill))Fail("$.editor.selectedSkill","Unknown skill.");
             if(!string.IsNullOrEmpty(editor.SelectedBuff)&&!buffs.Contains(editor.SelectedBuff))Fail("$.editor.selectedBuff","Unknown Buff.");
             if(!string.IsNullOrEmpty(editor.SelectedTimeline)&&!timelines.Contains(editor.SelectedTimeline))Fail("$.editor.selectedTimeline","Unknown timeline.");
             if(!string.IsNullOrEmpty(editor.SelectedProjectile)&&!projectiles.Contains(editor.SelectedProjectile))Fail("$.editor.selectedProjectile","Unknown projectile.");
+            if(!string.IsNullOrEmpty(editor.SelectedArea)&&!areas.Contains(editor.SelectedArea))Fail("$.editor.selectedArea","Unknown area.");
             if(editor.Viewports==null||editor.Viewports.Length>1024)Fail("$.editor.viewports","Invalid viewport array.");
             var views=new HashSet<string>();
             foreach(var view in editor.Viewports)
             {
                 if(view==null)Fail("$.editor.viewports","Null viewport.");
                 string path="$.editor.viewports["+view.Kind+":"+view.Id+"]";
-                var ids=view.Kind=="skill"?skills:view.Kind=="buff"?buffs:view.Kind=="timeline"?timelines:view.Kind=="projectile"?projectiles:null;
+                var ids=view.Kind=="skill"?skills:view.Kind=="buff"?buffs:view.Kind=="timeline"?timelines:view.Kind=="projectile"?projectiles:view.Kind=="area"?areas:null;
                 if(ids==null||!ids.Contains(view.Id??""))Fail(path,"Unknown graph identity.");
                 if(!views.Add(view.Kind+":"+view.Id))Fail(path,"Duplicate graph viewport.");
                 if(!Finite(view.X)||!Finite(view.Y)||!Finite(view.Zoom)||view.Zoom<.1f||view.Zoom>4)Fail(path,"Invalid viewport coordinates or zoom.");

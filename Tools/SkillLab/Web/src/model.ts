@@ -19,9 +19,10 @@ export interface RayView { sequence: number; step: number; fromX: number; fromZ:
 export interface SummonBlueprint { id: string; name: string; skillId: string; hp: number; attack: number; defense: number; moveSpeed: number; collisionRadius: number; energy: number; initialEnergy?: number | null; recovery: number; ammo?:number;initialAmmo?:number|null;actionSpeed?:number;acquireRadius: number; attackRange: number; followRange: number; holdDuration: number }
 export interface SharedTimeline {id:string;name:string;nodes:GraphNode[];edges:GraphEdge[];timeline:AuthoredTimeline}
 export interface SharedProjectile {id:string;name:string;root:string;nodes:GraphNode[];edges:GraphEdge[]}
-export interface GraphViewport { kind:'skill'|'buff'|'timeline'|'projectile';id:string;x:number;y:number;zoom:number }
-export interface EditorMetadata { selectedSkill?:string;selectedBuff?:string;selectedTimeline?:string;selectedProjectile?:string;viewports?:GraphViewport[] }
-export interface Project { formatVersion: number; id: string; name: string; skills: Skill[];timelines?:SharedTimeline[];projectiles?:SharedProjectile[]; buffs?:BuffDefinition[]; summonBlueprints?: SummonBlueprint[];editor?:EditorMetadata;runtime?:RuntimeContent; preview: { seed: number; energy: number; initialEnergy?: number | null; recovery: number; ammo?:number;initialAmmo?:number|null;caster: ActorInitial; targets: ActorInitial[]; obstacles?: ObstacleView[] } }
+export interface SharedArea {id:string;name:string;root:string;nodes:GraphNode[];edges:GraphEdge[]}
+export interface GraphViewport { kind:'skill'|'buff'|'timeline'|'projectile'|'area';id:string;x:number;y:number;zoom:number }
+export interface EditorMetadata { selectedSkill?:string;selectedBuff?:string;selectedTimeline?:string;selectedProjectile?:string;selectedArea?:string;viewports?:GraphViewport[] }
+export interface Project { formatVersion: number; id: string; name: string; skills: Skill[];timelines?:SharedTimeline[];projectiles?:SharedProjectile[];areas?:SharedArea[]; buffs?:BuffDefinition[]; summonBlueprints?: SummonBlueprint[];editor?:EditorMetadata;runtime?:RuntimeContent; preview: { seed: number; energy: number; initialEnergy?: number | null; recovery: number; ammo?:number;initialAmmo?:number|null;caster: ActorInitial; targets: ActorInitial[]; obstacles?: ObstacleView[] } }
 export interface BuffView {instanceId:number;id:string;name:string;source:string;stacks:number;remaining:number|null}
 export interface ActorView { id: string; name: string; kind: string; x: number; y:number; z: number; hp: number | null; maxHp: number | null; radius: number; remaining: number | null; dead: boolean; owner: string | null; blueprint: string | null; skill: string | null; energy: number | null;ammo:number|null;trackingKey:string|null;group:string|null;damageCap:number|null;nextDecay:number|null;stopped:boolean;hitstopFrames:number;logicalTime:number;hurtLevel:string|null;hurtAge:number|null;comboConfirmed:boolean;currentSkill:string|null;bufferedInput:string|null;actionTime:number|null;actionDuration:number|null;actionRate:number;controlTags:number[];castId:number;generation:number;chainsLeft:number;distance:number|null;range:number|null;speed:number|null;verticalSpeed:number|null;returning:boolean;groundBouncesLeft:number;wallBouncesLeft:number;absorbedProjectiles:number;areaVelocityX:number|null;areaVelocityZ:number|null;buffs:BuffView[];tags:Record<string,number>;attributes:Record<string,number> }
 export interface AreaView { sequence: number; step: number; x: number; z: number; radius: number; targets: number }
@@ -31,6 +32,10 @@ export interface RunEvent { sequence: number; time: number; kind: string; source
 export interface PreviewState { step: number; time: number; actors: ActorView[]; events: RunEvent[]; areas: AreaView[]; volumes: VolumeView[]; obstacles: ObstacleView[]; rays: RayView[]; trails: { entity: string; x: number; z: number; step: number }[]; energy: number; ammo:number;ammoCapacity:number;channeling: boolean; charging: boolean; chargeProgress: number; castPower: number; cooldowns: Record<string, number>; statistics: { damage: number; hits: number; casts: number; projectiles: number; chains:number; splits:number; areas: number; summons: number;constructs:number } }
 export interface Field { key: string; label: string; type?: 'select' | 'check' | 'text'|'times'; unit?: string; min?: number; max?: number; step?: number; options?: [string, string][]; initial: ParameterValue; when?: (parameters: Parameters) => boolean }
 export const kinds: Record<string, { title: string; color: string; fields: Field[]; inputs: string[]; outputs: [string, string][] }> = {
+  'area-ref':{title:'共享区域生成',color:'#667b69',inputs:['execute'],outputs:[],fields:[
+    {key:'area',label:'共享区域定义',type:'select',initial:''},
+    {key:'center',label:'生成中心',type:'select',initial:'auto',options:[['auto','事件位置或来源'],['point','指定位置'],['source','效果来源'],['target','当前目标']]},
+    {key:'forwardOffset',label:'前方偏移',unit:'米',min:0,max:100,step:.01,initial:0}]},
   'projectile-ref':{title:'共享弹体发射',color:'#887547',inputs:['execute'],outputs:[],fields:[
     {key:'projectile',label:'共享弹体定义',type:'select',initial:''},
     {key:'count',label:'发射数量',min:1,max:64,step:1,initial:1},
@@ -145,6 +150,9 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
     {key:'amount',label:'护盾增加量',min:0,max:10000000,step:1,initial:100,when:p=>p.mode==='shield'}
   ]},
   cue: { title: '表现事件', color: '#74667e', inputs: ['execute'], outputs: [['next','继续']], fields: [{ key: 'id', label: 'Cue ID', min: 1, max: 9999, step: 1, initial: 1 },
+    {key:'playback',label:'播放方式',type:'select',initial:'once',options:[['once','单次'],['start','开启循环'],['stop','停止循环']]},
+    {key:'instanceKey',label:'循环实例键',type:'text',initial:'',when:p=>p.playback==='start'||p.playback==='stop'},
+    {key:'stopWithCast',label:'施法结束自动停止',type:'check',initial:true,when:p=>p.playback==='start'},
     {key:'center',label:'表现位置',type:'select',initial:'source',options:[['source','效果来源'],['point','事件 / 指定点'],['target','当前目标']]}] },
   buff:{title:'施加 Buff',color:'#5c7e68',inputs:['execute'],outputs:[['next','继续']],fields:[
     {key:'buff',label:'Buff定义',type:'select',initial:'',options:[]},
@@ -235,7 +243,7 @@ export function nodeOutputs(node: GraphNode): [string,string][] {
   const allowed=node.parameters.mode==='summon'?['apply','expire','removed']:node.parameters.mode==='ray'?['apply','wall','complete']:node.parameters.mode==='area'&&node.parameters.persistent===true?['apply','enter','exit','stay','expire',...(node.parameters.absorbProjectiles===true?['absorb']:[])]:['apply'];
   return ports.filter(([port])=>allowed.includes(port));
 }
-export const deliveryLabel = (node: GraphNode) => node.kind==='projectile'||node.kind==='projectile-ref'?'投射物':node.kind==='construct'?'可破坏物':node.parameters.mode==='summon'?'召唤分身':node.parameters.mode==='area'?(node.parameters.persistent?'持续区域':'瞬时区域'):node.parameters.mode==='ray'?'射线判定':node.parameters.mode==='melee'?'近战判定':node.parameters.mode==='displacement'?(node.parameters.movementMode==='blink'?'闪现打击':'冲刺打击'):'目标作用';
+export const deliveryLabel = (node: GraphNode) => node.kind==='area-ref'?'持续区域':node.kind==='projectile'||node.kind==='projectile-ref'?'投射物':node.kind==='construct'?'可破坏物':node.parameters.mode==='summon'?'召唤分身':node.parameters.mode==='area'?(node.parameters.persistent?'持续区域':'瞬时区域'):node.parameters.mode==='ray'?'射线判定':node.parameters.mode==='melee'?'近战判定':node.parameters.mode==='displacement'?(node.parameters.movementMode==='blink'?'闪现打击':'冲刺打击'):'目标作用';
 export const portName = (port: string) => port === 'target' ? '目标数据' : '执行';
 export const effectKinds:[string,string][]=[['damage','伤害结算'],['impact','受击与状态'],['heal','治疗'],['buff','施加 Buff'],['dispel','驱散 Buff'],['cue','表现事件'],['split','命中分裂'],['after-damage','扣血后条件'],['refill-ammo','补充弹药'],['teleport-projectile','传送到追踪弹'],['construct-chain','范围引爆物体'],['hurt-feedback','受伤反馈']];
 export const parameterValue = (field: Field, parameters: Parameters) => parameters[field.key] ?? (field.key === 'energyPerSecond' && parameters.mode === 'charge' ? 0 : field.initial);

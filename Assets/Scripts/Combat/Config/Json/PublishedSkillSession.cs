@@ -23,6 +23,7 @@ namespace Combat.Config
             var buffs=new Dictionary<string,BuffDocument>();
             var timelines=new Dictionary<string,SharedTimelineDocument>();
             var projectiles=new Dictionary<string,SharedProjectileDocument>();
+            var areas=new Dictionary<string,SharedAreaDocument>();
             var revisions = new List<string>();
             SkillProjectDocument project = null;
             foreach (var slot in slots.OrderBy(entry => entry.Key, StringComparer.Ordinal))
@@ -63,6 +64,12 @@ namespace Combat.Config
                         throw new ContentValidationException("$.slots."+slot.Key,"Conflicting timeline versions: "+timeline.Id);
                     timelines[timeline.Id]=timeline;
                 }
+                foreach(var area in closure.Areas)
+                {
+                    if(areas.TryGetValue(area.Id,out var other)&&SkillJsonCodec.Write(area)!=SkillJsonCodec.Write(other))
+                        throw new ContentValidationException("$.slots."+slot.Key,"Conflicting area versions: "+area.Id);
+                    areas[area.Id]=area;
+                }
                 revisions.Add(slot.Key + ":" + document.Revision);
                 foreach(var projectile in closure.Projectiles)
                 {
@@ -76,6 +83,7 @@ namespace Combat.Config
             project.Buffs=buffs.Values.ToArray();
             project.Timelines=timelines.Values.ToArray();
             project.Projectiles=projectiles.Values.ToArray();
+            project.Areas=areas.Values.ToArray();
             var candidate = new SkillSimulation(project, CombatContentCompiler.Compile(project));
             var previous = Simulation;
             Simulation = candidate;

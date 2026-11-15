@@ -9,6 +9,7 @@ namespace Combat.Config
         public string SelectedBuff {get;set;}
         [Newtonsoft.Json.JsonProperty(NullValueHandling=Newtonsoft.Json.NullValueHandling.Ignore)]public string SelectedTimeline {get;set;}
         [Newtonsoft.Json.JsonProperty(NullValueHandling=Newtonsoft.Json.NullValueHandling.Ignore)]public string SelectedProjectile {get;set;}
+        [Newtonsoft.Json.JsonProperty(NullValueHandling=Newtonsoft.Json.NullValueHandling.Ignore)]public string SelectedArea {get;set;}
         public GraphViewportDocument[] Viewports {get;set;}=Array.Empty<GraphViewportDocument>();
     }
 

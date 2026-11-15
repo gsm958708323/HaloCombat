@@ -61,6 +61,11 @@ namespace Combat.Config
                     if(!_content.SharedProjectiles.TryGetValue(projectileKey,out int spec))throw new ContentValidationException(path+".parameters.projectile","Unknown shared projectile.");
                     _content.Dependencies.Add(_graph.ContentKey,ContentDependencies.Projectile(projectileKey));
                     effects.Add(new SpawnProjectileEffect(spec,reference.Integer("count",1,1,64),reference.Number("spread",0,0,360)));break;
+                case "area-ref":
+                    var areaRef=new NodeParameters(node,path,"area","center","forwardOffset");string areaKey=areaRef.Text("area");
+                    if(!_content.SharedAreas.TryGetValue(areaKey,out int areaSpec))throw new ContentValidationException(path+".parameters.area","Unknown shared area.");
+                    _content.Dependencies.Add(_graph.ContentKey,ContentDependencies.Area(areaKey));
+                    effects.Add(new SpawnAoeEffect(areaSpec,Center(areaRef),areaRef.Number("forwardOffset",0,0,100)));break;
                 case "split":
                     var split=new NodeParameters(node,path,"count","spread","generations","powerMultiplier","rangeMode","range");
                     effects.Add(new SplitProjectileEffect(split.Integer("count",3,1,32),split.Number("spread",60,0,360),
@@ -88,11 +93,16 @@ namespace Combat.Config
                     effects.Add(damage); effects.AddRange(Outputs(node, "next",allowSpatial));
                     break;
                 case "cue":
-                    var cue = new NodeParameters(node, path, "id","name","center");
+                    var cue = new NodeParameters(node, path, "id","name","center","playback","instanceKey","stopWithCast");
                     _content.RequiredCues.Add(cue.Integer("id",1,1,1000000));
                     string cueCenter=cue.Choice("center","source","source","point","target");
-                    effects.Add(cueCenter=="source"?(IEffect)new PlayCueEffect(cue.Integer("id", 1, 1, 1000000),cue.Text("name","Skill")):
-                        new PlayPositionedCueEffect(cue.Integer("id",1,1,1000000),cue.Text("name","Skill"),cueCenter=="point"?EffectCenter.Point:EffectCenter.Target));
+                    string playback=cue.Choice("playback","once","once","start","stop"),instanceKey=cue.OptionalIdentity("instanceKey");
+                    if(playback!="once"&&(string.IsNullOrEmpty(instanceKey)||cueCenter=="point"))throw new ContentValidationException(path,"Keyed Cue needs an entity center and instanceKey.");
+                    if(playback=="once"&&!string.IsNullOrEmpty(instanceKey))throw new ContentValidationException(path+".parameters.instanceKey","One-shot Cue has no instance key.");
+                    int cueId=cue.Integer("id",1,1,1000000);string cueName=cue.Text("name","Skill");
+                    bool stopWithCast=cue.Boolean("stopWithCast",true);
+                    effects.Add(playback!="once"?new CuePlaybackEffect(cueId,cueName,cueCenter=="target"?EffectCenter.Target:EffectCenter.Source,(CuePlayback)Array.IndexOf(new[]{"once","start","stop"},playback),instanceKey,stopWithCast):
+                        cueCenter=="source"?(IEffect)new PlayCueEffect(cueId,cueName):new PlayPositionedCueEffect(cueId,cueName,cueCenter=="point"?EffectCenter.Point:EffectCenter.Target));
                     effects.AddRange(Outputs(node, "next",allowSpatial));
                     break;
                 case "buff":

@@ -64,7 +64,7 @@ namespace Combat.Tests
         public void MultiplePressesUseHistoricalPriorityAndDoNotOverwriteTheFirstCommand()
         {
             using(var s=Session(true))
-            {s.Start();s.ApplyInput(Input(false,"Fire1","Roll","Homing"));s.Advance();Assert.AreEqual(SkillNodeId.Dodge,Player(s).GetComp<SkillDirectorComp>().CurrentSkill);}
+            {s.Start();s.ApplyInput(Input(false,"Fire1","Roll","Homing"));s.Advance();Assert.AreEqual(new SkillNodeId(2002),Player(s).GetComp<SkillDirectorComp>().CurrentSkill);}
         }
         [Test]
         public void AimKeepsMouseDirectionWhileWalkingAnotherWay()
