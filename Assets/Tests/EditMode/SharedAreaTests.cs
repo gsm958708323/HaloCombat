@@ -19,7 +19,7 @@ namespace Combat.Tests
         {
             var p=Formal();var pub=SkillPublicationJson.Create(p,"arena-bomb-shot");var loaded=SkillPublicationJson.Read(SkillPublicationJson.Write(pub));
             Assert.AreEqual(2007,pub.Project.Skills.Single().RuntimeId);Assert.AreEqual(4005,RootProjectile(pub.Project).RuntimeId);
-            CollectionAssert.AreEquivalent(new[]{4104,4105,4106},pub.Project.Areas.Select(a=>Root(a).RuntimeId));Assert.AreEqual(5102,pub.Project.Buffs.Single().RuntimeId);
+            CollectionAssert.AreEquivalent(new[]{4104,4105,4106},pub.Project.Areas.Select(a=>Root(a).RuntimeId));Assert.AreEqual(5103,pub.Project.Buffs.Single().RuntimeId);
             Assert.IsTrue(loaded.Content.Aoes.TryGet(4104,out var explosion));Assert.AreEqual(.02f,explosion.Duration);Assert.AreEqual(1.5f,explosion.Radius);
             Assert.IsTrue(loaded.Content.Aoes.TryGet(4105,out var delayed));Assert.AreEqual(3,delayed.Duration);Assert.AreEqual(2,delayed.OnExpire.Length);
             Assert.IsTrue(pub.Project.Areas.SelectMany(a=>a.Nodes).All(n=>n.Position.X==0&&n.Position.Y==0));Assert.Greater(p.Areas[0].Nodes.Max(n=>n.Position.X),0);

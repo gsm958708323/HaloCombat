@@ -33,6 +33,7 @@ namespace Combat.Core
         public SkillNodeId AmmoFallback,RecastSkill;
         public string RecastProjectile,RequiredProjectile;
         public HitFeedbackLevel HitFeedback;
+        public IEffect[] OperationEffects;
     }
 
     public sealed class SkillCatalog
@@ -41,7 +42,7 @@ namespace Combat.Core
         public IEnumerable<SkillDefinition> All => _definitions.Values;
         public void Register(SkillDefinition value)
         {
-            if (value == null || !value.Id.IsValid || !value.Timeline.IsValid)
+            if (value == null || !value.Id.IsValid || (value.OperationEffects==null?!value.Timeline.IsValid:value.Timeline.IsValid||value.OperationEffects.Length==0||value.Mode!=SkillCastMode.Instant||value.Charge!=null))
                 throw new ArgumentException("Invalid skill definition.");
             if (_definitions.ContainsKey(value.Id.Value)) throw new ArgumentException("Duplicate skill id " + value.Id.Value);
             _definitions.Add(value.Id.Value, value);
@@ -132,6 +133,18 @@ namespace Combat.Core
                 float radius=Self.TryGetComp<LocomotionComp>(out var loco)?loco.CollisionRadius:0;
                 if(!Self.World.Collision.IsFree(resolved.Point,radius))return Reject("Destination overlaps an obstacle.");
             }
+            if(definition.OperationEffects!=null)
+            {
+                if(definition.EnergyCost>0)_energy.TrySpend(definition.EnergyCost);
+                if(definition.AmmoCost>0)_ammo.TrySpend(definition.AmmoCost);
+                _readyAt[id.Value]=_time+definition.Cooldown;
+                Actor target=null;if(resolved.Target.IsValid)Self.World.TryGetActor(resolved.Target,out target);
+                float attack=Self.TryGetComp<AttributeSet>(out var attributes)?attributes.GetFinal(AttrId.Atk):0;
+                Self.World.Deliver(definition.OperationEffects,Self,target,attack,resolved.HasPoint?(SimVec3?)resolved.Point:null,
+                    resolved.HasYaw?(SimVec3?)LocomotionComp.ForwardFromYaw(resolved.Yaw):null,power:_basePower,
+                    origin:new SkillOrigin(id,0,caster:Self.Id));
+                Self.World.Events.Publish(new EvSkillOperation(Self.Id,id));return true;
+            }
             if (!_director.Play(id, definition.Timeline, resolved, AdvanceBudget, PayPulse,
                 definition.Mode != SkillCastMode.Instant ? ResolveAim : (Func<SkillAim?>)null, definition.Charge,_basePower))
                 return Reject("Activity rejected casting.");
@@ -168,5 +181,12 @@ namespace Combat.Core
         public override void Tick(float dt) => _time += dt;
         protected override void OnDetach()
         { _readyAt.Clear(); _time = 0f; _basePower=1; _active = null; _director = null; _energy = null; _ammo=null; _tags = null; }
+    }
+
+    public readonly struct EvSkillOperation
+    {
+        public readonly EntityId Source;
+        public readonly SkillNodeId Skill;
+        public EvSkillOperation(EntityId source,SkillNodeId skill){Source=source;Skill=skill;}
     }
 }

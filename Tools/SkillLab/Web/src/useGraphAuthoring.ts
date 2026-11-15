@@ -11,6 +11,7 @@ import {extractArea} from './authoring/areaEdits';
 import type { EditableGraph, GraphKey } from './authoring/contentEdits';
 import { connectGraph, copySelection, deleteSelection, pasteSelection } from './authoring/graphEdits';
 import type { GraphClipboard } from './authoring/graphEdits';
+import {setCastExecution} from './authoring/castExecution';
 
 export function useGraphAuthoring(document:ReturnType<typeof useProjectDocument>,key:GraphKey,report:(text:string)=>void,focus:{key:GraphKey;nodeId:string;request:number}|null=null) {
   const flow=useReactFlow<EditorNode>();const initialized=useNodesInitialized();
@@ -46,7 +47,7 @@ export function useGraphAuthoring(document:ReturnType<typeof useProjectDocument>
     document.endGroup();document.edit(p=>deleteSelection(p,key,ids,edges));setSelectedNodes([]);setSelectedEdges([]);
   },[document.edit,document.endGroup,key.kind,key.id]);
   const parameter=useCallback((id:string,field:string,value:ParameterValue)=>editGraph(g=>{
-    const nodes=g.nodes.map(n=>n.id===id?{...n,parameters:{...n.parameters,[field]:value}}:n);
+    const nodes=g.nodes.map(n=>n.id!==id?n:n.kind==='cast'&&field==='execution'?setCastExecution(n,String(value)):{...n,parameters:{...n.parameters,[field]:value}});
     const ports=nodeOutputs(nodes.find(n=>n.id===id)!).map(([p])=>p);
     return {...g,nodes,edges:g.edges.filter(e=>e.source!==id||ports.includes(e.sourcePort))};
   }),[editGraph]);

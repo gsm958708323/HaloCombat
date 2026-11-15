@@ -48,6 +48,7 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
     { key: 'range', label: '索敌距离', unit: '米', min: .1, max: 50, step: .1, initial: 20 }
   ] },
   cast: { title: '施放规则', color: '#5b7164', inputs: ['target'], outputs: [['cast','施放']], fields: [
+    {key:'execution',label:'执行方式',type:'select',initial:'timeline',options:[['timeline','时间轴动作'],['operation','即时操作']]},
     {key:'hitFeedback',label:'技能默认命中反馈',type:'select',initial:'none',options:[['none','基础'],['light','轻'],['confirm','连段'],['heavy','重'],['finisher','终结']]},
     { key: 'mode', label: '施放规则', type: 'select', initial: 'instant', options: [['instant','瞬发'],['channel','引导'],['charge','蓄力']] },
     { key: 'cost', label: '能量消耗', min: 0, max: 100, step: 1, initial: 10 },
@@ -148,9 +149,11 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
     {key:'recipient',label:'作用对象',type:'select',initial:'target',options:[['target','当前目标'],['self','效果来源自身']]},
     {key:'duration',label:'效果持续时间',unit:'秒',min:.001,max:120,step:.001,initial:.3,when:p=>p.mode==='hitstun'||p.mode==='knockdown'||p.mode==='iframe'},
     {key:'iframe',label:'受击附加无敌',unit:'秒',min:0,max:120,step:.01,initial:0,when:p=>p.mode==='hitstun'},
-    {key:'distance',label:'作用位移距离',unit:'米',min:0,max:100,step:.1,initial:2,when:p=>p.mode==='knockback'||p.mode==='pull'},
+    {key:'distance',label:'作用位移距离',unit:'米',min:0,max:100,step:.1,initial:2,when:p=>p.mode==='knockback'||p.mode==='pull'&&p.pullMode!=='rate'},
     {key:'speed',label:'击飞竖直速度',unit:'米/秒',min:.01,max:100,step:.01,initial:6,when:p=>p.mode==='launch'},
     {key:'center',label:'拉动中心',type:'select',initial:'source',options:[['point','事件指定点'],['source','效果来源'],['target','当前目标']],when:p=>p.mode==='pull'},
+    {key:'pullMode',label:'牵引方式',type:'select',initial:'distance',options:[['distance','固定距离'],['rate','按时间衰减']],when:p=>p.mode==='pull'},
+    {key:'pullStrength',label:'牵引强度',unit:'米/秒',min:0,max:1000,step:.1,initial:1,when:p=>p.mode==='pull'&&p.pullMode==='rate'},
     {key:'amount',label:'护盾增加量',min:0,max:10000000,step:1,initial:100,when:p=>p.mode==='shield'}
   ]},
   cue: { title: '表现事件', color: '#74667e', inputs: ['execute'], outputs: [['next','继续']], fields: [{ key: 'id', label: 'Cue ID', min: 1, max: 9999, step: 1, initial: 1 },
@@ -255,6 +258,15 @@ export const deliveryLabel = (node: GraphNode) => node.kind==='area-ref'?'持续
 export const portName = (port: string) => port === 'target' ? '目标数据' : '执行';
 export const effectKinds:[string,string][]=[['damage','伤害结算'],['impact','受击与状态'],['heal','治疗'],['buff','施加 Buff'],['dispel','驱散 Buff'],['cue','表现事件'],['split','命中分裂'],['after-damage','扣血后条件'],['refill-ammo','补充弹药'],['teleport-projectile','传送到追踪弹'],['construct-chain','范围引爆物体'],['hurt-feedback','受伤反馈']];
 export const parameterValue = (field: Field, parameters: Parameters) => parameters[field.key] ?? (field.key === 'energyPerSecond' && parameters.mode === 'charge' ? 0 : field.initial);
+export const castRoutingFields=['ammoCost','fallbackSkill','recastProjectile','recastSkill','requiredProjectile'];
+export function nodeFields(node:GraphNode,options:{definitionRoot?:boolean;authoredTimeline?:boolean}={}):Field[] {
+  const definitionFields=node.kind==='delivery'?['mode','persistent','center','forwardOffset']:['multi','count','spread'];
+  const rules=['cost','cooldown','hitFeedback',...castRoutingFields];
+  return (kinds[node.kind]?.fields??[]).filter(f=>(!f.when||f.when(node.parameters))&&
+    (!options.definitionRoot||!definitionFields.includes(f.key))&&
+    (!options.authoredTimeline||node.kind!=='cast'||rules.includes(f.key))&&
+    (node.kind!=='cast'||node.parameters.execution!=='operation'||['execution',...rules].includes(f.key)));
+}
 export const clone = <T,>(value: T): T => structuredClone(value);
 export async function api<T>(path: string, body?: unknown, method = 'POST'): Promise<T> {
   const response = await fetch('/api' + path, { method, headers: body === undefined ? {} : { 'Content-Type': 'application/json' }, body: body === undefined ? undefined : JSON.stringify(body) });

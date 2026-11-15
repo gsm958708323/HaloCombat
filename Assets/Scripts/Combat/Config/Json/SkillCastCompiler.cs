@@ -11,12 +11,22 @@ namespace Combat.Config
         {
             var c = new NodeParameters(node, path, "mode", "cost", "cooldown", "delay", "duration", "count", "interval", "sustained", "channelDuration",
                 "energyPerSecond", "costPerPulse", "chargeMin", "chargeMax", "powerMin", "powerMax", "autoRelease",
-                "ammoCost","fallbackSkill","recastSkill","recastProjectile","requiredProjectile","hitFeedback");
+                "ammoCost","fallbackSkill","recastSkill","recastProjectile","requiredProjectile","hitFeedback","execution");
             string mode = c.Choice("mode", "instant", "instant", "channel", "charge");
+            if(c.Choice("execution","timeline","timeline","operation")=="operation")
+            {
+                if(mode!="instant"||authored!=null||skill.TimelineRef!=null||actionClips.Length>0||followups.Length>0||effects.Length==0)
+                    Fail(path+".parameters.execution","Operation requires immediate effects, instant mode and no Timeline or scheduled actor action.");
+                foreach(var property in node.Parameters.Properties())
+                    if(Array.IndexOf(new[]{"mode","execution","cost","cooldown","ammoCost","fallbackSkill","recastSkill","recastProjectile","requiredProjectile","hitFeedback"},property.Name)<0)
+                        Fail(path+".parameters."+property.Name,"Operation has no timed cast schedule fields.");
+                return SkillCastRoutingCompiler.Apply(new SkillDefinition{Id=new SkillNodeId(skill.RuntimeId),Key=skill.Id,Name=skill.Name,
+                    Cooldown=c.Number("cooldown",0,0,3600),EnergyCost=c.Number("cost",0,0,1000000),Mode=SkillCastMode.Instant,OperationEffects=effects},skill.Id,c,path,skills,dependencies);
+            }
             if(authored!=null)
             {
                 foreach(var property in node.Parameters.Properties())
-                    if(System.Array.IndexOf(new[]{"mode","cost","cooldown","count","delay","ammoCost","fallbackSkill","recastSkill","recastProjectile","requiredProjectile","hitFeedback"},property.Name)<0)
+                    if(System.Array.IndexOf(new[]{"mode","execution","cost","cooldown","count","delay","ammoCost","fallbackSkill","recastSkill","recastProjectile","requiredProjectile","hitFeedback"},property.Name)<0)
                         Fail(path+".parameters."+property.Name,"Explicit timeline owns timing and has no automatic cast schedule fields.");
                 if(mode!="instant"||effects.Length>0||actionClips.Length>0||followups.Length>0||
                     c.Integer("count",1,1,1000)!=1||c.Number("delay",0,0,60)!=0)

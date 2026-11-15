@@ -115,7 +115,7 @@ namespace Combat.Core
 
         public void EquipSkill(SkillSlot slot, SkillNodeId skill, TimelineId timeline)
         {
-            if (!skill.IsValid || !timeline.IsValid)
+            if (!skill.IsValid)
                 throw new ArgumentException("EquipSkill");
             _slots[(int)slot] = new Slot { Occupied = true, Skill = skill, Timeline = timeline };
         }

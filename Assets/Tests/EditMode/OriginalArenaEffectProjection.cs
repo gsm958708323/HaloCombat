@@ -30,6 +30,7 @@ namespace Combat.Tests
                 else if(effect is SpawnAoeEffect)value=new JObject{{"kind","area"},{"id",Field<int>(effect,"_specId")}};
                 else if(effect is SpawnConstructEffect)value=new JObject{{"kind","barrel"}};
                 else if(effect is RefillAmmoEffect)value=new JObject{{"kind","refill"},{"amount",Field<int>(effect,"_amount")}};
+                else if(effect is PullTowardPointEffect)value=new JObject{{"kind","pull"},{"mode",Field<bool>(effect,"_rate")?"rate":"distance"},{"strength",Field<float>(effect,"_distance")},{"center",Field<EffectCenter>(effect,"_center").ToString().ToLowerInvariant()}};
                 else if(effect is CuePlaybackEffect)
                 {
                     bool tiers=Field<bool>(effect,"_stacksAsTier");

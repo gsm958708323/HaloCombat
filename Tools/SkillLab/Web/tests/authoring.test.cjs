@@ -11,6 +11,23 @@ const skillKey={kind:'skill',id:'basic-shot'};
 const runtime=()=>JSON.parse(fs.readFileSync(path.resolve(__dirname,'../../../../Assets/StreamingAssets/Combat/project.json'),'utf8'));
 const areaEdits=require('../../.local/web-checks/authoring/areaEdits.js');
 const {previewFrameBudget,previewSemanticKey}=require('../../.local/web-checks/authoring/previewTiming.js');
+const {setCastExecution}=require('../../.local/web-checks/authoring/castExecution.js');
+
+test('an operation transition removes timed schedule fields while preserving identity resources and invalid unknown parameters',()=>{
+  const node={id:'cast',kind:'cast',position:{x:3,y:4},parameters:{mode:'charge',delay:.1,duration:1,count:3,interval:.1,chargeMax:2,powerMax:3,cost:5,cooldown:.3,requiredProjectile:'warp',unknownField:7}};
+  const before=JSON.stringify(node),operation=setCastExecution(node,'operation');
+  assert.equal(JSON.stringify(node),before);assert.equal(operation.id,node.id);assert.equal(operation.parameters.mode,'instant');
+  assert.equal(operation.parameters.delay,undefined);assert.equal(operation.parameters.chargeMax,undefined);assert.equal(operation.parameters.unknownField,7);
+  assert.equal(operation.parameters.cost,5);assert.equal(operation.parameters.requiredProjectile,'warp');
+  assert.equal(setCastExecution(operation,'timeline').parameters.execution,'timeline');assert.throws(()=>setCastExecution(node,'other'),/未知/);
+});
+
+test('operation nodes and summaries expose the same effective fields without invented action timing',()=>{
+  const {nodeFields}=require('../../.local/web-checks/model.js');
+  const operation={id:'cast',kind:'cast',position:{x:0,y:0},parameters:{execution:'operation',mode:'instant'}};
+  const fields=nodeFields(operation).map(f=>f.key);assert(fields.includes('execution'));assert(fields.includes('cooldown'));assert(!fields.includes('duration'));assert(!fields.includes('delay'));assert(!fields.includes('mode'));
+  const action=nodeFields({...operation,parameters:{}},{authoredTimeline:true}).map(f=>f.key);assert(action.includes('recastSkill'));assert(!action.includes('duration'));assert(!action.includes('execution'));
+});
 
 test('quarter speed accumulates partial fixed steps and frame stalls have a bounded budget',()=>{
   let carry=0,steps=0;
@@ -144,7 +161,11 @@ test('merging runtime content preserves authored timing and rewrites all importe
   const p=runtime();const next=mergeProjects(p,p,ids());const imported=next.skills.slice(p.skills.length);const valid=new Set(imported.map(s=>s.id));
   assert(next.runtime.combos.slice(p.runtime.combos.length).every(c=>valid.has(c.toSkill)&&c.preSkills.every(id=>valid.has(id))));
   assert(next.runtime.actors.slice(p.runtime.actors.length).every(a=>(!a.skillId||valid.has(a.skillId))&&(!a.dodgeSkill||valid.has(a.dodgeSkill))&&(a.slots??[]).every(id=>valid.has(id))));
-  for(const s of imported){const owner=s.timelineRef?next.timelines.find(t=>t.id===s.timelineRef):s;assert(owner);assert([...owner.timeline.clips,...owner.timeline.payloads].every(c=>(c.effects??[]).every(id=>owner.nodes.some(n=>n.id===id))));}
+  for(const s of imported){
+    const cast=s.nodes.find(n=>n.kind==='cast');
+    if(cast.parameters.execution==='operation'){assert.equal(s.timeline,undefined);assert.equal(s.timelineRef,undefined);assert(s.edges.some(e=>e.source===cast.id&&e.sourcePort==='cast'));continue;}
+    const owner=s.timelineRef?next.timelines.find(t=>t.id===s.timelineRef):s;assert(owner?.timeline);assert([...owner.timeline.clips,...owner.timeline.payloads].every(c=>(c.effects??[]).every(id=>owner.nodes.some(n=>n.id===id))));
+  }
   assert.deepEqual(next.runtime.arena,p.runtime.arena);
 });
 test('imported Arena remaps actor and input references without selecting an existing Combo root',()=>{

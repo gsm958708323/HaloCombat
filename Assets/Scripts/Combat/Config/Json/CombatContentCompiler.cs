@@ -58,7 +58,8 @@ namespace Combat.Config
                 var skill = project.Skills[i]; var path = "$.skills[" + i + "]";
                 if (skill == null || string.IsNullOrWhiteSpace(skill.Id) || !keys.Add(skill.Id)) Fail(path + ".id", "Missing or duplicate skill id.");
                 if (skill.RuntimeId <= 0 || !numbers.Add(skill.RuntimeId)) Fail(path + ".runtimeId", "Expected unique positive id.");
-                if(skill.TimelineRef==null&&!timelineIds.Add(skill.Timeline?.RuntimeId??skill.RuntimeId))Fail(path+".timeline.runtimeId","Duplicate timeline identity.");
+                bool operation=Array.Exists(skill.Nodes,n=>n.Kind=="cast"&&(string)n.Parameters?["execution"]=="operation");
+                if(!operation&&skill.TimelineRef==null&&!timelineIds.Add(skill.Timeline?.RuntimeId??skill.RuntimeId))Fail(path+".timeline.runtimeId","Duplicate timeline identity.");
                 skillIds.Add(skill.Id,new SkillNodeId(skill.RuntimeId));content.Dependencies.Register(ContentDependencies.Skill(skill.Id));
             }
             SummonBlueprintCompiler.Compile(project.SummonBlueprints,skillIds,content.Blueprints);
@@ -110,6 +111,7 @@ namespace Combat.Config
                 var events=graph.OptionalRoot("skill-events");
                 if(events!=null)
                 {
+                    if(definition.OperationEffects!=null)Fail(graph.NodePath(events),"Immediate operation has no cast lifecycle; connect follow-up effects directly to its effect graph.");
                     new NodeParameters(events,graph.NodePath(events));
                     var handlers=new SkillEventDefinition();
                     string[] ports={"hit","critical","kill","completed","wall","range","projectile-end"};

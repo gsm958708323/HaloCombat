@@ -16,7 +16,8 @@ namespace Combat.Core
     {
         readonly float _distance;
         readonly EffectCenter _center;
-        public PullTowardPointEffect(float distance,EffectCenter center){_distance=distance;_center=center;}
+        readonly bool _rate;
+        public PullTowardPointEffect(float distance,EffectCenter center,bool rate=false){_distance=distance;_center=center;_rate=rate;}
         public void Apply(ref EffectContext context)
         {
             var target=context.Target;
@@ -24,7 +25,9 @@ namespace Combat.Core
                 !target.TryGetComp<LocomotionComp>(out var locomotion)||!EffectPosition.TryResolve(context,_center,out var point))return;
             var from=target.GetComp<TransformComp>().Position;
             float dx=point.X-from.X,dz=point.Z-from.Z,distance=(float)Math.Sqrt(dx*dx+dz*dz);
-            if(distance<.000001f)return;float ratio=Math.Min(distance,_distance)/distance;
+            if(distance<.000001f)return;
+            float amount=_rate?distance/(distance+1)*_distance*context.World.Time.Delta:_distance;
+            float ratio=Math.Min(distance,amount)/distance;
             locomotion.RequestHitDelta(dx*ratio,0,dz*ratio);
         }
     }

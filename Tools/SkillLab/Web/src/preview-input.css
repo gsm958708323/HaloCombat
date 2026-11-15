@@ -45,6 +45,9 @@
 .scene-actors select,.scene-actors small{grid-column:1/-1}.scene-actors label{display:flex;flex-direction:column;gap:3px}.scene-actors input{width:100%}
 .damage-inspector[open]{max-height:none;overflow:visible}.damage-inspector article{padding:6px 0;border-top:1px solid #35484b}.damage-inspector b,.damage-inspector small{display:block;overflow-wrap:anywhere}
 .damage-inspector dl{margin:6px 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}.damage-inspector dl>div{display:flex;justify-content:space-between}.damage-inspector dd{margin:0;color:#dfcf9d}
-.preview-panel>.world-canvas{min-height:0}.world-canvas>svg{min-height:0}
+.preview-panel>.world-canvas{min-height:100px}.preview-panel>.world-canvas>svg{min-height:0}
 .preview-panel>.panel-title,.preview-controls,.preview-options,.preview-readiness{flex-shrink:0}
 .preview-settings{flex:0 1 auto;min-height:0;max-height:30%;overflow:auto}
+
+/* Resource readouts must not cover the simulation on compact desktop heights. */
+.preview-panel>.energy-box{position:static;margin:4px 9px;flex-shrink:0}

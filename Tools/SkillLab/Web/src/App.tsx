@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { ReactFlow, ReactFlowProvider, Background, BackgroundVariant } from '@xyflow/react';
 import { Plus, Save, Download, Upload, Undo2, Redo2, Maximize, Workflow } from 'lucide-react';
-import { api, clone, kinds, parameterValue, deliveryLabel } from './model';
+import { api, clone, kinds, parameterValue, deliveryLabel,nodeFields } from './model';
 import {ComboProperties} from './ComboProperties';
 import type { Project, Skill, BuffDefinition } from './model';
 import { SkillNode } from './SkillNode';
@@ -55,7 +55,7 @@ function Workbench() {
   const root=previewRoot&&project?.skills.some(s=>s.id===previewRoot)?previewRoot:skill?.id??'';
   const preview=usePreview(project,root,setMessage,(p,id)=>{setPreviewRoot(id);setTraceFocus(null);editor.endGroup();editor.edit(selectGraph(prepareImportedLayout(p),id));});preview.skill.current=root;
   const mode=String(skill?.nodes.find(n=>n.kind==='cast'&&n.enabled!==false)?.parameters.mode??'instant');
-  const castMode=({instant:'瞬发',channel:'引导',charge:'蓄力'} as Record<string,string>)[mode]??mode;
+  const castMode=skill?.nodes.find(n=>n.kind==='cast')?.parameters.execution==='operation'?'即时操作':({instant:'瞬发',channel:'引导',charge:'蓄力'} as Record<string,string>)[mode]??mode;
   const actionNodes=skill?.timelineRef?project?.timelines?.find(t=>t.id===skill.timelineRef)?.nodes:skill?.nodes;
   const transfers=[...new Set(actionNodes?.filter(n=>n.enabled!==false&&(n.kind==='projectile'||n.kind==='projectile-ref'||n.kind==='area-ref'||n.kind==='delivery'||n.kind==='construct')).map(deliveryLabel))].join(' / ')||'效果';
   function select(skillId:string,buffId='',timelineId='',projectileId='',areaId=''){setPreviewRoot(null);setTraceFocus(null);editor.endGroup();editor.edit(p=>selectGraph(p,skillId,buffId,timelineId,projectileId,areaId),false);setLibrary(false);}
@@ -187,7 +187,7 @@ function Workbench() {
         <h3>▾ 技能属性</h3><p className="type-summary">{castMode} · {transfers}</p><label className="category-field">分类<input aria-label="技能分类" value={skill.category??''} onChange={event=>editor.edit(p=>({...p,skills:p.skills.map(s=>s.id===skill.id?{...s,category:event.target.value}:s)}))}/></label>
         <SharedTimelineControls project={project} skill={skill} update={editor.edit} open={id=>select(skill.id,'',id)} report={setMessage}/>
         <TimelineProperties skill={skill} change={timeline=>graphEditor.editGraph(g=>({...g,timeline}))}/>
-        {skill.nodes.filter(n=>n.enabled!==false).map(node=><section key={node.id}><h4>{kinds[node.kind]?.title??node.kind}</h4>{kinds[node.kind]?.fields.filter(f=>(!f.when||f.when(node.parameters))&&(!(skill.timeline||skill.timelineRef)||node.kind!=='cast'||['cost','cooldown','ammoCost','fallbackSkill','hitFeedback'].includes(f.key))).map(f=><div className="property" key={f.key}><span>{f.label}</span><b>{f.key==='buff'?(project.buffs?.find(b=>b.id===node.parameters.buff)?.name??String(node.parameters.buff)):f.options?.find(([v])=>v===parameterValue(f,node.parameters))?.[1]??String(parameterValue(f,node.parameters))}{f.unit}</b></div>)}</section>)}
+        {skill.nodes.filter(n=>n.enabled!==false).map(node=><section key={node.id}><h4>{kinds[node.kind]?.title??node.kind}</h4>{nodeFields(node,{authoredTimeline:!!(skill.timeline||skill.timelineRef)}).map(f=><div className="property" key={f.key}><span>{f.label}</span><b>{f.key==='buff'?(project.buffs?.find(b=>b.id===node.parameters.buff)?.name??String(node.parameters.buff)):f.options?.find(([v])=>v===parameterValue(f,node.parameters))?.[1]??String(parameterValue(f,node.parameters))}{f.unit}</b></div>)}</section>)}
         <SummonBlueprints project={project} update={editor.edit} action={setContentAction} duplicate={id=>duplicate('blueprint',id)}/></>:<p>空工程可保存或导出。</p>}
         {graph&&<GraphConnections graph={graph} change={update=>{editor.endGroup();graphEditor.editGraph(update);}}/>}
         <RuntimeProperties project={project} update={editor.edit}/>

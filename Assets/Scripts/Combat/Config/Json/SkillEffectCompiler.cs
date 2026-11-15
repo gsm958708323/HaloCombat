@@ -149,13 +149,14 @@ namespace Combat.Config
 
         IEffect Impact(SkillNodeDocument node,string path)
         {
-            var p=new NodeParameters(node,path,"mode","recipient","duration","iframe","distance","speed","center","amount");
+            var p=new NodeParameters(node,path,"mode","recipient","duration","iframe","distance","speed","center","amount","pullMode","pullStrength");
             string mode=p.Choice("mode","hitstun","hitstun","knockback","knockdown","iframe","launch","pull","shield");
             float duration=p.Number("duration",.3f,.001f,120),frames=p.Number("iframe",0,0,120),distance=p.Number("distance",2,0,100),speed=p.Number("speed",6,.01f,100),amount=p.Number("amount",100,0,10000000);
             IEffect effect=mode=="hitstun"?new HitStunEffect{Duration=duration,IFrameDuration=frames}:
                 mode=="knockback"?(IEffect)new KnockbackEffect{Distance=distance}:mode=="knockdown"?new KnockdownEffect{Duration=duration}:
-                mode=="iframe"?new IFrameEffect{Duration=duration}:mode=="launch"?new LaunchEffect(speed):mode=="pull"?new PullTowardPointEffect(distance,
-                    (EffectCenter)Array.IndexOf(new[]{"point","target","source"},p.Choice("center","source","point","target","source"))):new AddShieldEffect(amount);
+                mode=="iframe"?new IFrameEffect{Duration=duration}:mode=="launch"?new LaunchEffect(speed):mode=="pull"?new PullTowardPointEffect(
+                    p.Choice("pullMode","distance","distance","rate")=="rate"?p.Number("pullStrength",1,0,1000):distance,
+                    (EffectCenter)Array.IndexOf(new[]{"point","target","source"},p.Choice("center","source","point","target","source")),p.Choice("pullMode","distance","distance","rate")=="rate"):new AddShieldEffect(amount);
             return new TargetEffects(new[]{effect},p.Choice("recipient","target","target","self")=="self");
         }
 

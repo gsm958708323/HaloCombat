@@ -133,7 +133,7 @@ namespace Combat.Core
             if (atk == 0f && ctx.Source.TryGetComp<AttributeSet>(out var attr))
                 atk = attr.GetFinal(AttrId.Atk);
             var origin=ctx.Origin;
-            if(origin.CastId==0&&ctx.Source.TryGetComp<SkillDirectorComp>(out var director)&&director.IsPlaying)origin=director.CurrentOrigin;
+            if(!origin.Skill.IsValid&&origin.CastId==0&&ctx.Source.TryGetComp<SkillDirectorComp>(out var director)&&director.IsPlaying)origin=director.CurrentOrigin;
             var family=ctx.ProjectileHit?.Family??new ProjectileFamily(origin);
             float yaw=ctx.HasDir?LocomotionComp.YawFromStick(ctx.Dir):tf.YawDegrees;
             for(int i=0;i<_count;i++)

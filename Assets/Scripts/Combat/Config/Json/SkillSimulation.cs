@@ -49,6 +49,8 @@ namespace Combat.Config
             _world.Events.Subscribe<EvHeal>(e=>Record("heal",Name(e.Target),e.Amount.ToString("F1",System.Globalization.CultureInfo.InvariantCulture)));
             _world.Events.Subscribe<EvShield>(e=>Record("shield",Name(e.Target),e.Amount.ToString("F1",System.Globalization.CultureInfo.InvariantCulture),e.Origin));
             _world.Events.Subscribe<EvBuffLifecycle>(OnBuff);
+            _world.Events.Subscribe<EvSkillOperation>(e=>
+            {_content.Skills.TryGet(e.Skill,out var skill);Record("operation",Name(e.Source),skill?.Name??e.Skill.ToString(),new SkillOrigin(e.Skill,0,caster:e.Source),node:_content.Sources.Definition("skill",e.Skill.Value),sourceId:e.Source);});
             _world.Events.Subscribe<EvSkillStarted>(e=>
             {_casts++;_content.Skills.TryGet(e.Skill,out var skill);Record("cast",Name(e.Source),skill?.Name??e.Skill.ToString(),OriginOf(e.Source),node:_content.Sources.Definition("skill",e.Skill.Value),sourceId:e.Source);});
             _world.Events.Subscribe<EvSummonLifecycle>(e=>Record("summon-"+e.Kind.ToString().ToLowerInvariant(),Name(e.Owner),e.Detail??Name(e.Id)));

@@ -63,7 +63,7 @@ namespace Combat.Tests
             }
         }
         [Test]
-        public void ReachableOriginalAreasKeepOccupancyMotionAbsorptionAndAllLifecycleBags()
+        public void AllSixOriginalAreasKeepOccupancyMotionAbsorptionAndAllLifecycleBags()
         {
             var c=CombatContentCompiler.Compile(Project());foreach(var row in Reference()["areas"])
             {

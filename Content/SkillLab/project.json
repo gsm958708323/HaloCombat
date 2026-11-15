@@ -3849,7 +3849,8 @@
             "mode": "instant",
             "cost": 0,
             "cooldown": 0,
-            "requiredProjectile": "warp"
+            "requiredProjectile": "warp",
+            "execution": "operation"
           }
         },
         {
@@ -3872,22 +3873,16 @@
           "target": "cast",
           "targetPort": "target",
           "order": 0
+        },
+        {
+          "id": "cast-operation",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "warp",
+          "targetPort": "execute",
+          "order": 0
         }
-      ],
-      "timeline": {
-        "runtimeId": 3038,
-        "duration": 0.02,
-        "clips": [],
-        "payloads": [
-          {
-            "id": "payload",
-            "time": 0,
-            "effects": [
-              "warp"
-            ]
-          }
-        ]
-      }
+      ]
     },
     {
       "id": "barrel-chain",
