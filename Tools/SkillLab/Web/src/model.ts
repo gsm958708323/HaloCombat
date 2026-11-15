@@ -33,7 +33,7 @@ export interface DamageBreakdown {kind:string;target:string;base:number;scaled:n
 export interface AuthorNodeSource {graphKind:string;graphId:string;graphName:string;nodeId:string;nodeKind:string}
 export interface RunEvent { node:AuthorNodeSource|null;step:number;sourceId:string|null;targetId:string|null;bodyId:string|null;executionId:number;parentExecutionId:number; sequence: number; time: number; kind: string; source: string; result: string;castId:number;skill:string|null;hitIndex:number;damage:DamageBreakdown|null }
 export interface PreviewState { step: number; time: number; actors: ActorView[]; events: RunEvent[]; areas: AreaView[]; volumes: VolumeView[]; obstacles: ObstacleView[]; rays: RayView[]; trails: { entity: string; x: number; z: number; step: number }[]; energy: number; ammo:number;ammoCapacity:number;channeling: boolean; charging: boolean; chargeProgress: number; castPower: number; cooldowns: Record<string, number>; statistics: { damage: number; hits: number; casts: number; projectiles: number; chains:number; splits:number; areas: number; summons: number;constructs:number } }
-export interface Field { key: string; label: string; type?: 'select' | 'check' | 'text'|'times'; unit?: string; min?: number; max?: number; step?: number; options?: [string, string][]; initial: ParameterValue; when?: (parameters: Parameters) => boolean }
+export interface Field { key: string; label: string; type?: 'select' | 'check' | 'text'|'times'; unit?: string; min?: number; max?: number; step?: number; integer?:boolean; displayScale?:number; options?: [string, string][]; initial: ParameterValue; when?: (parameters: Parameters) => boolean }
 export const kinds: Record<string, { title: string; color: string; fields: Field[]; inputs: string[]; outputs: [string, string][] }> = {
   'area-ref':{title:'共享区域生成',color:'#667b69',inputs:['execute'],outputs:[],fields:[
     {key:'area',label:'共享区域定义',type:'select',initial:''},
@@ -41,7 +41,7 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
     {key:'forwardOffset',label:'前方偏移',unit:'米',min:0,max:100,step:.01,initial:0}]},
   'projectile-ref':{title:'共享弹体发射',color:'#887547',inputs:['execute'],outputs:[],fields:[
     {key:'projectile',label:'共享弹体定义',type:'select',initial:''},
-    {key:'count',label:'发射数量',min:1,max:64,step:1,initial:1},
+    {key:'count',integer:true,label:'发射数量',min:1,max:64,step:1,initial:1},
     {key:'spread',label:'散射角度',unit:'°',min:0,max:360,step:1,initial:0}]},
   target: { title: '目标选择', color: '#526c7b', inputs: [], outputs: [['target', '目标 / 方向']], fields: [
     { key: 'mode', label: '目标选择', type: 'select', initial: 'point', options: [['point','指定位置'],['entity','指定目标'],['nearest','最近目标'],['random','随机目标'],['direction','随机方向'],['self','施法者自身'],['facing','当前朝向']] },
@@ -52,7 +52,7 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
     {key:'hitFeedback',label:'技能默认命中反馈',type:'select',initial:'none',options:[['none','基础'],['light','轻'],['confirm','连段'],['heavy','重'],['finisher','终结']]},
     { key: 'mode', label: '施放规则', type: 'select', initial: 'instant', options: [['instant','瞬发'],['channel','引导'],['charge','蓄力']] },
     { key: 'cost', label: '能量消耗', min: 0, max: 100, step: 1, initial: 10 },
-    {key:'ammoCost',label:'弹药消耗',min:0,max:1000000,step:1,initial:0},
+    {key:'ammoCost',integer:true,label:'弹药消耗',min:0,max:1000000,step:1,initial:0},
     {key:'fallbackSkill',label:'缺弹替代技能',type:'select',initial:''},
     {key:'recastProjectile',label:'重施放追踪键',type:'text',initial:''},
     {key:'recastSkill',label:'弹体存在时技能',type:'select',initial:''},
@@ -60,7 +60,7 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
     { key: 'cooldown', label: '冷却', unit: '秒', min: 0, max: 10, step: .05, initial: .7 },
     { key: 'delay', label: '延迟生效', unit: '秒', min: 0, max: 3, step: .02, initial: .1 },
     { key: 'duration', label: '动作总长', unit: '秒', min: .02, max: 5, step: .02, initial: .3, when: p => p.mode !== 'channel' },
-    { key: 'count', label: '连发次数', min: 1, max: 1000, step: 1, initial: 1, when: p => p.mode !== 'channel' && p.mode !== 'charge' },
+    { key: 'count',integer:true, label: '连发次数', min: 1, max: 1000, step: 1, initial: 1, when: p => p.mode !== 'channel' && p.mode !== 'charge' },
     { key: 'interval', label: '生效间隔', unit: '秒', min: .001, max: 1, step: .001, initial: .1, when: p => p.mode !== 'charge' },
     { key: 'costPerPulse', label: '逐段支付资源', type: 'check', initial: false, when: p => p.mode !== 'channel' && p.mode !== 'charge' },
     { key: 'energyPerSecond', label: '持续耗能', unit: '/秒', min: 0, max: 100, step: 1, initial: 12, when: p => p.mode === 'channel' || p.mode === 'charge' },
@@ -93,18 +93,18 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
     {key:'verticalSpeed',label:'初始竖直速度',unit:'米/秒',min:0,max:100,step:.1,initial:5,when:p=>p.trajectory==='bounce'},
     {key:'gravity',label:'弹跳重力',unit:'米/秒²',min:.1,max:1000,step:.1,initial:20,when:p=>p.trajectory==='bounce'},
     {key:'restitution',label:'反弹恢复系数',min:0,max:1,step:.01,initial:.6,when:p=>p.trajectory==='bounce'},
-    {key:'groundBounces',label:'额外地面反弹次数',min:0,max:32,step:1,initial:2,when:p=>p.trajectory==='bounce'},
-    {key:'wallBounces',label:'额外撞墙反射次数',min:0,max:64,step:1,initial:0},
+    {key:'groundBounces',integer:true,label:'额外地面反弹次数',min:0,max:32,step:1,initial:2,when:p=>p.trajectory==='bounce'},
+    {key:'wallBounces',integer:true,label:'额外撞墙反射次数',min:0,max:64,step:1,initial:0},
     { key: 'range', label: '飞行距离 (0=寿命限制)', unit: '米', min: 0, max: 60, step: .1, initial: 24 },
     { key:'spawnForward',label:'枪口前移',unit:'米',min:0,max:10,step:.01,initial:.4 },
     { key: 'lifetime', label: '最大寿命', unit: '秒', min: .001, max: 3600, step: .001, initial: 120 },
     { key: 'radius', label: '碰撞半径', unit: '米', min: .01, max: 2, step: .01, initial: .18 },
     { key: 'multi', label: '多重发射', type: 'check', initial: false },
-    { key: 'count', label: '同时发射数量', min: 1, max: 64, step: 1, initial: 3, when:p=>p.multi===true },
+    { key: 'count',integer:true, label: '同时发射数量', min: 1, max: 64, step: 1, initial: 3, when:p=>p.multi===true },
     { key: 'spread', label: '散射角度', unit:'°', min: 0, max: 360, step: 1, initial: 45, when:p=>p.multi===true },
-    { key: 'maxHits', label: '每段命中上限 (0=无限穿透)', min: 0, max: 10000, step: 1, initial: 1 },
+    { key: 'maxHits',integer:true, label: '每段命中上限 (0=无限穿透)', min: 0, max: 10000, step: 1, initial: 1 },
     { key: 'chain', label: '命中后连锁', type: 'check', initial:false },
-    { key: 'chainCount', label: '额外连锁次数', min: 1, max: 64, step: 1, initial: 2, when:p=>p.chain===true },
+    { key: 'chainCount',integer:true, label: '额外连锁次数', min: 1, max: 64, step: 1, initial: 2, when:p=>p.chain===true },
     { key: 'chainRadius', label: '连锁搜索距离', unit:'米', min:.01,max:1000,step:.01,initial:6,when:p=>p.chain===true },
     { key: 'chainMode', label: '连锁选敌', type:'select',initial:'nearest',options:[['nearest','最近目标'],['random','随机目标']],when:p=>p.chain===true },
     { key: 'homingRate', label: '追踪转速', unit: '度/秒', min: 0, max: 36000, step: 10, initial: 0 },
@@ -112,9 +112,9 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
     { key: 'homingRadius', label: '追踪搜索距离', unit:'米', min:.01,max:1000,step:.01,initial:12,when:p=>Number(p.homingRate)>0 }
   ] },
   split: {title:'命中分裂',color:'#8b7352',inputs:['execute'],outputs:[['next','继续']],fields:[
-    {key:'count',label:'分裂数量',min:1,max:32,step:1,initial:3},
+    {key:'count',integer:true,label:'分裂数量',min:1,max:32,step:1,initial:3},
     {key:'spread',label:'分裂夹角',unit:'°',min:0,max:360,step:1,initial:60},
-    {key:'generations',label:'最大分裂代数',min:0,max:8,step:1,initial:1},
+    {key:'generations',integer:true,label:'最大分裂代数',min:0,max:8,step:1,initial:1},
     {key:'powerMultiplier',label:'子弹伤害倍率',unit:'×',min:.001,max:10,step:.001,initial:.5},
     {key:'rangeMode',label:'子弹射程模式',type:'select',initial:'inherit',options:[['inherit','继承父弹剩余距离'],['fixed','固定距离']]},
     {key:'range',label:'子弹飞行距离',unit:'米',min:.01,max:1000,step:.01,initial:8,when:p=>p.rangeMode==='fixed'}
@@ -126,20 +126,20 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
     { key: 'scope', label: '结算范围', type: 'select', initial: 'target', options: [['target','当前目标'],['area','范围结算']] },
     { key: 'center', label: '范围中心', type: 'select', initial: 'point', options: [['point','事件 / 指定点'],['target','当前目标位置'],['source','来源位置']], when: p=>p.scope==='area' },
     { key: 'radius', label: '结算半径', unit: '米', min: .1, max: 20, step: .1, initial: 3, when:p=>p.scope==='area' },
-    { key: 'maxTargets', label: '目标上限 (0=全部)', min: 0, max: 128, step: 1, initial: 0, when:p=>p.scope==='area' },
+    { key: 'maxTargets',integer:true, label: '目标上限 (0=全部)', min: 0, max: 128, step: 1, initial: 0, when:p=>p.scope==='area' },
     { key: 'flat', label: '基础伤害', min: 0, max: 500, step: 1, initial: 80 },
     { key: 'coefficient', label: '攻击系数', unit: '×', min: 0, max: 5, step: .1, initial: 0 },
     { key:'canCrit',label:'允许暴击',type:'check',initial:true },
     { key:'critFromAttribute',label:'使用角色暴击率',type:'check',initial:false,when:p=>p.canCrit!==false },
-    { key: 'critChance', label: '暴击概率', min: 0, max: 1, step: .01, initial: .15,when:p=>p.canCrit!==false&&p.critFromAttribute!==true },
+    { key: 'critChance', label: '暴击概率', unit:'%',displayScale:100, min: 0, max: 1, step: .01, initial: .15,when:p=>p.canCrit!==false&&p.critFromAttribute!==true },
     { key:'snapshotAttack',label:'使用攻击快照',type:'check',initial:true },
     { key: 'critMultiplier', label: '暴击倍率', unit: '×', min: 1, max: 5, step: .1, initial: 1.8 },
     { key: 'ignoreDefense', label: '忽略防御', type: 'check', initial: false },
     {key:'scaleByStacks',label:'按Buff层数缩放',type:'check',initial:false},
     {key:'notifyHurt',label:'通知受击Buff',type:'check',initial:true},
-    { key: 'hitstopFrames', label: '世界顿帧', unit: '帧', min: 0, max: 1000, step: 1, initial: 0 },
-    {key:'sourceHitstopFrames',label:'攻击者顿帧',unit:'帧',min:0,max:1000,step:1,initial:0},
-    {key:'targetHitstopFrames',label:'目标顿帧',unit:'帧',min:0,max:1000,step:1,initial:0},
+    { key: 'hitstopFrames',integer:true, label: '世界顿帧', unit: '帧', min: 0, max: 1000, step: 1, initial: 0 },
+    {key:'sourceHitstopFrames',integer:true,label:'攻击者顿帧',unit:'帧',min:0,max:1000,step:1,initial:0},
+    {key:'targetHitstopFrames',integer:true,label:'目标顿帧',unit:'帧',min:0,max:1000,step:1,initial:0},
     {key:'feedback',label:'命中反馈等级',type:'select',initial:'skill',options:[['skill','沿用技能配置'],['none','基础'],['light','轻'],['confirm','连段'],['heavy','重'],['finisher','终结']]}
   ] },
   'skill-events':{title:'技能事件',color:'#765f79',inputs:[],outputs:[['hit','实际扣血命中'],['critical','暴击扣血'],['kill','击杀'],['completed','自然完成'],['wall','撞墙终结'],['range','射程耗尽'],['projectile-end','投射物结束']],fields:[]},
@@ -156,25 +156,25 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
     {key:'pullStrength',label:'牵引强度',unit:'米/秒',min:0,max:1000,step:.1,initial:1,when:p=>p.mode==='pull'&&p.pullMode==='rate'},
     {key:'amount',label:'护盾增加量',min:0,max:10000000,step:1,initial:100,when:p=>p.mode==='shield'}
   ]},
-  cue: { title: '表现事件', color: '#74667e', inputs: ['execute'], outputs: [['next','继续']], fields: [{ key: 'id', label: 'Cue ID', min: 1, max: 9999, step: 1, initial: 1 },
+  cue: { title: '表现事件', color: '#74667e', inputs: ['execute'], outputs: [['next','继续']], fields: [{ key: 'id',integer:true, label: 'Cue ID', min: 1, max: 9999, step: 1, initial: 1 },
     {key:'playback',label:'播放方式',type:'select',initial:'once',options:[['once','单次'],['start','开启循环'],['stop','停止循环']]},
     {key:'anchor',label:'角色表现锚点',type:'text',initial:'',when:p=>p.center!=='point'},
     {key:'instanceKey',label:'循环实例键',type:'text',initial:'',when:p=>p.playback==='start'||p.playback==='stop'},
     {key:'stopWithCast',label:'施法结束自动停止',type:'check',initial:true,when:p=>p.playback==='start'},
     {key:'stacksAsTier',label:'按Buff层数分级',type:'check',initial:false,when:p=>p.playback==='start'||p.playback==='stop'},
-    {key:'maxTier',label:'表现层数上限',min:1,max:128,step:1,initial:3,when:p=>!!p.stacksAsTier},
+    {key:'maxTier',integer:true,label:'表现层数上限',min:1,max:128,step:1,initial:3,when:p=>!!p.stacksAsTier},
     {key:'center',label:'表现位置',type:'select',initial:'source',options:[['source','效果来源'],['point','事件 / 指定点'],['target','当前目标']]}] },
   buff:{title:'施加 Buff',color:'#5c7e68',inputs:['execute'],outputs:[['next','继续']],fields:[
     {key:'buff',label:'Buff定义',type:'select',initial:'',options:[]},
-    {key:'stacks',label:'施加层数',min:1,max:128,step:1,initial:1},
+    {key:'stacks',integer:true,label:'施加层数',min:1,max:128,step:1,initial:1},
     {key:'recipient',label:'持有者',type:'select',initial:'target',options:[['target','当前目标'],['self','效果来源自身']]}
   ]},
   dispel:{title:'驱散 Buff',color:'#6b7d85',inputs:['execute'],outputs:[['next','继续']],fields:[
     {key:'mode',label:'驱散规则',type:'select',initial:'buff',options:[['buff','指定Buff'],['group','互斥组'],['tag','授予Tag'],['source','当前效果来源']]},
     {key:'buff',label:'Buff定义',type:'select',initial:'',options:[],when:p=>!p.mode||p.mode==='buff'},
     {key:'group',label:'互斥组',min:1,max:1000000,step:1,initial:1,when:p=>p.mode==='group'},
-    {key:'tag',label:'授予Tag ID',min:1,max:1000000,step:1,initial:3101,when:p=>p.mode==='tag'},
-    {key:'maxCount',label:'移除实例上限 (0=全部)',min:0,max:128,step:1,initial:0},
+    {key:'tag',integer:true,label:'授予Tag ID',min:1,max:1000000,step:1,initial:3101,when:p=>p.mode==='tag'},
+    {key:'maxCount',integer:true,label:'移除实例上限 (0=全部)',min:0,max:128,step:1,initial:0},
     {key:'recipient',label:'持有者',type:'select',initial:'target',options:[['target','当前目标'],['self','效果来源自身']]}
   ]},
   heal:{title:'恢复生命',color:'#597f76',inputs:['execute'],outputs:[['next','继续']],fields:[{key:'amount',label:'恢复量',min:0,max:1000000,step:1,initial:10}]},
@@ -185,8 +185,8 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
     { key:'recipient', label:'作用目标', type:'select', initial:'target', options:[['target','当前目标'],['self','施法者自身']],when:p=>!p.mode||p.mode==='target' },
     { key:'center',label:'作用中心',type:'select',initial:'point',options:[['point','事件 / 指定点'],['target','当前目标位置'],['source','来源位置'],['auto','指定点或来源']],when:p=>p.mode==='area'||p.mode==='summon' },
     { key:'radius',label:'作用半径',unit:'米',min:.1,max:20,step:.1,initial:3,when:p=>p.mode==='area' },
-    {key:'hostileMask',label:'目标阵营掩码 (0=敌对)',min:0,max:2147483647,step:1,initial:0,when:p=>p.mode==='area'},
-    { key:'maxTargets',label:'目标上限 (0=全部)',min:0,max:128,step:1,initial:0,when:p=>p.mode==='area'||p.mode==='melee'||p.mode==='displacement'||(p.mode==='ray'&&p.pierce===true) },
+    {key:'hostileMask',integer:true,label:'目标阵营掩码 (0=敌对)',min:0,max:2147483647,step:1,initial:0,when:p=>p.mode==='area'},
+    { key:'maxTargets',integer:true,label:'目标上限 (0=全部)',min:0,max:128,step:1,initial:0,when:p=>p.mode==='area'||p.mode==='melee'||p.mode==='displacement'||(p.mode==='ray'&&p.pierce===true) },
     { key:'persistent',label:'持续区域',type:'check',initial:false,when:p=>p.mode==='area' },
     { key:'permanent',label:'永久存在',type:'check',initial:false,when:p=>p.mode==='summon'||p.mode==='area'&&p.persistent===true },
     { key:'duration',label:'持续时间',unit:'秒',min:.02,max:120,step:.02,initial:2,when:p=>p.permanent!==true&&(p.mode==='area'&&p.persistent===true||p.mode==='summon') },
@@ -211,12 +211,12 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
     { key:'speed',label:'冲刺速度',unit:'米/秒',min:.1,max:100,step:.1,initial:12,when:p=>p.mode==='displacement'&&p.movementMode!=='blink' },
     { key:'hitRadius',label:'命中半径',unit:'米',min:.01,max:10,step:.01,initial:.5,when:p=>p.mode==='displacement' },
     { key:'blueprint',label:'召唤蓝图',type:'select',initial:'',options:[],when:p=>p.mode==='summon' },
-    { key:'count',label:'生成数量',min:1,max:16,step:1,initial:1,when:p=>p.mode==='summon' },
+    { key:'count',integer:true,label:'生成数量',min:1,max:16,step:1,initial:1,when:p=>p.mode==='summon' },
     { key:'spacing',label:'布置半径',unit:'米',min:0,max:20,step:.1,initial:1,when:p=>p.mode==='summon' },
-    { key:'maxAlive',label:'同来源存活上限',min:1,max:64,step:1,initial:4,when:p=>p.mode==='summon' }
+    { key:'maxAlive',integer:true,label:'同来源存活上限',min:1,max:64,step:1,initial:4,when:p=>p.mode==='summon' }
   ] },
   'refill-ammo':{title:'补充弹药',color:'#657664',inputs:['execute'],outputs:[['next','继续']],fields:[
-    {key:'amount',label:'补充数量',min:0,max:1000000,step:1,initial:60},
+    {key:'amount',label:'补充数量',integer:true,min:0,max:1000000,step:1,initial:60},
     {key:'recipient',label:'补充对象',type:'select',initial:'self',options:[['self','效果来源'],['target','当前目标']]}
   ]},
   'teleport-projectile':{title:'传送到追踪弹',color:'#6e6988',inputs:['execute'],outputs:[['next','继续']],fields:[
@@ -229,13 +229,13 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
     {key:'radius',label:'物体净空半径',unit:'米',min:0,max:10,step:.01,initial:.25},
     {key:'group',label:'连爆组',type:'text',initial:'barrel'},
     {key:'view',label:'物体外观',type:'select',initial:'barrel',options:[['barrel','木桶'],['crate','箱子']]},
-    {key:'team',label:'物体阵营',min:0,max:30,step:1,initial:0},
+    {key:'team',integer:true,label:'物体阵营',min:0,max:30,step:1,initial:0},
     {key:'damageCap',label:'单次受伤上限 (0=不限)',min:0,max:10000000,step:1,initial:1},
     {key:'decayPeriod',label:'自伤周期 (0=关闭)',unit:'秒',min:0,max:3600,step:.02,initial:5},
     {key:'decayDamage',label:'每次自伤',min:0,max:10000000,step:1,initial:1},
-    {key:'count',label:'物体数量',min:1,max:16,step:1,initial:1},
+    {key:'count',integer:true,label:'物体数量',min:1,max:16,step:1,initial:1},
     {key:'spacing',label:'物体布置半径',unit:'米',min:0,max:20,step:.01,initial:1},
-    {key:'maxAlive',label:'同来源物体上限',min:1,max:128,step:1,initial:64},
+    {key:'maxAlive',integer:true,label:'同来源物体上限',min:1,max:128,step:1,initial:64},
     {key:'cleanupWithOwner',label:'随拥有者清理',type:'check',initial:false}
   ]},
   'construct-chain':{title:'范围引爆物体',color:'#916c4b',inputs:['execute'],outputs:[['next','继续']],fields:[

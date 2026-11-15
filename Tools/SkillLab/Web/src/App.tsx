@@ -29,6 +29,7 @@ import {ExportDialog} from './ExportDialog';
 import {prepareImportedLayout} from './authoring/importLayout';
 import {traceLocation} from './authoring/traceLocation';
 import type {AuthorNodeSource} from './model';
+import {formatFieldValue} from './authoring/numericParameters';
 
 const nodeTypes={skill:SkillNode};
 function Workbench() {
@@ -187,7 +188,7 @@ function Workbench() {
         <h3>▾ 技能属性</h3><p className="type-summary">{castMode} · {transfers}</p><label className="category-field">分类<input aria-label="技能分类" value={skill.category??''} onChange={event=>editor.edit(p=>({...p,skills:p.skills.map(s=>s.id===skill.id?{...s,category:event.target.value}:s)}))}/></label>
         <SharedTimelineControls project={project} skill={skill} update={editor.edit} open={id=>select(skill.id,'',id)} report={setMessage}/>
         <TimelineProperties skill={skill} change={timeline=>graphEditor.editGraph(g=>({...g,timeline}))}/>
-        {skill.nodes.filter(n=>n.enabled!==false).map(node=><section key={node.id}><h4>{kinds[node.kind]?.title??node.kind}</h4>{nodeFields(node,{authoredTimeline:!!(skill.timeline||skill.timelineRef)}).map(f=><div className="property" key={f.key}><span>{f.label}</span><b>{f.key==='buff'?(project.buffs?.find(b=>b.id===node.parameters.buff)?.name??String(node.parameters.buff)):f.options?.find(([v])=>v===parameterValue(f,node.parameters))?.[1]??String(parameterValue(f,node.parameters))}{f.unit}</b></div>)}</section>)}
+        {skill.nodes.filter(n=>n.enabled!==false).map(node=><section key={node.id}><h4>{kinds[node.kind]?.title??node.kind}</h4>{nodeFields(node,{authoredTimeline:!!(skill.timeline||skill.timelineRef)}).map(f=><div className="property" key={f.key}><span>{f.label}</span><b>{f.key==='buff'?(project.buffs?.find(b=>b.id===node.parameters.buff)?.name??String(node.parameters.buff)):formatFieldValue(f,parameterValue(f,node.parameters))}{f.unit}</b></div>)}</section>)}
         <SummonBlueprints project={project} update={editor.edit} action={setContentAction} duplicate={id=>duplicate('blueprint',id)}/></>:<p>空工程可保存或导出。</p>}
         {graph&&<GraphConnections graph={graph} change={update=>{editor.endGroup();graphEditor.editGraph(update);}}/>}
         <RuntimeProperties project={project} update={editor.edit}/>

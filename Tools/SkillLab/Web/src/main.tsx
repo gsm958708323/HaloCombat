@@ -5,4 +5,5 @@ import './style.css';
 import './authoring.css';
 import './runtime.css';
 import './combo.css';
+import './workbench.css';
 createRoot(document.getElementById('root')!).render(<App/>);

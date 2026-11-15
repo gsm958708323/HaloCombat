@@ -51,3 +51,6 @@
 
 /* Resource readouts must not cover the simulation on compact desktop heights. */
 .preview-panel>.energy-box{position:static;margin:4px 9px;flex-shrink:0}
+
+.number-pair:has(.number-error){flex-wrap:wrap}.number-pair .number-error{flex:1 0 100%;color:#efb6a2;white-space:normal}.number-pair input[aria-invalid=true]{border-color:#d58a74}
+.parameter>span{min-width:0;flex:1;white-space:normal;line-height:1.35}.parameter .number-pair{flex:0 0 107px}.parameter>select{min-width:0;flex:0 1 112px}

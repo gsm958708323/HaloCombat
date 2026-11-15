@@ -1,0 +1,8 @@
+/* Match the reference desktop columns while keeping the compact desktop usable. */
+.workspace{grid-template-columns:clamp(350px,27.3vw,530px) minmax(0,1fr)}
+.editor-body{grid-template-columns:minmax(0,1fr) clamp(220px,14.7vw,282px)}
+.graph-panel .react-flow{--xy-background-color:#161c1f}
+.properties{background:#171f23}
+.preview-settings>summary{padding:5px 9px;cursor:pointer;font-size:10px;color:#b4c9c6;border-bottom:1px solid #36464c}
+.preview-settings:not([open]){flex:0 0 auto}
+.preview-settings[open]{max-height:30%;min-height:70px}

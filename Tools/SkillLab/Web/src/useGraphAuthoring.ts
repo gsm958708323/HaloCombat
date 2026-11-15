@@ -58,7 +58,7 @@ export function useGraphAuthoring(document:ReturnType<typeof useProjectDocument>
   }),[editGraph]);
   const nodes=useMemo<EditorNode[]>(()=>graph?.nodes.map(n=>({id:n.id,type:'skill',position:n.position,measured:measurements[keyString+':'+n.id],selected:selectedNodes.includes(n.id),deletable:n.kind!=='buff-events'&&n.id!==graph.root,data:{...n,definitionRoot:n.id===graph.root,authoredTimeline:!!graph.timeline||!!graph.timelineRef,
     counts:Object.fromEntries(nodeOutputs(n).map(([port])=>[port,graph.edges.filter(e=>e.source===n.id&&e.sourcePort===port).length])),
-    blueprints:project?.summonBlueprints,buffs:project?.buffs,skills:project?.skills,projectiles:project?.projectiles,areas:project?.areas,views:project?.runtime?.views,change:parameter,changeKind,remove:(id)=>remove([id]),
+    blueprints:project?.summonBlueprints,buffs:project?.buffs,skills:project?.skills,projectiles:project?.projectiles,areas:project?.areas,views:project?.runtime?.views,change:parameter,changeKind,remove:(id)=>remove([id]),beginEdit:document.beginGroup,endEdit:document.endGroup,
     openArea:(id:string)=>document.edit(p=>selectGraph(p,p.editor?.selectedSkill??p.skills[0]?.id??'','','','',id),false),
     extractArea:(id:string)=>{try{document.endGroup();document.edit(p=>extractArea(p,key,id).project);}catch(e){report(String(e));}},
     openProjectile:(id:string)=>document.edit(p=>selectGraph(p,p.editor?.selectedSkill??p.skills[0]?.id??'','','',id),false),
