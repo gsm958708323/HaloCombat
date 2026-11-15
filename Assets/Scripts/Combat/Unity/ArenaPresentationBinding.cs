@@ -15,11 +15,13 @@ namespace Combat.Unity
         readonly Transform _root;
         readonly ViewRegistry _views;
         readonly PresentationRouter _router;
+        readonly ArenaCameraMotion _cameraMotion;
         bool _disposed;
         public Camera Camera {get;}
         public ArenaPresentationBinding(Transform parent,Camera camera,ArenaSession session,CombatContentSnapshot content)
         {
             _session=session;Camera=camera;_root=new GameObject("ArenaRuntime").transform;
+            var settings=session.Definition;_cameraMotion=new ArenaCameraMotion(settings.CameraFocusHeight,settings.CameraDownedFocusHeight,settings.CameraSpringHz);
             _root.gameObject.SetActive(false);_root.SetParent(parent,false);
             try
             {
@@ -28,6 +30,7 @@ namespace Combat.Unity
                 _views=new ViewRegistry(new UnityViewFactory(content.Runtime.Actors,views,content.Runtime.Views));
                 _router=new PresentationRouter(session.World,_views,new UnityCuePlayer(content.Runtime.Data.Cues,vfx,session.World));
                 _router.Bind(session.World.Events);
+                session.World.Events.Subscribe<EvDamage>(OnDamage);
                 var rules=session.Definition;
                 Block("Ground",new Vector3(0,session.World.Motor.GroundY-.1f,0),new Vector3(rules.HalfWidth*2,.15f,rules.HalfDepth*2),new Color(.08f,.13f,.17f));
                 foreach(var box in rules.Obstacles)Block("Obstacle_"+box.Id,new Vector3(box.X,session.World.Motor.GroundY+.3f,box.Z),new Vector3(box.Width,.6f,box.Depth),new Color(.2f,.3f,.33f));
@@ -47,13 +50,20 @@ namespace Combat.Unity
             if(shader==null)throw new InvalidOperationException("Arena surface shader is unavailable.");
             var material=new Material(shader){color=color};_materials.Add(material);go.GetComponent<Renderer>().sharedMaterial=material;
         }
-        public void Sample(float alpha)
+        void OnDamage(EvDamage damage)
+        {if(damage.Source==_session.PlayerId&&damage.Result!=null)_cameraMotion.NotifyHit(damage.Result.Feedback);}
+        public void Sample(float alpha,float deltaTime,float realTime)
         {
             if(_disposed)return;_router.SampleLate(alpha,_session.Paused);
             if(_session.World.TryGetActor(_session.PlayerId,out var player))
             {
-                var p=player.GetComp<TransformComp>().Position;var definition=_session.Definition;var target=new Vector3(p.X,p.Y+definition.CameraFocusHeight,p.Z);
-                Camera.transform.position=target+new Vector3(0,definition.CameraHeight,-definition.CameraDistance);Camera.transform.LookAt(target);Camera.fieldOfView=definition.CameraFov;
+                var p=player.GetComp<TransformComp>().Position;var definition=_session.Definition;var tags=player.GetComp<TagComp>();
+                _cameraMotion.Sample(p,tags.Has(CommonTags.Downed)||tags.Has(CommonTags.Dead),deltaTime);
+                var focus=_cameraMotion.Focus;var target=new Vector3(focus.X,focus.Y,focus.Z);
+                float impulse=definition.CameraShakeEnabled?_cameraMotion.Impulse:0;
+                var shake=new Vector3(Mathf.Sin(realTime*70),Mathf.Cos(realTime*61),0)*impulse*.045f;
+                Camera.transform.position=target+new Vector3(0,definition.CameraHeight,-definition.CameraDistance)+shake;
+                Camera.transform.LookAt(target);Camera.fieldOfView=definition.CameraFov+impulse*2.5f;
             }
             foreach(var body in _root.GetComponentsInChildren<UnityActorView>())
                 if(_session.World.TryGetActor(body.Id,out var actor)&&actor.TryGetComp<AoeComp>(out var area))body.SetAreaRadius(area.Radius);
@@ -61,6 +71,7 @@ namespace Combat.Unity
         public void Dispose()
         {
             if(_disposed)return;_disposed=true;_router?.Unbind(_session.World.Events);_views?.ReleaseAll();
+            _session.World.Events.Unsubscribe<EvDamage>(OnDamage);
             _root.gameObject.SetActive(false);Object.Destroy(_root.gameObject);
             foreach(var material in _materials)if(material!=null)Object.Destroy(material);_materials.Clear();
         }

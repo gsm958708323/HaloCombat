@@ -18,6 +18,7 @@ namespace Combat.Config
             N(document.SpawnPeriod,.02f,3600,p+".spawnPeriod");N(document.CleanupDelay,0,120,p+".cleanupDelay");
             N(document.CameraDistance,.1f,100,p+".cameraDistance");N(document.CameraHeight,.1f,100,p+".cameraHeight");N(document.CameraFov,10,120,p+".cameraFov");
             N(document.CameraFocusHeight,0,20,p+".cameraFocusHeight");
+            N(document.CameraDownedFocusHeight,0,20,p+".cameraDownedFocusHeight");N(document.CameraSpringHz,0,100,p+".cameraSpringHz");
             if(document.MaxEnemies<1||document.MaxEnemies>128)throw new ContentValidationException(p+".maxEnemies","Expected1..128.");
             if(document.Obstacles==null||document.Obstacles.Length>128)throw new ContentValidationException(p+".obstacles","Expected at most128 obstacles.");
             if(document.Obstacles.Any(o=>o!=null&&Array.IndexOf(new[]{"arena-left","arena-right","arena-front","arena-back"},o.Id)>=0))throw new ContentValidationException(p+".obstacles","Arena boundary obstacle ids are reserved.");
@@ -41,7 +42,8 @@ namespace Combat.Config
             if(!actions.Contains("Fire1"))throw new ContentValidationException(p+".bindings","Primary Fire1 binding is required.");
             return new ArenaDefinition{Player=document.Player,Enemy=document.Enemy,TrainingTarget=document.TrainingTarget,Seed=document.Seed,MaxEnemies=document.MaxEnemies,
                 SpawnPeriod=document.SpawnPeriod,CleanupDelay=document.CleanupDelay,HalfWidth=document.HalfWidth,HalfDepth=document.HalfDepth,SpawnDistance=document.SpawnDistance,
-                PlayerPosition=position,PlayerYaw=document.PlayerYaw,Bindings=bindings.ToArray(),Obstacles=obstacles.ToArray(),CameraDistance=document.CameraDistance,CameraHeight=document.CameraHeight,CameraFov=document.CameraFov,CameraFocusHeight=document.CameraFocusHeight};
+                PlayerPosition=position,PlayerYaw=document.PlayerYaw,Bindings=bindings.ToArray(),Obstacles=obstacles.ToArray(),CameraDistance=document.CameraDistance,CameraHeight=document.CameraHeight,CameraFov=document.CameraFov,CameraFocusHeight=document.CameraFocusHeight,
+                CameraDownedFocusHeight=document.CameraDownedFocusHeight,CameraSpringHz=document.CameraSpringHz,CameraShakeEnabled=document.CameraShakeEnabled};
         }
         static void N(float value,float min,float max,string path)=>AuthoredTimelineCompiler.Number(value,min,max,path);
     }

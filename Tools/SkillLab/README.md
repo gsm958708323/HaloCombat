@@ -181,6 +181,8 @@ AI可选择“游走与定时射击”，独立配置首次换向、随机角度
 
 正式Arena打开`Assets/Scenes/Arena.unity`直接运行，F5读取`Combat/project.json`及同目录F6/F7。网页先“打开正式内容”，从该工程发布技能槽；其他工程发布的槽会被拒绝并保留旧局。首次进场、HUD重开和训练切换只读正式工程，F5才显式纳入发布槽。F6/F7走真实玩家施放守卫，失败不扣费；松开只释放自己成功启动的保持技能。WASD移动、鼠标瞄准、Esc暂停，HUD切训练/重开。Arena的规则、相机和输入令牌可在正式runtime配置中校验/发布；JSON始终是唯一配置源。
 
+相机使用正式`runtime.arena`的`cameraDistance/cameraHeight/cameraFov/cameraFocusHeight`；原站立视点为1.6米。可选`cameraDownedFocusHeight`默认0.55、`cameraSpringHz`默认8（0为立即跟随）、`cameraShakeEnabled`默认true，保持原命中等级冲量、渲染时间衰减和倒地/死亡视点。相机跟随不会修改角色/逻辑时间，重开会创建独立表现状态；训练目标使用原敌人骨骼模型，保持静止不还手。
+
 独立验证：
 
 ```powershell

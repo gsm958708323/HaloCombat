@@ -1,10 +1,10 @@
-# HaloCombat 纯 C# 战斗核（第一期总装）
+# HaloCombat：JSON 技能编辑器与战斗核
 
 ## 网页技能编辑器（开发中）
 
 在 `codex/web-skill-editor-json` 分支开发 JSON 网页技能编辑器。运行 `./Tools/SkillLab/Start.ps1` 启动本地网页，使用说明见 [Tools/SkillLab/README.md](Tools/SkillLab/README.md)，完整范围和验证记录见 [docs/实施进度.md](docs/实施进度.md)。
 
-网页预览和 Unity `Assets/Scenes/HaloCombat/SkillLab.unity` 共用实际战斗核。网页发布 F6/F7 后，Unity SkillLab 运行中按 F5 重载，再按 F6/F7 施放。已接通瞬发、有限连发、引导、蓄力、目标/范围伤害、持续区域、近战、位移、射线、矩形障碍、召唤分身、共享 Buff 生命周期图、弹药换弹、追踪弹传送、可破坏物/木桶链爆，以及投射物散射/穿透/连锁/命中分裂/加减速/回旋/重力弹跳/墙反射，提供42个示例模板；发布包含技能/Buff/蓝图依赖闭包。现有V1–V4、训练场与Arena已接通同一JSON协议；历史技能/表现能力和最终参考对照仍在开发中。
+网页预览和 Unity `Assets/Scenes/HaloCombat/SkillLab.unity` 共用实际战斗核。网页发布F6/F7后，Unity运行中按F5重载，再按F6/F7施放。已接通瞬发、有限连发、引导、蓄力、目标/范围、近战、位移、射线、召唤、Buff、换弹、传送弹、木桶链爆、完整弹体行为和飞行触发，提供53个模板。工程、当前技能闭包、完整运行内容三种JSON可导出回读；事件支持作者节点定位与输入文件重放。完整验收仍在进行。
 
 ## JSON 正式内容
 
@@ -19,7 +19,7 @@ dotnet run --project Combat.csproj -- json Assets/StreamingAssets/Combat/project
 
 `CodeCombatContent`与独立Demo仍是教学测试样例，不是正式运行入口的后备。
 
-网页“连招输入与接续”可编辑正式Combo表，并在同一预览会话发送实际令牌；命中确认按完整Skill/CastId绑定，接触敌方无敌/护盾/0伤害仍可获得，取消窗与施放守卫生效，失败输入保留。ConfirmAttack示例用于G1命中后接G2，历史Arena十三技能的完整连段/数值仍继续迁移，见[确认连招验收](docs/验证/2026-11-15-confirmed-combos.md)。
+网页“连招输入与接续”可编辑正式Combo表，并在同一预览发送实际令牌。命中确认按完整Skill/CastId绑定，取消窗与施放守卫生效，失败输入保留；原2001→2012→2013确认链已纳入JSON，见[历史对照](docs/验证/2026-11-15-original-arena-contract.md)。
 
 显式时间轴支持六种动作控制与动作速度缩放，角色/召唤/Buff的ActionSpeed只影响明确开启缩放的动作轴。控制通过独立租约释放，角色钟/冷却/Buff/已发弹体保持独立；受控位移射击示例在2倍速度下仍完成2米位移，见[时间轴控制验收](docs/验证/2026-11-15-timeline-controls.md)。
 
@@ -31,7 +31,7 @@ dotnet run --project Combat.csproj -- json Assets/StreamingAssets/Combat/project
 
 `Assets/Scenes/Arena.unity`是可直接运行的JSON入口，也位于Build Settings首位。WASD/方向键移动，鼠标瞄准，按住左键/1重复主攻击；2/右键、3/中键、5/鼠标侧键、Space/Q/E走JSON的输入绑定。Esc暂停，HUD可重开/切换训练模式。F5明确重载，F6/F7使用同一正式玩家的消耗/冷却/状态守卫；槽必须从当前正式工程发布，其他工程的槽会报错并保留当前局。首次启动只读正式文件，避免未关联的旧调试槽阻止进入。
 
-当前Arena使用已迁移技能、原角色Animator和部分内置物体模型；Fire1弹药主攻击/换弹、Fire4追踪弹重施放、Fire5木桶链爆，以及来源/目标独立顿帧和受伤反馈已经接入JSON。历史13技能其余内容、弹体/AoE/Cue/音频等剩余原资源和角色成长值仍需迁移，不能将本入口称为旧玩法/美术完整复刻。验收边界见[JSON Arena记录](docs/验证/2026-11-15-json-arena.md)、[弹药与重施放](docs/验证/2026-11-15-ammo-and-recasts.md)、[可破坏物](docs/验证/2026-11-15-constructs.md)和[独立顿帧验收](docs/验证/2026-11-15-actor-feedback.md)。
+当前Arena包含原13技能ID、缺弹换弹/传送弹/木桶链爆、三段确认、双相位Motor、独立顿帧、原角色和实体/Cue资源，以及原游走/生成随机与累计成长。固定对照与实际行为证据见`docs/验证`；完整历史审计与统一交付继续进行。原提交没有音频文件，不能宣称恢复了原音效。
 
 ## 运行
 
@@ -56,13 +56,13 @@ dotnet run --project Combat.csproj -- lesson
 dotnet run --project Combat.csproj -- training-camp
 dotnet run --project Combat.csproj -- regress
 
-默认 `season` = 第一期验收：G1 近战+刀光 Cue+火球灼烧、G2 火地叠 3、受击停轴、Bake 清缓存、死亡清弹圈。
+默认`season`验证G1近战/刀光/火球灼烧、G2火地叠层、受击停轴和死亡清理。
 
 ## 冻结
 
 Actor / Comp / World / Time / EventBus / IntentQueue / Pool
 Combo 边表 + Play(skill, timeline)
-InputBuffer 单槽 0.2s
+InputBuffer容量3的FIFO，独立输入年龄；窗口由角色配置，正式Arena为0.8秒，教学默认0.2秒。
 
 ## 唯一结算
 

@@ -19,7 +19,7 @@ namespace Combat.Unity
         {
             prepared.Activate();var previous=_binding;_binding=prepared;previous?.Dispose();
         }
-        public void Sample(float alpha)=>_binding?.Sample(alpha);
+        public void Sample(float alpha,float deltaTime,float realTime)=>_binding?.Sample(alpha,deltaTime,realTime);
         public void Unbind(){_binding?.Dispose();_binding=null;}
         void OnDestroy()=>Unbind();
     }

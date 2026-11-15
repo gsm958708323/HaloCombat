@@ -65,7 +65,7 @@ namespace Combat.Tests
             _arena.Submit(new ArenaInputFrame{MoveZ=1});_arena.StepForTests(1);
             Assert.AreEqual(4,player.GetComp<TransformComp>().Position.X,.0001);Assert.AreEqual(0,player.GetComp<TransformComp>().Position.Z,.0001);
             Assert.AreEqual(before-10,target.GetComp<AttributeSet>().GetBase(AttrId.Hp),.0001);Assert.IsFalse(player.GetComp<HitboxComp>().IsOpen);Assert.IsFalse(player.GetComp<SkillDirectorComp>().IsPlaying);
-            yield return null;_arena.GetComponent<ArenaPresentation>().Sample(1);
+            yield return null;_arena.GetComponent<ArenaPresentation>().Sample(1,0,0);
             var view=_arena.GetComponentsInChildren<UnityActorView>().Single(v=>v.Id==player.Id);Assert.AreEqual(4,view.transform.position.x,.0001);
             LogAssert.NoUnexpectedReceived();
         }

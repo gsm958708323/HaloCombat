@@ -21,6 +21,9 @@ namespace Combat.Config
         public float CameraHeight {get;set;}=2.5f;
         public float CameraFov {get;set;}=60;
         public float CameraFocusHeight {get;set;}=.75f;
+        [System.ComponentModel.DefaultValue(.55f),Newtonsoft.Json.JsonProperty(DefaultValueHandling=Newtonsoft.Json.DefaultValueHandling.Ignore)]public float CameraDownedFocusHeight {get;set;}=.55f;
+        [System.ComponentModel.DefaultValue(8f),Newtonsoft.Json.JsonProperty(DefaultValueHandling=Newtonsoft.Json.DefaultValueHandling.Ignore)]public float CameraSpringHz {get;set;}=8;
+        [System.ComponentModel.DefaultValue(true),Newtonsoft.Json.JsonProperty(DefaultValueHandling=Newtonsoft.Json.DefaultValueHandling.Ignore)]public bool CameraShakeEnabled {get;set;}=true;
         public ArenaBindingDocument[] Bindings {get;set;}=Array.Empty<ArenaBindingDocument>();
         public PreviewObstacleDocument[] Obstacles {get;set;}=Array.Empty<PreviewObstacleDocument>();
     }

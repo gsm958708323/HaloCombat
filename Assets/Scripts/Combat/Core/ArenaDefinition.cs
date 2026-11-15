@@ -12,6 +12,8 @@ namespace Combat.Core
         public ObstacleDefinition[] Obstacles=Array.Empty<ObstacleDefinition>();
         public ArenaBinding[] Bindings=Array.Empty<ArenaBinding>();
         public float CameraDistance,CameraHeight,CameraFov,CameraFocusHeight;
+        public float CameraDownedFocusHeight=.55f,CameraSpringHz=8;
+        public bool CameraShakeEnabled=true;
     }
     public readonly struct ArenaBinding
     {

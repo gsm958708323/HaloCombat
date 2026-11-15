@@ -3290,7 +3290,7 @@
         "recovery": 10,
         "skillId": "arena-enemy-shot",
         "ai": "wander-shooter",
-        "acquireRadius": 40,
+        "acquireRadius": 20,
         "attackRange": 4,
         "followRange": 1.5,
         "leashRange": 100,
@@ -3330,7 +3330,7 @@
         "energy": 0,
         "recovery": 0,
         "ai": "none",
-        "view": "stake",
+        "view": "arena-enemy-view",
         "spawnStats": {
           "hpPerSpawn": 0,
           "attackPerSpawn": 0,
@@ -3465,7 +3465,7 @@
       "cameraDistance": 2.5,
       "cameraHeight": 2.5,
       "cameraFov": 60,
-      "cameraFocusHeight": 0.75,
+      "cameraFocusHeight": 1.6,
       "bindings": [
         {
           "action": "Fire1",

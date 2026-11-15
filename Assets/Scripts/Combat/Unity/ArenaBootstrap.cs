@@ -38,7 +38,7 @@ namespace Combat.Unity
                 candidate.World.Events.Subscribe<EvProjectileTeleport>(OnProjectileTeleport);
                 var previous=_session;_present.Replace(prepared);prepared=null;_session=candidate;candidate=null;
                 if(previous!=null)previous.World.Events.Unsubscribe<EvProjectileTeleport>(OnProjectileTeleport);
-                previous?.Dispose();_clock.Reset();_present.Sample(1);
+                previous?.Dispose();_clock.Reset();_present.Sample(1,0,Time.unscaledTime);
                 LastLoadError=null;Status=includePublished?"JSON reloaded, F6/F7 updated":"JSON Arena ready";return true;
             }
             catch(Exception error) when(error is IOException||error is UnauthorizedAccessException||error is ContentValidationException||error is ArgumentException||error is InvalidOperationException)
@@ -74,7 +74,7 @@ namespace Combat.Unity
             else _clock.Reset();
             _session.AdvanceWall(Time.unscaledDeltaTime);
         }
-        void LateUpdate(){if(_session!=null)_present?.Sample(_session.Paused||_session.PlayerDead?1:_clock.Alpha);}
+        void LateUpdate(){if(_session!=null)_present?.Sample(_session.Paused||_session.PlayerDead?1:_clock.Alpha,Time.deltaTime,Time.unscaledTime);}
         void OnApplicationFocus(bool focused){if(!focused){_session?.CancelInput();_clock.Reset();}}
         void OnDisable(){_session?.CancelInput();_clock.Reset();}
         void OnDestroy(){if(_session!=null)_session.World.Events.Unsubscribe<EvProjectileTeleport>(OnProjectileTeleport);_present?.Unbind();_session?.Dispose();_session=null;}
