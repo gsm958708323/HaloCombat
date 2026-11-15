@@ -6,7 +6,7 @@ using Combat.Core;
 namespace Combat.Config
 {
     // One simulation implementation is used by the local host and the Unity test scene.
-    public sealed class SkillSimulation : IDisposable
+    public sealed partial class SkillSimulation : IDisposable
     {
         public const float Step = 0.02f;
         readonly CombatContentSnapshot _content;
@@ -33,7 +33,9 @@ namespace Combat.Config
             _content = content ?? throw new ArgumentNullException(nameof(content));
             var preview = project?.Preview;
             SkillSceneValidation.Validate(preview);
-            _world = new CombatWorld(new SkillSimulationFactory(content, preview), random: new SeededRandom(preview.Seed), cues: content.Runtime?.Data.Cues??content.Cues,motor:content.Runtime?.Data.Motor,obstacles:SkillSceneValidation.Obstacles(preview),skillEvents:content.SkillEvents);
+            _trace=new AuthorExecutionTrace(content.Sources);
+            _world = new CombatWorld(new SkillSimulationFactory(content, preview), random: new SeededRandom(preview.Seed), cues: content.Runtime?.Data.Cues??content.Cues,motor:content.Runtime?.Data.Motor,obstacles:SkillSceneValidation.Obstacles(preview),skillEvents:content.SkillEvents,effectObserver:_trace);
+            _trace.Executing+=e=>Record("execute",Name(e.Source),e.Node.NodeKind,e.Origin,node:e.Node,sourceId:e.Source,targetId:e.Target);
             _world.ReplaceCatalogs(content.Projectiles, content.Aoes, content.Summons);
             _world.ReplaceConstructs(content.Constructs);
             _world.Events.Subscribe<EvEntitySpawn>(OnSpawn);
@@ -47,24 +49,24 @@ namespace Combat.Config
             _world.Events.Subscribe<EvShield>(e=>Record("shield",Name(e.Target),e.Amount.ToString("F1",System.Globalization.CultureInfo.InvariantCulture),e.Origin));
             _world.Events.Subscribe<EvBuffLifecycle>(OnBuff);
             _world.Events.Subscribe<EvSkillStarted>(e=>
-            {_casts++;_content.Skills.TryGet(e.Skill,out var skill);Record("cast",Name(e.Source),skill?.Name??e.Skill.ToString());});
+            {_casts++;_content.Skills.TryGet(e.Skill,out var skill);Record("cast",Name(e.Source),skill?.Name??e.Skill.ToString(),OriginOf(e.Source),node:_content.Sources.Definition("skill",e.Skill.Value),sourceId:e.Source);});
             _world.Events.Subscribe<EvSummonLifecycle>(e=>Record("summon-"+e.Kind.ToString().ToLowerInvariant(),Name(e.Owner),e.Detail??Name(e.Id)));
-            _world.Events.Subscribe<EvConstructLifecycle>(e=>Record("construct-"+e.Kind.ToString().ToLowerInvariant(),Name(e.Owner),e.Detail+" / "+Name(e.Id),e.Origin));
+            _world.Events.Subscribe<EvConstructLifecycle>(e=>Record("construct-"+e.Kind.ToString().ToLowerInvariant(),Name(e.Owner),e.Detail+" / "+Name(e.Id),e.Origin,node:_content.Sources.Definition("construct",e.SpecId),sourceId:e.Owner,bodyId:e.Id));
             _world.Events.Subscribe<EvEntityCleanup>(OnCleanup);
             _world.Events.Subscribe<EvAreaResolved>(OnArea);
             _world.Events.Subscribe<EvSpatialVolume>(OnVolume);
             _world.Events.Subscribe<EvRayResolved>(OnRay);
-            _world.Events.Subscribe<EvObstacleHit>(e=>Record("collision",Name(e.Source),e.Kind+" -> "+e.Obstacle));
-            _world.Events.Subscribe<EvProjectileEnded>(e=>Record("projectile-end",Name(e.Source),e.Reason.ToString()));
+            _world.Events.Subscribe<EvObstacleHit>(e=>Record("collision",Name(e.Source),e.Kind+" -> "+e.Obstacle,node:BodySource(e.Body),sourceId:e.Source,bodyId:e.Body));
+            _world.Events.Subscribe<EvProjectileEnded>(e=>Record("projectile-end",Name(e.Source),e.Reason.ToString(),OriginOf(e.Id),node:BodySource(e.Id),sourceId:e.Source,bodyId:e.Id));
             _world.Events.Subscribe<EvProjectileTeleport>(e=>Record(e.Moved?"projectile-teleport":"projectile-teleport-blocked",Name(e.Source),e.Key+" / "+e.Result));
             _world.Events.Subscribe<EvAmmoChanged>(e=>Record("ammunition",Name(e.Source),e.Reason+" "+e.Delta+" -> "+e.Current+"/"+e.Capacity));
             _world.Events.Subscribe<EvProjectileBehavior>(e=>
             {
                 if(e.Kind=="chain")_chains++;if(e.Kind=="split")_splits++;
                 Record("projectile-"+e.Kind,Name(e.Source),e.Kind=="chain"||e.Kind=="returning"?Name(e.Target):
-                    e.Kind=="split"||e.Kind=="rejected"?e.Count+" queued / generation "+e.Generation:e.Kind+" / y="+e.Point.Y.ToString("F3",System.Globalization.CultureInfo.InvariantCulture),e.Origin);
+                    e.Kind=="split"||e.Kind=="rejected"?e.Count+" queued / generation "+e.Generation:e.Kind+" / y="+e.Point.Y.ToString("F3",System.Globalization.CultureInfo.InvariantCulture),e.Origin,node:BodySource(e.Projectile),sourceId:e.Source,targetId:e.Target,bodyId:e.Projectile);
             });
-            _world.Events.Subscribe<EvAoeLifecycle>(e => Record("area-" + e.Kind.ToString().ToLowerInvariant(), Name(e.Source), Name(e.Target.IsValid ? e.Target : e.Id)));
+            _world.Events.Subscribe<EvAoeLifecycle>(e => Record("area-" + e.Kind.ToString().ToLowerInvariant(), Name(e.Source), Name(e.Target.IsValid ? e.Target : e.Id),OriginOf(e.Id),node:BodySource(e.Id),sourceId:e.Source,targetId:e.Target,bodyId:e.Id));
             _world.Events.Subscribe<EvAoeAbsorbed>(e=>Record("area-absorbed",Name(e.Area),Name(e.Projectile)+" / count="+e.Count+" / radius="+e.Radius.ToString("F3",System.Globalization.CultureInfo.InvariantCulture),e.Origin));
             _world.Events.Subscribe<EvSkillEnded>(OnSkillEnded);
             _world.Events.Subscribe<EvSkillReleased>(e => Record("released", Name(e.Source), "Power " + e.Power.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
@@ -104,7 +106,7 @@ namespace Combat.Config
             if(caster.TryGetComp<PlayerAimComp>(out var aiming)){aiming.Valid=true;aiming.Aim=new SkillAim(EntityId.Invalid,point,heading);}
             var cast = caster.GetComp<SkillCastComp>();
             bool accepted = cast.TryCast(skill.Id, new SkillAim(EntityId.Invalid, point, heading));
-            if(!accepted)Record("rejected",skill.Name,cast.LastRejection);
+            if(!accepted)Record("rejected",skill.Name,cast.LastRejection,node:_content.Sources.Definition("skill",skill.Id.Value),sourceId:caster.Id);
             return new SkillCastResult(accepted, cast.LastRejection);
         }
 
@@ -229,7 +231,7 @@ namespace Combat.Config
                 a.TryGetComp<SkillDirectorComp>(out var director);
                 return new SkillActorSnapshot
                 {
-                    Id = HitboxComp.Pack(a.Id).ToString(), Name = Name(a.Id), Kind = _kinds[HitboxComp.Pack(a.Id)], X = p.X,Y=p.Y, Z = p.Z,
+                    Id = HitboxComp.Pack(a.Id).ToString(), Name = Name(a.Id), Kind = _kinds[HitboxComp.Pack(a.Id)], X = p.X,Y=p.Y, Z = p.Z,Author=ActorSource(a),
                     View=projectile?.Def?.View??area?.Def?.View??construct?.Def?.View,Yaw=a.GetComp<TransformComp>().YawDegrees,
                     ViewScale=area?.Def!=null&&area.Def.Radius>0?area.Radius/area.Def.Radius:1,
                     Hp = attr?.GetBase(AttrId.Hp), MaxHp = attr?.GetFinal(AttrId.MaxHp), Radius = projectile?.Def?.HitRadius ?? area?.Radius ?? (a.TryGetComp<LocomotionComp>(out var locomotion)?locomotion.CollisionRadius:.4f),
@@ -280,7 +282,10 @@ namespace Combat.Config
                 if(_world.TryGetActor(e.Id,out var actor)&&actor.TryGetComp<SummonComp>(out var body)&&_content.Blueprints.TryGet(body.Def?.BlueprintId,out var blueprint))
                     _names[HitboxComp.Pack(e.Id)]=(blueprint.Name??blueprint.Id)+"#"+e.Id.Index;
             }
-            Record("spawn",Name(e.Id),e.BlueprintId);
+            _world.TryGetActor(e.Id,out var spawned);
+            var location=ActorSource(spawned);if(location!=null)_bodySources[HitboxComp.Pack(e.Id)]=location;
+            var spawnedOrigin=OriginOf(e.Id);if(spawnedOrigin.CastId>0)_bodyOrigins[HitboxComp.Pack(e.Id)]=spawnedOrigin;
+            Record("spawn",Name(e.Id),e.BlueprintId,OriginOf(e.Id),node:ActorSource(spawned),sourceId:e.Owner,bodyId:e.Id);
         }
         void OnDamage(EvDamage e)
         { if(e.Amount>0)_hits++; _damage += e.Amount; Record(e.IsCrit ? "critical" : "damage", Name(e.Source), e.Amount + " → " + Name(e.Target),e.Origin,e.Result); }
@@ -294,7 +299,7 @@ namespace Combat.Config
             _content.Buffs.TryGet(e.BuffId,out var spec);
             string text=(spec?.Name??e.BuffId.ToString())+" ×"+e.Stacks+" → "+Name(e.Owner);
             if(e.Kind==BuffEventKind.Removed)text+=" / "+e.Reason;
-            Record("buff-"+e.Kind.ToString().ToLowerInvariant(),Name(e.Source),text);
+            Record("buff-"+e.Kind.ToString().ToLowerInvariant(),Name(e.Source),text,node:_content.Sources.Definition("buff",e.BuffId),sourceId:e.Source,targetId:e.Owner);
         }
         void OnArea(EvAreaResolved e)
         {
@@ -304,8 +309,8 @@ namespace Combat.Config
         }
         void OnVolume(EvSpatialVolume e)
         {
-            if(e.Closed){_volumes.Remove(e.Sequence);Record("action-close",Name(e.Source),e.Shape.ToString());return;}
-            if(!_volumes.ContainsKey(e.Sequence))Record("action-open",Name(e.Source),e.Shape.ToString());
+            if(e.Closed){_volumes.Remove(e.Sequence);Record("action-close",Name(e.Source),e.Shape.ToString(),e.SkillOrigin,node:_content.Sources.Site(e.DiagnosticSite),sourceId:e.Source);return;}
+            if(!_volumes.ContainsKey(e.Sequence))Record("action-open",Name(e.Source),e.Shape.ToString(),e.SkillOrigin,node:_content.Sources.Site(e.DiagnosticSite),sourceId:e.Source);
             _volumes[e.Sequence]=new SkillSpatialSnapshot {Sequence=e.Sequence,Source=Name(e.Source),Shape=e.Shape.ToString().ToLowerInvariant(),
                 X=e.Origin.X,Z=e.Origin.Z,Yaw=e.Yaw,Length=e.Length,Width=e.Width,Angle=e.Angle};
         }
@@ -317,21 +322,25 @@ namespace Combat.Config
         }
         void OnSkillEnded(EvSkillEnded e)
         {
-            Record(e.Reason == DirectorStopReason.Finished ? "completed" : "cancelled", Name(e.Source), e.Reason.ToString());
+            Record(e.Reason == DirectorStopReason.Finished ? "completed" : "cancelled", Name(e.Source), e.Reason.ToString(),e.Origin,node:_content.Sources.Definition("skill",e.Skill.Value),sourceId:e.Source);
             if (e.Source==_caster&&(e.Reason == DirectorStopReason.Hit || e.Reason == DirectorStopReason.Dead || e.Reason == DirectorStopReason.Knockdown))
                 _movement = SimVec3.Zero;
         }
         void OnCleanup(EvEntityCleanup e)
         {
-            Record("cleanup", Name(e.Id), e.Reason);
+            Record("cleanup", Name(e.Id), e.Reason,OriginOf(e.Id),node:BodySource(e.Id),bodyId:e.Id);_bodySources.Remove(HitboxComp.Pack(e.Id));_bodyOrigins.Remove(HitboxComp.Pack(e.Id));
             _names.Remove(HitboxComp.Pack(e.Id)); _kinds.Remove(HitboxComp.Pack(e.Id));
             _hurts.Remove(HitboxComp.Pack(e.Id));
         }
         string Name(EntityId id) => _names.TryGetValue(HitboxComp.Pack(id), out var name) ? name : id.ToString();
         string SkillName(SkillOrigin origin)=>_content.Skills.TryGet(origin.Skill,out var skill)?skill.Key:null;
-        void Record(string kind, string source, string result,SkillOrigin origin=default,DamageResult damage=null)
+        void Record(string kind, string source, string result,SkillOrigin origin=default,DamageResult damage=null,AuthorNodeSource node=null,EntityId sourceId=default,EntityId targetId=default,EntityId bodyId=default)
         {
-            _events.Add(new SkillEventSnapshot { Sequence = ++_eventSequence, Time = _steps * Step, Kind = kind, Source = source, Result = result,CastId=origin.CastId,Skill=SkillName(origin),
+            var execution=_trace.Current;
+            if(origin.CastId==0&&execution.Node!=null)origin=execution.Origin;
+            _events.Add(new SkillEventSnapshot { Sequence = ++_eventSequence,Step=_steps, Time = _steps * Step, Kind = kind, Source = source, Result = result,CastId=origin.CastId,Skill=SkillName(origin),
+                Node=node??execution.Node,ExecutionId=execution.Id,ParentExecutionId=execution.Parent,SourceId=Packed(damage?.Source??(sourceId.IsValid?sourceId:execution.Source)),
+                TargetId=Packed(damage?.Target??(targetId.IsValid?targetId:execution.Target)),BodyId=Packed(bodyId),
                 HitIndex=damage?.HitIndex??0,Damage=damage==null?null:new SkillDamageSnapshot {Kind=damage.Kind.ToString().ToLowerInvariant(),Target=Name(damage.Target),Base=damage.Base,Scaled=damage.Scaled,
                     AfterDefense=damage.AfterDefense,AfterCritical=damage.AfterCritical,Final=damage.Final,Absorbed=damage.Absorbed,HpLost=damage.HpLost,Overkill=damage.Overkill,Killed=damage.Killed,Feedback=damage.Feedback.ToString().ToLowerInvariant()} });
             if (_events.Count > 500) _events.RemoveAt(0);
@@ -344,6 +353,7 @@ namespace Combat.Config
             { if (actor.TryGetComp<SkillDirectorComp>(out var director)) director.Stop(DirectorStopReason.Detach); _world.RequestDespawn(actor.Id); }
             _world.Tick(0);
             _events.Clear(); _trails.Clear(); _areas.Clear(); _rays.Clear(); _volumes.Clear(); _names.Clear(); _kinds.Clear(); _hurts.Clear(); _sceneActors.Clear();
+            _bodySources.Clear();_bodyOrigins.Clear();
             _disposed = true;
         }
     }

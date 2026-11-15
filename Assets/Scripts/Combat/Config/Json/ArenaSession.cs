@@ -35,7 +35,7 @@ namespace Combat.Config
             Training=training;_bindings=Definition.Bindings.ToDictionary(b=>b.Action,b=>b.Input,StringComparer.Ordinal);
             _slots=new Dictionary<string,SkillNodeId>();if(slots!=null)foreach(var slot in slots)_slots.Add(slot.Key,slot.Value);
             World=new CombatWorld(content.Runtime.CreateFactory(content.Skills),random:new SeededRandom(Definition.Seed),cues:content.Runtime.Data.Cues,
-                motor:content.Runtime.Data.Motor,obstacles:Definition.Obstacles,skillEvents:content.SkillEvents);
+                motor:content.Runtime.Data.Motor,obstacles:Definition.Obstacles,skillEvents:content.SkillEvents,effectObserver:new AuthorExecutionTrace(content.Sources));
             content.Runtime.Data.Install(World);World.Events.Subscribe<EvEntityDead>(OnDead);
         }
         public void Start()

@@ -12,7 +12,7 @@ import type { EditableGraph, GraphKey } from './authoring/contentEdits';
 import { connectGraph, copySelection, deleteSelection, pasteSelection } from './authoring/graphEdits';
 import type { GraphClipboard } from './authoring/graphEdits';
 
-export function useGraphAuthoring(document:ReturnType<typeof useProjectDocument>,key:GraphKey,report:(text:string)=>void) {
+export function useGraphAuthoring(document:ReturnType<typeof useProjectDocument>,key:GraphKey,report:(text:string)=>void,focus:{key:GraphKey;nodeId:string;request:number}|null=null) {
   const flow=useReactFlow<EditorNode>();const initialized=useNodesInitialized();
   const [selectedNodes,setSelectedNodes]=useState<string[]>([]);const [selectedEdges,setSelectedEdges]=useState<string[]>([]);
   const [zoom,setZoom]=useState(1);const clipboard=useRef<GraphClipboard|null>(null);
@@ -22,6 +22,7 @@ export function useGraphAuthoring(document:ReturnType<typeof useProjectDocument>
   const project=document.project;const graph=project?graphOf(project,key):undefined;const keyString=(project?.id??'')+'/'+key.kind+':'+key.id;
   const savedViewport=project?.editor?.viewports?.find(v=>v.kind===key.kind&&v.id===key.id);
   const viewportKey=JSON.stringify(savedViewport);
+  const focused=useRef(0);
   const flowRef=useRef(flow);flowRef.current=flow;
   const editGraph=useCallback((update:(g:EditableGraph)=>EditableGraph,group?:string)=>document.edit(p=>updateGraph(p,key,update),true,group),[document.edit,key.kind,key.id]);
   useEffect(()=>{setSelectedNodes([]);setSelectedEdges([]);},[keyString]);
@@ -30,15 +31,17 @@ export function useGraphAuthoring(document:ReturnType<typeof useProjectDocument>
     if(!key.id||!initialized)return;
     const saved=document.current.current?.editor?.viewports?.find(v=>v.kind===key.kind&&v.id===key.id);
     const actual=flowRef.current.getViewport();
-    if(restored.current===keyString&&(!saved||Math.abs(saved.x-actual.x)<.01&&Math.abs(saved.y-actual.y)<.01&&Math.abs(saved.zoom-actual.zoom)<.00001))return;
+    const locating=focus&&focus.request!==focused.current&&focus.key.kind===key.kind&&focus.key.id===key.id;
+    if(!locating&&restored.current===keyString&&(!saved||Math.abs(saved.x-actual.x)<.01&&Math.abs(saved.y-actual.y)<.01&&Math.abs(saved.zoom-actual.zoom)<.00001))return;
     restoring.current=true;let cancelled=false;
     const frame=requestAnimationFrame(()=>requestAnimationFrame(()=>{
       if(cancelled)return;
-      const pending=saved?flowRef.current.setViewport(saved):flowRef.current.fitView({padding:.15});
+      if(locating){focused.current=focus.request;setSelectedNodes([focus.nodeId]);setSelectedEdges([]);}
+      const pending=locating?flowRef.current.fitView({nodes:[{id:focus.nodeId}],padding:.3,maxZoom:1}):saved?flowRef.current.setViewport(saved):flowRef.current.fitView({padding:.15});
       void pending.finally(()=>{if(!cancelled){restored.current=keyString;restoring.current=false;setZoom(flowRef.current.getZoom());}});
     }));
     return ()=>{cancelled=true;cancelAnimationFrame(frame);restoring.current=false;};
-  },[initialized,keyString,viewportKey,document.current,key.kind,key.id]);
+  },[initialized,keyString,viewportKey,document.current,key.kind,key.id,focus]);
   const remove=useCallback((ids:string[],edges:string[]=[])=>{
     document.endGroup();document.edit(p=>deleteSelection(p,key,ids,edges));setSelectedNodes([]);setSelectedEdges([]);
   },[document.edit,document.endGroup,key.kind,key.id]);

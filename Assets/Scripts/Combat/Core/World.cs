@@ -47,6 +47,7 @@ namespace Combat.Core
         public CueLibrary Cues => _cues;
         public MotorConfig Motor => _motor;
         public CollisionWorld Collision { get; }
+        public IEffectObserver EffectObserver {get;}
 
         public CombatWorld(
             IActorFactory actorFactory,
@@ -56,12 +57,12 @@ namespace Combat.Core
             IRandom random = null,
             CueLibrary cues = null,
             MotorConfig? motor = null,
-            ObstacleDefinition[] obstacles = null,SkillEventCatalog skillEvents=null)
+            ObstacleDefinition[] obstacles = null,SkillEventCatalog skillEvents=null,IEffectObserver effectObserver=null)
         {
             _time = time ?? new CombatTime();
             _intents = intents ?? new IntentQueue();
             _events = events ?? new EventBus();
-            _pipeline = new EffectPipeline();
+            EffectObserver=effectObserver;_pipeline=new EffectPipeline(effectObserver);
             _random = random ?? new SeededRandom(1);
             _cues = cues ?? CueLibrary.DefaultCombat();
             _motor = motor ?? MotorConfig.SeasonOneDefaults();

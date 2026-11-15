@@ -18,6 +18,7 @@ namespace Combat.Config
         public CueLibrary Cues { get; } = new CueLibrary();
         public SkillEventCatalog SkillEvents {get;}=new SkillEventCatalog();
         public RuntimeContentSnapshot Runtime {get;internal set;}
+        public AuthorSourceMap Sources {get;internal set;}
         internal HashSet<int> RequiredCues {get;}=new HashSet<int>();
         internal HashSet<string> RequiredBodyViews {get;}=new HashSet<string>();
         internal Dictionary<string,int> SharedProjectiles {get;}=new Dictionary<string,int>();
@@ -33,7 +34,7 @@ namespace Combat.Config
             if (string.IsNullOrWhiteSpace(project.Id)) Fail("$.id", "Project id is required.");
             SkillSceneValidation.Validate(project.Preview);
             if (project.Skills == null || project.Skills.Length == 0 || project.Skills.Length > 512) Fail("$.skills", "Expected 1 to 512 skills.");
-            var content = new CombatContentSnapshot();
+            var content = new CombatContentSnapshot{Sources=new AuthorSourceMap(project)};
             foreach(var area in project.Areas)
             {
                 var root=System.Array.Find(area.Nodes,n=>n.Id==area.Root);

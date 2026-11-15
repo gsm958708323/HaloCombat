@@ -31,6 +31,7 @@ namespace Combat.Config
         public string Name { get; internal set; }
         public string Kind { get; internal set; }
         public string View {get;internal set;}
+        public AuthorNodeSource Author {get;internal set;}
         public float ViewScale {get;internal set;}=1;
         public float Yaw {get;internal set;}
         public float X { get; internal set; }
@@ -139,6 +140,13 @@ namespace Combat.Config
         public string Kind { get; internal set; }
         public string Source { get; internal set; }
         public string Result { get; internal set; }
+        public int Step {get;internal set;}
+        public AuthorNodeSource Node {get;internal set;}
+        public string SourceId {get;internal set;}
+        public string TargetId {get;internal set;}
+        public string BodyId {get;internal set;}
+        public int ExecutionId {get;internal set;}
+        public int ParentExecutionId {get;internal set;}
         public int CastId {get;internal set;}
         public string Skill {get;internal set;}
         public int HitIndex {get;internal set;}

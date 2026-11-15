@@ -23,7 +23,7 @@ namespace Combat.Config
         {
             var runtime=Content.Runtime;var data=runtime.Data;
             var world=new CombatWorld(runtime.CreateFactory(Content.Skills),random:random??new SeededRandom(Project.Preview.Seed),
-                cues:data.Cues,motor:data.Motor,skillEvents:Content.SkillEvents);
+                cues:data.Cues,motor:data.Motor,skillEvents:Content.SkillEvents,effectObserver:new AuthorExecutionTrace(Content.Sources));
             data.Install(world);return world;
         }
     }

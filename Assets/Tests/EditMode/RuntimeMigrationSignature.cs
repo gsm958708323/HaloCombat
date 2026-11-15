@@ -42,7 +42,7 @@ namespace Combat.Tests
             {
                 // Animation is presentation metadata added after this numeric gameplay fixture;
                 // ActorViewContentTests and actual Animator PlayMode tests cover its mapping.
-                if(field.IsStatic||new[]{"Name","Key","OriginContentKey","Tree","PresentationKind","ResourceKey","Animation"}.Contains(field.Name))continue;
+                if(field.IsStatic||new[]{"Name","Key","OriginContentKey","Tree","PresentationKind","ResourceKey","Animation","DiagnosticSite"}.Contains(field.Name))continue;
                 if(value is TimelineDefinition&&field.Name=="ControlTags"&&((TagId[])field.GetValue(value)).Length==0)continue;
                 if(value is TimelineDefinition&&field.Name=="ScaleWithActionSpeed"&&!(bool)field.GetValue(value))continue;
                 if(value is DamageEffect damage&&!damage.CanCrit&&field.Name=="CritChance")continue;

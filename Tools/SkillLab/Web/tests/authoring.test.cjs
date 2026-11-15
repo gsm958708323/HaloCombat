@@ -11,6 +11,20 @@ const skillKey={kind:'skill',id:'basic-shot'};
 const runtime=()=>JSON.parse(fs.readFileSync(path.resolve(__dirname,'../../../../Assets/StreamingAssets/Combat/project.json'),'utf8'));
 const areaEdits=require('../../.local/web-checks/authoring/areaEdits.js');
 const {prepareImportedLayout}=require('../../.local/web-checks/authoring/importLayout.js');
+const {traceLocation}=require('../../.local/web-checks/authoring/traceLocation.js');
+
+test('trace locations use graph and node identities even when different skills reuse local IDs',()=>{
+  const p=example(),before=JSON.stringify(p),s=p.skills[1],n=s.nodes.find(n=>n.kind==='damage');
+  assert.deepEqual(traceLocation(p,{graphKind:'skill',graphId:s.id,nodeId:n.id,nodeKind:n.kind}),{kind:'skill',id:s.id});assert.equal(JSON.stringify(p),before);
+  assert.throws(()=>traceLocation(p,{graphKind:'skill',graphId:'deleted',nodeId:n.id,nodeKind:n.kind}),/修改或删除/);
+  assert.throws(()=>traceLocation(p,{graphKind:'skill',graphId:s.id,nodeId:n.id,nodeKind:'heal'}),/修改或删除/);
+});
+
+test('a runtime event locates shared definitions directly without selecting one of their callers',()=>{
+  const p=runtime(),g=p.projectiles[0],n=g.nodes[0];
+  assert.deepEqual(traceLocation(p,{graphKind:'projectile',graphId:g.id,nodeId:n.id,nodeKind:n.kind}),{kind:'projectile',id:g.id});
+  n.enabled=false;assert.throws(()=>traceLocation(p,{graphKind:'projectile',graphId:g.id,nodeId:n.id,nodeKind:n.kind}),/修改或删除/);
+});
 
 test('runtime imports acquire readable positions without changing gameplay identities parameters or edge order',()=>{
   const p=runtime();for(const {graph:g} of edits.allGraphs(p))for(const n of g.nodes)n.position={x:0,y:0};

@@ -27,6 +27,8 @@ import {newProjectile} from './authoring/projectileEdits';
 import {newArea} from './authoring/areaEdits';
 import {ExportDialog} from './ExportDialog';
 import {prepareImportedLayout} from './authoring/importLayout';
+import {traceLocation} from './authoring/traceLocation';
+import type {AuthorNodeSource} from './model';
 
 const nodeTypes={skill:SkillNode};
 function Workbench() {
@@ -39,6 +41,9 @@ function Workbench() {
   const [newProjectName,setNewProjectName]=useState<string|null>(null);const [projectTemplate,setProjectTemplate]=useState('empty');
   const [pendingImport,setPendingImport]=useState<Project|null>(null);
   const [exporting,setExporting]=useState(false);
+  const [previewRoot,setPreviewRoot]=useState<string|null>(null);
+  const [traceFocus,setTraceFocus]=useState<{key:GraphKey;nodeId:string;request:number}|null>(null);
+  const traceRequest=useRef(0);
   const fileInput=useRef<HTMLInputElement>(null);
   const skill=project?.skills.find(s=>s.id===project.editor?.selectedSkill)??project?.skills[0];
   const buff=project?.buffs?.find(b=>b.id===project.editor?.selectedBuff);
@@ -46,13 +51,21 @@ function Workbench() {
   const projectile=project?.projectiles?.find(t=>t.id===project.editor?.selectedProjectile);
   const area=project?.areas?.find(a=>a.id===project.editor?.selectedArea);
   const key:GraphKey={kind:area?'area':projectile?'projectile':timeline?'timeline':buff?'buff':'skill',id:area?.id??projectile?.id??timeline?.id??buff?.id??skill?.id??''};
-  const graphEditor=useGraphAuthoring(editor,key,setMessage);const graph=graphEditor.graph;
-  const preview=usePreview(project,skill?.id??'',setMessage);preview.skill.current=skill?.id??'';
+  const graphEditor=useGraphAuthoring(editor,key,setMessage,traceFocus);const graph=graphEditor.graph;
+  const root=previewRoot&&project?.skills.some(s=>s.id===previewRoot)?previewRoot:skill?.id??'';
+  const preview=usePreview(project,root,setMessage);preview.skill.current=root;
   const mode=String(skill?.nodes.find(n=>n.kind==='cast'&&n.enabled!==false)?.parameters.mode??'instant');
   const castMode=({instant:'瞬发',channel:'引导',charge:'蓄力'} as Record<string,string>)[mode]??mode;
   const actionNodes=skill?.timelineRef?project?.timelines?.find(t=>t.id===skill.timelineRef)?.nodes:skill?.nodes;
   const transfers=[...new Set(actionNodes?.filter(n=>n.enabled!==false&&(n.kind==='projectile'||n.kind==='projectile-ref'||n.kind==='area-ref'||n.kind==='delivery'||n.kind==='construct')).map(deliveryLabel))].join(' / ')||'效果';
-  function select(skillId:string,buffId='',timelineId='',projectileId='',areaId=''){editor.endGroup();editor.edit(p=>selectGraph(p,skillId,buffId,timelineId,projectileId,areaId),false);setLibrary(false);}
+  function select(skillId:string,buffId='',timelineId='',projectileId='',areaId=''){setPreviewRoot(null);setTraceFocus(null);editor.endGroup();editor.edit(p=>selectGraph(p,skillId,buffId,timelineId,projectileId,areaId),false);setLibrary(false);}
+  function inspectSource(source:AuthorNodeSource){
+    try{
+      const p=editor.current.current;if(!p||!preview.ready)return;const target=traceLocation(p,source);
+      setPreviewRoot(root);editor.edit(selectGraph(p,target.kind==='skill'?target.id:skill?.id??'',target.kind==='buff'?target.id:'',target.kind==='timeline'?target.id:'',target.kind==='projectile'?target.id:'',target.kind==='area'?target.id:''),false);
+      setTraceFocus({key:target,nodeId:source.nodeId,request:++traceRequest.current});setMessage('已定位 '+source.graphId+' / '+source.nodeId+'；预览仍使用 '+root);
+    }catch(error){setMessage(String(error));}
+  }
   function newShared(){editor.endGroup();editor.edit(p=>newTimeline(p,skill?.id??'').project);}
   function newBullet(){editor.endGroup();editor.edit(p=>newProjectile(p,skill?.id??'').project);}
   function newZone(){editor.endGroup();editor.edit(p=>newArea(p,skill?.id??'').project);}
@@ -144,7 +157,7 @@ function Workbench() {
         <input ref={fileInput} type="file" accept=".json,application/json" hidden onChange={event=>{const file=event.target.files?.[0];if(file)void importFile(file);event.target.value='';}}/>
       </div></header>
     <nav className="app-navigation"><span className="active">技能</span><div/><small>{project.name} · {project.skills.length} 个技能</small></nav>
-    <div className="workspace"><Preview key={project.id} preview={preview} project={project} update={editor.edit}/>
+    <div className="workspace"><Preview key={project.id} preview={preview} project={project} update={editor.edit} inspectSource={inspectSource} root={root}/>
       <section className="editor-panel"><div className="editor-heading"><span>节点编辑</span><div className="popover-anchor"><button onClick={()=>setLibrary(!library)}>技能库 ▾</button>{library&&<SkillLibrary project={project} selected={skill?.id??''} select={id=>select(id)}/>}</div>
         <button onClick={()=>void openCreate()}><Plus size={12}/>新建</button><button onClick={()=>{if(buff)select(skill?.id??'');else if(project.buffs?.length)select(skill?.id??'',project.buffs[0].id);else newBuff();}}>{buff?'返回技能':'Buff定义'}</button>
         <button onClick={()=>{if(timeline)select(skill?.id??'');else if(project.timelines?.length)select(skill?.id??'','',project.timelines[0].id);else newShared();}}>{timeline?'返回技能':'共享时间轴'}</button>

@@ -140,6 +140,7 @@ namespace Combat.Config
                 default: throw new ContentValidationException(path + ".kind", "Unsupported effect kind: " + node.Kind);
             }
             var result=effects.ToArray();
+            _content.Sources.Register(_graph.ContentKey,node,result);
             if(clipCount==Clips.Count&&followupCount==Followups.Count)_compiled[node.Id]=result;
             return result;
         }
@@ -273,7 +274,7 @@ namespace Combat.Config
             if(mode=="melee")
             {
                 string shape=p.Choice("shape","thrust","thrust","fan","circle");
-                Clips.Add(new TimelineClip {Kind=ClipKind.Melee,Start=start,End=start+p.Number("activeDuration",.2f,.001f,60),
+                Clips.Add(new TimelineClip {DiagnosticSite=_content.Sources.SiteId(_graph.ContentKey,node.Id),Kind=ClipKind.Melee,Start=start,End=start+p.Number("activeDuration",.2f,.001f,60),
                     Shape=(HitShape)Array.IndexOf(new[]{"thrust","fan","circle"},shape),Length=p.Number("length",3,.01f,100),
                     Width=p.Number("width",1,.01f,100),Angle=p.Number("angle",90,1,360),MaxTargets=maximum,OnHit=effects});
             }
@@ -281,12 +282,13 @@ namespace Combat.Config
             {
                 float distance=p.Number("distance",6,.01f,100);float radius=p.Number("hitRadius",.5f,.01f,20);
                 string movement=p.Choice("movementMode","dash","dash","blink");
-                if(movement=="dash")Clips.Add(new TimelineClip {Kind=ClipKind.Dash,Start=start,End=start+distance/p.Number("speed",12,.1f,1000),
+                if(movement=="dash")Clips.Add(new TimelineClip {DiagnosticSite=_content.Sources.SiteId(_graph.ContentKey,node.Id),Kind=ClipKind.Dash,Start=start,End=start+distance/p.Number("speed",12,.1f,1000),
                     Length=distance,Width=radius*2,MaxTargets=maximum,OnHit=effects});
                 else
                 {
                     AimRange=AimRange>0?Math.Min(AimRange,distance):distance;
-                    Followups.Add(new TimelinePayload {Time=start,Effects=new IEffect[]{new BlinkStrikeEffect(effects,distance,radius,maximum,_requiresTarget)}});
+                    var followup=new IEffect[]{new BlinkStrikeEffect(effects,distance,radius,maximum,_requiresTarget)};
+                    _content.Sources.Register(_graph.ContentKey,node,followup);Followups.Add(new TimelinePayload {Time=start,Effects=followup});
                 }
             }
         }

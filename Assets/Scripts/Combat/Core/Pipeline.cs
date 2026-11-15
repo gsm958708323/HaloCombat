@@ -62,12 +62,26 @@ namespace Combat.Core
 
     public sealed class EffectPipeline
     {
+        readonly IEffectObserver _observer;
+        public EffectPipeline(IEffectObserver observer=null)=>_observer=observer;
         public void Run(ref EffectContext ctx, IEffect[] effects)
         {
             if (effects == null) return;
             for (int i = 0; i < effects.Length; i++)
-                effects[i]?.Apply(ref ctx);
+            {
+                if(effects[i]==null)continue;
+                int token=_observer?.Enter(effects[i],ctx)??-1;
+                try{effects[i].Apply(ref ctx);}finally{_observer?.Exit(token);}
+            }
         }
+    }
+
+    // Optional execution diagnostics. Implementations belong to the composition layer;
+    // gameplay does not know author documents, node identities or editor positions.
+    public interface IEffectObserver
+    {
+        int Enter(IEffect effect,in EffectContext context);
+        void Exit(int token);
     }
 
     public sealed class CallbackEffect : IEffect

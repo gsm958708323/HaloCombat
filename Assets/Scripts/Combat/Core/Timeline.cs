@@ -16,6 +16,7 @@ namespace Combat.Core
     [Serializable]
     public struct TimelineClip
     {
+        public int DiagnosticSite; // Opaque to Core; the optional observer's source catalog owns it.
         public float Start;
         public float End;
         public ClipKind Kind;

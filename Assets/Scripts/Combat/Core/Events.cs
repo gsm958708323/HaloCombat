@@ -72,8 +72,10 @@ namespace Combat.Core
         public readonly float Yaw,Length,Width,Angle;
         public readonly HitShape Shape;
         public readonly bool Closed;
-        public EvSpatialVolume(EntityId source,int sequence,SimVec3 origin,float yaw,HitShape shape,float length,float width,float angle,bool closed)
-        { Source=source;Sequence=sequence;Origin=origin;Yaw=yaw;Shape=shape;Length=length;Width=width;Angle=angle;Closed=closed; }
+        public readonly int DiagnosticSite;
+        public readonly SkillOrigin SkillOrigin;
+        public EvSpatialVolume(EntityId source,int sequence,SimVec3 origin,float yaw,HitShape shape,float length,float width,float angle,bool closed,int diagnosticSite=0,SkillOrigin skillOrigin=default)
+        { Source=source;Sequence=sequence;Origin=origin;Yaw=yaw;Shape=shape;Length=length;Width=width;Angle=angle;Closed=closed;DiagnosticSite=diagnosticSite;SkillOrigin=skillOrigin; }
     }
 
     public readonly struct EvAreaResolved

@@ -33,7 +33,7 @@ namespace Combat.Core
             float yaw=dash&&length>.000001f?LocomotionComp.YawFromStick(new SimVec3(position.X-origin.X,0,position.Z-origin.Z)):MeleeClipHandler.Yaw(runtime);
             var shape=dash?HitShape.Capsule:runtime.Clip.Shape;
             float angle=dash?360:runtime.Clip.Angle;
-            world.Events.Publish(new EvSpatialVolume(self.Id,runtime.Sequence,origin,yaw,shape,length,runtime.Clip.Width,angle,false));
+            world.Events.Publish(new EvSpatialVolume(self.Id,runtime.Sequence,origin,yaw,shape,length,runtime.Clip.Width,angle,false,runtime.Clip.DiagnosticSite,runtime.Origin));
             Apply(runtime,SpatialGeometry.Query(world,self,origin,yaw,shape,length,runtime.Clip.Width,angle),yaw);
             if(dash&&self.GetComp<LocomotionComp>().MovementContact.Blocked){Blocked=true;CloseVolume(runtime);}
         }
@@ -55,7 +55,7 @@ namespace Combat.Core
         {
             if(_volumeClosed)return;_volumeClosed=true;
             var self=runtime.Self;
-            self.World.Events.Publish(new EvSpatialVolume(self.Id,runtime.Sequence,self.GetComp<TransformComp>().Position,0,runtime.Clip.Shape,0,0,0,true));
+            self.World.Events.Publish(new EvSpatialVolume(self.Id,runtime.Sequence,self.GetComp<TransformComp>().Position,0,runtime.Clip.Shape,0,0,0,true,runtime.Clip.DiagnosticSite,runtime.Origin));
         }
     }
 
