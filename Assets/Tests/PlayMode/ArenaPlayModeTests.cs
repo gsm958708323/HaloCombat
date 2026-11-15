@@ -49,7 +49,10 @@ namespace Combat.Tests
             Assert.Greater(damage,0);yield return null;
             var view=_runner.GetComponentsInChildren<UnityActorView>().First(v=>v.Id==_runner.Session.PlayerId);
             Assert.AreEqual(Player.GetComp<TransformComp>().Position.X,view.transform.position.x,.001f);
-            Assert.NotNull(view.Animation);Assert.AreEqual(1,view.GetComponentsInChildren<Animator>().Length);
+            var actor=_project.Runtime.Actors.Single(a=>a.Id==_project.Runtime.Arena.Player);
+            var prefab=Resources.Load<GameObject>(_project.Runtime.Views.Single(v=>v.Id==actor.View).Resource);
+            Assert.NotNull(view.Animation);Assert.IsTrue(view.Animation.Animator.transform.IsChildOf(view.transform));
+            Assert.AreSame(prefab.GetComponentInChildren<Animator>(true).runtimeAnimatorController,view.Animation.Animator.runtimeAnimatorController,"Cue prefabs may add their own Animators under character anchors.");
             Assert.Greater(view.GetComponentInChildren<SkinnedMeshRenderer>().bounds.size.y,.5f);LogAssert.NoUnexpectedReceived();
         }
         [UnityTest]

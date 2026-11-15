@@ -14,6 +14,7 @@ namespace Combat.Core
         TimelineDefinition _so;
         double _time;
         bool _playing;
+        bool _finishPending;
         SkillAim _aim;
         Func<float, float> _advanceBudget;
         Func<int, bool> _payPulse;
@@ -96,25 +97,33 @@ namespace Combat.Core
             _time += allowed;
             FirePayloads(self);
             if (!_playing) return;
-            OpenDue(self);
+            OpenDue(self,previous);
             TickLive(previous);
-            CloseDue();
             if (!_playing) return;
             if (allowed + .000001f < requested)
-            { EndReason = DirectorStopReason.EnergyDepleted; StopInternal(true); }
+            { EndReason = DirectorStopReason.EnergyDepleted; _finishPending=true; }
             else if (_time + .000001 >= _so.Duration)
-                StopInternal(false);
+                _finishPending=true;
         }
 
-        void OpenDue(Actor self)
+        // Keep the final step's hitbox, movement policy and control leases alive until
+        // the world has integrated motion and delivered its queued contact effects.
+        public void FlushPendingCloses()
+        {
+            if(!_playing)return;
+            CloseDue();
+            if(_finishPending)StopInternal(EndReason!=DirectorStopReason.Finished);
+        }
+
+        void OpenDue(Actor self,double previous)
         {
             var clips = _so.Clips;
             if (clips == null) return;
             for (int i = 0; i < clips.Length; i++)
             {
-                // Match payload/close comparisons: five 0.02f steps are a few nanoseconds
-                // below an authored 0.1f. Opening must not slip by a whole logic frame.
-                if (clips[i].OnPayload || _clipOpened[i] || clips[i].Start > _time + .000001) continue;
+                // A clip needs a nonempty overlap with this step. Merely reaching its
+                // start cannot open a zero-time hitbox or grant an early iframe.
+                if(clips[i].OnPayload||_clipOpened[i]||Math.Min(_time,clips[i].End)-Math.Max(previous,clips[i].Start)<=.0000001)continue;
                 _clipOpened[i] = true;
                 var rt = new ClipRuntime
                 {
@@ -130,7 +139,7 @@ namespace Combat.Core
             for (int i = 0; i < _pendingClips.Count;)
             {
                 var rt = _pendingClips[i];
-                if (rt.Start > _time + .000001) { i++; continue; }
+                if(Math.Min(_time,rt.End)-Math.Max(previous,rt.Start)<=.0000001){i++;continue;}
                 _pendingClips.RemoveAt(i);
                 var handler = ClipHandlerFactory.Create(rt.Clip.Kind); handler.Open(rt);
                 _live.Add(new LiveClip { Handler = handler, Rt = rt });
@@ -232,6 +241,7 @@ namespace Combat.Core
             _live.Clear();
             _pendingClips.Clear(); _pendingPayloads.Clear();
             _playing = false;
+            _finishPending=false;
             _so = null;
             _time = 0f;
             _charging = false; _charge = null; _chargeTime = 0;

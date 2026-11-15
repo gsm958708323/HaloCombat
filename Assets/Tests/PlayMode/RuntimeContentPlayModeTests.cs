@@ -12,11 +12,19 @@ namespace Combat.Tests
 {
     public sealed class RuntimeContentPlayModeTests
     {
+        // Scene load can consume a large render delta before the test resumes. Disable
+        // automatic ticking at sceneLoaded, before Start/Update can play lesson inputs.
+        [UnitySetUp]
+        public IEnumerator SetUp(){SceneManager.sceneLoaded+=StopAutoplay;yield return null;}
+        [UnityTearDown]
+        public IEnumerator TearDown(){SceneManager.sceneLoaded-=StopAutoplay;var runner=Object.FindFirstObjectByType<CombatRunner>();if(runner!=null)Object.Destroy(runner.gameObject);yield return null;}
+        static void StopAutoplay(Scene scene,LoadSceneMode mode)
+        {foreach(var runner in Object.FindObjectsByType<CombatRunner>(FindObjectsSortMode.None))runner.enabled=false;}
         [UnityTest]
         public IEnumerator DiskJsonDrivesRealInputTimelineDamageAndActorViews()
         {
             yield return SceneManager.LoadSceneAsync("Assets/Scenes/HaloCombat/V2Melee.unity",LoadSceneMode.Single);yield return null;
-            var runner=Object.FindFirstObjectByType<CombatRunner>();Assert.IsNotNull(runner);runner.SetLessonAuto(false);
+            var runner=Object.FindFirstObjectByType<CombatRunner>();Assert.IsNotNull(runner);runner.SetLessonAuto(false);runner.enabled=false;runner.BuildWorld();
             Assert.IsNull(runner.LastLoadError);Assert.IsTrue(runner.TryGetPlayer(out var player));
             float startX=player.GetComp<TransformComp>().Position.X;
             float damage=0;runner.World.Events.Subscribe<EvDamage>(e=>damage+=e.Amount);
@@ -29,7 +37,7 @@ namespace Combat.Tests
         public IEnumerator MissingFileCannotReplaceTheWorkingWorldOrItsPendingTimeline()
         {
             yield return SceneManager.LoadSceneAsync("Assets/Scenes/HaloCombat/V2Melee.unity",LoadSceneMode.Single);yield return null;
-            var runner=Object.FindFirstObjectByType<CombatRunner>();runner.SetLessonAuto(false);var original=runner.World;
+            var runner=Object.FindFirstObjectByType<CombatRunner>();runner.SetLessonAuto(false);runner.enabled=false;runner.BuildWorld();var original=runner.World;
             runner.InjectInput(InputToken.Attack);runner.StepLogicForTests(4);
             runner.Configure(CombatRunner.SceneKind.V2,"Combat/missing-runtime-test.json");runner.BuildWorld();
             Assert.AreSame(original,runner.World);StringAssert.Contains("missing-runtime-test",runner.LastLoadError);

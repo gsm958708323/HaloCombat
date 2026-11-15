@@ -117,8 +117,9 @@ namespace Combat.Tests
                 s.Start();s.Advance();s.World.TryGetActor(s.PlayerId,out var actor);var cast=actor.GetComp<SkillCastComp>();actor.GetComp<EnergyComp>().TrySpend(100);
                 Assert.IsTrue(cast.TryCast(SkillNodeId.G1,new SkillAim(EntityId.Invalid,new SimVec3(4,0,0),0)));var director=actor.GetComp<SkillDirectorComp>();
                 var target=s.World.RegistryActive().First(a=>a.Id!=s.PlayerId);s.World.Deliver(new IEffect[]{new DamageEffect{Coeff=0,Flat=0}},actor,target,0,origin:director.CurrentOrigin);
-                actor.GetComp<InputBufferComp>().Push(new InputToken("ConfirmAttack"));s.Advance(7);Assert.AreEqual(SkillNodeId.G1,director.CurrentSkill);Assert.IsFalse(director.HasComboConfirmation);Assert.IsTrue(actor.GetComp<InputBufferComp>().TryPeek(out _));
-                s.Advance(2);Assert.IsTrue(actor.GetComp<InputBufferComp>().TryPeek(out _));Assert.AreEqual(0,actor.GetComp<EnergyComp>().Current,.001f);
+                actor.GetComp<InputBufferComp>().Push(new InputToken("ConfirmAttack"));s.Advance(7);Assert.IsTrue(director.HasComboConfirmation,"The driver precedes the clip opening at the first nonempty cancel interval.");
+                s.Advance();Assert.AreEqual(SkillNodeId.G1,director.CurrentSkill);Assert.IsFalse(director.HasComboConfirmation);Assert.IsTrue(actor.GetComp<InputBufferComp>().TryPeek(out _));
+                s.Advance();Assert.IsTrue(actor.GetComp<InputBufferComp>().TryPeek(out _));Assert.AreEqual(0,actor.GetComp<EnergyComp>().Current,.001f);
             }
         }
         [Test]

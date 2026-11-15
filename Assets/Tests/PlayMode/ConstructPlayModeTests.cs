@@ -62,7 +62,10 @@ namespace Combat.Tests
             arena.Submit(new ArenaInputFrame{Pressed=new[]{"Fire5"},AimValid=true,Aim=new SkillAim(EntityId.Invalid,new SimVec3(4,0,0),0)});arena.StepForTests(5);yield return null;
             var actor=arena.Session.World.RegistryActive().Single(a=>a.TryGetComp<ConstructComp>(out _));var id=actor.Id;var point=actor.GetComp<TransformComp>().Position;
             Assert.AreEqual(.55f,point.X,.0001f);Assert.AreEqual(5,actor.GetComp<AttributeSet>().GetBase(AttrId.Hp));
-            Assert.IsNotNull(arena.GetComponentsInChildren<UnityActorView>().Single(v=>v.Id==id).transform.Find("Visual/DestructibleBody"));
+            var formal=new RuntimeProjectLoader(Path.Combine(Application.streamingAssetsPath,UnityRuntimeContent.DefaultFile));
+            var key=actor.GetComp<ConstructComp>().Def.View;var prefab=Resources.Load<GameObject>(formal.Content.Runtime.Views[key].Resource);
+            var view=arena.GetComponentsInChildren<UnityActorView>().Single(v=>v.Id==id);
+            Assert.IsNotNull(view.transform.Find("Visual/"+prefab.name+"(Clone)"));Assert.IsNotNull(view.GetComponentInChildren<Renderer>());
             arena.Session.World.Deliver(new IEffect[]{new DamageEffect{Flat=9999,Coeff=0}},actor,actor,0);yield return null;
             Assert.IsFalse(arena.Session.World.TryGetActor(id,out _));var cue=arena.transform.Find("ArenaRuntime/Effects/Cue_4206");Assert.IsNotNull(cue);Assert.AreEqual(point.X,cue.position.x,.0001f);
             arena.Restart();yield return null;Assert.AreEqual(0,arena.GetComponentsInChildren<UnityActorView>().Count(v=>v.name.StartsWith("construct_")));LogAssert.NoUnexpectedReceived();

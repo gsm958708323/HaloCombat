@@ -40,7 +40,8 @@ namespace Combat.Tests
                 Assert.IsTrue(_lab.CastSlot("f7",5,0).Accepted);reference.Simulation.Cast("arena-ammo-shot",5,0);_lab.StepLogicForTests(40);reference.Simulation.Advance(40);
                 var area=_lab.Snapshot.Actors.Single(a=>a.Kind=="aoe");Assert.AreEqual(2,area.AbsorbedProjectiles);Assert.AreEqual(.275f,area.Radius,.0001);Assert.AreEqual(.6f,area.AreaVelocityX.Value,.0001);Assert.AreEqual(55,_lab.Snapshot.Ammo);
                 Assert.IsTrue(Newtonsoft.Json.Linq.JToken.DeepEquals(Newtonsoft.Json.Linq.JToken.FromObject(reference.Simulation.Snapshot()),Newtonsoft.Json.Linq.JToken.FromObject(_lab.Snapshot)));
-                yield return null;var visual=_lab.GetComponentsInChildren<Transform>().Single(t=>t.name=="aoe_"+area.Name);Assert.AreEqual(area.Radius*2,visual.localScale.x,.0001);LogAssert.NoUnexpectedReceived();
+                yield return null;var visual=_lab.GetComponentsInChildren<Transform>().Single(t=>t.name=="aoe_"+area.Name);
+                Assert.AreEqual(area.ViewScale,visual.Find("Visual").localScale.x,.0001);Assert.IsNotNull(visual.GetComponentInChildren<Renderer>());LogAssert.NoUnexpectedReceived();
             }
         }
         [UnityTest]
@@ -50,7 +51,8 @@ namespace Combat.Tests
             _arena=Object.FindFirstObjectByType<ArenaBootstrap>();_arena.AutoAdvance=false;_arena.Configure("Combat/"+Path.GetFileName(_directory)+"/project.json",true);Assert.IsTrue(_arena.Reload(),_arena.LastLoadError);
             _arena.Submit(new ArenaInputFrame{Pressed=new[]{"Monkey"},AimValid=true,Aim=new SkillAim(EntityId.Invalid,new SimVec3(4,0,0),0)});_arena.StepForTests(30);
             var area=_arena.Session.World.RegistryActive().Single(a=>a.TryGetComp<AoeComp>(out _));Assert.AreEqual(4102,area.GetComp<AoeComp>().Def.SpecId);Assert.IsTrue(_arena.CastPublished("f7"));_arena.StepForTests(40);yield return null;
-            var body=area.GetComp<AoeComp>();Assert.AreEqual(1,body.AbsorbedProjectiles);var view=_arena.GetComponentsInChildren<UnityActorView>().Single(v=>v.Id==area.Id);Assert.AreEqual(body.Radius*2,view.transform.Find("Visual/AreaField").localScale.x,.0001f);
+            var body=area.GetComp<AoeComp>();Assert.AreEqual(1,body.AbsorbedProjectiles);var view=_arena.GetComponentsInChildren<UnityActorView>().Single(v=>v.Id==area.Id);
+            Assert.AreEqual(body.Radius/body.Def.Radius,view.transform.Find("Visual").localScale.x,.0001f);Assert.IsNotNull(view.GetComponentInChildren<Renderer>());
             _arena.Restart();yield return null;Assert.IsTrue(view==null);Assert.IsFalse(_arena.Session.World.RegistryActive().Any(a=>a.TryGetComp<AoeComp>(out _)));Assert.AreEqual(1,_arena.GetComponentsInChildren<UnityActorView>().Length);LogAssert.NoUnexpectedReceived();
         }
         [UnityTest]

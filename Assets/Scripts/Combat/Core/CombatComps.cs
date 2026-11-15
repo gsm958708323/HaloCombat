@@ -240,6 +240,12 @@ namespace Combat.Core
             FinishIfStopped();
         }
 
+        public void FlushTimeline()
+        {
+            if(!IsPlaying||Self.World.IsActorStopped(Self))return;
+            _player.FlushPendingCloses();FinishIfStopped();
+        }
+
         public void ReleaseCharge()
         {
             if (!_player.IsCharging) return;

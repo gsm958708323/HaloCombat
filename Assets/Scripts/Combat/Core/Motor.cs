@@ -19,6 +19,7 @@ namespace Combat.Core
 
         SimVec3 _moveIntent;
         SimVec3 _skillDelta;
+        string _skillCollisionKind;
         SimVec3 _hitDelta;
         SimVec3? _teleport;
         float _pendingYaw;
@@ -39,6 +40,8 @@ namespace Combat.Core
         public float ClipSteer => _clipSteer;
         public SimVec3 MoveIntent => _moveIntent;
         public float CollisionRadius { get; set; } = .4f;
+        internal SimVec3 MovementFrom {get;private set;}
+        internal ObstacleHit MovementContact {get;private set;}
 
         protected override void OnAttach()
         {
@@ -63,15 +66,17 @@ namespace Combat.Core
             _tags = null;
             _attr = null;
             ClearFrameRequests();
+            _teleport=null;_hasSnapYaw=false;_moveIntent=SimVec3.Zero;_verticalVel=0;
         }
 
         public void RequestMoveIntent(float x, float z) => _moveIntent = new SimVec3(x, 0f, z);
 
-        public void RequestSkillDelta(float x, float y, float z)
+        public void RequestSkillDelta(float x, float y, float z,string collisionKind=null)
         {
             _skillDelta.X += x;
             _skillDelta.Y += y;
             _skillDelta.Z += z;
+            if(collisionKind!=null)_skillCollisionKind=collisionKind;
         }
 
         public void RequestHitDelta(float x, float y, float z)
@@ -123,10 +128,13 @@ namespace Combat.Core
 
         public void SetClipSteer(float steer) => _clipSteer = steer < 0f ? 0f : steer;
         public void ClearClipSteer() => _clipSteer = 0f;
-        public void ClearPendingSkill() { _skillDelta = SimVec3.Zero; _teleport = null; }
+        public void ClearPendingSkill() { _skillDelta=SimVec3.Zero;_skillCollisionKind=null;_teleport=null; }
 
-        public void Integrate(float dt)
+        // Only voluntary movement belongs before queries. Hit effects and gravity are
+        // resolved after every attack has observed the same post-movement positions.
+        public void IntegrateBeforeHitDetection(float dt)
         {
+            if(Self.World.IsActorStopped(Self))return;
             if (_tf == null || _fsm == null)
             {
                 ClearFrameRequests();
@@ -138,6 +146,7 @@ namespace Combat.Core
                 _tf.Position = _teleport.Value;
                 _teleport = null;
             }
+            MovementFrom=_tf.Position;
 
             var policy = _fsm.Motor;
             var loco = policy.Loco;
@@ -164,28 +173,29 @@ namespace Combat.Core
                 delta.Z += _skillDelta.Z;
             }
 
-            if (loco.UseHit&&!_tags.Has(CommonTags.BlockHitMotion))
-            {
-                delta.X += _hitDelta.X;
-                delta.Y += _hitDelta.Y;
-                delta.Z += _hitDelta.Z;
-            }
-
-            if (loco.ApplyGravity&&!_tags.Has(CommonTags.BlockGravity))
-                delta.Y += IntegrateGravity(dt);
-            else if (_grounded)
-                _verticalVel = 0f;
-
             ApplyFacing(policy.Facing);
+            MovementContact=Move(delta,_skillCollisionKind??"movement");
+            _skillDelta=SimVec3.Zero;_skillCollisionKind=null;_hasAimYaw=false;
+        }
 
-            if (delta.X != 0f || delta.Y != 0f || delta.Z != 0f)
-            {
-                var destination=_tf.Position+delta;
-                _tf.Position=Self.World.Collision.Constrain(_tf.Position,destination,CollisionRadius,out var obstacle);
-                if(obstacle.Blocked)Self.World.Events.Publish(new EvObstacleHit(Self.Id,Self.Id,obstacle.Id,obstacle.Point,obstacle.Normal,"movement"));
-            }
+        public void IntegrateAfterHitDetection(float dt)
+        {
+            if(Self.World.IsActorStopped(Self))return;
+            if(_tf==null||_fsm==null){_hitDelta=SimVec3.Zero;return;}
+            var loco=_fsm.Motor.Loco;
+            var delta=loco.UseHit&&!_tags.Has(CommonTags.BlockHitMotion)?_hitDelta:SimVec3.Zero;
+            if(loco.ApplyGravity&&!_tags.Has(CommonTags.BlockGravity))delta.Y+=IntegrateGravity(dt);
+            else if(_grounded)_verticalVel=0;
+            Move(delta);_hitDelta=SimVec3.Zero;
+        }
 
-            ClearFrameRequests();
+        ObstacleHit Move(SimVec3 delta,string kind="movement")
+        {
+            if(delta.X==0&&delta.Y==0&&delta.Z==0)return default;
+            var destination=_tf.Position+delta;
+            _tf.Position=Self.World.Collision.Constrain(_tf.Position,destination,CollisionRadius,out var obstacle);
+            if(obstacle.Blocked)Self.World.Events.Publish(new EvObstacleHit(Self.Id,Self.Id,obstacle.Id,obstacle.Point,obstacle.Normal,kind));
+            return obstacle;
         }
 
         float MotorScale(in LocoProfile loco)
@@ -239,7 +249,7 @@ namespace Combat.Core
             if(_tags.Has(CommonTags.BlockRotate))return;
             if(_hasAimYaw)
             {
-                if(_grounded&&(facing.Mode==FacingMode.FollowStickIfGrounded||facing.Mode==FacingMode.SteerIfGrounded&&_clipSteer>0))_tf.YawDegrees=_aimYaw;
+                if(_grounded&&facing.Mode!=FacingMode.Lock)_tf.YawDegrees=_aimYaw;
                 return;
             }
             bool stick = StickMag(_moveIntent) >= _stickDeadzone;
@@ -281,6 +291,7 @@ namespace Combat.Core
         {
             _hasAimYaw=false;
             _skillDelta = SimVec3.Zero;
+            _skillCollisionKind=null;
             _hitDelta = SimVec3.Zero;
         }
 

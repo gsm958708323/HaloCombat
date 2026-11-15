@@ -67,7 +67,7 @@ InputBuffer 单槽 0.2s
 ## 唯一结算
 
 IEffect.Apply(ref EffectContext) + World.Deliver
-位姿：Request* → Locomotion.Integrate
+位姿：Request* → Locomotion.IntegrateBeforeHitDetection（自主/技能位移）→ 命中结算 → IntegrateAfterHitDetection（受击位移/重力）。Timeline到期判定和控制在接触结算后收尾，最后有效步不会漏判。
 血量：AttributeSet.SetBase(Hp)
 
 ## Unity

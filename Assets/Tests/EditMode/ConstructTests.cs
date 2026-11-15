@@ -38,7 +38,9 @@ namespace Combat.Tests
             try
             {
                 var player=Spawn(world,"arena-player");bool configured=false;
-                world.Events.Subscribe<EvEntitySpawn>(e=>{if(e.BlueprintId!="construct")return;world.TryGetActor(e.Id,out var a);configured=Hp(a)==5&&e.Owner==player.Id&&e.ViewKey=="barrel"&&Math.Abs(a.GetComp<TransformComp>().Position.X-.55f)<.0001f;});
+                var node=loaded.Project.Skills.Single(s=>s.Id=="arena-barrel").Nodes.Single(n=>n.Kind=="construct");
+                string view=node.Parameters.Value<string>("view");Assert.AreEqual("buff_barrel_view",view);
+                world.Events.Subscribe<EvEntitySpawn>(e=>{if(e.BlueprintId!="construct")return;world.TryGetActor(e.Id,out var a);configured=Hp(a)==5&&e.Owner==player.Id&&e.ViewKey==view&&Math.Abs(a.GetComp<TransformComp>().Position.X-.55f)<.0001f;});
                 Assert.IsTrue(player.GetComp<SkillCastComp>().TryCast(new SkillNodeId(2008),new SkillAim(EntityId.Invalid,new SimVec3(4,0,0),0)));
                 for(int i=0;i<5;i++)world.Tick(.02f);Assert.IsTrue(configured);
             }

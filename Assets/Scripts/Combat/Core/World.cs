@@ -221,10 +221,16 @@ namespace Combat.Core
             for (int i = 0; i < actors.Count; i++)
                 actors[i].TickAll(_time.Delta);
 
+            actors=_registry.CopyActiveActors();
+            foreach(var actor in actors)
+                if(!IsActorStopped(actor)&&actor.TryGetComp<LocomotionComp>(out var motion))
+                    motion.IntegrateBeforeHitDetection(_time.Delta);
+
             for (int i = 0; i < _servicePhase.Count; i++)
                 _servicePhase[i]();
 
             _projectilesSvc.Tick(_time.Delta);
+            _intents.Drain<SpatialHitIntent>(intent=>intent.Resolve());
             _hitDetect.Tick();
 
             _intents.Drain<ApplyEffectsIntent>(intent =>
@@ -237,6 +243,10 @@ namespace Combat.Core
             });
 
             _projectilesSvc.FinishTerminations();
+
+            actors=_registry.CopyActiveActors();
+            foreach(var actor in actors)
+                if(!IsActorStopped(actor)&&actor.TryGetComp<SkillDirectorComp>(out var director))director.FlushTimeline();
             _aoe.Tick(_time.Delta);
 
             actors = _registry.CopyActiveActors();
@@ -250,7 +260,7 @@ namespace Combat.Core
             for (int i = 0; i < actors.Count; i++)
             {
                 if (!IsActorStopped(actors[i])&&actors[i].TryGetComp<LocomotionComp>(out var loco))
-                    loco.Integrate(_time.Delta);
+                    loco.IntegrateAfterHitDetection(_time.Delta);
             }
 
             _registry.FlushDespawn();

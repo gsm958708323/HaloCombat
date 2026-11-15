@@ -37,8 +37,9 @@ namespace Combat.Tests
             using(var f=new F())
             {
                 Assert.IsTrue(f.Cast(2002));f.Tick(4);Assert.IsFalse(f.Player.GetComp<TagComp>().Has(CommonTags.Invincible));Assert.AreEqual(0,f.Player.GetComp<TransformComp>().Position.X,.00001);
-                f.Tick();Assert.IsTrue(f.Player.GetComp<TagComp>().Has(CommonTags.Invincible));Assert.AreEqual(.5f,f.Player.GetComp<AttributeSet>().GetFinal(AttrId.DmgTakenMul));
-                f.Tick(5);Assert.AreEqual(0,f.Player.GetComp<TransformComp>().Position.X,.00001);f.Tick(30);Assert.AreEqual(2,f.Player.GetComp<TransformComp>().Position.X,.0001);
+                f.Tick();Assert.IsFalse(f.Player.GetComp<TagComp>().Has(CommonTags.Invincible),"Reaching .1s is not a nonempty interval yet.");Assert.AreEqual(.5f,f.Player.GetComp<AttributeSet>().GetFinal(AttrId.DmgTakenMul));
+                f.Tick();Assert.IsTrue(f.Player.GetComp<TagComp>().Has(CommonTags.Invincible));
+                f.Tick(4);Assert.AreEqual(0,f.Player.GetComp<TransformComp>().Position.X,.00001);f.Tick(30);Assert.AreEqual(2,f.Player.GetComp<TransformComp>().Position.X,.0001);
                 Assert.IsFalse(f.Player.GetComp<TagComp>().Has(CommonTags.Invincible));Assert.AreEqual(1,f.Player.GetComp<AttributeSet>().GetFinal(AttrId.DmgTakenMul));
                 f.Tick(5);Assert.IsFalse(f.Player.GetComp<SkillDirectorComp>().IsPlaying);Assert.IsFalse(f.Player.GetComp<TagComp>().Has(CommonTags.BlockMove));
                 CollectionAssert.AreEquivalent(new[]{"roll_fire","buff_5104"},f.Cues.Where(c=>c.Playback==CuePlayback.Start).Select(c=>c.InstanceKey));
