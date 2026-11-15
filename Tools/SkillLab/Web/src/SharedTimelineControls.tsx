@@ -4,7 +4,7 @@ import './shared-timelines.css';
 
 export function SharedTimelineControls({project,skill,update,open,report}:{project:Project;skill:Skill;update:(f:(p:Project)=>Project)=>void;open:(id:string)=>void;report:(s:string)=>void}) {
   if(skill.nodes.some(n=>n.kind==='cast'&&n.parameters.execution==='operation'))return <p>即时投递效果，不创建动作或时间轴；改变执行方式后可配置动作。</p>;
-  return <details className="timeline-properties shared-timeline-binding" open><summary>动作复用</summary>
+  return <details className="timeline-properties shared-timeline-binding"><summary>动作复用</summary>
     <label>共享时间轴<select aria-label="技能共享时间轴" value={skill.timelineRef??''} onChange={e=>update(p=>bindTimeline(p,skill.id,e.target.value))}>
       <option value="">{skill.timeline?'本技能内联时间轴':'本技能自动时序'}</option>{project.timelines?.map(t=><option key={t.id} value={t.id}>{t.name} · {t.id}</option>)}
     </select></label>

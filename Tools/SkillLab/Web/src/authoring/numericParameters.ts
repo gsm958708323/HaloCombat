@@ -23,5 +23,5 @@ export function steppedValue(value:number,field:Field,direction:1|-1):number {
   return Number((value+direction*(field.step??1)).toPrecision(12));
 }
 export function formatFieldValue(field:Field,value:ParameterValue):string {
-  return field.options?.find(([key])=>key===value)?.[1]??(typeof value==='number'?String(displayNumber(value,field)):Array.isArray(value)?value.join(', '):String(value));
+  return field.options?.find(([key])=>key===value)?.[1]??(typeof value==='number'?String(displayNumber(value,field)):typeof value==='boolean'?value?'开启':'关闭':Array.isArray(value)?value.join(', '):String(value));
 }

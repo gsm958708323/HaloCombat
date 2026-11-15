@@ -45,7 +45,7 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
     {key:'spread',label:'散射角度',unit:'°',min:0,max:360,step:1,initial:0}]},
   target: { title: '目标选择', color: '#526c7b', inputs: [], outputs: [['target', '目标 / 方向']], fields: [
     { key: 'mode', label: '目标选择', type: 'select', initial: 'point', options: [['point','指定位置'],['entity','指定目标'],['nearest','最近目标'],['random','随机目标'],['direction','随机方向'],['self','施法者自身'],['facing','当前朝向']] },
-    { key: 'range', label: '索敌距离', unit: '米', min: .1, max: 50, step: .1, initial: 20 }
+    { key: 'range', label: '索敌距离', unit: '米', min: .1, max: 50, step: .1, initial: 20,when:p=>['entity','nearest','random','direction'].includes(String(p.mode)) }
   ] },
   cast: { title: '施放规则', color: '#5b7164', inputs: ['target'], outputs: [['cast','施放']], fields: [
     {key:'execution',label:'执行方式',type:'select',initial:'timeline',options:[['timeline','时间轴动作'],['operation','即时操作']]},
@@ -59,10 +59,11 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
     {key:'requiredProjectile',label:'必需弹体追踪键',type:'text',initial:''},
     { key: 'cooldown', label: '冷却', unit: '秒', min: 0, max: 10, step: .05, initial: .7 },
     { key: 'delay', label: '延迟生效', unit: '秒', min: 0, max: 3, step: .02, initial: .1 },
+    {key:'burst',label:'有限连发',type:'check',initial:false,when:p=>(p.mode??'instant')==='instant'},
     { key: 'duration', label: '动作总长', unit: '秒', min: .02, max: 5, step: .02, initial: .3, when: p => p.mode !== 'channel' },
-    { key: 'count',integer:true, label: '连发次数', min: 1, max: 1000, step: 1, initial: 1, when: p => p.mode !== 'channel' && p.mode !== 'charge' },
-    { key: 'interval', label: '生效间隔', unit: '秒', min: .001, max: 1, step: .001, initial: .1, when: p => p.mode !== 'charge' },
-    { key: 'costPerPulse', label: '逐段支付资源', type: 'check', initial: false, when: p => p.mode !== 'channel' && p.mode !== 'charge' },
+    { key: 'count',integer:true, label: '连发次数', min: 1, max: 1000, step: 1, initial: 3, when:p=>(p.mode??'instant')==='instant'&&burstEnabled(p) },
+    { key: 'interval', label: '生效间隔', unit: '秒', min: .001, max: 1, step: .001, initial: .1, when:p=>p.mode==='channel'||(p.mode??'instant')==='instant'&&burstEnabled(p) },
+    { key: 'costPerPulse', label: '逐段支付资源', type: 'check', initial: false, when:p=>(p.mode??'instant')==='instant'&&burstEnabled(p) },
     { key: 'energyPerSecond', label: '持续耗能', unit: '/秒', min: 0, max: 100, step: 1, initial: 12, when: p => p.mode === 'channel' || p.mode === 'charge' },
     { key: 'sustained', label: '持续引导', type: 'check', initial: true, when: p => p.mode === 'channel' },
     { key: 'channelDuration', label: '引导时长', unit: '秒', min: .02, max: 120, step: .02, initial: 3, when: p => p.mode === 'channel' && p.sustained === false },
@@ -254,10 +255,11 @@ export function nodeOutputs(node: GraphNode): [string,string][] {
   const allowed=node.parameters.mode==='summon'?['apply','expire','removed']:node.parameters.mode==='ray'?['apply','wall','complete']:node.parameters.mode==='area'&&node.parameters.persistent===true?['apply','enter','exit','stay','expire',...(node.parameters.absorbProjectiles===true?['absorb']:[])]:['apply'];
   return ports.filter(([port])=>allowed.includes(port));
 }
-export const deliveryLabel = (node: GraphNode) => node.kind==='area-ref'?'持续区域':node.kind==='projectile'||node.kind==='projectile-ref'?'投射物':node.kind==='construct'?'可破坏物':node.parameters.mode==='summon'?'召唤分身':node.parameters.mode==='area'?(node.parameters.persistent?'持续区域':'瞬时区域'):node.parameters.mode==='ray'?'射线判定':node.parameters.mode==='melee'?'近战判定':node.parameters.mode==='displacement'?(node.parameters.movementMode==='blink'?'闪现打击':'冲刺打击'):'目标作用';
+export const deliveryLabel = (node: GraphNode) => node.kind==='teleport-projectile'?'传送到追踪弹':node.kind==='area-ref'?'持续区域':node.kind==='projectile'||node.kind==='projectile-ref'?'投射物':node.kind==='construct'?'可破坏物':node.parameters.mode==='summon'?'召唤分身':node.parameters.mode==='area'?(node.parameters.persistent?'持续区域':'瞬时区域'):node.parameters.mode==='ray'?'射线判定':node.parameters.mode==='melee'?'近战判定':node.parameters.mode==='displacement'?(node.parameters.movementMode==='blink'?'闪现打击':'冲刺打击'):'目标作用';
 export const portName = (port: string) => port === 'target' ? '目标数据' : '执行';
 export const effectKinds:[string,string][]=[['damage','伤害结算'],['impact','受击与状态'],['heal','治疗'],['buff','施加 Buff'],['dispel','驱散 Buff'],['cue','表现事件'],['split','命中分裂'],['after-damage','扣血后条件'],['refill-ammo','补充弹药'],['teleport-projectile','传送到追踪弹'],['construct-chain','范围引爆物体'],['hurt-feedback','受伤反馈']];
-export const parameterValue = (field: Field, parameters: Parameters) => parameters[field.key] ?? (field.key === 'energyPerSecond' && parameters.mode === 'charge' ? 0 : field.initial);
+export const burstEnabled=(p:Parameters)=>typeof p.burst==='boolean'?p.burst:Number(p.count??1)>1;
+export const parameterValue = (field: Field, parameters: Parameters) => parameters[field.key] ?? (field.key==='burst'?burstEnabled(parameters):(field.key === 'energyPerSecond' && parameters.mode === 'charge' ? 0 : field.initial));
 export const castRoutingFields=['ammoCost','fallbackSkill','recastProjectile','recastSkill','requiredProjectile'];
 export function nodeFields(node:GraphNode,options:{definitionRoot?:boolean;authoredTimeline?:boolean}={}):Field[] {
   const definitionFields=node.kind==='delivery'?['mode','persistent','center','forwardOffset']:['multi','count','spread'];

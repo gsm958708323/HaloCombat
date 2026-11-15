@@ -18,7 +18,7 @@ namespace Combat.Core
         SkillAim _aim;
         Func<float, float> _advanceBudget;
         Func<int, bool> _payPulse;
-        Func<SkillAim?> _aimResolver;
+        Func<bool,SkillAim?> _aimResolver;
         int _emitted;
         ChargeDefinition _charge;
         double _chargeTime;
@@ -39,7 +39,7 @@ namespace Combat.Core
         public event Action<float> Released;
 
         public void Play(TimelineDefinition so, SkillAim aim = default, Func<float, float> advanceBudget = null,
-            Func<int, bool> payPulse = null, Func<SkillAim?> aimResolver = null, ChargeDefinition charge = null,float power=1,SkillOrigin origin=default)
+            Func<int, bool> payPulse = null, Func<bool,SkillAim?> aimResolver = null, ChargeDefinition charge = null,float power=1,SkillOrigin origin=default)
         {
             StopInternal(true);
             _so = so ?? throw new ArgumentNullException(nameof(so));
@@ -66,7 +66,7 @@ namespace Combat.Core
             { EndReason = DirectorStopReason.EarlyRelease; StopInternal(true); return false; }
             if (_aimResolver != null)
             {
-                var aim = _aimResolver();
+                var aim = _aimResolver(true);
                 if (!aim.HasValue) { EndReason = DirectorStopReason.TargetLost; StopInternal(true); return false; }
                 _aim = aim.Value; _aimResolver = null;
             }
@@ -194,14 +194,17 @@ namespace Combat.Core
                     Deliver(self, pending.Effects, pending.Aim, pending.Power,_origin); continue;
                 }
                 if (index < 0) return;
-                if (_aimResolver != null)
-                {
-                    var aim = _aimResolver();
-                    if (!aim.HasValue) { EndReason = DirectorStopReason.TargetLost; StopInternal(true); return; }
-                    _aim = aim.Value;
-                }
+                // Validate without consuming random state. An unpaid pulse never draws a target.
+                if (_aimResolver != null&&!_aimResolver(false).HasValue)
+                {EndReason=DirectorStopReason.TargetLost;StopInternal(true);return;}
                 if (_payPulse != null && !_payPulse(_emitted))
                 { EndReason = DirectorStopReason.EnergyDepleted; StopInternal(true); return; }
+                if(_aimResolver!=null)
+                {
+                    var aim=_aimResolver(true);
+                    if(!aim.HasValue){EndReason=DirectorStopReason.TargetLost;StopInternal(true);return;}
+                    _aim=aim.Value;
+                }
                 _emitted++; _payloadCounts[index]++;
                 QueueActions(self, index, first);
                 Deliver(self, payloads[index].Effects, _aim, Power,_origin);

@@ -1,6 +1,6 @@
-import {kinds} from '../model';
 import type {Project} from '../model';
 import {allGraphs,updateGraph} from './contentEdits';
+import {nodeFieldGroups,nodePortGroups} from './nodePresentation';
 
 // Runtime files intentionally omit layout. Give their imported graph a readable view
 // without changing the identities, edge order or any gameplay parameter.
@@ -14,9 +14,10 @@ export function prepareImportedLayout(project:Project):Project {
       const value=Math.max(0,...graph.edges.filter(e=>e.target===id).map(e=>depth(e.source,next)+1));levels.set(id,value);return value;
     }
     result=updateGraph(result,{kind,id:graph.id},g=>({...g,nodes:g.nodes.map(n=>{
-      const schema=kinds[n.kind],level=depth(n.id),y=rows.get(level)??60;
-      const fields=schema?.fields.filter(f=>!f.when||f.when(n.parameters)).length??1;
-      rows.set(level,y+Math.max(260,fields*48+(schema?.outputs.length??0)*28+180));return {...n,position:{x:level*320,y}};
+      const level=depth(n.id),y=rows.get(level)??60;
+      const groups=nodeFieldGroups(n,{definitionRoot:n.id===g.root,authoredTimeline:!!(g.timeline||g.timelineRef)}),ports=nodePortGroups(n);
+      const fields=groups.main.length+Number(groups.advanced.length>0)+Number(groups.behaviors.length>0);
+      rows.set(level,y+Math.max(260,fields*38+ports.main.length*28+150));return {...n,position:{x:level*320,y}};
     })}));
   }
   return result;

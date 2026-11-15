@@ -192,7 +192,7 @@ namespace Combat.Core
         }
 
         public bool Play(SkillNodeId skill, TimelineId timelineId, SkillAim aim = default,
-            Func<float, float> advanceBudget = null, Func<int, bool> payPulse = null, Func<SkillAim?> aimResolver = null,
+            Func<float, float> advanceBudget = null, Func<int, bool> payPulse = null, Func<bool,SkillAim?> aimResolver = null,
             ChargeDefinition charge = null,float power=1)
         {
             if(!CanStartSkill)return false;

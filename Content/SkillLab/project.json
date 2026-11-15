@@ -4856,6 +4856,102 @@
           "order": 0
         }
       ]
+    },
+    {
+      "id": "death-shot",
+      "runtimeId": 3046,
+      "name": "死亡射击 · 二十发",
+      "category": "视频示例",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "direction",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "burst": true,
+            "count": 20,
+            "interval": 0.04,
+            "delay": 0,
+            "duration": 0.8,
+            "cost": 10,
+            "cooldown": 1
+          }
+        },
+        {
+          "id": "projectile",
+          "kind": "projectile",
+          "runtimeId": 6506,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "speed": 12,
+            "range": 24,
+            "radius": 0.18,
+            "maxHits": 1,
+            "homingRate": 0
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 80,
+            "coefficient": 0,
+            "critChance": 0.15,
+            "critMultiplier": 1.8,
+            "ignoreDefense": false,
+            "hitstopFrames": 0
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "projectile",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "projectile",
+          "sourcePort": "hit",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
     }
   ],
   "preview": {

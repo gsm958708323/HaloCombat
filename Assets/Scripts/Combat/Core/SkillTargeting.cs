@@ -7,7 +7,7 @@ namespace Combat.Core
 
     public static class SkillTargeting
     {
-        public static bool TryResolve(Actor caster, SkillDefinition definition, in SkillAim input, out SkillAim aim)
+        public static bool TryResolve(Actor caster, SkillDefinition definition, in SkillAim input, out SkillAim aim,bool sampleRandom=true)
         {
             aim = input;
             var origin = caster.GetComp<TransformComp>().Position;
@@ -18,7 +18,7 @@ namespace Combat.Core
             {aim=new SkillAim(EntityId.Invalid,origin,input.Yaw,false);return true;}
             if (definition.TargetMode == SkillTargetMode.Direction)
             {
-                float yaw = caster.World.Random.Next01() * 360;
+                float yaw = sampleRandom?caster.World.Random.Next01()*360:input.Yaw;
                 var f = LocomotionComp.ForwardFromYaw(yaw);
                 aim = new SkillAim(EntityId.Invalid, new SimVec3(origin.X+f.X*definition.TargetRange,origin.Y,origin.Z+f.Z*definition.TargetRange),yaw);
                 return true;
@@ -39,7 +39,7 @@ namespace Combat.Core
                 if (selected == null) return false;
             }
             else if (definition.TargetMode == SkillTargetMode.Random)
-                selected = candidates[Math.Min(candidates.Count-1,(int)(caster.World.Random.Next01()*candidates.Count))];
+                selected = candidates[sampleRandom?Math.Min(candidates.Count-1,(int)(caster.World.Random.Next01()*candidates.Count)):0];
             else
             {
                 var reference = definition.TargetMode == SkillTargetMode.Entity && input.HasPoint ? input.Point : origin;

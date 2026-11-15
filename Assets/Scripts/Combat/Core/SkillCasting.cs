@@ -124,7 +124,9 @@ namespace Combat.Core
                 return Reject("Insufficient energy.");
             if(definition.AmmoCost>0&&(_ammo==null||!_ammo.CanSpend(definition.AmmoCost)))return Reject("Insufficient ammunition.");
             if(!string.IsNullOrEmpty(definition.RequiredProjectile)&&(!Self.TryGetComp<TrackedProjectilesComp>(out var tracked)||!tracked.TryFind(definition.RequiredProjectile,out _)))return Reject("Required projectile is unavailable.");
-            if (!SkillTargeting.TryResolve(Self, definition, aim, out var resolved)) return Reject("No valid target.");
+            bool refreshOnTrigger=definition.OperationEffects==null&&(definition.Mode!=SkillCastMode.Instant||
+                definition.TargetMode==SkillTargetMode.Random||definition.TargetMode==SkillTargetMode.Direction);
+            if (!SkillTargeting.TryResolve(Self, definition, aim, out var resolved,!refreshOnTrigger)) return Reject("No valid target.");
             if (definition.AimRange > 0)
             {
                 var origin = Self.GetComp<TransformComp>().Position;
@@ -146,7 +148,7 @@ namespace Combat.Core
                 Self.World.Events.Publish(new EvSkillOperation(Self.Id,id));return true;
             }
             if (!_director.Play(id, definition.Timeline, resolved, AdvanceBudget, PayPulse,
-                definition.Mode != SkillCastMode.Instant ? ResolveAim : (Func<SkillAim?>)null, definition.Charge,_basePower))
+                refreshOnTrigger ? ResolveAim : (Func<bool,SkillAim?>)null, definition.Charge,_basePower))
                 return Reject("Activity rejected casting.");
             _active = definition; _inputAim = aim;
             if (definition.EnergyCost > 0f) _energy.TrySpend(definition.EnergyCost);
@@ -175,7 +177,7 @@ namespace Combat.Core
             if(_active.EnergyCost>0&&(_energy==null||!_energy.CanSpend(_active.EnergyCost))||_active.AmmoCost>0&&(_ammo==null||!_ammo.CanSpend(_active.AmmoCost)))return false;
             if(_active.EnergyCost>0)_energy.TrySpend(_active.EnergyCost);if(_active.AmmoCost>0)_ammo.TrySpend(_active.AmmoCost);return true;
         }
-        SkillAim? ResolveAim() => SkillTargeting.TryResolve(Self, _active, _inputAim, out var aim) ? aim : (SkillAim?)null;
+        SkillAim? ResolveAim(bool sample) => SkillTargeting.TryResolve(Self, _active, _inputAim, out var aim,sample) ? aim : (SkillAim?)null;
         bool Reject(string reason) { LastRejection = reason; return false; }
         static bool Finite(float value)=>!float.IsNaN(value)&&!float.IsInfinity(value);
         public override void Tick(float dt) => _time += dt;

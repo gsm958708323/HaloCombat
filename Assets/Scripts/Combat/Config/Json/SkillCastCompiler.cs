@@ -9,7 +9,7 @@ namespace Combat.Config
         public static SkillDefinition Compile(SkillGraphDocument skill, SkillNodeDocument node, string path, IEffect[] effects, TimelineLibrary timelines,
             TimelineClip[] actionClips,TimelinePayload[] followups,TimelineDefinition authored,Dictionary<string,SkillNodeId> skills,ContentDependencies dependencies)
         {
-            var c = new NodeParameters(node, path, "mode", "cost", "cooldown", "delay", "duration", "count", "interval", "sustained", "channelDuration",
+            var c = new NodeParameters(node, path, "mode", "cost", "cooldown", "delay", "duration", "burst", "count", "interval", "sustained", "channelDuration",
                 "energyPerSecond", "costPerPulse", "chargeMin", "chargeMax", "powerMin", "powerMax", "autoRelease",
                 "ammoCost","fallbackSkill","recastSkill","recastProjectile","requiredProjectile","hitFeedback","execution");
             string mode = c.Choice("mode", "instant", "instant", "channel", "charge");
@@ -37,7 +37,8 @@ namespace Combat.Config
             }
             float delay = c.Number("delay", 0, 0, 60);
             float interval = c.Number("interval", .1f, .001f, 60);
-            int count = mode == "instant" ? c.Integer("count", 1, 1, 1000) : 1;
+            bool burst=c.Boolean("burst",c.Integer("count",1,1,1000)>1);
+            int count = mode == "instant"&&burst ? c.Integer("count",3,1,1000) : 1;
             if (delay + (count - 1) * interval > 120) Fail(path, "Cast schedule exceeds 120 seconds.");
             var payloads = new List<TimelinePayload>();
             for (int i = 0; i < count; i++) payloads.Add(new TimelinePayload

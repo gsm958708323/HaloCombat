@@ -288,7 +288,7 @@ test('real transformed project is exported for the C# compiler and HTTP validati
   let p=example();p=edits.renameContent(p,'skill','basic-shot','authoring-basic');p=edits.renameContent(p,'buff','burn','authoring-burn');p=edits.renameContent(p,'blueprint','echo-gunner','authoring-summon');
   const duplicate=edits.duplicateContent(p,'skill','authoring-basic','作者复制验证',ids());p=edits.selectGraph(duplicate.project,duplicate.id);
   const output=path.resolve(__dirname,'../../.local/verification');fs.mkdirSync(output,{recursive:true});fs.writeFileSync(path.join(output,'authoring-transformed.json'),JSON.stringify(p,null,2));
-  assert.equal(p.skills.length,49);
+  assert.equal(p.skills.length,example().skills.length+1);assert(p.skills.some(s=>s.id==='death-shot'));
 });
 
 
