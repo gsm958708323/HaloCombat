@@ -153,6 +153,14 @@ namespace Combat.Config
         public string Skill {get;internal set;}
         public int HitIndex {get;internal set;}
         public SkillDamageSnapshot Damage {get;internal set;}
+        public SkillFlightSnapshot Flight {get;internal set;}
+    }
+    public sealed class SkillFlightSnapshot
+    {
+        public string Clock {get;internal set;}
+        public long Index {get;internal set;}
+        public double Age {get;internal set;}
+        public double Distance {get;internal set;}
     }
     public sealed class SkillDamageSnapshot
     {

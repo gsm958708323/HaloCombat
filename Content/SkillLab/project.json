@@ -4952,6 +4952,477 @@
           "order": 0
         }
       ]
+    },
+    {
+      "id": "behavior-pierce",
+      "runtimeId": 3050,
+      "name": "独立行为 · 贯穿射击",
+      "category": "枪专精",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "projectile",
+          "kind": "projectile",
+          "runtimeId": 6510,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "speed": 10,
+            "range": 24,
+            "radius": 0.18,
+            "homingRate": 0
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 80,
+            "coefficient": 0,
+            "critChance": 0.15,
+            "critMultiplier": 1.8,
+            "ignoreDefense": false,
+            "hitstopFrames": 0
+          }
+        },
+        {
+          "id": "behavior",
+          "kind": "projectile-behavior",
+          "position": {
+            "x": 300,
+            "y": 550
+          },
+          "parameters": {
+            "mode": "pierce",
+            "maxHits": 3,
+            "unlimited": false
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "projectile",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "projectile",
+          "sourcePort": "hit",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "behavior-input",
+          "source": "behavior",
+          "sourcePort": "behavior",
+          "target": "projectile",
+          "targetPort": "behavior",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "behavior-chain",
+      "runtimeId": 3051,
+      "name": "独立行为 · 连锁射击",
+      "category": "枪专精",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "projectile",
+          "kind": "projectile",
+          "runtimeId": 6511,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "speed": 10,
+            "range": 24,
+            "radius": 0.18,
+            "homingRate": 0
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 810,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 80,
+            "coefficient": 0,
+            "critChance": 0.15,
+            "critMultiplier": 1.8,
+            "ignoreDefense": false,
+            "hitstopFrames": 0
+          }
+        },
+        {
+          "id": "behavior",
+          "kind": "projectile-behavior",
+          "position": {
+            "x": 300,
+            "y": 550
+          },
+          "parameters": {
+            "mode": "chain",
+            "chainCount": 2,
+            "chainRadius": 6,
+            "chainMode": "nearest"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "projectile",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "projectile",
+          "sourcePort": "hit",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "behavior-input",
+          "source": "behavior",
+          "sourcePort": "behavior",
+          "target": "projectile",
+          "targetPort": "behavior",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "flight-time",
+      "runtimeId": 3052,
+      "name": "飞行触发 · 时间脉冲",
+      "category": "枪专精",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "projectile",
+          "kind": "projectile",
+          "runtimeId": 6512,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "speed": 5,
+            "range": 15,
+            "lifetime": 5,
+            "radius": 0.1,
+            "spawnForward": 0,
+            "contactMode": "ignore",
+            "sameTargetMode": "once",
+            "flightTrigger": "time",
+            "flightInterval": 0.2,
+            "flightDistance": 2
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 1130,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 25,
+            "coefficient": 0,
+            "canCrit": false
+          }
+        },
+        {
+          "id": "flight-area",
+          "kind": "delivery",
+          "position": {
+            "x": 850,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "area",
+            "center": "point",
+            "radius": 1.25,
+            "maxTargets": 0,
+            "persistent": false
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "projectile",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "flight-area",
+          "source": "projectile",
+          "sourcePort": "flight",
+          "target": "flight-area",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "area-damage",
+          "source": "flight-area",
+          "sourcePort": "apply",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "flight-distance",
+      "runtimeId": 3053,
+      "name": "飞行触发 · 距离脉冲",
+      "category": "枪专精",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "position": {
+            "x": 0,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "position": {
+            "x": 270,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 10,
+            "cooldown": 0.7,
+            "delay": 0.1,
+            "duration": 0.3,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "projectile",
+          "kind": "projectile",
+          "runtimeId": 6513,
+          "position": {
+            "x": 540,
+            "y": 80
+          },
+          "parameters": {
+            "speed": 5,
+            "range": 15,
+            "lifetime": 5,
+            "radius": 0.1,
+            "spawnForward": 0,
+            "contactMode": "ignore",
+            "sameTargetMode": "once",
+            "flightTrigger": "distance",
+            "flightInterval": 0.2,
+            "flightDistance": 2
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "position": {
+            "x": 1130,
+            "y": 80
+          },
+          "parameters": {
+            "flat": 25,
+            "coefficient": 0,
+            "canCrit": false
+          }
+        },
+        {
+          "id": "flight-area",
+          "kind": "delivery",
+          "position": {
+            "x": 850,
+            "y": 80
+          },
+          "parameters": {
+            "mode": "area",
+            "center": "point",
+            "radius": 1.25,
+            "maxTargets": 0,
+            "persistent": false
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "projectile",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "flight-area",
+          "source": "projectile",
+          "sourcePort": "flight",
+          "target": "flight-area",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "area-damage",
+          "source": "flight-area",
+          "sourcePort": "apply",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
     }
   ],
   "preview": {

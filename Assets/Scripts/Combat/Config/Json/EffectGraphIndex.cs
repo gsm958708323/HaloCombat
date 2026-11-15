@@ -14,7 +14,7 @@ namespace Combat.Config
         readonly Dictionary<string, SkillNodeDocument> _nodes = new Dictionary<string, SkillNodeDocument>();
         readonly HashSet<string> _used = new HashSet<string>();
         readonly List<SkillNodeDocument> _entries=new List<SkillNodeDocument>();
-        static readonly HashSet<string> Kinds=new HashSet<string>{"target","cast","projectile","projectile-ref","area-ref","split","damage","cue","delivery","buff","dispel","heal","buff-events","skill-events","after-damage","impact","refill-ammo","teleport-projectile","construct","construct-chain","hurt-feedback"};
+        static readonly HashSet<string> Kinds=new HashSet<string>{"target","cast","projectile","projectile-behavior","projectile-ref","area-ref","split","damage","cue","delivery","buff","dispel","heal","buff-events","skill-events","after-damage","impact","refill-ammo","teleport-projectile","construct","construct-chain","hurt-feedback"};
         internal static bool KnownKind(string kind)=>kind!=null&&Kinds.Contains(kind);
         public EffectGraphIndex(string contentKey,SkillNodeDocument[] nodes,SkillEdgeDocument[] edges, string path,bool effectOnly=false)
         {
@@ -45,7 +45,7 @@ namespace Combat.Config
         public SkillNodeDocument Entry(string id,string path)
         {
             if(!_nodes.TryGetValue(id??"",out var node))throw new ContentValidationException(path,"Unknown effect entry node.");
-            if(node.Kind=="target"||node.Kind=="cast"||node.Kind=="skill-events"||node.Kind=="buff-events")throw new ContentValidationException(path,"Root is not an effect entry.");
+            if(node.Kind=="target"||node.Kind=="cast"||node.Kind=="skill-events"||node.Kind=="buff-events"||node.Kind=="projectile-behavior")throw new ContentValidationException(path,"Node is not an effect entry.");
             Use(node);_entries.Add(node);return node;
         }
         public SkillNodeDocument Root(string kind)
@@ -91,14 +91,15 @@ namespace Combat.Config
                 var kind = _nodes[edge.Source].Kind;
                 bool valid = (kind == "target" && edge.SourcePort == "target" && edge.TargetPort == "target")
                     || (kind == "cast" && edge.SourcePort == "cast" && edge.TargetPort == "execute")
-                    || (kind == "projectile" && Array.IndexOf(new[]{"hit","wall","range","lifetime","expire","bounce","returned","ground"},edge.SourcePort)>=0 && edge.TargetPort == "execute")
+                    || (kind == "projectile" && Array.IndexOf(new[]{"hit","wall","range","lifetime","expire","bounce","returned","ground","flight"},edge.SourcePort)>=0 && edge.TargetPort == "execute")
+                    || (kind=="projectile-behavior"&&edge.SourcePort=="behavior"&&edge.TargetPort=="behavior"&&_nodes[edge.Target].Kind=="projectile")
                     || (kind == "delivery" && Array.IndexOf(new[] { "apply", "enter", "exit", "stay", "expire","wall","complete","removed","absorb" }, edge.SourcePort) >= 0 && edge.TargetPort == "execute")
                     || (kind=="buff-events"&&Array.IndexOf(new[]{"apply","stack","period","expire","hurt","cast","removed"},edge.SourcePort)>=0&&edge.TargetPort=="execute")
                     || (kind=="skill-events"&&Array.IndexOf(new[]{"hit","critical","kill","completed","wall","range","projectile-end"},edge.SourcePort)>=0&&edge.TargetPort=="execute")
                     || (kind=="construct"&&Array.IndexOf(new[]{"apply","death","removed"},edge.SourcePort)>=0&&edge.TargetPort=="execute")
                     || (kind=="after-damage"&&(edge.SourcePort=="apply"||edge.SourcePort=="next")&&edge.TargetPort=="execute")
                     || ((kind == "damage" || kind == "cue" || kind=="buff" || kind=="dispel" || kind=="heal" || kind=="split" || kind=="impact"||kind=="refill-ammo"||kind=="teleport-projectile"||kind=="construct-chain"||kind=="hurt-feedback") && edge.SourcePort == "next" && edge.TargetPort == "execute");
-                valid &= edge.TargetPort == "target" ? _nodes[edge.Target].Kind == "cast" : _nodes[edge.Target].Kind != "target" && _nodes[edge.Target].Kind != "cast" && _nodes[edge.Target].Kind!="buff-events" && _nodes[edge.Target].Kind!="skill-events";
+                valid &= edge.TargetPort == "target" ? _nodes[edge.Target].Kind == "cast" : _nodes[edge.Target].Kind != "target" && _nodes[edge.Target].Kind != "cast" && _nodes[edge.Target].Kind!="buff-events" && _nodes[edge.Target].Kind!="skill-events"&&_nodes[edge.Target].Kind!="projectile-behavior";
                 if (!valid) Fail(Path + ".edges." + edge.Id, "Unsupported port connection.");
             }
             var contexts=new HashSet<string>();
@@ -124,8 +125,21 @@ namespace Combat.Config
             }
         }
         public void Use(SkillNodeDocument node) => _used.Add(node.Id);
+        public SkillNodeDocument ProjectileBehavior(SkillNodeDocument projectile)
+        {
+            SkillNodeDocument selected=null;
+            foreach(var edge in Edges)if(edge.Target==projectile.Id&&edge.TargetPort=="behavior")
+            {
+                var node=_nodes[edge.Source];
+                if(node.Kind!="projectile-behavior"||edge.SourcePort!="behavior")Fail(Path+".edges["+edge.Id+"]","Projectile behavior input requires a behavior node.");
+                Use(node);if(!node.Enabled)continue;
+                if(selected!=null)Fail(NodePath(projectile)+".behavior","Only one enabled behavior may feed a projectile.");selected=node;
+            }
+            return selected;
+        }
         public void IgnoreBranch(SkillNodeDocument node)
         {
+            if(node.Kind=="projectile")foreach(var edge in Edges)if(edge.Target==node.Id&&edge.TargetPort=="behavior")Use(_nodes[edge.Source]);
             foreach (var edge in Edges)
                 if (edge.Source == node.Id)
                 { var child = _nodes[edge.Target]; if (_used.Add(child.Id)) IgnoreBranch(child); }

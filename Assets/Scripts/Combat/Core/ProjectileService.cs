@@ -90,12 +90,15 @@ namespace Combat.Core
                 }
                 double groundTime=ProjectileKinematics.GroundTime(body,transform,_world.Motor.GroundY);
                 if(groundTime<=.00000001){if(!Ground(projectile,body,owner))return;continue;}
+                // Resolve a turn/bounce at this boundary before observing the flight direction.
+                ProjectileFlightCadence.Deliver(_world,projectile,body);if(!projectile.IsActive||body.Exhausted)return;
                 if(timeLeft<=.000000001)return;
                 double elapsed=Math.Min(timeLeft,groundTime);
+                elapsed=ProjectileFlightCadence.Bound(body,elapsed);
                 if(!body.Returning&&motion!=null&&motion.ReturnAfter>=0)elapsed=Math.Min(elapsed,Math.Max(0,motion.ReturnAfter-body.Age));
                 double distance=Math.Min(ProjectileKinematics.Distance(body,elapsed),Math.Max(0,body.RangeLimit-body.Distance));
-                elapsed=ProjectileKinematics.Time(body,distance,elapsed);
-                if(distance<=.000000001)elapsed=Math.Min(timeLeft,groundTime);
+                double horizon=elapsed;
+                elapsed=distance<=.000000001?horizon:ProjectileKinematics.Time(body,distance,horizon);
                 var direction=LocomotionComp.ForwardFromYaw(transform.YawDegrees);var from=transform.Position;
                 var to=ProjectileKinematics.Position(body,from,direction,elapsed,distance);
                 var obstacle=_world.Collision.Trace(from,to,def.HitRadius);
@@ -106,6 +109,7 @@ namespace Combat.Core
                 bool redirected=false;
                 foreach(var hit in LineTargeting.Query(_world,owner,from,to,def.HitRadius,def.HostileMask))
                 {
+                    if(def.ContactMode==ProjectileContactMode.Ignore)break;
                     if(hit.Fraction>=limit-.000001f&&(obstacle.Blocked||catchFraction<=1))break;
                     if(!AreaTargets.TryLive(_world,hit.Target,out var victim))continue;
                     double path=distance*hit.Fraction-spentDistance;
@@ -120,6 +124,8 @@ namespace Combat.Core
                     var context=new ProjectileHitContext(projectile,body,transform.Position,transform.YawDegrees,attack);
                     _world.Deliver(def.OnHit,owner,victim,attack,transform.Position,direction,power:body.Power,origin:body.Family.Origin,projectileHit:context);
                     if(!projectile.IsActive||body.Exhausted)return;
+                    if(def.ContactMode==ProjectileContactMode.Continue)continue;
+                    if(def.ContactMode==ProjectileContactMode.End){Terminate(projectile,body,ProjectileEndReason.HitLimit);return;}
                     if(def.MaxHits<=0||body.LegHits<def.MaxHits)continue;
                     if(body.Distance+.000001>=body.RangeLimit){Terminate(projectile,body,ProjectileEndReason.HitLimit);return;}
                     if(body.ChainsLeft<=0||body.Returning){Terminate(projectile,body,ProjectileEndReason.HitLimit);return;}
@@ -238,10 +244,12 @@ namespace Combat.Core
             {
                 double ground=ProjectileKinematics.GroundTime(body,transform,_world.Motor.GroundY);
                 if(ground<=.00000001){if(!Ground(projectile,body,owner))return;continue;}
-                double time=Math.Min(wait,Math.Min(ground,Math.Max(0,body.Def.Lifetime-body.Age)));
+                ProjectileFlightCadence.Deliver(_world,projectile,body);if(!projectile.IsActive||body.Exhausted)return;
+                double time=ProjectileFlightCadence.Bound(body,Math.Min(wait,Math.Min(ground,Math.Max(0,body.Def.Lifetime-body.Age))),false);
                 ProjectileKinematics.Advance(body,transform,transform.Position,SimVec3.Zero,time,0);wait-=time;
                 if(body.Age+.000001>=body.Def.Lifetime){Terminate(projectile,body,ProjectileEndReason.Lifetime);return;}
                 if(ground<=time+(body.Def.Motion?.ScheduledBounce!=null?.0000001:.00000001)&&!Ground(projectile,body,owner))return;
+                ProjectileFlightCadence.Deliver(_world,projectile,body);
             }
         }
         void BounceEffects(Actor projectile,ProjectileComp body,Actor owner,string kind,SimVec3 point)

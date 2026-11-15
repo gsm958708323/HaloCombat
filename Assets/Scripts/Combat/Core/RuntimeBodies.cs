@@ -26,6 +26,10 @@ namespace Combat.Core
         public float SameTargetDelay;
         public bool PassInvulnerable;
         public bool RemoveOnObstacle=true;
+        public ProjectileContactMode ContactMode;
+        public bool HitOncePerLeg;
+        public ProjectileFlightDefinition Flight;
+        public IEffect[] OnFlight=Array.Empty<IEffect>();
         public IEffect[] OnHit = Array.Empty<IEffect>();
         public IEffect[] OnExpire = Array.Empty<IEffect>();
         public IEffect[] OnWall = Array.Empty<IEffect>();
@@ -90,6 +94,11 @@ namespace Combat.Core
     {
         readonly HashSet<EntityId> _hits = new HashSet<EntityId>();
         readonly Dictionary<EntityId,double> _nextHit=new Dictionary<EntityId,double>();
+        readonly HashSet<EntityId> _returnHits=new HashSet<EntityId>(),_ancestors=new HashSet<EntityId>();
+        internal long NextFlightIndex {get;set;}
+        internal int FlightFrame {get;set;}=int.MinValue;
+        internal int FlightDelivered {get;set;}
+        internal bool FlightLimited {get;set;}
         public EntityId OwnerId { get; private set; }
         public float SnapshotAtk { get; private set; }
         public float Power { get; private set; } = 1;
@@ -132,16 +141,18 @@ namespace Combat.Core
             HomingTarget = homingTarget;
             _hits.Clear();
             _nextHit.Clear();
-            if(seed!=null)foreach(var id in seed.Ancestors)_hits.Add(id);
+            _returnHits.Clear();_ancestors.Clear();NextFlightIndex=1;FlightFrame=int.MinValue;FlightDelivered=0;FlightLimited=false;
+            if(seed!=null)foreach(var id in seed.Ancestors){_hits.Add(id);_ancestors.Add(id);}
         }
 
         public bool TryRecord(EntityId id)
         {
             if(!CanHit(id,Age))return false;
-            _hits.Add(id);float delay=Def?.SameTargetDelay??0;if(delay>0)_nextHit[id]=Age+delay;return true;
+            _hits.Add(id);if(Returning)_returnHits.Add(id);float delay=Def?.SameTargetDelay??0;if(delay>0)_nextHit[id]=Age+delay;return true;
         }
-        public bool CanHit(EntityId id,double atAge)=>id.IsValid&&!Exhausted&&
-            (!_hits.Contains(id)||(Def?.SameTargetDelay??0)>0&&_nextHit.TryGetValue(id,out double next)&&atAge+.0000001>=next);
+        public bool CanHit(EntityId id,double atAge)=>id.IsValid&&!Exhausted&&!_ancestors.Contains(id)&&
+            (Def?.HitOncePerLeg==true&&Returning?!_returnHits.Contains(id):
+                !_hits.Contains(id)||(Def?.SameTargetDelay??0)>0&&_nextHit.TryGetValue(id,out double next)&&atAge+.0000001>=next);
         public bool HasHit(EntityId id)=>_hits.Contains(id);
         internal EntityId[] Visited()
         {
@@ -153,6 +164,7 @@ namespace Combat.Core
             if(Self.World!=null&&Self.World.TryGetActor(OwnerId,out var owner)&&owner.TryGetComp<TrackedProjectilesComp>(out var tracker))tracker.ClearIf(Def?.TrackingKey,Self.Id);
             _hits.Clear();
             _nextHit.Clear();
+            _returnHits.Clear();_ancestors.Clear();NextFlightIndex=1;FlightFrame=int.MinValue;FlightDelivered=0;FlightLimited=false;
             Def = null;
             Exhausted = true;
             Power = 1;

@@ -31,7 +31,7 @@ export interface AreaView { sequence: number; step: number; x: number; z: number
 export interface VolumeView { sequence: number; source: string; shape: string; x: number; z: number; yaw: number; length: number; width: number; angle: number }
 export interface DamageBreakdown {kind:string;target:string;base:number;scaled:number;afterDefense:number;afterCritical:number;final:number;absorbed:number;hpLost:number;overkill:number;killed:boolean;feedback:string}
 export interface AuthorNodeSource {graphKind:string;graphId:string;graphName:string;nodeId:string;nodeKind:string}
-export interface RunEvent { node:AuthorNodeSource|null;step:number;sourceId:string|null;targetId:string|null;bodyId:string|null;executionId:number;parentExecutionId:number; sequence: number; time: number; kind: string; source: string; result: string;castId:number;skill:string|null;hitIndex:number;damage:DamageBreakdown|null }
+export interface RunEvent { node:AuthorNodeSource|null;step:number;sourceId:string|null;targetId:string|null;bodyId:string|null;executionId:number;parentExecutionId:number; sequence: number; time: number; kind: string; source: string; flight?:{clock:string;index:number;age:number;distance:number}|null; result: string;castId:number;skill:string|null;hitIndex:number;damage:DamageBreakdown|null }
 export interface PreviewState { step: number; time: number; actors: ActorView[]; events: RunEvent[]; areas: AreaView[]; volumes: VolumeView[]; obstacles: ObstacleView[]; rays: RayView[]; trails: { entity: string; x: number; z: number; step: number }[]; energy: number; ammo:number;ammoCapacity:number;channeling: boolean; charging: boolean; chargeProgress: number; castPower: number; cooldowns: Record<string, number>; statistics: { damage: number; hits: number; casts: number; projectiles: number; chains:number; splits:number; areas: number; summons: number;constructs:number } }
 export interface Field { key: string; label: string; type?: 'select' | 'check' | 'text'|'times'; unit?: string; min?: number; max?: number; step?: number; integer?:boolean; displayScale?:number; options?: [string, string][]; initial: ParameterValue; when?: (parameters: Parameters) => boolean }
 export const kinds: Record<string, { title: string; color: string; fields: Field[]; inputs: string[]; outputs: [string, string][] }> = {
@@ -73,9 +73,21 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
     { key: 'powerMax', label: '满蓄倍率', unit: '×', min: .01, max: 10, step: .1, initial: 3, when: p => p.mode === 'charge' },
     { key: 'autoRelease', label: '满蓄自动释放', type: 'check', initial: true, when: p => p.mode === 'charge' }
   ] },
-  projectile: { title: '效果传递', color: '#887547', inputs: ['execute'], outputs: [['hit','命中结算'],['wall','撞墙终结'],['range','射程耗尽'],['lifetime','寿命结束'],['bounce','成功反弹'],['returned','返回来源'],['ground','落地终结'],['expire','投射物结束']], fields: [
+  'projectile-behavior':{title:'投射物行为',color:'#68796e',inputs:[],outputs:[['behavior','行为']],fields:[
+    {key:'mode',label:'投射物行为',type:'select',initial:'pierce',options:[['pierce','穿透'],['chain','连锁']]},
+    {key:'unlimited',label:'无限穿透',type:'check',initial:false,when:p=>p.mode!=='chain'},
+    {key:'maxHits',label:'每段命中上限',integer:true,min:1,max:1000000,step:1,initial:2,when:p=>p.mode!=='chain'&&p.unlimited!==true},
+    {key:'chainCount',label:'额外连锁次数',integer:true,min:1,max:64,step:1,initial:3,when:p=>p.mode==='chain'},
+    {key:'chainRadius',label:'连锁搜索距离',unit:'米',min:.01,max:1000,step:.01,initial:6,when:p=>p.mode==='chain'},
+    {key:'chainMode',label:'连锁选敌',type:'select',initial:'nearest',options:[['nearest','最近目标'],['random','随机目标']],when:p=>p.mode==='chain'}]},
+  projectile: { title: '效果传递', color: '#887547', inputs: ['execute','behavior'], outputs: [['flight','飞行触发'],['hit','命中结算'],['wall','撞墙终结'],['range','射程耗尽'],['lifetime','寿命结束'],['bounce','成功反弹'],['returned','返回来源'],['ground','落地终结'],['expire','投射物结束']], fields: [
     {key:'view',label:'实体外观资源',type:'select',initial:''},
-    {key:'sameTargetDelay',label:'同目标再次命中间隔 (0=一次)',unit:'秒',min:0,max:3600,step:.01,initial:0},
+    {key:'contactMode',label:'接触敌人',type:'select',initial:'behavior',options:[['behavior','按投射物行为'],['end','命中即结束'],['continue','穿过并结算'],['ignore','忽略敌人']]},
+    {key:'sameTargetMode',label:'同目标命中',type:'select',initial:'once',options:[['once','全程一次'],['per-leg','去程/返程各一次'],['interval','按间隔重复']]},
+    {key:'flightTrigger',label:'飞行触发',type:'select',initial:'none',options:[['none','不触发'],['time','按时间间隔'],['distance','按距离间隔']]},
+    {key:'flightInterval',label:'飞行触发间隔',unit:'秒',min:.001,max:3600,step:.01,initial:.2,when:p=>p.flightTrigger==='time'},
+    {key:'flightDistance',label:'飞行触发距离',unit:'米',min:.01,max:1000,step:.1,initial:1,when:p=>p.flightTrigger==='distance'},
+    {key:'sameTargetDelay',label:'同目标再次命中间隔 (0=一次)',unit:'秒',min:0,max:3600,step:.01,initial:.2,when:p=>(p.sameTargetMode??(Number(p.sameTargetDelay)>0?'interval':'once'))==='interval'},
     {key:'passInvulnerable',label:'穿过无敌目标且保留命中数',type:'check',initial:false},
     {key:'trackingKey',label:'来源追踪键',type:'text',initial:''},
     {key:'trajectory',label:'飞行轨迹',type:'select',initial:'linear',options:[['linear','方向飞行'],['accelerate','加减速'],['ramp','渐进加速曲线'],['return','回旋返回'],['bounce','地面弹跳'],['phase-bounce','按时间表弹跳']]},
@@ -256,16 +268,17 @@ export function nodeOutputs(node: GraphNode): [string,string][] {
   return ports.filter(([port])=>allowed.includes(port));
 }
 export const deliveryLabel = (node: GraphNode) => node.kind==='teleport-projectile'?'传送到追踪弹':node.kind==='area-ref'?'持续区域':node.kind==='projectile'||node.kind==='projectile-ref'?'投射物':node.kind==='construct'?'可破坏物':node.parameters.mode==='summon'?'召唤分身':node.parameters.mode==='area'?(node.parameters.persistent?'持续区域':'瞬时区域'):node.parameters.mode==='ray'?'射线判定':node.parameters.mode==='melee'?'近战判定':node.parameters.mode==='displacement'?(node.parameters.movementMode==='blink'?'闪现打击':'冲刺打击'):'目标作用';
-export const portName = (port: string) => port === 'target' ? '目标数据' : '执行';
+export const portName = (port: string) => port==='behavior'?'投射物行为':port === 'target' ? '目标数据' : '执行';
 export const effectKinds:[string,string][]=[['damage','伤害结算'],['impact','受击与状态'],['heal','治疗'],['buff','施加 Buff'],['dispel','驱散 Buff'],['cue','表现事件'],['split','命中分裂'],['after-damage','扣血后条件'],['refill-ammo','补充弹药'],['teleport-projectile','传送到追踪弹'],['construct-chain','范围引爆物体'],['hurt-feedback','受伤反馈']];
 export const burstEnabled=(p:Parameters)=>typeof p.burst==='boolean'?p.burst:Number(p.count??1)>1;
-export const parameterValue = (field: Field, parameters: Parameters) => parameters[field.key] ?? (field.key==='burst'?burstEnabled(parameters):(field.key === 'energyPerSecond' && parameters.mode === 'charge' ? 0 : field.initial));
+export const parameterValue = (field: Field, parameters: Parameters) => parameters[field.key] ?? (field.key==='sameTargetMode'?(Number(parameters.sameTargetDelay)>0?'interval':'once'):field.key==='burst'?burstEnabled(parameters):(field.key === 'energyPerSecond' && parameters.mode === 'charge' ? 0 : field.initial));
 export const castRoutingFields=['ammoCost','fallbackSkill','recastProjectile','recastSkill','requiredProjectile'];
-export function nodeFields(node:GraphNode,options:{definitionRoot?:boolean;authoredTimeline?:boolean}={}):Field[] {
+export function nodeFields(node:GraphNode,options:{definitionRoot?:boolean;authoredTimeline?:boolean;behaviorLinked?:boolean}={}):Field[] {
   const definitionFields=node.kind==='delivery'?['mode','persistent','center','forwardOffset']:['multi','count','spread'];
   const rules=['cost','cooldown','hitFeedback',...castRoutingFields];
   return (kinds[node.kind]?.fields??[]).filter(f=>(!f.when||f.when(node.parameters))&&
     (!options.definitionRoot||!definitionFields.includes(f.key))&&
+    (!options.behaviorLinked||!['maxHits','chain','chainCount','chainRadius','chainMode'].includes(f.key))&&
     (!options.authoredTimeline||node.kind!=='cast'||rules.includes(f.key))&&
     (node.kind!=='cast'||node.parameters.execution!=='operation'||['execution',...rules].includes(f.key)));
 }

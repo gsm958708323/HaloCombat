@@ -12,6 +12,7 @@ import type { EditableGraph, GraphKey } from './authoring/contentEdits';
 import { connectGraph, copySelection, deleteSelection, pasteSelection } from './authoring/graphEdits';
 import type { GraphClipboard } from './authoring/graphEdits';
 import {setCastExecution,setBurst} from './authoring/castExecution';
+import {extractProjectileBehavior} from './authoring/projectileBehavior';
 
 export function useGraphAuthoring(document:ReturnType<typeof useProjectDocument>,key:GraphKey,report:(text:string)=>void,focus:{key:GraphKey;nodeId:string;request:number}|null=null) {
   const flow=useReactFlow<EditorNode>();const initialized=useNodesInitialized();
@@ -56,16 +57,17 @@ export function useGraphAuthoring(document:ReturnType<typeof useProjectDocument>
     const ports=nodeOutputs(nodes.find(n=>n.id===id)!).map(([p])=>p);
     return {...g,nodes,edges:g.edges.filter(e=>e.source!==id||ports.includes(e.sourcePort))};
   }),[editGraph]);
-  const nodes=useMemo<EditorNode[]>(()=>graph?.nodes.map(n=>({id:n.id,type:'skill',position:n.position,measured:measurements[keyString+':'+n.id],selected:selectedNodes.includes(n.id),deletable:n.kind!=='buff-events'&&n.id!==graph.root,data:{...n,definitionRoot:n.id===graph.root,authoredTimeline:!!graph.timeline||!!graph.timelineRef,
+  const nodes=useMemo<EditorNode[]>(()=>graph?.nodes.map(n=>({id:n.id,type:'skill',position:n.position,measured:measurements[keyString+':'+n.id],selected:selectedNodes.includes(n.id),deletable:n.kind!=='buff-events'&&n.id!==graph.root,data:{...n,definitionRoot:n.id===graph.root,authoredTimeline:!!graph.timeline||!!graph.timelineRef,behaviorLinked:graph.edges.some(e=>e.target===n.id&&e.targetPort==='behavior'&&graph.nodes.find(v=>v.id===e.source)?.enabled!==false),
     counts:Object.fromEntries(nodeOutputs(n).map(([port])=>[port,graph.edges.filter(e=>e.source===n.id&&e.sourcePort===port).length])),
     blueprints:project?.summonBlueprints,buffs:project?.buffs,skills:project?.skills,projectiles:project?.projectiles,areas:project?.areas,views:project?.runtime?.views,change:parameter,changeKind,remove:(id)=>remove([id]),beginEdit:document.beginGroup,endEdit:document.endGroup,
     openArea:(id:string)=>document.edit(p=>selectGraph(p,p.editor?.selectedSkill??p.skills[0]?.id??'','','','',id),false),
     extractArea:(id:string)=>{try{document.endGroup();document.edit(p=>extractArea(p,key,id).project);}catch(e){report(String(e));}},
     openProjectile:(id:string)=>document.edit(p=>selectGraph(p,p.editor?.selectedSkill??p.skills[0]?.id??'','','',id),false),
     extractProjectile:(id:string)=>{try{document.endGroup();document.edit(p=>extractProjectile(p,key,id).project);}catch(e){report(String(e));}},
+    extractBehavior:(id:string)=>{try{document.endGroup();editGraph(g=>extractProjectileBehavior(g,id));}catch(e){report(String(e));}},
     toggle:(id,enabled)=>editGraph(g=>({...g,nodes:g.nodes.map(v=>v.id===id?{...v,enabled}:v)}))}}))??[],[graph,project?.summonBlueprints,project?.buffs,project?.skills,project?.projectiles,project?.areas,project?.runtime?.views,selectedNodes,parameter,changeKind,remove,editGraph,measurements,keyString]);
   const edges=useMemo<Edge[]>(()=>graph?.edges.map(e=>({id:e.id,source:e.source,sourceHandle:e.sourcePort,target:e.target,targetHandle:e.targetPort,
-    selected:selectedEdges.includes(e.id),type:'default',reconnectable:true,style:{stroke:selectedEdges.includes(e.id)?'#f4d890':e.sourcePort==='target'?'#85abbc':'#d1b66e',strokeWidth:selectedEdges.includes(e.id)?3:2},animated:false}))??[],[graph,selectedEdges]);
+      selected:selectedEdges.includes(e.id),type:'default',reconnectable:true,style:{stroke:selectedEdges.includes(e.id)?'#f4d890':e.sourcePort==='target'?'#85abbc':e.sourcePort==='behavior'?'#88ad91':'#d1b66e',strokeWidth:selectedEdges.includes(e.id)?3:2},animated:false}))??[],[graph,selectedEdges]);
   function nodeChanges(changes:NodeChange<EditorNode>[]){
     const dimensions=changes.filter(c=>c.type==='dimensions');
     if(dimensions.length)setMeasurements(previous=>{

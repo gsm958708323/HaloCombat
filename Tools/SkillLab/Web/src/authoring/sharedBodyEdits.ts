@@ -10,6 +10,10 @@ export function extractBody(project:Project,key:GraphKey,nodeId:string,kind:'pro
   if(!graph||!root||!matches||graph.root===nodeId)throw new Error('请选择可提取的'+(kind==='area'?'持续区域':'普通弹体')+'节点');
   const ids=new Set([nodeId]),pending=[nodeId];
   while(pending.length){const id=pending.pop()!;for(const edge of graph.edges)if(edge.source===id&&!ids.has(edge.target)){ids.add(edge.target);pending.push(edge.target);}}
+  const behaviors=graph.edges.filter(e=>ids.has(e.target)&&e.targetPort==='behavior');
+  for(const edge of behaviors){
+    if(graph.edges.some(e=>e.source===edge.source&&!ids.has(e.target)))throw new Error('行为节点还被其他弹体引用，请先复制行为');ids.add(edge.source);
+  }
   if(graph.edges.some(e=>ids.has(e.target)&&e.target!==nodeId&&!ids.has(e.source)))throw new Error('效果分支还被其他节点使用，请先拆开引用');
   if(graph.timeline&&[...graph.timeline.clips,...graph.timeline.payloads].some(c=>c.effects?.some(id=>id!==nodeId&&ids.has(id))))throw new Error('分支仍被时间轴直接调度，请先拆开入口');
   const id=newId(),omitted=kind==='area'?['center','forwardOffset']:['multi','count','spread'];

@@ -59,6 +59,9 @@ namespace Combat.Tests
                 if(value is ProjectileDefinition&&field.Name=="SameTargetDelay"&&(float)field.GetValue(value)==0)continue;
                 if(value is ProjectileDefinition&&field.Name=="PassInvulnerable"&&!(bool)field.GetValue(value))continue;
                 if(value is ProjectileDefinition&&field.Name=="RemoveOnObstacle"&&(bool)field.GetValue(value))continue;
+                // These diagnostics/policies are neutral in the original six-skill fixture;
+                // active contact/flight modes have dedicated execution tests.
+                if(value is ProjectileDefinition shot&&(field.Name=="ContactMode"&&shot.ContactMode==ProjectileContactMode.Behavior||field.Name=="HitOncePerLeg"&&!shot.HitOncePerLeg||field.Name=="Flight"&&shot.Flight==null||field.Name=="OnFlight"&&shot.OnFlight.Length==0))continue;
                 if((value is ProjectileDefinition||value is AoeDefinition)&&field.Name=="View"&&string.IsNullOrEmpty((string)field.GetValue(value)))continue;
                 if(value is SpawnAoeEffect&&field.Name=="_forwardOffset"&&(float)field.GetValue(value)==0)continue;
                 if(value is AoeDefinition area)

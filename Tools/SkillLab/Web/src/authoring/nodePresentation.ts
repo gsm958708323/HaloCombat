@@ -7,8 +7,8 @@ const extra:Record<string,Set<string>>={
   damage:new Set(['feedbackHitstop','canCrit','critFromAttribute','snapshotAttack','ignoreDefense','scaleByStacks','notifyHurt','hitstopFrames','sourceHitstopFrames','targetHitstopFrames','feedback','maxTargets']),
   delivery:new Set(['view','maxTargets','hostileMask','cueId','pulseOnSpawn','forwardOffset']),
 };
-const behavior=new Set(['maxHits','chain','chainCount','chainRadius','chainMode','sameTargetDelay']);
-export function nodeFieldGroups(node:GraphNode,options:{definitionRoot?:boolean;authoredTimeline?:boolean}={}) {
+const behavior=new Set(['maxHits','chain','chainCount','chainRadius','chainMode']);
+export function nodeFieldGroups(node:GraphNode,options:{definitionRoot?:boolean;authoredTimeline?:boolean;behaviorLinked?:boolean}={}) {
   const fields=nodeFields(node,options),main:Field[]=[],advanced:Field[]=[],behaviors:Field[]=[];
   for(const field of fields){
     if(node.kind==='projectile'&&behavior.has(field.key)){behaviors.push(field);continue;}
@@ -20,7 +20,7 @@ export function nodeFieldGroups(node:GraphNode,options:{definitionRoot?:boolean;
 export function nodePortGroups(node:GraphNode,counts:Record<string,number>={}) {
   const ports=nodeOutputs(node);
   if(node.kind!=='projectile')return {main:ports,extra:[] as [string,string][]};
-  const visible=new Set(['hit','wall','range','expire']);
+  const visible=new Set(['hit','wall','range','expire']);if(node.parameters.flightTrigger&&node.parameters.flightTrigger!=='none')visible.add('flight');
   if(node.parameters.trajectory==='return')visible.add('returned');
   if(['bounce','phase-bounce'].includes(String(node.parameters.trajectory))){visible.add('bounce');visible.add('ground');}
   if(Number(node.parameters.wallBounces)>0)visible.add('bounce');

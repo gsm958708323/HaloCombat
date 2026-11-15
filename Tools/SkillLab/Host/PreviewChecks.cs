@@ -56,6 +56,7 @@ internal static class PreviewChecks
         ReplayChecks.Run(root);
         BurstChecks.Run(root);
         ScenePlacementChecks.Run(root);
+        ProjectilePolicyChecks.Run(root);
         Console.WriteLine("PASS: JSON roundtrip, real Core cast/spawn/damage, cooldown/resource rejection, deterministic reset, invalid fields/references/cycles.");
     }
     static void CheckDamageEvents(SkillProjectDocument source)

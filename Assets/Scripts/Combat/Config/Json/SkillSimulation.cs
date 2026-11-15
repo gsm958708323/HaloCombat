@@ -70,6 +70,8 @@ namespace Combat.Config
                 Record("projectile-"+e.Kind,Name(e.Source),e.Kind=="chain"||e.Kind=="returning"?Name(e.Target):
                     e.Kind=="split"||e.Kind=="rejected"?e.Count+" queued / generation "+e.Generation:e.Kind+" / y="+e.Point.Y.ToString("F3",System.Globalization.CultureInfo.InvariantCulture),e.Origin,node:BodySource(e.Projectile),sourceId:e.Source,targetId:e.Target,bodyId:e.Projectile);
             });
+            _world.Events.Subscribe<EvProjectileFlight>(e=>Record("projectile-flight",Name(e.Owner),e.Clock.ToString().ToLowerInvariant()+" #"+e.Index,e.Origin,
+                node:BodySource(e.Projectile),sourceId:e.Owner,bodyId:e.Projectile,flight:new SkillFlightSnapshot{Clock=e.Clock.ToString().ToLowerInvariant(),Index=e.Index,Age=e.Age,Distance=e.Distance}));
             _world.Events.Subscribe<EvAoeLifecycle>(e => Record("area-" + e.Kind.ToString().ToLowerInvariant(), Name(e.Source), Name(e.Target.IsValid ? e.Target : e.Id),OriginOf(e.Id),node:BodySource(e.Id),sourceId:e.Source,targetId:e.Target,bodyId:e.Id));
             _world.Events.Subscribe<EvAoeAbsorbed>(e=>Record("area-absorbed",Name(e.Area),Name(e.Projectile)+" / count="+e.Count+" / radius="+e.Radius.ToString("F3",System.Globalization.CultureInfo.InvariantCulture),e.Origin));
             _world.Events.Subscribe<EvSkillEnded>(OnSkillEnded);
@@ -344,14 +346,14 @@ namespace Combat.Config
         }
         string Name(EntityId id) => _names.TryGetValue(HitboxComp.Pack(id), out var name) ? name : id.ToString();
         string SkillName(SkillOrigin origin)=>_content.Skills.TryGet(origin.Skill,out var skill)?skill.Key:null;
-        void Record(string kind, string source, string result,SkillOrigin origin=default,DamageResult damage=null,AuthorNodeSource node=null,EntityId sourceId=default,EntityId targetId=default,EntityId bodyId=default)
+        void Record(string kind, string source, string result,SkillOrigin origin=default,DamageResult damage=null,AuthorNodeSource node=null,EntityId sourceId=default,EntityId targetId=default,EntityId bodyId=default,SkillFlightSnapshot flight=null)
         {
             var execution=_trace.Current;
             if(origin.CastId==0&&execution.Node!=null)origin=execution.Origin;
             _events.Add(new SkillEventSnapshot { Sequence = ++_eventSequence,Step=_steps, Time = _steps * Step, Kind = kind, Source = source, Result = result,CastId=origin.CastId,Skill=SkillName(origin),
                 Node=node??execution.Node,ExecutionId=execution.Id,ParentExecutionId=execution.Parent,SourceId=Packed(damage?.Source??(sourceId.IsValid?sourceId:execution.Source)),
                 TargetId=Packed(damage?.Target??(targetId.IsValid?targetId:execution.Target)),BodyId=Packed(bodyId),
-                HitIndex=damage?.HitIndex??0,Damage=damage==null?null:new SkillDamageSnapshot {Kind=damage.Kind.ToString().ToLowerInvariant(),Target=Name(damage.Target),Base=damage.Base,Scaled=damage.Scaled,
+                Flight=flight,HitIndex=damage?.HitIndex??0,Damage=damage==null?null:new SkillDamageSnapshot {Kind=damage.Kind.ToString().ToLowerInvariant(),Target=Name(damage.Target),Base=damage.Base,Scaled=damage.Scaled,
                     AfterDefense=damage.AfterDefense,AfterCritical=damage.AfterCritical,Final=damage.Final,Absorbed=damage.Absorbed,HpLost=damage.HpLost,Overkill=damage.Overkill,Killed=damage.Killed,Feedback=damage.Feedback.ToString().ToLowerInvariant()} });
             if (_events.Count > 500) _events.RemoveAt(0);
         }

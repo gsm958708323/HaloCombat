@@ -164,15 +164,19 @@ namespace Combat.Config
         {
             var p=new NodeParameters(node,path,"speed","range","lifetime","radius","maxHits","homingRate",
                 "multi","count","spread","chain","chainCount","chainRadius","chainMode","homingRetarget","homingRadius",
-                "trajectory","acceleration","maxSpeed","returnAfter","returnSpeed","catchRadius","launchHeight","verticalSpeed","gravity","restitution","groundBounces","wallBounces","spawnForward","snapshotAttack","hostileMask","cueId","homingMaxTurn","trackingKey","rampTime","sameTargetDelay","passInvulnerable","returnCurve","groundPhases","bounceHeight","removeOnObstacle","view");
+                "trajectory","acceleration","maxSpeed","returnAfter","returnSpeed","catchRadius","launchHeight","verticalSpeed","gravity","restitution","groundBounces","wallBounces","spawnForward","snapshotAttack","hostileMask","cueId","homingMaxTurn","trackingKey","rampTime","sameTargetDelay","passInvulnerable","returnCurve","groundPhases","bounceHeight","removeOnObstacle","view","contactMode","sameTargetMode","flightTrigger","flightInterval","flightDistance");
             CheckId(node,path,_projectiles,"projectile");
             int projectileCue=p.Integer("cueId",0,0,1000000);if(projectileCue>0)_content.RequiredCues.Add(projectileCue);
-            int maxHits=p.Integer("maxHits",1,0,1000000);
-            int chainCount=p.Integer("chainCount",2,1,64);
-            float chainRadius=p.Number("chainRadius",6,.01f,1000);
-            var chainMode=p.Choice("chainMode","nearest","nearest","random");
-            var chain=p.Boolean("chain",false)?new ProjectileChainDefinition {ExtraChains=chainCount,Radius=chainRadius,Mode=chainMode=="random"?ChainTargetMode.Random:ChainTargetMode.Nearest}:null;
-            if(chain!=null&&maxHits==0)throw new ContentValidationException(path+".parameters.maxHits","Chain needs a finite per-segment hit budget; unlimited piercing has no segment endpoint.");
+            var behavior=ProjectileBehaviorCompiler.Compile(_graph,node,p,path);int maxHits=behavior.Hits;var chain=behavior.Chain;
+            string contact=p.Choice("contactMode","behavior","behavior","end","continue","ignore");
+            float sameDelay=p.Number("sameTargetDelay",0,0,3600);
+            string same=p.Choice("sameTargetMode",sameDelay>0?"interval":"once","once","interval","per-leg");
+            if(same=="interval"&&sameDelay<=0)throw new ContentValidationException(path+".parameters.sameTargetDelay","Interval hit policy needs a positive delay.");
+            if(contact!="behavior"&&chain!=null)throw new ContentValidationException(path+".parameters.contactMode","Chain requires the behavior contact policy.");
+            string flight=p.Choice("flightTrigger","none","none","time","distance");
+            float flightInterval=p.Number("flightInterval",.2f,.001f,3600),flightDistance=p.Number("flightDistance",1,.01f,1000);
+            var flightEffects=Outputs(node,"flight");
+            if(flight=="none"&&flightEffects.Length>0)throw new ContentValidationException(path+".parameters.flightTrigger","Connected flight effects require a time or distance trigger.");
             float speed=p.Number("speed",12,.1f,1000);
             string trajectory=p.Choice("trajectory","linear","linear","accelerate","return","bounce","ramp","phase-bounce");
             float acceleration=p.Number("acceleration",6,-1000,1000),maxSpeed=p.Number("maxSpeed",60,.1f,1000);
@@ -191,7 +195,9 @@ namespace Combat.Config
                 SpecId=node.RuntimeId,Speed=speed,Range=p.Number("range",24,0,1000),Lifetime=p.Number("lifetime",120,.001f,3600),Motion=motion,TrackingKey=p.OptionalIdentity("trackingKey"),
                 SpawnForward=p.Number("spawnForward",.4f,0,100),SnapshotAtk=p.Boolean("snapshotAttack",true),HostileMask=p.Integer("hostileMask",0,0,int.MaxValue),CueId=projectileCue,HomingMaxTurn=p.Number("homingMaxTurn",0,0,10000),
                 HitRadius=p.Number("radius",.18f,.01f,100),MaxHits=maxHits,Chain=chain,
-                SameTargetDelay=p.Number("sameTargetDelay",0,0,3600),PassInvulnerable=p.Boolean("passInvulnerable",false),
+                ContactMode=(ProjectileContactMode)Array.IndexOf(new[]{"behavior","end","continue","ignore"},contact),HitOncePerLeg=same=="per-leg",
+                Flight=flight=="none"?null:new ProjectileFlightDefinition{Clock=flight=="time"?ProjectileFlightClock.Time:ProjectileFlightClock.Distance,Interval=flight=="time"?flightInterval:flightDistance},OnFlight=flightEffects,
+                SameTargetDelay=same=="interval"?sameDelay:0,PassInvulnerable=p.Boolean("passInvulnerable",false),
                 RemoveOnObstacle=p.Boolean("removeOnObstacle",true),
                 View=BodyView(p),
                 HomingRate=p.Number("homingRate",0,0,36000),HomingRetarget=p.Boolean("homingRetarget",false),HomingAcquireRadius=p.Number("homingRadius",12,.01f,1000),
