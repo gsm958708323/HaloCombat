@@ -1,0 +1,100 @@
+{
+  "id": "arena-returning-shot",
+  "runtimeId": 2005,
+  "name": "正弦回旋弹",
+  "category": "Arena 原技能",
+  "nodes": [
+    {
+      "id": "target",
+      "kind": "target",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 0.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "facing",
+        "range": 20
+      }
+    },
+    {
+      "id": "cast",
+      "kind": "cast",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 300.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "instant",
+        "cost": 0,
+        "cooldown": 0,
+        "ammoCost": 0,
+        "hitFeedback": "heavy"
+      }
+    },
+    {
+      "id": "projectile",
+      "kind": "projectile-ref",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 600.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "projectile": "arena-returning-projectile",
+        "count": 1,
+        "spread": 0
+      }
+    },
+    {
+      "id": "muzzle-cue",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 600.0,
+        "y": 760.0
+      },
+      "parameters": {
+        "id": 4202,
+        "name": "ReturnHeart",
+        "center": "source",
+        "anchor": "Head"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "target-target-cast",
+      "source": "target",
+      "sourcePort": "target",
+      "target": "cast",
+      "targetPort": "target",
+      "order": 0
+    }
+  ],
+  "timeline": {
+    "runtimeId": 3005,
+    "duration": 0.5,
+    "animation": "Fire",
+    "controlTags": [
+      1013
+    ],
+    "clips": [],
+    "payloads": [
+      {
+        "id": "shot-0",
+        "time": 0.1,
+        "repeatInterval": 0.0,
+        "effects": [
+          "muzzle-cue",
+          "projectile"
+        ]
+      }
+    ]
+  }
+}

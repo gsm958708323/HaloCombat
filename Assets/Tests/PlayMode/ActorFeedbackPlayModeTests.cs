@@ -42,7 +42,7 @@ namespace Combat.Tests
         public IEnumerator PublishedJsonSnapshotAndReleaseKeepIndependentTimingAcrossTheUnityBoundary()
         {
             _directory=Path.Combine(Path.GetTempPath(),"HaloCombat-ActorFeedback-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(_directory);
-            var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));p.Preview.Caster.X=0;p.Preview.Targets=new[]{new PreviewActorDocument{Id="target",X=2,Hp=1000}};
+            var p=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));p.Preview.Caster.X=0;p.Preview.Targets=new[]{new PreviewActorDocument{Id="target",X=2,Hp=1000}};
             File.WriteAllText(Path.Combine(_directory,"f6.json"),SkillPublicationJson.Write(SkillPublicationJson.Create(p,"actor-hitstop")));
             yield return SceneManager.LoadSceneAsync("Assets/Scenes/HaloCombat/SkillLab.unity",LoadSceneMode.Single);_lab=Object.FindFirstObjectByType<SkillLabRunner>();_lab.AutoAdvance=false;_lab.ConfigureContentDirectory(_directory);Assert.IsTrue(_lab.ReloadPublished(),_lab.LastLoadError);
             Assert.IsTrue(_lab.CastSlot("f6",2,0).Accepted);_lab.StepLogicForTests(1);_lab.SetMovement(1,0);_lab.StepLogicForTests(2);var shot=_lab.Snapshot;

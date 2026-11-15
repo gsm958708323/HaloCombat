@@ -20,7 +20,7 @@ namespace Combat.Tests
             public readonly List<EvDamage> Damage=new List<EvDamage>();
             public F(float targetX=1)
             {
-                var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,"Combat/project.json")));
+                var p=SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,"Combat/project.json"));
                 Content=CombatContentCompiler.Compile(p);World=new CombatWorld(Content.Runtime.CreateFactory(Content.Skills),random:new FixedRandom(.9f));Content.Runtime.Data.Install(World);
                 World.TryGetActor(World.SpawnActor(new ActorSpawnSpec("arena-player")),out Player);World.TryGetActor(World.SpawnActor(new ActorSpawnSpec("arena-target")),out Target);
                 Target.GetComp<TransformComp>().Position=new SimVec3(targetX,0,0);World.Events.Subscribe<EvCue>(e=>Cues.Add(e));World.Events.Subscribe<EvDamage>(e=>Damage.Add(e));
@@ -85,7 +85,7 @@ namespace Combat.Tests
         [Test]
         public void FractionalDamageEventsKeepNumbersStructuredAndTargetLabelsCultureIndependent()
         {
-            var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,"Combat/project.json")));
+            var p=SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,"Combat/project.json"));
             using(var s=new SkillSimulation(p,CombatContentCompiler.Compile(p)))
             {
                 s.Execute(new SkillSimulationCommand{Kind="cast",SkillId="arena-returning-shot",X=4,Z=0});s.Advance(300);

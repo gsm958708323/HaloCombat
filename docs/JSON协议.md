@@ -2,6 +2,12 @@
 
 当前协议`formatVersion: 1`，文档字段写作camelCase；身份、枚举、parameters键和资源键按明确契约区分大小写。类型、有限数值、范围、重复字段、稳定身份、引用与图上下文由`Combat.Config/Json`校验。原视频未公开完整Schema，本协议属于HaloCombat，不宣称与原工具的隐藏格式互通。
 
+## 按功能保存的磁盘工程
+
+磁盘project.json是`formatVersion/id/name/files`索引。files.skills/projectiles/areas/buffs/timelines/summonBlueprints为按稳定ID命名的相对文件数组，files.preview/editor为独立文件；files.runtime保存motor/actors/combos/cues/views/arena等文件路径。SkillProjectFiles组合为原SkillProjectDocument后继续校验/编译，不把文件引用传入Core。
+
+路径必须留在索引目录内，重复文件、未知字段、重复JSON键及坏模块拒绝并报文件。保存使用跨进程互斥、逐文件原子替换和失败回滚；ETag基于展开文档，单独改模块也使原ETag失效。示例、正式和用户工作工程均采用该结构，部署时携带索引引用闭包。以下单文件协议继续用于HTTP、下载、独立F6/F7和输入记录；磁盘索引不能脱离目录单独导入浏览器。
+
 ## 三种内容文件
 
 | 文件 | 作用与结构 | 读取入口 |
@@ -17,6 +23,8 @@
 每个图持有稳定id，节点持有图内唯一id、kind、parameters，可选runtimeId/enabled/position；边具有稳定id、source/sourcePort/target/targetPort和显式order。数组位置、显示名、坐标不充当身份；重复入口仍执行多次。节点字段契约由`SkillEffectCompiler/SkillCastCompiler`及相应独立编译器维护，网页`model.ts`提供同字段的作者控件。类型化目录分别保存技能、Buff、蓝图、共享轴、弹体和区域，跨图引用使用明确字符串键。
 
 目标、行为输入是数据；cast/execute/next和生命周期输出是执行连接，非法混接拒绝。即时图循环、跨类型依赖递归拒绝；连发、引导、弹体连锁/分裂使用有界领域机制。独立projectile-behavior与根行内策略不能同时拥有同一字段，提取与切换为一次可撤销作者事务。普通传递七模式可以切换，共享定义根类型固定。
+
+cast.allowMovement允许动作中的自主移动；远程自动时序默认true，近战/冲刺/延迟位移默认false，显式时间轴含命中盒时默认false；BlockMove及动作控制Tag优先。弹体扫掠半径为弹体半径+目标Locomotion碰撞半径，墙/射程/去重保持原规则；射线宽度独立，不因本次弹体修正暗改。
 
 默认单位：时间秒、空间米、速度米/秒、角度度、概率0..1、倍率无量纲；界面百分比换算不改变JSON。DTO整数拒绝小数取整、数字字符串、溢出与非有限值，旧内容中的精确整数`.0`身份继续合法；节点参数另按其字段类型校验。所有输入数值必须有限；运行中持续引导使用的无限时长在只读快照中表示null，不将Infinity写入JSON。时间轴、Buff、弹体与角色钟按各自契约推进，网页显示不决定战斗时间。
 

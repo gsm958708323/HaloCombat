@@ -11,7 +11,7 @@ namespace Combat.Tests
 {
     public sealed class OriginalRollBombTests
     {
-        static SkillProjectDocument Formal()=>SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,"Combat/project.json")));
+        static SkillProjectDocument Formal()=>SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,"Combat/project.json"));
         sealed class F:IDisposable
         {
             public readonly CombatWorld World;

@@ -142,6 +142,7 @@ namespace Combat.Core
             if(!TryGetActor(id,out var actor))return false;actor.Time.RequestHitstop(frames);return true;
         }
         public List<Actor> RegistryActive() => _registry.CopyActiveActors();
+        internal IEnumerable<Actor> QueryActors()=>_registry.QueryActors();
         public void FlushCleanup()=>_registry.FlushDespawn();
 
         public void AddServicePhase(Action phase)

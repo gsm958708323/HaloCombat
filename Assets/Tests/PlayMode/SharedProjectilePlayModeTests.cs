@@ -20,7 +20,7 @@ namespace Combat.Tests
         string _directory;SkillLabRunner _lab;ArenaBootstrap _arena;
         [UnityTearDown]
         public IEnumerator TearDown(){if(_lab!=null)Object.Destroy(_lab.gameObject);if(_arena!=null)Object.Destroy(_arena.gameObject);yield return null;if(_directory!=null&&Directory.Exists(_directory))Directory.Delete(_directory,true);}
-        static SkillProjectDocument Formal()=>SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,UnityRuntimeContent.DefaultFile)));
+        static SkillProjectDocument Formal()=>SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,UnityRuntimeContent.DefaultFile));
         void Files(SkillProjectDocument p,string first,string second)
         {
             _directory=Path.Combine(Application.streamingAssetsPath,"Combat/.shared-projectile-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(_directory);
@@ -45,7 +45,7 @@ namespace Combat.Tests
         [UnityTest]
         public IEnumerator ScheduledAndSineMotionUseThePublishedParametersAndRealVerticalPose()
         {
-            var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));p.Preview.Caster.X=0;p.Preview.Targets=Array.Empty<PreviewActorDocument>();Files(p,"phase-bounce","sampled-return");
+            var p=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));p.Preview.Caster.X=0;p.Preview.Targets=Array.Empty<PreviewActorDocument>();Files(p,"phase-bounce","sampled-return");
             yield return SceneManager.LoadSceneAsync("Assets/Scenes/HaloCombat/SkillLab.unity",LoadSceneMode.Single);_lab=Object.FindFirstObjectByType<SkillLabRunner>();_lab.AutoAdvance=false;_lab.ConfigureContentDirectory(_directory);Assert.IsTrue(_lab.ReloadPublished(),_lab.LastLoadError);
             Assert.IsTrue(_lab.CastSlot("f6",5,0).Accepted);_lab.StepLogicForTests(29);var shot=_lab.Snapshot.Actors.Single(a=>a.Kind=="projectile");Assert.AreEqual(1,shot.Y,.0001);yield return null;
             var visual=_lab.GetComponentsInChildren<Transform>().Single(t=>t.name=="projectile_"+shot.Name);Assert.Greater(visual.position.y,1);

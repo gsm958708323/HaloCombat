@@ -1,0 +1,201 @@
+{
+  "id": "arena-tracked-shot",
+  "runtimeId": 2006,
+  "name": "传送弹 · 再次施放传送",
+  "category": "弹药与重施放",
+  "nodes": [
+    {
+      "id": "target",
+      "kind": "target",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 0.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "facing",
+        "range": 20
+      }
+    },
+    {
+      "id": "cast",
+      "kind": "cast",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 300.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "instant",
+        "cost": 0,
+        "cooldown": 0,
+        "recastProjectile": "warp",
+        "recastSkill": "arena-projectile-warp"
+      }
+    },
+    {
+      "id": "projectile",
+      "kind": "projectile",
+      "runtimeId": 4004,
+      "enabled": true,
+      "position": {
+        "x": 600.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "speed": 6,
+        "range": 0,
+        "lifetime": 3,
+        "radius": 0.1,
+        "maxHits": 1,
+        "spawnForward": 0.4,
+        "trajectory": "ramp",
+        "trackingKey": "warp",
+        "rampTime": 5,
+        "view": "buff_projectile_teleport_view",
+        "passInvulnerable": true
+      }
+    },
+    {
+      "id": "damage",
+      "kind": "damage",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 900.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "flat": 0,
+        "coefficient": 0.6,
+        "canCrit": false,
+        "notifyHurt": false,
+        "sourceHitstopFrames": 0,
+        "targetHitstopFrames": 2,
+        "feedback": "none"
+      }
+    },
+    {
+      "id": "damage-hurt",
+      "kind": "hurt-feedback",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 1200.0,
+        "y": 320.0
+      },
+      "parameters": {
+        "level": "none",
+        "requireHpDamage": false
+      }
+    },
+    {
+      "id": "muzzle-cue",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 600.0,
+        "y": 760.0
+      },
+      "parameters": {
+        "id": 4201,
+        "name": "MuzzleFlash",
+        "center": "source",
+        "anchor": "Muzzle"
+      }
+    },
+    {
+      "id": "hit-cue",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 1400.0,
+        "y": 520.0
+      },
+      "parameters": {
+        "id": 4204,
+        "name": "OriginalCue4204",
+        "center": "target",
+        "anchor": "Body"
+      }
+    },
+    {
+      "id": "expiry-cue",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 900.0,
+        "y": 1000.0
+      },
+      "parameters": {
+        "id": 4207,
+        "name": "OriginalCue4207",
+        "center": "point"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "target-cast",
+      "source": "target",
+      "sourcePort": "target",
+      "target": "cast",
+      "targetPort": "target",
+      "order": 0
+    },
+    {
+      "id": "hit-damage",
+      "source": "projectile",
+      "sourcePort": "hit",
+      "target": "damage",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "damage-hurt-edge",
+      "source": "damage",
+      "sourcePort": "next",
+      "target": "damage-hurt",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "damage-hurt-next-hit-cue",
+      "source": "damage-hurt",
+      "sourcePort": "next",
+      "target": "hit-cue",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "projectile-lifetime-expiry-cue",
+      "source": "projectile",
+      "sourcePort": "lifetime",
+      "target": "expiry-cue",
+      "targetPort": "execute",
+      "order": 0
+    }
+  ],
+  "timeline": {
+    "runtimeId": 3006,
+    "duration": 0.5,
+    "animation": "Fire",
+    "clips": [],
+    "payloads": [
+      {
+        "id": "payload",
+        "time": 0.1,
+        "repeatInterval": 0.0,
+        "effects": [
+          "muzzle-cue",
+          "projectile"
+        ]
+      }
+    ]
+  }
+}

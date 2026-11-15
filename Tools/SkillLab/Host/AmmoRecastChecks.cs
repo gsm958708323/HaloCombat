@@ -7,7 +7,7 @@ internal static class AmmoRecastChecks
 {
     public static void Run(string root)
     {
-        var project=SkillProjectJson.Read(File.ReadAllText(Path.Combine(root,"Content/SkillLab/project.json")));
+        var project=SkillProjectFiles.Read(Path.Combine(root,"Content/SkillLab/project.json"));
         project.Preview.Caster.X=0;project.Preview.Targets=Array.Empty<PreviewActorDocument>();project.Preview.Recovery=0;project.Preview.InitialAmmo=0;
         using(var s=new SkillSimulation(project,CombatContentCompiler.Compile(project)))
         {

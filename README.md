@@ -8,7 +8,9 @@ JSON 网页技能编辑器位于 `codex/web-skill-editor-json` 分支。运行 `
 
 ## JSON 正式内容
 
-运行源为 `Assets/StreamingAssets/Combat/project.json`，保存技能效果图、显式Timeline、Combo、角色蓝图、Motor、Cue资源键及Arena会话规则。网页“打开正式内容”读取它，右侧显式时间轴编辑取消/移动/命中盒/无敌区间及离散触发，“发布正式内容”完整校验后写回同一文件。Arena按F5重载正式工程及其F6/F7槽，V1–V4按F1重建、训练场重置后读取新内容。缺文件、坏引用或缺资源均报错，保留已有有效会话，不回退SO或代码。旧作者类型、31个SO资产和生成入口已删除；Config程序集不再依赖UnityEngine。
+运行入口为 `Assets/StreamingAssets/Combat/project.json`索引，技能、弹体、区域、Buff、时间轴、召唤蓝图及runtime角色/连招/Motor/Cue/View/Arena按功能保存为独立JSON。网页“打开正式内容”和Unity经同一SkillProjectFiles组合并校验；“发布正式内容”写入索引及引用模块。工具栏“技能设置”编辑显式时间轴，右侧仅选中节点属性。Arena按F5重载正式工程及其F6/F7槽，V1–V4按F1重建、训练场重置后读取。缺文件、坏引用或缺资源保留有效会话，不回退SO或代码；Config程序集不依赖UnityEngine。
+
+射击支持“施放时允许移动”；普通远程默认开启，近战/冲刺与显式控制限制保留。弹体按自身及目标碰撞半径扫掠，避免视觉擦过目标却无命中。预览取消轨迹、瞄准不触发整场重绘，传输与显示刷新分开；后续分片/碰撞/性能验证见ADR-0045。
 
 CLI用同一文件直接验证和运行：
 

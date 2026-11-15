@@ -1,0 +1,54 @@
+{
+  "id": "arena-black-hole",
+  "name": "原黑洞",
+  "root": "area",
+  "nodes": [
+    {
+      "id": "area",
+      "kind": "delivery",
+      "runtimeId": 4103,
+      "enabled": true,
+      "position": {
+        "x": 0.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "area",
+        "persistent": true,
+        "radius": 2,
+        "duration": 1,
+        "interval": 0.02,
+        "pulseOnSpawn": true,
+        "removeOnObstacle": false,
+        "view": "buff_aoe_blackhole_view"
+      }
+    },
+    {
+      "id": "pull",
+      "kind": "impact",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 300.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "pull",
+        "center": "point",
+        "recipient": "target",
+        "pullMode": "rate",
+        "pullStrength": 1
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "area-stay-pull",
+      "source": "area",
+      "sourcePort": "stay",
+      "target": "pull",
+      "targetPort": "execute",
+      "order": 0
+    }
+  ]
+}

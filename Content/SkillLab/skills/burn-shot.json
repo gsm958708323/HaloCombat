@@ -1,0 +1,99 @@
+{
+  "id": "burn-shot",
+  "runtimeId": 2017,
+  "name": "灼烧弹",
+  "category": "Buff",
+  "nodes": [
+    {
+      "id": "target",
+      "kind": "target",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 0.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "point",
+        "range": 20
+      }
+    },
+    {
+      "id": "cast",
+      "kind": "cast",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 270.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "instant",
+        "cost": 10,
+        "cooldown": 0.7,
+        "delay": 0.1,
+        "duration": 0.3,
+        "count": 1,
+        "interval": 0.1
+      }
+    },
+    {
+      "id": "projectile",
+      "kind": "projectile",
+      "runtimeId": 4020,
+      "enabled": true,
+      "position": {
+        "x": 540.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "speed": 12,
+        "range": 24,
+        "radius": 0.18,
+        "maxHits": 1,
+        "homingRate": 0
+      }
+    },
+    {
+      "id": "burn",
+      "kind": "buff",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 810.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "buff": "burn",
+        "stacks": 1,
+        "recipient": "target"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "target-cast",
+      "source": "target",
+      "sourcePort": "target",
+      "target": "cast",
+      "targetPort": "target",
+      "order": 0
+    },
+    {
+      "id": "cast-delivery",
+      "source": "cast",
+      "sourcePort": "cast",
+      "target": "projectile",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "hit-damage",
+      "source": "projectile",
+      "sourcePort": "hit",
+      "target": "burn",
+      "targetPort": "execute",
+      "order": 0
+    }
+  ]
+}

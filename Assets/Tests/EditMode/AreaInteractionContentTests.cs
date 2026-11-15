@@ -10,12 +10,12 @@ namespace Combat.Tests
 {
     public sealed class AreaInteractionContentTests
     {
-        static SkillProjectDocument Example()=>SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));
+        static SkillProjectDocument Example()=>SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));
         static SkillNodeDocument Orb(SkillProjectDocument p)=>p.Skills.Single(s=>s.Id=="absorbing-orb").Nodes.Single(n=>n.Id=="orb");
         [Test]
         public void FormalMonkeyInputUsesTheOriginalSkillTimelineAndAreaValues()
         {
-            var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,UnityRuntimeContentFile)));
+            var p=SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,UnityRuntimeContentFile));
             var content=CombatContentCompiler.Compile(p);var skill=content.Skills.All.Single(s=>s.Key=="arena-absorbing-orb");
             Assert.AreEqual(2003,skill.Id.Value);Assert.AreEqual(3,skill.AmmoCost);Assert.AreEqual(3003,skill.Timeline.Value);
             Assert.IsTrue(content.Timelines.TryGet(skill.Timeline,out var timeline));Assert.AreEqual(.5f,timeline.Duration);Assert.AreEqual(.1f,timeline.Payloads.Single().Time);Assert.AreEqual("Fire",timeline.Animation);

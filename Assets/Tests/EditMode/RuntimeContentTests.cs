@@ -12,7 +12,7 @@ namespace Combat.Tests
     public sealed class RuntimeContentTests
     {
         static string Path=>System.IO.Path.Combine(Application.streamingAssetsPath,"Combat/project.json");
-        static SkillProjectDocument Project()=>SkillProjectJson.Read(File.ReadAllText(Path));
+        static SkillProjectDocument Project()=>SkillProjectFiles.Read(Path);
         static CombatWorld World(out RuntimeProjectLoader content){content=new RuntimeProjectLoader(Path);return content.CreateWorld(new FixedRandom(.5f));}
         static Actor Spawn(CombatWorld world,string id,float x){world.TryGetActor(world.SpawnActor(new ActorSpawnSpec(id)),out var actor);actor.GetComp<TransformComp>().Position=new SimVec3(x,0,0);return actor;}
         static void Tick(CombatWorld world,int count){for(int i=0;i<count;i++)world.Tick(.02f);}

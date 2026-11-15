@@ -107,7 +107,7 @@ namespace Combat.Core
                 float limit=obstacle.Blocked?Math.Min(obstacle.Fraction,catchFraction):Math.Min(1,catchFraction);
                 double spentDistance=0,spentTime=0;
                 bool redirected=false;
-                foreach(var hit in LineTargeting.Query(_world,owner,from,to,def.HitRadius,def.HostileMask))
+                foreach(var hit in LineTargeting.Query(_world,owner,from,to,def.HitRadius,def.HostileMask,true))
                 {
                     if(def.ContactMode==ProjectileContactMode.Ignore)break;
                     if(hit.Fraction>=limit-.000001f&&(obstacle.Blocked||catchFraction<=1))break;

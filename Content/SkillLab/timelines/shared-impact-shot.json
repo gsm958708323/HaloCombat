@@ -1,0 +1,53 @@
+{
+  "id": "shared-impact-shot",
+  "name": "可复用射击动作",
+  "nodes": [
+    {
+      "id": "projectile",
+      "kind": "projectile-ref",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 0.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "projectile": "shared-impact-projectile",
+        "count": 1,
+        "spread": 0
+      }
+    }
+  ],
+  "edges": [],
+  "timeline": {
+    "runtimeId": 3045,
+    "duration": 0.65,
+    "clips": [
+      {
+        "id": "cancel",
+        "kind": "cancel",
+        "start": 0.25,
+        "end": 0.65,
+        "moveX": 0.0,
+        "moveY": 0.0,
+        "moveZ": 0.0,
+        "steer": 0.0,
+        "hitRadius": 0.0,
+        "hitOffsetX": 0.0,
+        "hitOffsetY": 0.0,
+        "hitOffsetZ": 0.0,
+        "effects": []
+      }
+    ],
+    "payloads": [
+      {
+        "id": "shot",
+        "time": 0.22,
+        "repeatInterval": 0.0,
+        "effects": [
+          "projectile"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "id": "battle-rage",
+  "runtimeId": 8002,
+  "name": "战斗强化",
+  "permanent": false,
+  "duration": 1.0,
+  "interval": 0.0,
+  "stack": "refresh",
+  "maxStacks": 1,
+  "mutexGroup": 0,
+  "tags": [
+    1004,
+    3102
+  ],
+  "modifiers": [
+    {
+      "attribute": "attack",
+      "operation": "add",
+      "value": 40.0,
+      "priority": 0
+    }
+  ],
+  "nodes": [
+    {
+      "id": "events",
+      "kind": "buff-events",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 0.0,
+        "y": 80.0
+      },
+      "parameters": {}
+    },
+    {
+      "id": "cast-cue",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 270.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "id": 61
+      }
+    },
+    {
+      "id": "hurt-cue",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 270.0,
+        "y": 220.0
+      },
+      "parameters": {
+        "id": 62
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "cast",
+      "source": "events",
+      "sourcePort": "cast",
+      "target": "cast-cue",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "hurt",
+      "source": "events",
+      "sourcePort": "hurt",
+      "target": "hurt-cue",
+      "targetPort": "execute",
+      "order": 0
+    }
+  ]
+}

@@ -1,0 +1,110 @@
+{
+  "id": "arena-ground-burn",
+  "runtimeId": 5103,
+  "name": "地面燃烧",
+  "permanent": false,
+  "duration": 2.0,
+  "interval": 0.4,
+  "stack": "refresh",
+  "maxStacks": 1,
+  "mutexGroup": 0,
+  "tags": [],
+  "modifiers": [],
+  "nodes": [
+    {
+      "id": "events",
+      "kind": "buff-events",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 0.0,
+        "y": 80.0
+      },
+      "parameters": {}
+    },
+    {
+      "id": "period",
+      "kind": "damage",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 300.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "flat": 0,
+        "coefficient": 0.05,
+        "canCrit": false,
+        "snapshotAttack": false,
+        "scaleByStacks": false,
+        "notifyHurt": false,
+        "feedback": "none"
+      }
+    },
+    {
+      "id": "status-visual",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 600.0,
+        "y": 850.0
+      },
+      "parameters": {
+        "id": 4209,
+        "name": "StatusVisual",
+        "center": "target",
+        "anchor": "Body",
+        "playback": "start",
+        "instanceKey": "buff_5103",
+        "stopWithCast": false,
+        "stacksAsTier": false
+      }
+    },
+    {
+      "id": "status-visual-stop",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 900.0,
+        "y": 850.0
+      },
+      "parameters": {
+        "id": 4209,
+        "name": "StatusVisual",
+        "center": "target",
+        "anchor": "Body",
+        "playback": "stop",
+        "instanceKey": "buff_5103",
+        "stacksAsTier": false
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "events-period-period",
+      "source": "events",
+      "sourcePort": "period",
+      "target": "period",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "events-apply-status-visual-1",
+      "source": "events",
+      "sourcePort": "apply",
+      "target": "status-visual",
+      "targetPort": "execute",
+      "order": 1
+    },
+    {
+      "id": "events-removed-status-visual-stop-0",
+      "source": "events",
+      "sourcePort": "removed",
+      "target": "status-visual-stop",
+      "targetPort": "execute",
+      "order": 0
+    }
+  ]
+}

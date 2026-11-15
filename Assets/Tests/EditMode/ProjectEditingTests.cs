@@ -10,7 +10,7 @@ namespace Combat.Tests
 {
     public sealed class ProjectEditingTests
     {
-        static SkillProjectDocument Example()=>SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));
+        static SkillProjectDocument Example()=>SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));
         static SkillEditorDocument Editor(string id)=>new SkillEditorDocument {SelectedSkill=id,Viewports=new[]{new GraphViewportDocument {Kind="skill",Id=id,X=100,Y=-50,Zoom=.7f}}};
 
         [Test]

@@ -11,7 +11,7 @@ namespace Combat.Tests
 {
     public sealed class ArenaSessionTests
     {
-        static SkillProjectDocument Project()=>SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,"Combat/project.json")));
+        static SkillProjectDocument Project()=>SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,"Combat/project.json"));
         static ArenaSession Session(bool training=false,SkillProjectDocument p=null)=>new ArenaProject(p??Project()).Create(training);
         static Actor Player(ArenaSession s){s.World.TryGetActor(s.PlayerId,out var actor);return actor;}
         static ArenaInputFrame Input(bool held=false,params string[] keys)=>new ArenaInputFrame{PrimaryHeld=held,Pressed=keys,AimValid=true,Aim=new SkillAim(EntityId.Invalid,new SimVec3(4,0,0),0)};
@@ -155,7 +155,7 @@ namespace Combat.Tests
         }
         static SkillProjectDocument HeldProject(bool charge=false)
         {
-            var p=Project();var examples=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));
+            var p=Project();var examples=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));
             var graph=examples.Skills.First(s=>s.Id==(charge?"charged-shot":"basic-shot"));graph.Id="g1";graph.RuntimeId=101;p.Skills[0]=graph;
             p.Runtime.Arena.Bindings.First(b=>b.Action=="Fire1").Input="Attack";
             // Real Arena definitions now own 4001/4004; this synthetic held-cast fixture

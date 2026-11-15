@@ -25,7 +25,7 @@ namespace Combat.Tests
         public IEnumerator SetUp()
         {
             _directory=Path.Combine(Path.GetTempPath(),"HaloCombat-DamageEvents-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(_directory);
-            _project=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));
+            _project=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));
             _project.Preview.Targets=_project.Preview.Targets.Take(1).ToArray();var target=_project.Preview.Targets[0];target.Hp=20;target.Shield=30;target.Def=20;
             Publish();yield return SceneManager.LoadSceneAsync("Assets/Scenes/HaloCombat/SkillLab.unity",LoadSceneMode.Single);
             _runner=UnityEngine.Object.FindFirstObjectByType<SkillLabRunner>();Assert.IsNotNull(_runner);_runner.AutoAdvance=false;

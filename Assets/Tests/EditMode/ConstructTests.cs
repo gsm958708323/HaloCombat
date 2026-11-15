@@ -12,7 +12,7 @@ namespace Combat.Tests
     {
         static SkillProjectDocument Example()
         {
-            var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));
+            var p=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));
             p.Preview.Targets=new[]{new PreviewActorDocument{Id="target",X=0,Z=0,Hp=100000,Atk=0}};
             Cast(p).Parameters["delay"]=0;Node(p).Parameters["decayPeriod"]=0;
             p.Skills.Single(s=>s.Id=="barrel-chain").Nodes.Single(n=>n.Kind=="damage").Parameters["canCrit"]=false;
@@ -216,7 +216,7 @@ namespace Combat.Tests
         [Test]
         public void EnemyTeamConstructsDoNotReduceTheArenaEnemySpawnBudget()
         {
-            using(var s=new ArenaProject(SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,"Combat/project.json")))).Create())
+            using(var s=new ArenaProject(SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,"Combat/project.json"))).Create())
             {
                 s.Start();s.World.TryGetActor(s.PlayerId,out var player);Body(s.World,player,new ConstructDefinition{SpecId=1,Group="test",Team=2,DecayPeriod=0},10);
                 s.Advance();Assert.AreEqual(10,s.EnemyCount);Assert.AreEqual(10,s.SpawnedEnemies);

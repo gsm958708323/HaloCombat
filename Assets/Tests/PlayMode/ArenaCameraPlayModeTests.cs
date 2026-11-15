@@ -21,7 +21,7 @@ namespace Combat.Tests
         [UnitySetUp]
         public IEnumerator SetUp()
         {
-            _project=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,"Combat/project.json")));
+            _project=SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,"Combat/project.json"));
             _directory=Path.Combine(Application.streamingAssetsPath,"Combat/.camera-audit-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(_directory);Save();
             yield return SceneManager.LoadSceneAsync("Assets/Scenes/Arena.unity",LoadSceneMode.Single);yield return null;
             _arena=Object.FindFirstObjectByType<ArenaBootstrap>();_arena.AutoAdvance=false;_arena.Configure("Combat/"+Path.GetFileName(_directory)+"/project.json",true);

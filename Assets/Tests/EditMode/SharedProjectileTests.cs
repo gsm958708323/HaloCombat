@@ -12,8 +12,8 @@ namespace Combat.Tests
 {
     public sealed class SharedProjectileTests
     {
-        static SkillProjectDocument Formal()=>SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,"Combat/project.json")));
-        static SkillProjectDocument Examples()=>SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));
+        static SkillProjectDocument Formal()=>SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,"Combat/project.json"));
+        static SkillProjectDocument Examples()=>SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));
         static SharedProjectileDocument Definition(SkillProjectDocument p)=>p.Projectiles.Single(d=>d.Id=="arena-normal-projectile");
         static SkillNodeDocument Root(SharedProjectileDocument d)=>d.Nodes.Single(n=>n.Id==d.Root);
         [Test]

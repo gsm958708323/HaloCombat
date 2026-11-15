@@ -101,6 +101,7 @@ namespace Combat.Core
                 comp = (T)exact;
                 return true;
             }
+            if(typeof(T).IsSealed){comp=null;return false;}
 
             for (int i = 0; i < _order.Count; i++)
             {
@@ -241,6 +242,12 @@ namespace Combat.Core
             }
 
             return result;
+        }
+        internal IEnumerable<Actor> QueryActors()
+        {
+            int count=_slots.Count;
+            for(int i=1;i<count;i++)
+            {var slot=_slots[i];if(slot.Occupied&&slot.Actor!=null&&slot.Actor.IsActive)yield return slot.Actor;}
         }
 
         public void ClearAll()

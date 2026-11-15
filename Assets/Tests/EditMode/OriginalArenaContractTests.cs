@@ -11,7 +11,7 @@ namespace Combat.Tests
 {
     public sealed class OriginalArenaContractTests
     {
-        static SkillProjectDocument Project()=>SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,"Combat/project.json")));
+        static SkillProjectDocument Project()=>SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,"Combat/project.json"));
         static JObject Reference()=>JObject.Parse(File.ReadAllText(Path.Combine(Application.dataPath,"Tests/Fixtures/OriginalArenaContract.json")));
         static JArray Effects(IEffect[] effects)=>OriginalArenaEffectProjection.Capture(effects);
         static void Equal(JToken expected,JToken actual,string label)

@@ -6,7 +6,7 @@ internal static class TemplateAcceptanceChecks
 {
     public static void Run(string root)
     {
-        var source=SkillProjectJson.Read(File.ReadAllText(Path.Combine(root,"Content/SkillLab/project.json")));
+        var source=SkillProjectFiles.Read(Path.Combine(root,"Content/SkillLab/project.json"));
         foreach(var skill in source.Skills){
             var p=SkillProjectJson.SelectTemplate(source,skill.Id);
             var exported=SkillJsonTransfer.Export(p,"skill",skill.Id);var imported=SkillJsonTransfer.Import(exported.Json).Project;

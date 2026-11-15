@@ -210,7 +210,7 @@ namespace Combat.Core
         {
             if(_tags.Has(CommonTags.BlockMove))return 0;
             if (_grounded)
-                return _clipSteer > 0f ? _clipSteer : loco.MotorScale;
+                return _clipSteer > 0f ? _clipSteer : Self.TryGetComp<SkillCastComp>(out var cast)&&cast.AllowsMovement?1:loco.MotorScale;
             return _airSteer;
         }
 

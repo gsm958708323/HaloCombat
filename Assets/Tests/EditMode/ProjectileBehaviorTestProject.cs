@@ -11,7 +11,7 @@ namespace Combat.Tests
     {
         public static SkillProjectDocument Create(string id="basic-shot")
         {
-            var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));
+            var p=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));
             p.Skills=new[]{p.Skills.First(s=>s.Id==id)};p.Buffs=Array.Empty<BuffDocument>();p.SummonBlueprints=Array.Empty<SummonBlueprintDocument>();
             p.Preview.Energy=100;p.Preview.InitialEnergy=100;p.Preview.Recovery=0;p.Preview.Caster.X=0;p.Preview.Caster.Z=0;
             p.Preview.Obstacles=Array.Empty<PreviewObstacleDocument>();

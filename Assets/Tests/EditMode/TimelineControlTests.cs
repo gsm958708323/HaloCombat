@@ -10,7 +10,7 @@ namespace Combat.Tests
 {
     public sealed class TimelineControlTests
     {
-        static SkillProjectDocument Project()=>SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,"Combat/project.json")));
+        static SkillProjectDocument Project()=>SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,"Combat/project.json"));
         sealed class Fixture : IDisposable
         {
             public readonly CombatWorld World;

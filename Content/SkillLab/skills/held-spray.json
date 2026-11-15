@@ -1,0 +1,104 @@
+{
+  "id": "held-spray",
+  "runtimeId": 2003,
+  "name": "持续引导",
+  "category": "引导",
+  "nodes": [
+    {
+      "id": "target",
+      "kind": "target",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 0.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "point",
+        "range": 20
+      }
+    },
+    {
+      "id": "cast",
+      "kind": "cast",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 270.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "channel",
+        "cost": 10,
+        "cooldown": 0.7,
+        "delay": 0,
+        "duration": 0.3,
+        "count": 1,
+        "interval": 0.1,
+        "sustained": true,
+        "energyPerSecond": 12
+      }
+    },
+    {
+      "id": "projectile",
+      "kind": "projectile",
+      "runtimeId": 4003,
+      "enabled": true,
+      "position": {
+        "x": 540.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "speed": 12,
+        "range": 24,
+        "radius": 0.18,
+        "maxHits": 1,
+        "homingRate": 0
+      }
+    },
+    {
+      "id": "damage",
+      "kind": "damage",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 810.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "flat": 80,
+        "coefficient": 0,
+        "critChance": 0.15,
+        "critMultiplier": 1.8,
+        "ignoreDefense": false,
+        "hitstopFrames": 0
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "target-cast",
+      "source": "target",
+      "sourcePort": "target",
+      "target": "cast",
+      "targetPort": "target",
+      "order": 0
+    },
+    {
+      "id": "cast-delivery",
+      "source": "cast",
+      "sourcePort": "cast",
+      "target": "projectile",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "hit-damage",
+      "source": "projectile",
+      "sourcePort": "hit",
+      "target": "damage",
+      "targetPort": "execute",
+      "order": 0
+    }
+  ]
+}

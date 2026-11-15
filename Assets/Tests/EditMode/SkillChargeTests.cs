@@ -12,7 +12,7 @@ namespace Combat.Tests
     {
         static SkillProjectDocument Example()
         {
-            var project = SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath, "../Content/SkillLab/project.json")));
+            var project = SkillProjectFiles.Read(Path.Combine(Application.dataPath, "../Content/SkillLab/project.json"));
             project.Preview.Recovery = 0;
             return project;
         }

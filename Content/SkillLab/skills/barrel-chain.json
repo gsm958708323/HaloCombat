@@ -1,0 +1,156 @@
+{
+  "id": "barrel-chain",
+  "runtimeId": 2039,
+  "name": "木桶连锁爆炸",
+  "category": "可破坏物",
+  "nodes": [
+    {
+      "id": "target",
+      "kind": "target",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 0.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "point",
+        "range": 20
+      }
+    },
+    {
+      "id": "cast",
+      "kind": "cast",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 300.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "instant",
+        "cost": 0,
+        "cooldown": 0,
+        "delay": 0.1,
+        "duration": 0.5
+      }
+    },
+    {
+      "id": "barrel",
+      "kind": "construct",
+      "runtimeId": 6018,
+      "enabled": true,
+      "position": {
+        "x": 600.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "hp": 5,
+        "radius": 0.25,
+        "team": 0,
+        "group": "barrel",
+        "view": "barrel",
+        "damageCap": 1,
+        "decayPeriod": 5,
+        "decayDamage": 1,
+        "center": "point",
+        "forwardOffset": 0,
+        "count": 3,
+        "spacing": 1,
+        "maxAlive": 64,
+        "cleanupWithOwner": false
+      }
+    },
+    {
+      "id": "blast",
+      "kind": "delivery",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 900.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "area",
+        "center": "point",
+        "radius": 2.2,
+        "hostileMask": 4
+      }
+    },
+    {
+      "id": "damage",
+      "kind": "damage",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 1200.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "flat": 0,
+        "coefficient": 0.15,
+        "critChance": 0.05,
+        "critMultiplier": 1.8,
+        "canCrit": true,
+        "notifyHurt": false
+      }
+    },
+    {
+      "id": "chain",
+      "kind": "construct-chain",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 900.0,
+        "y": 460.0
+      },
+      "parameters": {
+        "group": "barrel",
+        "radius": 2.2,
+        "damage": 9999
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "target-cast",
+      "source": "target",
+      "sourcePort": "target",
+      "target": "cast",
+      "targetPort": "target",
+      "order": 0
+    },
+    {
+      "id": "death-blast",
+      "source": "barrel",
+      "sourcePort": "death",
+      "target": "blast",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "blast-damage",
+      "source": "blast",
+      "sourcePort": "apply",
+      "target": "damage",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "death-chain",
+      "source": "barrel",
+      "sourcePort": "death",
+      "target": "chain",
+      "targetPort": "execute",
+      "order": 1
+    },
+    {
+      "id": "cast-barrel",
+      "source": "cast",
+      "sourcePort": "cast",
+      "target": "barrel",
+      "targetPort": "execute",
+      "order": 0
+    }
+  ]
+}

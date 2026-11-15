@@ -26,7 +26,7 @@ namespace Combat.Tests
         public IEnumerator SetUp()
         {
             _directory=Path.Combine(Path.GetTempPath(),"HaloCombat-Motion-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(_directory);
-            _project=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));
+            _project=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));
             _project.Preview.Caster.X=0;_project.Preview.Caster.Z=0;_project.Preview.Recovery=0;_project.Preview.Targets=Array.Empty<PreviewActorDocument>();
             foreach(string id in new[]{"accelerating-shot","bouncing-shot","returning-shot","ricochet-shot"})
             {

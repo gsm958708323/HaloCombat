@@ -7,11 +7,11 @@ internal static class JsonTransferChecks
 {
     public static void Run(string root)
     {
-        var source=SkillProjectJson.Read(File.ReadAllText(Path.Combine(root,"Content/SkillLab/project.json")));
+        var source=SkillProjectFiles.Read(Path.Combine(root,"Content/SkillLab/project.json"));
         var before=SkillProjectJson.Write(source);
         foreach(string kind in new[]{"project","skill","runtime"})
         {
-            var document=kind=="runtime"?SkillProjectJson.Read(File.ReadAllText(Path.Combine(root,"Assets/StreamingAssets/Combat/project.json"))):source;
+            var document=kind=="runtime"?SkillProjectFiles.Read(Path.Combine(root,"Assets/StreamingAssets/Combat/project.json")):source;
             string skill=kind=="runtime"?"arena-ammo-shot":"summon-gunners";
             using var expected=new SkillSimulation(document,CombatContentCompiler.Compile(document));
             expected.Cast(skill,0,0);expected.Advance(120);var snapshot=JObject.FromObject(expected.Snapshot());

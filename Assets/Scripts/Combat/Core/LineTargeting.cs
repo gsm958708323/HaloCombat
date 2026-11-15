@@ -12,19 +12,15 @@ namespace Combat.Core
     }
     public static class LineTargeting
     {
-        public static LineHit[] Query(CombatWorld world,Actor source,SimVec3 from,SimVec3 to,float radius,int mask=0)
+        public static LineHit[] Query(CombatWorld world,Actor source,SimVec3 from,SimVec3 to,float radius,int mask=0,bool includeTargetRadius=false)
         {
-            var center=CollisionGeometry.Lerp(from,to,.5f);
-            float length=(float)Math.Sqrt(SpatialGeometry.DistanceSquared(from,to));
-            // This is only the broad phase. Include roundoff at segment endpoints;
-            // CircleEntry below remains the authority for actual contact.
-            var candidates=AreaTargets.Query(world,center,length*.5f+radius+.0001f,source,mask,0);
             var hits=new List<LineHit>();
-            foreach(var id in candidates)
+            foreach(var actor in world.QueryActors())
             {
-                if(!AreaTargets.TryLive(world,id,out var actor))continue;
-                if(CollisionGeometry.CircleEntry(from,to,actor.GetComp<TransformComp>().Position,radius,out float fraction))
-                    hits.Add(new LineHit(id,fraction,CollisionGeometry.Lerp(from,to,fraction)));
+                if(actor==source||!SimpleTargetQuery.PassesFilter(source,actor,mask)||!actor.TryGetComp<TransformComp>(out var transform))continue;
+                float targetRadius=includeTargetRadius&&actor.TryGetComp<LocomotionComp>(out var body)?body.CollisionRadius:0;
+                if(CollisionGeometry.CircleEntry(from,to,transform.Position,radius+Math.Max(0,targetRadius),out float fraction))
+                    hits.Add(new LineHit(actor.Id,fraction,CollisionGeometry.Lerp(from,to,fraction)));
             }
             hits.Sort((a,b)=>{int order=a.Fraction.CompareTo(b.Fraction);if(order!=0)return order;order=a.Target.Index.CompareTo(b.Target.Index);return order!=0?order:a.Target.Generation.CompareTo(b.Target.Generation);});
             return hits.ToArray();

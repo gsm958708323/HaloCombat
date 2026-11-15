@@ -12,7 +12,7 @@ namespace Combat.Tests
 {
     public sealed class SharedAreaTests
     {
-        static SkillProjectDocument Formal()=>SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,"Combat/project.json")));
+        static SkillProjectDocument Formal()=>SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,"Combat/project.json"));
         static SkillNodeDocument Root(SharedAreaDocument d)=>d.Nodes.Single(n=>n.Id==d.Root);
         [Test]
         public void BombPublicationContainsOneCopyOfEachAreaAndItsActualDelayedDependencies()

@@ -3,6 +3,17 @@ using SkillLab;
 using System.Collections.Concurrent;
 
 var paths=new HostPaths(args,Directory.GetCurrentDirectory(),AppContext.BaseDirectory);var root=paths.Root;
+if(args.Contains("--split-content"))
+{
+    foreach(var relative in new[]{"Content/SkillLab/project.json","Assets/StreamingAssets/Combat/project.json","Tools/SkillLab/.local/project.json"})
+    {
+        string path=Path.Combine(root,relative);if(!File.Exists(path))continue;
+        var project=SkillProjectFiles.Read(path);string before=SkillProjectJson.Write(project);SkillProjectFiles.Write(path,project);
+        if(before!=SkillProjectJson.Write(SkillProjectFiles.Read(path)))throw new InvalidOperationException("Content changed while splitting: "+relative);
+        Console.WriteLine("Split "+relative+" -> "+SkillProjectFiles.ReferencedPaths(path).Length+" modules");
+    }
+    return;
+}
 if(args.Contains("--self-test"))
 {
     try { PreviewChecks.Run(root); }
@@ -10,6 +21,7 @@ if(args.Contains("--self-test"))
     return;
 }
 var builder=WebApplication.CreateBuilder(args);
+builder.Logging.AddFilter("Microsoft.AspNetCore",LogLevel.Warning);
 builder.WebHost.UseUrls(paths.Url);
 builder.WebHost.ConfigureKestrel(options=>options.Limits.MaxRequestBodySize=4*1024*1024);
 var app=builder.Build();
@@ -18,7 +30,7 @@ var dataDirectory=paths.Data;
 Directory.CreateDirectory(dataDirectory);
 var projectFile=Path.Combine(dataDirectory,"project.json");
 var exampleFile=Path.Combine(root,"Content/SkillLab/project.json");
-if(!File.Exists(projectFile))File.Copy(exampleFile,projectFile);
+if(!File.Exists(projectFile))SkillProjectFiles.Write(projectFile,SkillProjectFiles.Read(exampleFile));
 var jsonLock=new SemaphoreSlim(1);
 var projectStore=new ProjectFileStore(projectFile);
 app.Use(async(context,next)=>
@@ -39,21 +51,21 @@ app.MapGet("/api/project",async(HttpContext context)=>
     var snapshot=await projectStore.Read();context.Response.Headers.ETag=snapshot.ETag;context.Response.Headers.CacheControl="no-store";
     return Results.Text(snapshot.Json,"application/json");
 });
-app.MapGet("/api/examples",()=>Results.Text(File.ReadAllText(exampleFile),"application/json"));
+app.MapGet("/api/examples",()=>Results.Text(SkillProjectJson.Write(SkillProjectFiles.Read(exampleFile)),"application/json"));
 var runtimeFile=Path.Combine(root,"Assets/StreamingAssets/Combat/project.json");
-app.MapGet("/api/runtime",()=>Results.Text(File.ReadAllText(runtimeFile),"application/json"));
+app.MapGet("/api/runtime",()=>Results.Text(SkillProjectJson.Write(SkillProjectFiles.Read(runtimeFile)),"application/json"));
 app.MapPost("/api/runtime/publish",async(HttpContext context)=>
 {
     var project=await ReadProject(context);var compiled=CombatContentCompiler.Compile(project);
     if(compiled.Runtime==null||project.Runtime.Actors.Length==0)throw new ContentValidationException("$.runtime.actors","正式内容需要角色定义。");
     project.Editor=null;
     await jsonLock.WaitAsync();
-    try{var temporary=runtimeFile+".tmp";await File.WriteAllTextAsync(temporary,SkillProjectJson.Write(project));File.Move(temporary,runtimeFile,true);}
+    try{SkillProjectFiles.Write(runtimeFile,project);}
     finally{jsonLock.Release();}
     return Results.Ok(new{message="正式JSON已发布；Arena按F5载入，演示场景按F1重建，训练场点击重置。"});
 });
 app.MapGet("/api/templates/{id}",(string id)=>
-{var project=SkillProjectJson.Read(File.ReadAllText(exampleFile));return Results.Text(SkillProjectJson.Write(SkillProjectJson.SelectTemplate(project,id)),"application/json");});
+{var project=SkillProjectFiles.Read(exampleFile);return Results.Text(SkillProjectJson.Write(SkillProjectJson.SelectTemplate(project,id)),"application/json");});
 app.MapPost("/api/project",async(HttpContext context)=>
 {
     var document=await ReadProject(context);

@@ -12,7 +12,7 @@ namespace Combat.Tests
 {
     public sealed class OriginalArenaEnvironmentTests
     {
-        static SkillProjectDocument Project()=>SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,"Combat/project.json")));
+        static SkillProjectDocument Project()=>SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,"Combat/project.json"));
         static JObject Original()=>JObject.Parse(File.ReadAllText(Path.Combine(Application.dataPath,"Tests/Fixtures/OriginalArenaEnvironment.json")));
         static void Equal(JToken expected,JToken actual,string label)
         {var result=SkillReplayComparer.Compare(expected,actual);Assert.IsTrue(result.Matches,label+"\n"+string.Join("\n",result.Differences.Select(d=>d.Path+": "+d.Expected+" != "+d.Actual)));}

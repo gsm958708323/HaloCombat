@@ -1,0 +1,149 @@
+{
+  "id": "burn",
+  "runtimeId": 8001,
+  "name": "灼烧",
+  "permanent": false,
+  "duration": 1.1,
+  "interval": 0.25,
+  "stack": "add",
+  "maxStacks": 3,
+  "mutexGroup": 0,
+  "tags": [
+    3101
+  ],
+  "modifiers": [
+    {
+      "attribute": "moveSpeed",
+      "operation": "mul",
+      "value": 0.5,
+      "priority": 0
+    }
+  ],
+  "nodes": [
+    {
+      "id": "events",
+      "kind": "buff-events",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 0.0,
+        "y": 80.0
+      },
+      "parameters": {}
+    },
+    {
+      "id": "period-damage",
+      "kind": "damage",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 270.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "flat": 10,
+        "coefficient": 0,
+        "critChance": 0,
+        "critMultiplier": 1.8,
+        "ignoreDefense": false,
+        "hitstopFrames": 0,
+        "scaleByStacks": true,
+        "notifyHurt": false
+      }
+    },
+    {
+      "id": "apply-cue",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 270.0,
+        "y": -180.0
+      },
+      "parameters": {
+        "id": 51
+      }
+    },
+    {
+      "id": "stack-cue",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 270.0,
+        "y": -70.0
+      },
+      "parameters": {
+        "id": 52
+      }
+    },
+    {
+      "id": "expire-cue",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 270.0,
+        "y": 380.0
+      },
+      "parameters": {
+        "id": 53
+      }
+    },
+    {
+      "id": "removed-cue",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 270.0,
+        "y": 490.0
+      },
+      "parameters": {
+        "id": 54
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "period",
+      "source": "events",
+      "sourcePort": "period",
+      "target": "period-damage",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "apply",
+      "source": "events",
+      "sourcePort": "apply",
+      "target": "apply-cue",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "stack",
+      "source": "events",
+      "sourcePort": "stack",
+      "target": "stack-cue",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "expire",
+      "source": "events",
+      "sourcePort": "expire",
+      "target": "expire-cue",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "removed",
+      "source": "events",
+      "sourcePort": "removed",
+      "target": "removed-cue",
+      "targetPort": "execute",
+      "order": 0
+    }
+  ]
+}

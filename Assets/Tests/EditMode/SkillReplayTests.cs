@@ -11,7 +11,7 @@ namespace Combat.Tests
 {
     public sealed class SkillReplayTests
     {
-        static SkillProjectDocument Example()=>SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));
+        static SkillProjectDocument Example()=>SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));
         static SkillSimulation Run(SkillProjectDocument p)=>new SkillSimulation(p,CombatContentCompiler.Compile(p));
         static void Command(SkillSimulation s,string json)=>s.Execute(SkillSimulationCommands.Read(json));
         static void Matched(SkillReplayDocument document)
@@ -86,7 +86,7 @@ namespace Combat.Tests
         [Test]
         public void RuntimeComboTokensAreRecordedThroughTheExistingInputBuffer()
         {
-            var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,"Combat/project.json")));
+            var p=SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,"Combat/project.json"));
             using(var s=Run(p))
             {
                 Command(s,"{\"kind\":\"input\",\"input\":\"Fire1\",\"x\":4,\"z\":0}");s.Advance(20);

@@ -3,7 +3,7 @@ import type { Project } from '../model';
 import { actionNumbers,numberAllocator,selectGraph } from './contentEdits';
 
 const roots=new Set(['target','cast']);
-const rules=new Set(['mode','cost','cooldown','ammoCost','fallbackSkill','recastSkill','recastProjectile','requiredProjectile','hitFeedback']);
+const rules=new Set(['mode','cost','cooldown','ammoCost','fallbackSkill','recastSkill','recastProjectile','requiredProjectile','hitFeedback','allowMovement']);
 export function bindTimeline(project:Project,skillId:string,timelineId:string):Project {
   if(timelineId&&!project.timelines?.some(t=>t.id===timelineId))throw new Error('共享时间轴不存在');
   return {...project,skills:project.skills.map(s=>{

@@ -16,7 +16,7 @@ namespace Combat.Tests
     public sealed class RestoredAreaOperationPlayModeTests
     {
         string _directory;SkillLabRunner _lab;
-        static SkillProjectDocument Formal()=>SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,"Combat/project.json")));
+        static SkillProjectDocument Formal()=>SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,"Combat/project.json"));
         void Publish(SkillProjectDocument p,string skill)
         {
             if(_directory==null){_directory=Path.Combine(Path.GetTempPath(),"HaloCombat-Restored-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(_directory);}

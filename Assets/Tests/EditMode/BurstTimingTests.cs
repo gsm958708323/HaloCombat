@@ -14,7 +14,7 @@ namespace Combat.Tests
     {
         static SkillProjectDocument Project(bool burst=true,int count=20,string target="direction")
         {
-            var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,"Combat/project.json")));
+            var p=SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,"Combat/project.json"));
             var s=p.Skills.Single(v=>v.Id=="arena-ammo-shot");s.Timeline=null;
             s.Nodes=s.Nodes.Where(n=>n.Kind=="target"||n.Kind=="cast"||n.Kind=="projectile-ref").ToArray();
             s.Nodes.Single(n=>n.Kind=="target").Parameters=JObject.FromObject(new{mode=target,range=1000});
@@ -96,7 +96,7 @@ namespace Combat.Tests
         [Test]
         public void TheDeliveredDeathShotTemplateRunsTwentyDirectionsAndRoundtripsItsBurstSwitch()
         {
-            var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));
+            var p=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));
             var selected=SkillProjectJson.SelectTemplate(p,"death-shot");Assert.AreEqual(1,selected.Skills.Length);
             var skill=selected.Skills.Single();Assert.AreEqual("direction",skill.Nodes.Single(n=>n.Kind=="target").Parameters.Value<string>("mode"));
             var cast=skill.Nodes.Single(n=>n.Kind=="cast");Assert.IsTrue(cast.Parameters.Value<bool>("burst"));Assert.AreEqual(20,cast.Parameters.Value<int>("count"));

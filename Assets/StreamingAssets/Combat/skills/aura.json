@@ -1,0 +1,124 @@
+{
+  "id": "aura",
+  "runtimeId": 401,
+  "name": "来源独立光环",
+  "category": "正式内容",
+  "nodes": [
+    {
+      "id": "target",
+      "kind": "target",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 0.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "facing",
+        "range": 20
+      }
+    },
+    {
+      "id": "cast",
+      "kind": "cast",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 300.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "instant",
+        "cost": 0,
+        "cooldown": 0
+      }
+    },
+    {
+      "id": "aura",
+      "kind": "delivery",
+      "runtimeId": 802,
+      "enabled": true,
+      "position": {
+        "x": 600.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "area",
+        "persistent": true,
+        "center": "source",
+        "radius": 1.2,
+        "duration": 8,
+        "interval": 0,
+        "pulseOnSpawn": false
+      }
+    },
+    {
+      "id": "slow",
+      "kind": "buff",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 900.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "buff": "aura-slow"
+      }
+    },
+    {
+      "id": "dispel",
+      "kind": "dispel",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 1200.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "source"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "target-cast",
+      "source": "target",
+      "sourcePort": "target",
+      "target": "cast",
+      "targetPort": "target",
+      "order": 0
+    },
+    {
+      "id": "aura-enter-slow-0",
+      "source": "aura",
+      "sourcePort": "enter",
+      "target": "slow",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "aura-exit-dispel-0",
+      "source": "aura",
+      "sourcePort": "exit",
+      "target": "dispel",
+      "targetPort": "execute",
+      "order": 0
+    }
+  ],
+  "timeline": {
+    "runtimeId": 1401,
+    "duration": 0.1,
+    "animation": "Fire",
+    "clips": [],
+    "payloads": [
+      {
+        "id": "area",
+        "time": 0.0,
+        "repeatInterval": 0.0,
+        "effects": [
+          "aura"
+        ]
+      }
+    ]
+  }
+}

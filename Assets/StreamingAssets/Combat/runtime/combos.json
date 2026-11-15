@@ -1,0 +1,271 @@
+[
+  {
+    "id": "attack-root",
+    "preSkills": [],
+    "input": "Attack",
+    "requiredTags": [],
+    "priority": 0,
+    "toSkill": "g1"
+  },
+  {
+    "id": "g1-to-g2",
+    "preSkills": [
+      "g1"
+    ],
+    "input": "Attack",
+    "requiredTags": [
+      1001
+    ],
+    "priority": 10,
+    "toSkill": "g2"
+  },
+  {
+    "id": "dodge-to-g1",
+    "preSkills": [
+      "dodge"
+    ],
+    "input": "Attack",
+    "requiredTags": [
+      1001
+    ],
+    "priority": 5,
+    "toSkill": "g1"
+  },
+  {
+    "id": "ArenaArea",
+    "preSkills": [],
+    "input": "ArenaArea",
+    "requiredTags": [],
+    "priority": 0,
+    "toSkill": "arena-returning-shot"
+  },
+  {
+    "id": "ArenaAura",
+    "preSkills": [],
+    "input": "ArenaAura",
+    "requiredTags": [],
+    "priority": 0,
+    "toSkill": "arena-bomb-shot"
+  },
+  {
+    "id": "ArenaSummon",
+    "preSkills": [],
+    "input": "ArenaSummon",
+    "requiredTags": [],
+    "priority": 0,
+    "toSkill": "summon-melee"
+  },
+  {
+    "id": "ArenaDodge",
+    "preSkills": [],
+    "input": "ArenaDodge",
+    "requiredTags": [],
+    "priority": 0,
+    "toSkill": "arena-roll"
+  },
+  {
+    "id": "ArenaHoming",
+    "preSkills": [],
+    "input": "ArenaHoming",
+    "requiredTags": [],
+    "priority": 0,
+    "toSkill": "arena-homing-shot"
+  },
+  {
+    "id": "ArenaArea-cancel",
+    "preSkills": [
+      "g1",
+      "g2",
+      "dodge",
+      "homing",
+      "aura",
+      "summon-melee"
+    ],
+    "input": "ArenaArea",
+    "requiredTags": [
+      1001
+    ],
+    "priority": 5,
+    "toSkill": "g2"
+  },
+  {
+    "id": "ArenaAura-cancel",
+    "preSkills": [
+      "g1",
+      "g2",
+      "dodge",
+      "homing",
+      "aura",
+      "summon-melee"
+    ],
+    "input": "ArenaAura",
+    "requiredTags": [
+      1001
+    ],
+    "priority": 5,
+    "toSkill": "arena-bomb-shot"
+  },
+  {
+    "id": "ArenaSummon-cancel",
+    "preSkills": [
+      "g1",
+      "g2",
+      "dodge",
+      "homing",
+      "aura",
+      "summon-melee"
+    ],
+    "input": "ArenaSummon",
+    "requiredTags": [
+      1001
+    ],
+    "priority": 5,
+    "toSkill": "summon-melee"
+  },
+  {
+    "id": "ArenaDodge-cancel",
+    "preSkills": [
+      "g1",
+      "g2",
+      "dodge",
+      "homing",
+      "aura",
+      "summon-melee"
+    ],
+    "input": "ArenaDodge",
+    "requiredTags": [
+      1001
+    ],
+    "priority": 5,
+    "toSkill": "arena-roll"
+  },
+  {
+    "id": "ArenaHoming-cancel",
+    "preSkills": [
+      "g1",
+      "g2",
+      "dodge",
+      "homing",
+      "aura",
+      "summon-melee"
+    ],
+    "input": "ArenaHoming",
+    "requiredTags": [
+      1001
+    ],
+    "priority": 5,
+    "toSkill": "homing"
+  },
+  {
+    "id": "arena-tracked-root",
+    "preSkills": [],
+    "input": "ArenaTracked",
+    "requiredTags": [],
+    "priority": 0,
+    "toSkill": "arena-tracked-shot"
+  },
+  {
+    "id": "arena-primary-root",
+    "preSkills": [],
+    "input": "ArenaPrimary",
+    "requiredTags": [],
+    "priority": 0,
+    "toSkill": "arena-ammo-shot"
+  },
+  {
+    "id": "arena-construct-root",
+    "preSkills": [],
+    "input": "ArenaConstruct",
+    "requiredTags": [],
+    "priority": 0,
+    "toSkill": "arena-barrel"
+  },
+  {
+    "id": "confirmed-root",
+    "preSkills": [],
+    "input": "ConfirmAttack",
+    "requiredTags": [],
+    "priority": 0,
+    "toSkill": "g1"
+  },
+  {
+    "id": "confirmed-g1-g2",
+    "preSkills": [
+      "g1"
+    ],
+    "input": "ConfirmAttack",
+    "requiredTags": [
+      1017
+    ],
+    "priority": 10,
+    "toSkill": "g2"
+  },
+  {
+    "id": "confirmed-g2-g1",
+    "preSkills": [
+      "g2"
+    ],
+    "input": "ConfirmAttack",
+    "requiredTags": [
+      1017
+    ],
+    "priority": 10,
+    "toSkill": "g1"
+  },
+  {
+    "id": "arena-orb-root",
+    "preSkills": [],
+    "input": "ArenaOrb",
+    "requiredTags": [],
+    "priority": 0,
+    "toSkill": "arena-absorbing-orb"
+  },
+  {
+    "id": "arena-first-second",
+    "preSkills": [
+      "arena-ammo-shot"
+    ],
+    "input": "ArenaPrimary",
+    "requiredTags": [
+      1017
+    ],
+    "priority": 10,
+    "toSkill": "arena-combo-second"
+  },
+  {
+    "id": "arena-second-finisher",
+    "preSkills": [
+      "arena-combo-second"
+    ],
+    "input": "ArenaPrimary",
+    "requiredTags": [
+      1017
+    ],
+    "priority": 10,
+    "toSkill": "arena-combo-finisher"
+  },
+  {
+    "id": "arena-confirmed-return",
+    "preSkills": [
+      "arena-ammo-shot"
+    ],
+    "input": "ArenaArea",
+    "requiredTags": [
+      1017
+    ],
+    "priority": 5,
+    "toSkill": "arena-returning-shot"
+  },
+  {
+    "id": "ArenaSecond-confirm-bomb",
+    "preSkills": [
+      "arena-combo-second"
+    ],
+    "input": "ArenaAura",
+    "requiredTags": [
+      1017
+    ],
+    "priority": 5,
+    "toSkill": "arena-bomb-shot"
+  }
+]

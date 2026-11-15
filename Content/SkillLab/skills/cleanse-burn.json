@@ -1,0 +1,97 @@
+{
+  "id": "cleanse-burn",
+  "runtimeId": 2018,
+  "name": "驱散灼烧",
+  "category": "Buff",
+  "nodes": [
+    {
+      "id": "target",
+      "kind": "target",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 0.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "nearest",
+        "range": 20
+      }
+    },
+    {
+      "id": "cast",
+      "kind": "cast",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 270.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "instant",
+        "cost": 10,
+        "cooldown": 0.7,
+        "delay": 0.1,
+        "duration": 0.3,
+        "count": 1,
+        "interval": 0.1
+      }
+    },
+    {
+      "id": "delivery",
+      "kind": "delivery",
+      "runtimeId": 5020,
+      "enabled": true,
+      "position": {
+        "x": 540.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "target",
+        "recipient": "target"
+      }
+    },
+    {
+      "id": "cleanse",
+      "kind": "dispel",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 810.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "buff",
+        "buff": "burn",
+        "recipient": "target",
+        "maxCount": 0
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "target-cast",
+      "source": "target",
+      "sourcePort": "target",
+      "target": "cast",
+      "targetPort": "target",
+      "order": 0
+    },
+    {
+      "id": "cast-delivery",
+      "source": "cast",
+      "sourcePort": "cast",
+      "target": "delivery",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "hit-damage",
+      "source": "delivery",
+      "sourcePort": "apply",
+      "target": "cleanse",
+      "targetPort": "execute",
+      "order": 0
+    }
+  ]
+}

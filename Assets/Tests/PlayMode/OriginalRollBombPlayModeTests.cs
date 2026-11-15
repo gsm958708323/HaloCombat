@@ -18,7 +18,7 @@ namespace Combat.Tests
     public sealed class OriginalRollBombPlayModeTests
     {
         string _directory;ArenaBootstrap _arena;SkillLabRunner _lab;
-        static SkillProjectDocument Formal()=>SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,"Combat/project.json")));
+        static SkillProjectDocument Formal()=>SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,"Combat/project.json"));
         void Files(SkillProjectDocument p,string first="arena-bomb-shot",string second="arena-roll")
         {
             _directory=Path.Combine(Application.streamingAssetsPath,"Combat/.roll-bomb-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(_directory);

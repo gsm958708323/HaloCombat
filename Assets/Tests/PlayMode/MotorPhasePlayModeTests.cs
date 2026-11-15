@@ -21,7 +21,7 @@ namespace Combat.Tests
         ArenaBootstrap _arena;
         static SkillProjectDocument Project(float distance)
         {
-            var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,UnityRuntimeContent.DefaultFile)));
+            var p=SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,UnityRuntimeContent.DefaultFile));
             var s=p.Skills.Single(v=>v.Id=="arena-controlled-shot");s.Nodes=s.Nodes.Where(n=>n.Kind!="projectile").ToArray();s.Edges=s.Edges.Where(e=>e.Source!="shot").ToArray();
             s.Nodes.Single(n=>n.Id=="damage").Parameters=JObject.FromObject(new{flat=10,coefficient=0,canCrit=false});
             s.Timeline=new TimelineDocument{RuntimeId=3015,Duration=.02f,ControlTags=new[]{1011},Clips=new[]{

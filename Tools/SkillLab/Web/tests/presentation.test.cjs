@@ -3,8 +3,8 @@ const {nodeFieldGroups,nodePortGroups}=require('../../.local/web-checks/authorin
 const {skillSummary}=require('../../.local/web-checks/authoring/skillSummary.js');
 const {setBurst,setCastExecution}=require('../../.local/web-checks/authoring/castExecution.js');
 const {burstEnabled,nodeFields,nodeOutputs}=require('../../.local/web-checks/model.js');
-const runtime=()=>JSON.parse(fs.readFileSync(path.resolve(__dirname,'../../../../Assets/StreamingAssets/Combat/project.json'),'utf8'));
-const examples=()=>JSON.parse(fs.readFileSync(path.resolve(__dirname,'../../../../Content/SkillLab/project.json'),'utf8'));
+const runtime=()=>require('./projectFixture.cjs').readProject(path.resolve(__dirname,'../../../../Assets/StreamingAssets/Combat/project.json'));
+const examples=()=>require('./projectFixture.cjs').readProject(path.resolve(__dirname,'../../../../Content/SkillLab/project.json'));
 
 test('burst switching preserves configured count interval payment and identity across off/on',()=>{
   const node={id:'cast',kind:'cast',position:{x:0,y:0},parameters:{mode:'instant',count:20,interval:.04,costPerPulse:true}};

@@ -20,7 +20,7 @@ namespace Combat.Tests
         [UnityTest]
         public IEnumerator PublishedTwentyShotRandomBurstAndDisabledSingleShotUseTheSameFileInUnity()
         {
-            var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));p.Preview.Targets=Array.Empty<PreviewActorDocument>();
+            var p=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));p.Preview.Targets=Array.Empty<PreviewActorDocument>();
             var s=p.Skills.Single(v=>v.Id=="basic-shot");var cast=s.Nodes.Single(n=>n.Kind=="cast");s.Nodes.Single(n=>n.Kind=="target").Parameters["mode"]="direction";
             cast.Parameters=JObject.FromObject(new{mode="instant",burst=true,count=20,interval=.04,delay=0,cost=0,cooldown=0,duration=.9});
             _directory=Path.Combine(Path.GetTempPath(),"HaloCombat-Burst-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(_directory);

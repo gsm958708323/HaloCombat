@@ -109,7 +109,7 @@ namespace Combat.Tests
         [Test]
         public void FailedResourceCastKeepsTheInputButCannotRestoreConsumedConfirmation()
         {
-            var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,"Combat/project.json")));
+            var p=SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,"Combat/project.json"));
             p.Skills.Single(s=>s.Id=="g2").Nodes.Single(n=>n.Kind=="cast").Parameters["cost"]=20;
             p.Runtime.Actors.Single(a=>a.Id=="arena-player").Recovery=0;
             using(var s=new ArenaProject(p).Create(true))
@@ -145,14 +145,14 @@ namespace Combat.Tests
         [Test]
         public void AmbiguousEqualPriorityPredecessorsAreRejectedEvenWhenTagsDiffer()
         {
-            var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,"Combat/project.json")));
+            var p=SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,"Combat/project.json"));
             var original=p.Runtime.Combos.Single(c=>c.Id=="confirmed-g1-g2");p.Runtime.Combos=p.Runtime.Combos.Concat(new[]{new RuntimeComboDocument{Id="conflict",Input=original.Input,PreSkills=new[]{"g1","g2"},Priority=original.Priority,ToSkill="g1",RequiredTags=new[]{999}}}).ToArray();
             var error=Assert.Throws<ContentValidationException>(()=>CombatContentCompiler.Compile(p));StringAssert.Contains("conflict",error.Path);StringAssert.Contains("priority",error.Message);
         }
         [Test]
         public void SharedPreviewInputUsesTheActualComboAndDoesNotRebuildTheSession()
         {
-            var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,"Combat/project.json")));p.Preview.Caster.X=0;p.Preview.Caster.Atk=10;p.Preview.Targets=new[]{new PreviewActorDocument{Id="target",X=.55f,Hp=1000}};
+            var p=SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,"Combat/project.json"));p.Preview.Caster.X=0;p.Preview.Caster.Atk=10;p.Preview.Targets=new[]{new PreviewActorDocument{Id="target",X=.55f,Hp=1000}};
             using(var s=new SkillSimulation(p,CombatContentCompiler.Compile(p)))
             {
                 s.Input("ConfirmAttack",4,0);s.Advance(10);var first=s.Snapshot();Assert.IsTrue(first.Actors.Single(a=>a.Kind=="caster").ComboConfirmed);Assert.Greater(first.Statistics.Damage,0);

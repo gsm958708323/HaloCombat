@@ -1,0 +1,151 @@
+{
+  "id": "homing",
+  "runtimeId": 201,
+  "name": "追踪箭",
+  "category": "正式内容",
+  "nodes": [
+    {
+      "id": "target",
+      "kind": "target",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 0.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "facing",
+        "range": 20
+      }
+    },
+    {
+      "id": "cast",
+      "kind": "cast",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 300.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "instant",
+        "cost": 0,
+        "cooldown": 0
+      }
+    },
+    {
+      "id": "homing",
+      "kind": "projectile",
+      "runtimeId": 902,
+      "enabled": true,
+      "position": {
+        "x": 600.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "speed": 8,
+        "lifetime": 2.5,
+        "range": 0,
+        "radius": 0.35,
+        "maxHits": 1,
+        "homingRate": 270,
+        "spawnForward": 0.2
+      }
+    },
+    {
+      "id": "damage",
+      "kind": "damage",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 900.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "flat": 0,
+        "coefficient": 1,
+        "critChance": 0,
+        "critMultiplier": 2,
+        "canCrit": false
+      }
+    },
+    {
+      "id": "stun",
+      "kind": "impact",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 1200.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "hitstun",
+        "duration": 0.35
+      }
+    },
+    {
+      "id": "knock",
+      "kind": "impact",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 1500.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "knockback",
+        "distance": 0.4
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "target-cast",
+      "source": "target",
+      "sourcePort": "target",
+      "target": "cast",
+      "targetPort": "target",
+      "order": 0
+    },
+    {
+      "id": "homing-hit-damage-0",
+      "source": "homing",
+      "sourcePort": "hit",
+      "target": "damage",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "homing-hit-stun-1",
+      "source": "homing",
+      "sourcePort": "hit",
+      "target": "stun",
+      "targetPort": "execute",
+      "order": 1
+    },
+    {
+      "id": "homing-hit-knock-2",
+      "source": "homing",
+      "sourcePort": "hit",
+      "target": "knock",
+      "targetPort": "execute",
+      "order": 2
+    }
+  ],
+  "timeline": {
+    "runtimeId": 1004,
+    "duration": 0.2,
+    "animation": "Fire",
+    "clips": [],
+    "payloads": [
+      {
+        "id": "shot",
+        "time": 0.02,
+        "repeatInterval": 0.0,
+        "effects": [
+          "homing"
+        ]
+      }
+    ]
+  }
+}

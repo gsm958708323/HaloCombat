@@ -10,7 +10,7 @@ namespace Combat.Tests
 {
     public sealed class InputQueueTests
     {
-        static SkillProjectDocument Project()=>SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,"Combat/project.json")));
+        static SkillProjectDocument Project()=>SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,"Combat/project.json"));
         static Actor Player(ArenaSession s){s.World.TryGetActor(s.PlayerId,out var p);return p;}
         static ArenaInputFrame Press(params string[] keys)=>new ArenaInputFrame{Pressed=keys,AimValid=true,Aim=new SkillAim(EntityId.Invalid,new SimVec3(4,0,0),0)};
         [Test]

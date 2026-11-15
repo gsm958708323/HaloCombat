@@ -28,6 +28,7 @@ namespace Combat.Core
         public ChargeDefinition Charge;
         public float EnergyPerSecond;
         public bool CostPerPulse;
+        public bool AllowMovement;
         public float AimRange;
         public int AmmoCost;
         public SkillNodeId AmmoFallback,RecastSkill;
@@ -96,6 +97,7 @@ namespace Combat.Core
         public bool IsCharging => IsActive && _director.IsCharging;
         public float ChargeProgress => IsCharging ? _director.ChargeProgress : 0;
         public float CastPower => IsActive ? _director.CastPower : 1;
+        public bool AllowsMovement=>IsActive&&_active.AllowMovement;
         public SkillCastComp(SkillCatalog catalog) => _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
         public HitFeedbackLevel FeedbackFor(SkillNodeId skill)=>_catalog.TryGet(skill,out var definition)?definition.HitFeedback:HitFeedbackLevel.None;
         public void SetBasePower(float power)

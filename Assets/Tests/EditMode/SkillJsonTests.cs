@@ -10,7 +10,7 @@ namespace Combat.Tests
 {
     public sealed class SkillJsonTests
     {
-        static string Example => File.ReadAllText(Path.Combine(Application.dataPath, "../Content/SkillLab/project.json"));
+        static string Example => SkillProjectJson.Write(SkillProjectFiles.Read(Path.Combine(Application.dataPath, "../Content/SkillLab/project.json")));
 
         [Test]
         public void JsonRoundtripBuildsFreshDefinitionsAndPreservesCastRules()

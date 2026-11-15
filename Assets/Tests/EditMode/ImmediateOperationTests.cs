@@ -11,13 +11,13 @@ namespace Combat.Tests
 {
     public sealed class ImmediateOperationTests
     {
-        static SkillProjectDocument Formal()=>SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,"Combat/project.json")));
+        static SkillProjectDocument Formal()=>SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,"Combat/project.json"));
         static SkillSimulation Sim(SkillProjectDocument p)=>new SkillSimulation(p,CombatContentCompiler.Compile(p));
         static SkillActorSnapshot Caster(SkillSimulation s)=>s.Snapshot().Actors.Single(a=>a.Kind=="caster");
         static void Command(SkillSimulation s,string key)=>s.Execute(new SkillSimulationCommand{Kind="cast",SkillId=key,X=20,Z=0});
         static SkillProjectDocument Shield()
         {
-            var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));p.Preview.Recovery=0;
+            var p=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));p.Preview.Recovery=0;
             var s=p.Skills.Single(v=>v.Id=="shield-self");s.Nodes.Single(n=>n.Kind=="cast").Parameters=JObject.FromObject(new{mode="instant",execution="operation",cost=20,cooldown=.5f});return p;
         }
         [Test]

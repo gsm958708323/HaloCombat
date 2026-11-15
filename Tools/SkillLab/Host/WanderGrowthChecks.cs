@@ -7,7 +7,7 @@ internal static class WanderGrowthChecks
 {
     public static void Run(string root)
     {
-        var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(root,"Assets/StreamingAssets/Combat/project.json")));p.Runtime.Arena.MaxEnemies=2;
+        var p=SkillProjectFiles.Read(Path.Combine(root,"Assets/StreamingAssets/Combat/project.json"));p.Runtime.Arena.MaxEnemies=2;
         using var session=new ArenaProject(p).Create();var spawns=new List<float>();var casts=new List<int>();
         session.World.Events.Subscribe<EvEntitySpawn>(e=>{if(e.BlueprintId=="arena-enemy"){session.World.TryGetActor(e.Id,out var actor);spawns.Add(actor.GetComp<AttributeSet>().GetBase(AttrId.MaxHp));}});
         session.World.Events.Subscribe<EvSkillStarted>(e=>{if(e.Source!=session.PlayerId)casts.Add(session.World.Time.Frame);});

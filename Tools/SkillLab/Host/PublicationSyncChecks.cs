@@ -6,7 +6,7 @@ internal static class PublicationSyncChecks
 {
     public static void Run(string root)
     {
-        var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(root,"Content/SkillLab/project.json")));
+        var p=SkillProjectFiles.Read(Path.Combine(root,"Content/SkillLab/project.json"));
         var slots=new Dictionary<string,string>{{"f6",SkillPublicationJson.Write(SkillPublicationJson.Create(p,"basic-shot"))},{"f7",SkillPublicationJson.Write(SkillPublicationJson.Create(p,"summon-gunners"))}};
         p.Skills.Single(s=>s.Id=="basic-shot").Nodes.Single(n=>n.Kind=="projectile").Parameters["speed"]=9;
         var plan=PublicationFiles.PlanSync(p,slots);

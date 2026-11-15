@@ -23,7 +23,7 @@ namespace Combat.Tests
         [UnitySetUp]
         public IEnumerator SetUp()
         {
-            _project=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,UnityRuntimeContent.DefaultFile)));
+            _project=SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,UnityRuntimeContent.DefaultFile));
             _relative="Combat/.arena-tests-"+Guid.NewGuid().ToString("N");_directory=Path.Combine(Application.streamingAssetsPath,_relative);Directory.CreateDirectory(_directory);Save();
             yield return SceneManager.LoadSceneAsync("Assets/Scenes/Arena.unity",LoadSceneMode.Single);yield return null;
             _runner=Object.FindFirstObjectByType<ArenaBootstrap>();Assert.IsNotNull(_runner);_runner.AutoAdvance=false;

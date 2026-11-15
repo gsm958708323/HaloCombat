@@ -1,0 +1,71 @@
+{
+  "id": "arena-confirmed-shot",
+  "name": "连段共享射击动作",
+  "nodes": [
+    {
+      "id": "projectile",
+      "kind": "projectile-ref",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 0.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "projectile": "arena-confirmed-projectile",
+        "count": 1,
+        "spread": 0
+      }
+    },
+    {
+      "id": "muzzle-cue",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 600.0,
+        "y": 760.0
+      },
+      "parameters": {
+        "id": 4206,
+        "name": "ConfirmedMuzzleExplosion",
+        "center": "source",
+        "anchor": "Muzzle"
+      }
+    }
+  ],
+  "edges": [],
+  "timeline": {
+    "runtimeId": 3013,
+    "duration": 0.65,
+    "animation": "Fire",
+    "clips": [
+      {
+        "id": "cancel",
+        "kind": "cancel",
+        "start": 0.25,
+        "end": 0.65,
+        "moveX": 0.0,
+        "moveY": 0.0,
+        "moveZ": 0.0,
+        "steer": 0.0,
+        "hitRadius": 0.0,
+        "hitOffsetX": 0.0,
+        "hitOffsetY": 0.0,
+        "hitOffsetZ": 0.0,
+        "effects": []
+      }
+    ],
+    "payloads": [
+      {
+        "id": "shot",
+        "time": 0.22,
+        "repeatInterval": 0.0,
+        "effects": [
+          "muzzle-cue",
+          "projectile"
+        ]
+      }
+    ]
+  }
+}

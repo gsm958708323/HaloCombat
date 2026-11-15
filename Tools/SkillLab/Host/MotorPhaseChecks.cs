@@ -7,7 +7,7 @@ internal static class MotorPhaseChecks
 {
     public static void Run(string root)
     {
-        var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(root,"Assets/StreamingAssets/Combat/project.json")));
+        var p=SkillProjectFiles.Read(Path.Combine(root,"Assets/StreamingAssets/Combat/project.json"));
         var skill=p.Skills.Single(s=>s.Id=="arena-controlled-shot");
         skill.Nodes=skill.Nodes.Where(n=>n.Kind!="projectile").ToArray();skill.Edges=skill.Edges.Where(e=>e.Source!="shot").ToArray();
         skill.Timeline=new TimelineDocument{RuntimeId=3015,Duration=.02f,ControlTags=new[]{1011},Clips=new[]{

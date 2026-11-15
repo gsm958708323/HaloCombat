@@ -1,0 +1,80 @@
+{
+  "id": "shared-impact-projectile",
+  "name": "共享命中弹体",
+  "root": "projectile",
+  "nodes": [
+    {
+      "id": "projectile",
+      "kind": "projectile",
+      "runtimeId": 6503,
+      "enabled": true,
+      "position": {
+        "x": 0.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "speed": 10,
+        "range": 0,
+        "lifetime": 3,
+        "radius": 0.16,
+        "maxHits": 4,
+        "spawnForward": 0.45,
+        "sameTargetDelay": 0.15,
+        "passInvulnerable": true
+      }
+    },
+    {
+      "id": "damage",
+      "kind": "damage",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 300.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "flat": 0,
+        "coefficient": 1.35,
+        "canCrit": true,
+        "critChance": 0.05,
+        "critMultiplier": 1.8,
+        "snapshotAttack": true,
+        "notifyHurt": false,
+        "sourceHitstopFrames": 2,
+        "targetHitstopFrames": 4
+      }
+    },
+    {
+      "id": "hurt",
+      "kind": "hurt-feedback",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 600.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "level": "damage",
+        "requireHpDamage": true
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "projectile-hit-damage",
+      "source": "projectile",
+      "sourcePort": "hit",
+      "target": "damage",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "damage-next-hurt",
+      "source": "damage",
+      "sourcePort": "next",
+      "target": "hurt",
+      "targetPort": "execute",
+      "order": 0
+    }
+  ]
+}

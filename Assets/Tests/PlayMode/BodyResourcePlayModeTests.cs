@@ -16,7 +16,7 @@ namespace Combat.Tests
     public sealed class BodyResourcePlayModeTests
     {
         string _directory;SkillLabRunner _lab;ArenaBootstrap _arena;
-        static SkillProjectDocument Formal()=>SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,"Combat/project.json")));
+        static SkillProjectDocument Formal()=>SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,"Combat/project.json"));
         void Files(SkillProjectDocument p)
         {
             _directory=Path.Combine(Application.streamingAssetsPath,"Combat/.body-resources-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(_directory);

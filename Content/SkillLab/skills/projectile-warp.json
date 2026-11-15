@@ -1,0 +1,70 @@
+{
+  "id": "projectile-warp",
+  "runtimeId": 2038,
+  "name": "追踪弹传送操作",
+  "category": "弹药与重施放",
+  "nodes": [
+    {
+      "id": "target",
+      "kind": "target",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 0.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "self",
+        "range": 20
+      }
+    },
+    {
+      "id": "cast",
+      "kind": "cast",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 300.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "instant",
+        "cost": 0,
+        "cooldown": 0,
+        "requiredProjectile": "warp",
+        "execution": "operation"
+      }
+    },
+    {
+      "id": "warp",
+      "kind": "teleport-projectile",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 600.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "trackingKey": "warp"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "target-cast",
+      "source": "target",
+      "sourcePort": "target",
+      "target": "cast",
+      "targetPort": "target",
+      "order": 0
+    },
+    {
+      "id": "cast-operation",
+      "source": "cast",
+      "sourcePort": "cast",
+      "target": "warp",
+      "targetPort": "execute",
+      "order": 0
+    }
+  ]
+}

@@ -1,0 +1,115 @@
+{
+  "id": "arena-bomb-projectile",
+  "name": "原弹跳炸弹",
+  "root": "projectile",
+  "nodes": [
+    {
+      "id": "projectile",
+      "kind": "projectile",
+      "runtimeId": 4005,
+      "enabled": true,
+      "position": {
+        "x": 0.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "speed": 3,
+        "range": 0,
+        "lifetime": 2,
+        "radius": 0.1,
+        "maxHits": 1,
+        "spawnForward": 0.4,
+        "snapshotAttack": true,
+        "passInvulnerable": true,
+        "trajectory": "phase-bounce",
+        "groundPhases": [
+          1,
+          1.6667,
+          1.999
+        ],
+        "bounceHeight": 1,
+        "removeOnObstacle": true,
+        "view": "buff_projectile_bomb_view"
+      }
+    },
+    {
+      "id": "explosion",
+      "kind": "area-ref",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 300.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "area": "arena-bomb-explosion",
+        "center": "auto",
+        "forwardOffset": 0
+      }
+    },
+    {
+      "id": "delayed",
+      "kind": "area-ref",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 300.0,
+        "y": 480.0
+      },
+      "parameters": {
+        "area": "arena-delayed-bomb",
+        "center": "auto",
+        "forwardOffset": 0
+      }
+    },
+    {
+      "id": "impact-explosion",
+      "kind": "area-ref",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 600.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "area": "arena-bomb-explosion",
+        "center": "target",
+        "forwardOffset": 0
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "projectile-hit-impact-explosion-0",
+      "source": "projectile",
+      "sourcePort": "hit",
+      "target": "impact-explosion",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "projectile-wall-explosion-0",
+      "source": "projectile",
+      "sourcePort": "wall",
+      "target": "explosion",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "projectile-lifetime-explosion-0",
+      "source": "projectile",
+      "sourcePort": "lifetime",
+      "target": "explosion",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "projectile-lifetime-delayed-1",
+      "source": "projectile",
+      "sourcePort": "lifetime",
+      "target": "delayed",
+      "targetPort": "execute",
+      "order": 1
+    }
+  ]
+}

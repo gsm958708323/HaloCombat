@@ -7,7 +7,7 @@ const {mergeProjects}=require('../../.local/web-checks/authoring/mergeProjects.j
 const {skillSummary}=require('../../.local/web-checks/authoring/skillSummary.js');
 const {nodeFieldGroups,nodePortGroups}=require('../../.local/web-checks/authoring/nodePresentation.js');
 const {EditorHistory}=require('../../.local/web-checks/authoring/EditorHistory.js');
-const example=()=>JSON.parse(fs.readFileSync(path.resolve(__dirname,'../../../../Content/SkillLab/project.json'),'utf8'));
+const example=()=>require('./projectFixture.cjs').readProject(path.resolve(__dirname,'../../../../Content/SkillLab/project.json'));
 let sequence=0;const ids=()=>{let n=0;const namespace=++sequence;return ()=>'behavior-'+namespace+'-'+ ++n;};
 const key={kind:'skill',id:'basic-shot'};
 function extracted(source='basic-shot'){

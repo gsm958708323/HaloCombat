@@ -10,7 +10,7 @@ namespace Combat.Tests
 {
     public sealed class SkillReplayValidationTests
     {
-        static SkillProjectDocument Example()=>SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));
+        static SkillProjectDocument Example()=>SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));
         static JObject FileToken()
         {
             var p=Example();using(var s=new SkillSimulation(p,CombatContentCompiler.Compile(p)))

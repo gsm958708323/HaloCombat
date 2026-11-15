@@ -93,7 +93,7 @@ namespace Combat.Tests
         [Test]
         public void WorldAliveLimitBoundsSeveralDifferentSummonNodes()
         {
-            var project=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));
+            var project=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));
             project.Preview.Targets=Array.Empty<PreviewActorDocument>();var skill=project.Skills.First(s=>s.Id=="summon-gunners");var prototype=skill.Nodes.First(n=>n.Kind=="delivery");
             var nodes=skill.Nodes.Where(n=>n.Kind!="delivery").ToList();var edges=skill.Edges.Where(e=>e.Source=="target").ToList();
             for(int i=0;i<9;i++)

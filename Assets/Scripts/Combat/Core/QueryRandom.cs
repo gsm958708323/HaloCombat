@@ -75,7 +75,7 @@ namespace Combat.Core
             return w;
         }
 
-        static bool PassesFilter(Actor source, Actor target, int hostileMask)
+        internal static bool PassesFilter(Actor source, Actor target, int hostileMask)
         {
             // Runtime bodies are not combatants. They carry a TeamComp only so
             // spawned projectiles/AoEs can inherit ownership, but must never become

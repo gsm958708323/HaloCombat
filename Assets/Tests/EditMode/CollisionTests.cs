@@ -10,7 +10,7 @@ namespace Combat.Tests
 {
     public sealed class CollisionTests
     {
-        static SkillProjectDocument Example()=>SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));
+        static SkillProjectDocument Example()=>SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));
         static SkillSimulation Simulation(SkillProjectDocument project)=>new SkillSimulation(project,CombatContentCompiler.Compile(project));
         static PreviewObstacleDocument Wall()=>new PreviewObstacleDocument{Id="wall",X=-2,Z=0,Width=.5f,Depth=4};
 

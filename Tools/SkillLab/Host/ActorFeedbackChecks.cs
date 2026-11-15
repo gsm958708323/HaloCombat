@@ -6,7 +6,7 @@ internal static class ActorFeedbackChecks
 {
     public static void Run(string root)
     {
-        var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(root,"Content/SkillLab/project.json")));p.Preview.Caster.X=0;
+        var p=SkillProjectFiles.Read(Path.Combine(root,"Content/SkillLab/project.json"));p.Preview.Caster.X=0;
         p.Preview.Targets=new[]{new PreviewActorDocument{Id="target",X=2,Hp=1000}};p.Preview.Recovery=0;
         using var s=new SkillSimulation(p,CombatContentCompiler.Compile(p));
         if(!s.Cast("actor-hitstop",2,0).Accepted)throw new Exception("Actor feedback cast rejected.");s.Advance(1);s.Move(1,0);s.Advance(1);

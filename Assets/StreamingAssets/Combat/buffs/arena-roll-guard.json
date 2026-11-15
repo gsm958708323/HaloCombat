@@ -1,0 +1,88 @@
+{
+  "id": "arena-roll-guard",
+  "runtimeId": 5104,
+  "name": "翻滚减伤",
+  "permanent": false,
+  "duration": 0.7,
+  "interval": 0.0,
+  "stack": "refresh",
+  "maxStacks": 1,
+  "mutexGroup": 0,
+  "tags": [],
+  "modifiers": [
+    {
+      "attribute": "damageTaken",
+      "operation": "mul",
+      "value": 0.5,
+      "priority": 0
+    }
+  ],
+  "nodes": [
+    {
+      "id": "events",
+      "kind": "buff-events",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 0.0,
+        "y": 80.0
+      },
+      "parameters": {}
+    },
+    {
+      "id": "start",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 300.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "id": 4212,
+        "name": "RollGuard",
+        "center": "target",
+        "playback": "start",
+        "instanceKey": "buff_5104",
+        "stopWithCast": false,
+        "anchor": "Body"
+      }
+    },
+    {
+      "id": "stop",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 600.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "id": 4212,
+        "name": "RollGuard",
+        "center": "target",
+        "playback": "stop",
+        "instanceKey": "buff_5104",
+        "anchor": "Body"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "events-apply-start-0",
+      "source": "events",
+      "sourcePort": "apply",
+      "target": "start",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "events-removed-stop-0",
+      "source": "events",
+      "sourcePort": "removed",
+      "target": "stop",
+      "targetPort": "execute",
+      "order": 0
+    }
+  ]
+}

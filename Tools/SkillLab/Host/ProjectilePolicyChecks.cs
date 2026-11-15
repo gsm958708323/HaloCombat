@@ -9,7 +9,7 @@ internal static class ProjectilePolicyChecks
     {
         foreach(string clock in new[]{"time","distance"})
         {
-            var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(root,"Content/SkillLab/project.json")));
+            var p=SkillProjectFiles.Read(Path.Combine(root,"Content/SkillLab/project.json"));
             var skill=p.Skills.Single(s=>s.Id=="basic-shot");var body=skill.Nodes.Single(n=>n.Kind=="projectile");
             skill.Nodes.Single(n=>n.Kind=="cast").Parameters["delay"]=0;p.Preview.Caster.X=0;p.Preview.Caster.Z=0;
             body.Parameters["contactMode"]="ignore";body.Parameters["speed"]=10;body.Parameters["range"]=100;body.Parameters["spawnForward"]=0;
@@ -27,7 +27,7 @@ internal static class ProjectilePolicyChecks
             using var replay=new SkillReplayRun(simulation.CaptureReplay(skill.Id));if(!replay.Comparison.Matches)throw new Exception("Projectile flight recording did not reproduce.");
         }
         var transformed=Path.Combine(root,"Tools/SkillLab/.local/verification/projectile-policy/web-shared-behavior.json");
-        if(File.Exists(transformed))CombatContentCompiler.Compile(SkillProjectJson.Read(File.ReadAllText(transformed)));
+        if(File.Exists(transformed))CombatContentCompiler.Compile(SkillProjectFiles.Read(transformed));
         Console.WriteLine("PASS: independent behavior data, time/distance flight execution, ignored contact, author/cast identity and recorded JSON replay.");
     }
 }

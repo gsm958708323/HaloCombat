@@ -21,7 +21,7 @@ namespace Combat.Tests
         {
             _directory = Path.Combine(Path.GetTempPath(), "HaloCombat-SkillLab-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(_directory);
-            var project = SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath, "../Content/SkillLab/project.json")));
+            var project = SkillProjectFiles.Read(Path.Combine(Application.dataPath, "../Content/SkillLab/project.json"));
             foreach (var pair in new[] { new[] { "f6", "basic-shot" }, new[] { "f7", "burst-shot" } })
                 File.WriteAllText(Path.Combine(_directory, pair[0] + ".json"), SkillPublicationJson.Write(SkillPublicationJson.Create(project, pair[1])));
             yield return SceneManager.LoadSceneAsync("Assets/Scenes/HaloCombat/SkillLab.unity", LoadSceneMode.Single);
@@ -94,7 +94,7 @@ namespace Combat.Tests
         [UnityTest]
         public IEnumerator HeldChannelUsesTheSameScheduleAndReleasesInUnity()
         {
-            var project = SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath, "../Content/SkillLab/project.json")));
+            var project = SkillProjectFiles.Read(Path.Combine(Application.dataPath, "../Content/SkillLab/project.json"));
             project.Preview.Recovery = 0;
             File.WriteAllText(Path.Combine(_directory, "f6.json"), SkillPublicationJson.Write(SkillPublicationJson.Create(project, "basic-shot")));
             File.WriteAllText(Path.Combine(_directory, "f7.json"), SkillPublicationJson.Write(SkillPublicationJson.Create(project, "held-spray")));
@@ -115,7 +115,7 @@ namespace Combat.Tests
         [UnityTest]
         public IEnumerator ChargedPublicationUsesInitialEnergyAndDealsScaledDamageAfterRelease()
         {
-            var project = SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath, "../Content/SkillLab/project.json")));
+            var project = SkillProjectFiles.Read(Path.Combine(Application.dataPath, "../Content/SkillLab/project.json"));
             project.Preview.InitialEnergy = 50; project.Preview.Recovery = 0;
             var skill = project.Skills.First(s => s.Id == "charged-shot");
             skill.Nodes.First(n => n.Kind == "cast").Parameters["autoRelease"] = false;
@@ -141,7 +141,7 @@ namespace Combat.Tests
         [UnityTest]
         public IEnumerator CancellingHeldChargeInTheUnityAdapterNeverFiresARelease()
         {
-            var project = SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath, "../Content/SkillLab/project.json")));
+            var project = SkillProjectFiles.Read(Path.Combine(Application.dataPath, "../Content/SkillLab/project.json"));
             File.WriteAllText(Path.Combine(_directory, "f7.json"), SkillPublicationJson.Write(SkillPublicationJson.Create(project, "charged-shot")));
             Assert.IsTrue(_runner.ReloadPublished());
             _runner.CastSlot("f7", 0, 0); _runner.StepLogicForTests(30);
@@ -155,7 +155,7 @@ namespace Combat.Tests
         [UnityTest]
         public IEnumerator PublishedExplosionHitsSeveralTargetsAndUsesItsRealRadius()
         {
-            var project = SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath, "../Content/SkillLab/project.json")));
+            var project = SkillProjectFiles.Read(Path.Combine(Application.dataPath, "../Content/SkillLab/project.json"));
             File.WriteAllText(Path.Combine(_directory, "f7.json"), SkillPublicationJson.Write(SkillPublicationJson.Create(project, "explosive-shot")));
             Assert.IsTrue(_runner.ReloadPublished(), _runner.LastLoadError);
             _runner.CastSlot("f7", 0, 0); _runner.StepLogicForTests(30);
@@ -175,7 +175,7 @@ namespace Combat.Tests
         [UnityTest]
         public IEnumerator PublishedAreaRendersAnIndependentLifetimeAndExpiresAfterFivePulses()
         {
-            var project = SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath, "../Content/SkillLab/project.json")));
+            var project = SkillProjectFiles.Read(Path.Combine(Application.dataPath, "../Content/SkillLab/project.json"));
             File.WriteAllText(Path.Combine(_directory, "f7.json"), SkillPublicationJson.Write(SkillPublicationJson.Create(project, "ground-field")));
             Assert.IsTrue(_runner.ReloadPublished(), _runner.LastLoadError);
             _runner.CastSlot("f7", 0, 0); _runner.StepLogicForTests(10);
@@ -196,7 +196,7 @@ namespace Combat.Tests
         [UnityTest]
         public IEnumerator PublishedMeleeRendersTheActiveShapeAndInterruptClosesIt()
         {
-            var project=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));
+            var project=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));
             File.WriteAllText(Path.Combine(_directory,"f7.json"),SkillPublicationJson.Write(SkillPublicationJson.Create(project,"melee-thrust")));
             Assert.IsTrue(_runner.ReloadPublished(),_runner.LastLoadError);
             _runner.CastSlot("f7",0,0);_runner.StepLogicForTests(12);
@@ -214,7 +214,7 @@ namespace Combat.Tests
         [UnityTest]
         public IEnumerator PublishedDashUsesExactDistanceSweptHitsAndStopsOnHit()
         {
-            var project=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));
+            var project=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));
             File.WriteAllText(Path.Combine(_directory,"f7.json"),SkillPublicationJson.Write(SkillPublicationJson.Create(project,"dash-strike")));
             _runner.ReloadPublished();_runner.CastSlot("f7",0,0);_runner.StepLogicForTests(80);
             Assert.AreEqual(6,_runner.Snapshot.Actors.First(a=>a.Kind=="caster").X,.002f);
@@ -231,7 +231,7 @@ namespace Combat.Tests
         [UnityTest]
         public IEnumerator PublishedBlinkValidatesItsDestinationAndResolvesAtTheExactPoint()
         {
-            var project=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));
+            var project=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));
             File.WriteAllText(Path.Combine(_directory,"f7.json"),SkillPublicationJson.Write(SkillPublicationJson.Create(project,"blink-strike")));
             _runner.ReloadPublished();Assert.IsFalse(_runner.CastSlot("f7",20,0).Accepted);Assert.AreEqual(100,_runner.Snapshot.Energy);
             Assert.IsTrue(_runner.CastSlot("f7",0,0).Accepted);_runner.StepLogicForTests(9);

@@ -22,7 +22,7 @@ namespace Combat.Tests
         [UnitySetUp]
         public IEnumerator SetUp()
         {
-            _project=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,UnityRuntimeContent.DefaultFile)));
+            _project=SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,UnityRuntimeContent.DefaultFile));
             _relative="Combat/.ammo-tests-"+Guid.NewGuid().ToString("N");_directory=Path.Combine(Application.streamingAssetsPath,_relative);Directory.CreateDirectory(_directory);
             Save();Publish("f6","arena-ammo-shot");Publish("f7","arena-tracked-shot");
             yield return SceneManager.LoadSceneAsync("Assets/Scenes/Arena.unity",LoadSceneMode.Single);yield return null;

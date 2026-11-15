@@ -6,7 +6,7 @@ internal static class ScenePlacementChecks
 {
     public static void Run(string root)
     {
-        var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(root,"Content/SkillLab/project.json")));
+        var p=SkillProjectFiles.Read(Path.Combine(root,"Content/SkillLab/project.json"));
         using var simulation=new SkillSimulation(p,CombatContentCompiler.Compile(p));
         simulation.Execute(new SkillSimulationCommand{Kind="cast",SkillId="basic-shot",X=0,Z=0});simulation.Advance(10);
         var state=simulation.Snapshot();var target=state.Actors.First(a=>a.Kind=="target");var shot=state.Actors.Single(a=>a.Kind=="projectile");

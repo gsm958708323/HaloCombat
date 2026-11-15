@@ -50,6 +50,7 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
   cast: { title: '施放规则', color: '#5b7164', inputs: ['target'], outputs: [['cast','施放']], fields: [
     {key:'execution',label:'执行方式',type:'select',initial:'timeline',options:[['timeline','时间轴动作'],['operation','即时操作']]},
     {key:'hitFeedback',label:'技能默认命中反馈',type:'select',initial:'none',options:[['none','基础'],['light','轻'],['confirm','连段'],['heavy','重'],['finisher','终结']]},
+    {key:'allowMovement',label:'施放时允许移动',type:'check',initial:true},
     { key: 'mode', label: '施放规则', type: 'select', initial: 'instant', options: [['instant','瞬发'],['channel','引导'],['charge','蓄力']] },
     { key: 'cost', label: '能量消耗', min: 0, max: 100, step: 1, initial: 10 },
     {key:'ammoCost',integer:true,label:'弹药消耗',min:0,max:1000000,step:1,initial:0},
@@ -275,7 +276,7 @@ export const parameterValue = (field: Field, parameters: Parameters) => paramete
 export const castRoutingFields=['ammoCost','fallbackSkill','recastProjectile','recastSkill','requiredProjectile'];
 export function nodeFields(node:GraphNode,options:{definitionRoot?:boolean;authoredTimeline?:boolean;behaviorLinked?:boolean}={}):Field[] {
   const definitionFields=node.kind==='delivery'?['mode','persistent','center','forwardOffset']:['multi','count','spread'];
-  const rules=['cost','cooldown','hitFeedback',...castRoutingFields];
+  const rules=['cost','cooldown','hitFeedback','allowMovement',...castRoutingFields];
   return (kinds[node.kind]?.fields??[]).filter(f=>(!f.when||f.when(node.parameters))&&
     (!options.definitionRoot||!definitionFields.includes(f.key))&&
     (!options.behaviorLinked||!['maxHits','chain','chainCount','chainRadius','chainMode'].includes(f.key))&&

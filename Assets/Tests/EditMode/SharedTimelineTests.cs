@@ -12,8 +12,8 @@ namespace Combat.Tests
 {
     public sealed class SharedTimelineTests
     {
-        static SkillProjectDocument Formal()=>SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,"Combat/project.json")));
-        static SkillProjectDocument Examples()=>SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));
+        static SkillProjectDocument Formal()=>SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,"Combat/project.json"));
+        static SkillProjectDocument Examples()=>SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));
         static SharedTimelineDocument Shared(SkillProjectDocument p)=>p.Timelines.Single();
         static SkillGraphDocument Second(SkillProjectDocument p)=>p.Skills.Single(s=>s.Id=="arena-combo-second");
         static SkillGraphDocument Finish(SkillProjectDocument p)=>p.Skills.Single(s=>s.Id=="arena-combo-finisher");

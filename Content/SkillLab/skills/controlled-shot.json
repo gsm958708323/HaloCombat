@@ -1,0 +1,139 @@
+{
+  "id": "controlled-shot",
+  "runtimeId": 2042,
+  "name": "受控位移射击",
+  "category": "动作控制",
+  "nodes": [
+    {
+      "id": "target",
+      "kind": "target",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 0.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "facing",
+        "range": 20
+      }
+    },
+    {
+      "id": "cast",
+      "kind": "cast",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 300.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "instant",
+        "cost": 10,
+        "cooldown": 0.8
+      }
+    },
+    {
+      "id": "shot",
+      "kind": "projectile",
+      "runtimeId": 6019,
+      "enabled": true,
+      "position": {
+        "x": 600.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "speed": 6,
+        "range": 20,
+        "lifetime": 5,
+        "radius": 0.1,
+        "maxHits": 1
+      }
+    },
+    {
+      "id": "damage",
+      "kind": "damage",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 900.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "flat": 20,
+        "coefficient": 0,
+        "canCrit": false
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "target-cast",
+      "source": "target",
+      "sourcePort": "target",
+      "target": "cast",
+      "targetPort": "target",
+      "order": 0
+    },
+    {
+      "id": "hit-damage",
+      "source": "shot",
+      "sourcePort": "hit",
+      "target": "damage",
+      "targetPort": "execute",
+      "order": 0
+    }
+  ],
+  "timeline": {
+    "runtimeId": 3042,
+    "duration": 0.6,
+    "controlTags": [
+      1011,
+      1012,
+      1013
+    ],
+    "scaleWithActionSpeed": true,
+    "clips": [
+      {
+        "id": "move",
+        "kind": "move",
+        "start": 0.0,
+        "end": 0.4,
+        "moveX": 2.0,
+        "moveY": 0.0,
+        "moveZ": 0.0,
+        "steer": 1.0,
+        "hitRadius": 0.0,
+        "hitOffsetX": 0.0,
+        "hitOffsetY": 0.0,
+        "hitOffsetZ": 0.0,
+        "effects": []
+      },
+      {
+        "id": "cancel",
+        "kind": "cancel",
+        "start": 0.4,
+        "end": 0.6,
+        "moveX": 0.0,
+        "moveY": 0.0,
+        "moveZ": 0.0,
+        "steer": 0.0,
+        "hitRadius": 0.0,
+        "hitOffsetX": 0.0,
+        "hitOffsetY": 0.0,
+        "hitOffsetZ": 0.0,
+        "effects": []
+      }
+    ],
+    "payloads": [
+      {
+        "id": "emit",
+        "time": 0.2,
+        "repeatInterval": 0.0,
+        "effects": [
+          "shot"
+        ]
+      }
+    ]
+  }
+}

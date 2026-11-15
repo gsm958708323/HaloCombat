@@ -1,0 +1,34 @@
+{
+  "id": "aura-slow",
+  "runtimeId": 2,
+  "name": "光环减速",
+  "permanent": true,
+  "duration": 3.0,
+  "interval": 0.0,
+  "stack": "independent",
+  "maxStacks": 1,
+  "mutexGroup": 0,
+  "tags": [],
+  "modifiers": [
+    {
+      "attribute": "moveSpeed",
+      "operation": "mul",
+      "value": 0.5,
+      "priority": 0
+    }
+  ],
+  "nodes": [
+    {
+      "id": "events",
+      "kind": "buff-events",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 0.0,
+        "y": 80.0
+      },
+      "parameters": {}
+    }
+  ],
+  "edges": []
+}

@@ -13,7 +13,7 @@ namespace Combat.Tests
     {
         static SkillProjectDocument Project(string mode)
         {
-            var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));
+            var p=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));
             p.Skills=new[]{p.Skills.First(s=>s.Id=="direct-hit")};p.SummonBlueprints=Array.Empty<SummonBlueprintDocument>();p.Buffs=Array.Empty<BuffDocument>();
             p.Preview.Caster.X=0;p.Preview.Caster.Z=0;p.Preview.Targets=new[]{new PreviewActorDocument{Id="target",X=2,Hp=1000}};
             var skill=p.Skills[0];var damage=skill.Nodes.First(n=>n.Kind=="damage");damage.Kind="impact";

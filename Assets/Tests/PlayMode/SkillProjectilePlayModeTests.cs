@@ -27,7 +27,7 @@ namespace Combat.Tests
         public IEnumerator SetUp()
         {
             _directory=Path.Combine(Path.GetTempPath(),"HaloCombat-Projectiles-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(_directory);
-            _project=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));
+            _project=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));
             _project.Preview.Caster.X=0;_project.Preview.Caster.Z=0;_project.Preview.Recovery=0;Targets((2,0),(4,0),(6,0));
             foreach(string skill in new[]{"chain-shot","split-shot","spread-shot","fan-channel"})
             {

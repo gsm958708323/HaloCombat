@@ -22,7 +22,7 @@ namespace Combat.Tests
         SkillLabRunner _lab;
         [UnityTearDown]
         public IEnumerator TearDown(){if(_arena!=null)Object.Destroy(_arena.gameObject);if(_lab!=null)Object.Destroy(_lab.gameObject);yield return null;if(_directory!=null&&Directory.Exists(_directory))Directory.Delete(_directory,true);}
-        static SkillProjectDocument Formal()=>SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,UnityRuntimeContent.DefaultFile)));
+        static SkillProjectDocument Formal()=>SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,UnityRuntimeContent.DefaultFile));
         void Files(SkillProjectDocument p)
         {
             _directory=Path.Combine(Application.streamingAssetsPath,"Combat/.shared-timeline-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(_directory);

@@ -9,7 +9,7 @@ internal static class PreviewChecks
     {
         HostPathChecks.Run(root);
         TemplateAcceptanceChecks.Run(root);
-        var json=File.ReadAllText(Path.Combine(root,"Content/SkillLab/project.json"));
+        var json=SkillProjectJson.Write(SkillProjectFiles.Read(Path.Combine(root,"Content/SkillLab/project.json")));
         var document=SkillProjectJson.Read(json);
         var content=CombatContentCompiler.Compile(document);
         using var first=new SkillSimulation(document,content);
@@ -185,7 +185,8 @@ internal static class PreviewChecks
     static void CheckAreas(SkillProjectDocument project)
     {
         var content=CombatContentCompiler.Compile(project);
-        foreach(var item in new[]{("explosive-shot",240f,3),("ground-field",300f,15),("direct-hit",80f,1)})
+        // Explosion center is the first contact of both collision discs, not the target center.
+        foreach(var item in new[]{("explosive-shot",160f,2),("ground-field",300f,15),("direct-hit",80f,1)})
         {
             using var simulation=new SkillSimulation(project,content);
             Assert(simulation.Cast(item.Item1,0,0).Accepted,"Area example must cast: "+item.Item1);
@@ -194,7 +195,7 @@ internal static class PreviewChecks
             Assert(state.Statistics.Hits==item.Item3,"Unexpected area target/pulse count: "+item.Item1);
             Assert(!state.Actors.Any(a=>a.Kind=="aoe"),"Finite area must expire.");
         }
-        Console.WriteLine("PASS: hit-point explosion 240/3 hits, finite area 300/15 hits and direct target 80/1 hit.");
+        Console.WriteLine("PASS: surface-contact explosion 160/2 hits, finite area 300/15 hits and direct target 80/1 hit.");
     }
     static void CheckCharge(SkillProjectDocument source)
     {

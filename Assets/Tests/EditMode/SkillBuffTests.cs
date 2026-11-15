@@ -9,7 +9,7 @@ namespace Combat.Tests
 {
     public sealed class SkillBuffTests
     {
-        static SkillProjectDocument Example()=>SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));
+        static SkillProjectDocument Example()=>SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));
         static SkillSimulation Simulation(SkillProjectDocument p)=>new SkillSimulation(p,CombatContentCompiler.Compile(p));
         static SkillNodeDocument Node(SkillProjectDocument p,string skill,string kind)=>p.Skills.First(s=>s.Id==skill).Nodes.First(n=>n.Kind==kind);
 

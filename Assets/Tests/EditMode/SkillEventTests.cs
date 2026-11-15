@@ -75,7 +75,7 @@ namespace Combat.Tests
         [TestCase("blink-strike")]
         public void DelayedAndSpatialDamagePreservesItsOriginalSkillAndCast(string id)
         {
-            var p=SkillProjectJson.Read(System.IO.File.ReadAllText(System.IO.Path.Combine(UnityEngine.Application.dataPath,"../Content/SkillLab/project.json")));
+            var p=SkillProjectFiles.Read(System.IO.Path.Combine(UnityEngine.Application.dataPath,"../Content/SkillLab/project.json"));
             using(var s=new SkillSimulation(p,CombatContentCompiler.Compile(p)))
             {
                 s.Cast(id,0,0);s.Advance(140);
@@ -115,7 +115,7 @@ namespace Combat.Tests
         public void EventAppliedBuffRetainsSuppressionWhenItsLaterPeriodsResolve()
         {
             var p=Project();RemoveConfirmation(p);Targets(p,(2,0));
-            var full=SkillProjectJson.Read(System.IO.File.ReadAllText(System.IO.Path.Combine(UnityEngine.Application.dataPath,"../Content/SkillLab/project.json")));
+            var full=SkillProjectFiles.Read(System.IO.Path.Combine(UnityEngine.Application.dataPath,"../Content/SkillLab/project.json"));
             p.Buffs=full.Buffs.Where(b=>b.Id=="burn").ToArray();
             var bonus=p.Skills[0].Nodes.First(n=>n.Id=="bonus-damage");bonus.Kind="buff";bonus.Parameters=JObject.FromObject(new{buff="burn",stacks=1,recipient="target"});
             using(var s=Run(p))

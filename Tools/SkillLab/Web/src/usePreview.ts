@@ -121,7 +121,7 @@ export function usePreview(project: Project | null, selected: string, report: (m
         if (continuous || latestState.current?.channeling || latestState.current?.charging) commands.push({ kind: 'aim', ...aim.current });
         commands.push({kind:'step',steps});await run(commands);
       } finally { busy.current = false; }
-    }, 20);
+    }, 33);
     return () => clearInterval(timer);
   }, [playing,ready,speed,continuous,run]);
   async function replayFile(text?:string){

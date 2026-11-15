@@ -11,7 +11,7 @@ namespace Combat.Tests
     public sealed class SkillJsonTransferTests
     {
         static SkillProjectDocument Example() => Read("Content/SkillLab/project.json");
-        static SkillProjectDocument Read(string path) => SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../"+path)));
+        static SkillProjectDocument Read(string path) => SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../"+path));
 
         [Test]
         public void ProjectFilesKeepDraftsAndEvenIntentionallyOverlappingLayout()

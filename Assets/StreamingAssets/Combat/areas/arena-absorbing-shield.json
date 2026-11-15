@@ -1,0 +1,32 @@
+{
+  "id": "arena-absorbing-shield",
+  "name": "原吸收盾",
+  "root": "area",
+  "nodes": [
+    {
+      "id": "area",
+      "kind": "delivery",
+      "runtimeId": 4101,
+      "enabled": true,
+      "position": {
+        "x": 0.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "area",
+        "persistent": true,
+        "radius": 1.5,
+        "permanent": true,
+        "duration": 0,
+        "interval": 0.45,
+        "pulseOnSpawn": true,
+        "absorbProjectiles": true,
+        "absorbForce": 0,
+        "radiusPerProjectile": 0.05,
+        "removeOnObstacle": false,
+        "view": "buff_aoe_shield_view"
+      }
+    }
+  ],
+  "edges": []
+}

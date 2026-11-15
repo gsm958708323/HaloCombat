@@ -11,8 +11,8 @@ namespace Combat.Tests
 {
     public sealed class AuthorTraceTests
     {
-        static SkillProjectDocument Example()=>SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));
-        static SkillProjectDocument Formal()=>SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,"Combat/project.json")));
+        static SkillProjectDocument Example()=>SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));
+        static SkillProjectDocument Formal()=>SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,"Combat/project.json"));
         static SkillSimulation Run(SkillProjectDocument p)=>new SkillSimulation(p,CombatContentCompiler.Compile(p));
 
         [TestCase("basic-shot",1)] [TestCase("burst-shot",3)]

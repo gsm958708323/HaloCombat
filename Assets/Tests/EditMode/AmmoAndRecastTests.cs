@@ -13,7 +13,7 @@ namespace Combat.Tests
     {
         static SkillProjectDocument Example()
         {
-            var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));
+            var p=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));
             p.Preview.Caster.X=0;p.Preview.Targets=Array.Empty<PreviewActorDocument>();p.Preview.Recovery=0;return p;
         }
         static SkillGraphDocument Graph(SkillProjectDocument p,string id)=>p.Skills.Single(s=>s.Id==id);
@@ -132,7 +132,7 @@ namespace Combat.Tests
         [Test]
         public void FormalPrimaryInputConsumesRealAmmoAndFallsBackToTheConfiguredReload()
         {
-            var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,"Combat/project.json")));
+            var p=SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,"Combat/project.json"));
             p.Runtime.Actors.Single(a=>a.Id=="arena-player").InitialAmmo=1;
             using(var s=new ArenaProject(p).Create(true))
             {

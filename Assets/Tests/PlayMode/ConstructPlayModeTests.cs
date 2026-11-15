@@ -23,7 +23,7 @@ namespace Combat.Tests
         public IEnumerator SetUp()
         {
             _directory=Path.Combine(Path.GetTempPath(),"HaloCombat-Constructs-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(_directory);
-            _project=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));
+            _project=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));
             _project.Preview.Targets=new[]{new PreviewActorDocument{Id="target",X=0,Hp=1000}};var graph=_project.Skills.Single(s=>s.Id=="barrel-chain");
             graph.Nodes.Single(n=>n.Kind=="cast").Parameters["delay"]=0;graph.Nodes.Single(n=>n.Kind=="damage").Parameters["canCrit"]=false;
             graph.Nodes.Single(n=>n.Kind=="construct").Parameters["decayPeriod"]=0;Publish();

@@ -9,7 +9,7 @@ namespace Combat.Tests
     public sealed class SpatialActionTests
     {
         static SkillProjectDocument Example()
-        { var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));p.Preview.Recovery=0;return p; }
+        { var p=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));p.Preview.Recovery=0;return p; }
         static SkillGraphDocument Skill(SkillProjectDocument p,string id)=>p.Skills.First(s=>s.Id==id);
         static SkillNodeDocument Node(SkillProjectDocument p,string id,string kind)=>Skill(p,id).Nodes.First(n=>n.Kind==kind);
         static SkillSimulation Simulation(SkillProjectDocument p)=>new SkillSimulation(p,CombatContentCompiler.Compile(p));

@@ -21,7 +21,7 @@ namespace Combat.Tests
         [UnityTest]
         public IEnumerator PlacementKeepsTheRunningWorldAndReplaysItsExactSameStepChangeInUnity()
         {
-            var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));
+            var p=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));
             string text=SkillPublicationJson.Write(SkillPublicationJson.Create(p,"basic-shot"));
             _directory=Path.Combine(Path.GetTempPath(),"HaloCombat-Placement-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(_directory);File.WriteAllText(Path.Combine(_directory,"f6.json"),text);
             yield return SceneManager.LoadSceneAsync("Assets/Scenes/HaloCombat/SkillLab.unity",LoadSceneMode.Single);

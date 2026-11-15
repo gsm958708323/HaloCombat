@@ -11,7 +11,7 @@ namespace Combat.Tests
 {
     public sealed class BuffJsonTests
     {
-        static SkillProjectDocument Example()=>SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));
+        static SkillProjectDocument Example()=>SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));
         static string Publish(SkillProjectDocument p,string id)=>SkillPublicationJson.Write(SkillPublicationJson.Create(p,id));
 
         [Test]

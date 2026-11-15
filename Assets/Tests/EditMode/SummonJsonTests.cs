@@ -11,7 +11,7 @@ namespace Combat.Tests
 {
     public sealed class SummonJsonTests
     {
-        static SkillProjectDocument Example()=>SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));
+        static SkillProjectDocument Example()=>SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));
         static string Publish(SkillProjectDocument p,string key)=>SkillPublicationJson.Write(SkillPublicationJson.Create(p,key));
         static SkillNodeDocument Summon(SkillProjectDocument p)=>p.Skills.First(s=>s.Id=="summon-gunners").Nodes.First(n=>n.Kind=="delivery");
 

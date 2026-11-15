@@ -6,7 +6,7 @@ internal static class AuthorTraceChecks
 {
     public static void Run(string root)
     {
-        var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(root,"Content/SkillLab/project.json")));
+        var p=SkillProjectFiles.Read(Path.Combine(root,"Content/SkillLab/project.json"));
         var publication=SkillPublicationJson.Read(SkillPublicationJson.Write(SkillPublicationJson.Create(p,"burn-shot")));
         using var simulation=new SkillSimulation(publication.Document.Project,publication.Content);
         simulation.Cast("burn-shot",0,0);simulation.Advance(200);var state=simulation.Snapshot();

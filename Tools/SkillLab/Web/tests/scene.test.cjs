@@ -1,6 +1,6 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const {addSceneTarget,addSceneObstacle,moveSceneActor,removeSceneTarget,scenePlacementFree,sceneBounds,fitScene,zoomScene}=require('../../.local/web-checks/authoring/scenePlacement.js');
-const project=()=>JSON.parse(fs.readFileSync(path.resolve(__dirname,'../../../../Content/SkillLab/project.json'),'utf8'));
+const project=()=>require('./projectFixture.cjs').readProject(path.resolve(__dirname,'../../../../Content/SkillLab/project.json'));
 
 test('target and obstacle creation are deterministic independent snapshots with free placement and stable identities',()=>{
   const p=project(),before=JSON.stringify(p),a=addSceneTarget(p),b=addSceneTarget(p);

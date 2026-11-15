@@ -24,7 +24,7 @@ namespace Combat.Tests
         public IEnumerator RealPublicationAppliesControlLeasesAndFastAuthoredTimingAndReleasesOnInterrupt()
         {
             _directory=Path.Combine(Path.GetTempPath(),"HaloCombat-TimelineControl-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(_directory);
-            var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));p.Preview.Caster.X=0;p.Preview.Caster.ActionSpeed=2;p.Preview.Targets=Array.Empty<PreviewActorDocument>();
+            var p=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));p.Preview.Caster.X=0;p.Preview.Caster.ActionSpeed=2;p.Preview.Targets=Array.Empty<PreviewActorDocument>();
             File.WriteAllText(Path.Combine(_directory,"f6.json"),SkillPublicationJson.Write(SkillPublicationJson.Create(p,"controlled-shot")));
             yield return SceneManager.LoadSceneAsync("Assets/Scenes/HaloCombat/SkillLab.unity",LoadSceneMode.Single);_lab=Object.FindFirstObjectByType<SkillLabRunner>();_lab.AutoAdvance=false;_lab.ConfigureContentDirectory(_directory);Assert.IsTrue(_lab.ReloadPublished(),_lab.LastLoadError);
             Assert.IsTrue(_lab.CastSlot("f6",4,0).Accepted);_lab.SetMovement(0,1);_lab.StepLogicForTests(5);var actor=_lab.Snapshot.Actors.Single(a=>a.Kind=="caster");
@@ -36,7 +36,7 @@ namespace Combat.Tests
         public IEnumerator FormalDiskActorSpeedDrivesTheSameTimelineAndBodyPoseWhileMoveInputIsBlocked()
         {
             _directory=Path.Combine(Application.streamingAssetsPath,"Combat/.timeline-controls-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(_directory);
-            var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,UnityRuntimeContent.DefaultFile)));p.Runtime.Actors.Single(a=>a.Id=="arena-player").ActionSpeed=2;
+            var p=SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,UnityRuntimeContent.DefaultFile));p.Runtime.Actors.Single(a=>a.Id=="arena-player").ActionSpeed=2;
             File.WriteAllText(Path.Combine(_directory,"project.json"),SkillProjectJson.Write(p));File.WriteAllText(Path.Combine(_directory,"f6.json"),SkillPublicationJson.Write(SkillPublicationJson.Create(p,"arena-controlled-shot")));
             yield return SceneManager.LoadSceneAsync("Assets/Scenes/Arena.unity",LoadSceneMode.Single);yield return null;_arena=Object.FindFirstObjectByType<ArenaBootstrap>();_arena.AutoAdvance=false;_arena.Configure("Combat/"+Path.GetFileName(_directory)+"/project.json",true);Assert.IsTrue(_arena.Reload(),_arena.LastLoadError);
             Assert.IsTrue(_arena.CastPublished("f6"));_arena.Submit(new ArenaInputFrame{MoveZ=1,AimValid=true,Aim=new SkillAim(EntityId.Invalid,new SimVec3(4,0,0),0)});_arena.StepForTests(10);
@@ -48,7 +48,7 @@ namespace Combat.Tests
         public IEnumerator InvalidControlMetadataKeepsThePreviouslyLoadedWorld()
         {
             _directory=Path.Combine(Application.streamingAssetsPath,"Combat/.timeline-controls-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(_directory);
-            var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,UnityRuntimeContent.DefaultFile)));string file=Path.Combine(_directory,"project.json");File.WriteAllText(file,SkillProjectJson.Write(p));
+            var p=SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,UnityRuntimeContent.DefaultFile));string file=Path.Combine(_directory,"project.json");File.WriteAllText(file,SkillProjectJson.Write(p));
             yield return SceneManager.LoadSceneAsync("Assets/Scenes/Arena.unity",LoadSceneMode.Single);yield return null;_arena=Object.FindFirstObjectByType<ArenaBootstrap>();_arena.AutoAdvance=false;_arena.Configure("Combat/"+Path.GetFileName(_directory)+"/project.json",true);Assert.IsTrue(_arena.Reload(false));var previous=_arena.Session;
             p.Skills.Single(s=>s.Id=="arena-controlled-shot").Timeline.ControlTags=new[]{1005};File.WriteAllText(file,SkillProjectJson.Write(p));Assert.IsFalse(_arena.Reload(false));Assert.AreSame(previous,_arena.Session);StringAssert.Contains("controlTags",_arena.LastLoadError);
             _arena.StepForTests(5);Assert.AreEqual(5,previous.World.Time.Frame);yield return null;LogAssert.NoUnexpectedReceived();

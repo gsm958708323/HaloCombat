@@ -13,7 +13,7 @@ namespace Combat.Tests
     {
         static SkillProjectDocument Project(string area)
         {
-            var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,"Combat/project.json")));
+            var p=SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,"Combat/project.json"));
             p.Preview.Caster.X=0;p.Preview.Targets=new[]{new PreviewActorDocument{Id="target",X=1,Hp=1000}};
             var s=p.Skills.Single(v=>v.Id=="arena-projectile-warp");s.Nodes=s.Nodes.Where(n=>n.Kind!="teleport-projectile").ToArray();
             s.Nodes.Single(n=>n.Kind=="cast").Parameters=JObject.FromObject(new{mode="instant",execution="operation",cost=0,cooldown=0});

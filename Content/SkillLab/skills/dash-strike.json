@@ -1,0 +1,104 @@
+{
+  "id": "dash-strike",
+  "runtimeId": 2011,
+  "name": "冲刺打击",
+  "category": "近战与位移",
+  "nodes": [
+    {
+      "id": "target",
+      "kind": "target",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 0.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "point",
+        "range": 20
+      }
+    },
+    {
+      "id": "cast",
+      "kind": "cast",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 270.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "instant",
+        "cost": 10,
+        "cooldown": 0.7,
+        "delay": 0.1,
+        "duration": 0.3,
+        "count": 1,
+        "interval": 0.1
+      }
+    },
+    {
+      "id": "action",
+      "kind": "delivery",
+      "runtimeId": 5103,
+      "enabled": true,
+      "position": {
+        "x": 540.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "displacement",
+        "movementMode": "dash",
+        "distance": 12,
+        "speed": 20,
+        "hitRadius": 1.2,
+        "maxTargets": 0,
+        "startup": 0.1
+      }
+    },
+    {
+      "id": "damage",
+      "kind": "damage",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 810.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "flat": 80,
+        "coefficient": 0,
+        "critChance": 0,
+        "critMultiplier": 1.8,
+        "ignoreDefense": false,
+        "hitstopFrames": 0
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "target-cast",
+      "source": "target",
+      "sourcePort": "target",
+      "target": "cast",
+      "targetPort": "target",
+      "order": 0
+    },
+    {
+      "id": "cast-delivery",
+      "source": "cast",
+      "sourcePort": "cast",
+      "target": "action",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "hit-damage",
+      "source": "action",
+      "sourcePort": "apply",
+      "target": "damage",
+      "targetPort": "execute",
+      "order": 0
+    }
+  ]
+}

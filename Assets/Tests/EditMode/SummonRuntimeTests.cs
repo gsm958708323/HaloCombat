@@ -12,7 +12,7 @@ namespace Combat.Tests
     {
         static SkillProjectDocument Example()
         {
-            var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));
+            var p=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));
             p.Preview.Recovery=0;p.Skills.First(s=>s.Id=="basic-shot").Nodes.First(n=>n.Kind=="damage").Parameters["critChance"]=0;return p;
         }
         static SkillSimulation Simulation(SkillProjectDocument p)=>new SkillSimulation(p,CombatContentCompiler.Compile(p));

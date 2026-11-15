@@ -6,7 +6,7 @@ internal static class TimelineControlChecks
 {
     public static void Run(string root)
     {
-        string file=Path.Combine(root,"Content/SkillLab/project.json");var p=SkillProjectJson.Read(File.ReadAllText(file));
+        string file=Path.Combine(root,"Content/SkillLab/project.json");var p=SkillProjectFiles.Read(file);
         p.Preview.Caster.X=0;p.Preview.Caster.ActionSpeed=2;p.Preview.Recovery=0;p.Preview.Targets=Array.Empty<PreviewActorDocument>();
         using var s=new SkillSimulation(p,CombatContentCompiler.Compile(p));s.Move(0,1);
         if(!s.Cast("controlled-shot",4,0).Accepted)throw new Exception("Controlled timeline rejected.");s.Advance(5);

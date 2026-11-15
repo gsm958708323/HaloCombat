@@ -1,0 +1,78 @@
+{
+  "id": "summon-blade",
+  "runtimeId": 2016,
+  "name": "近战召唤",
+  "category": "召唤",
+  "nodes": [
+    {
+      "id": "target",
+      "kind": "target",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 0.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "point",
+        "range": 20
+      }
+    },
+    {
+      "id": "cast",
+      "kind": "cast",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 270.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "instant",
+        "cost": 10,
+        "cooldown": 0.7,
+        "delay": 0.1,
+        "duration": 0.3,
+        "count": 1,
+        "interval": 0.1
+      }
+    },
+    {
+      "id": "summon",
+      "kind": "delivery",
+      "runtimeId": 6002,
+      "enabled": true,
+      "position": {
+        "x": 540.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "summon",
+        "blueprint": "echo-blade",
+        "center": "source",
+        "count": 1,
+        "spacing": 1.2,
+        "duration": 2,
+        "maxAlive": 4
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "target-cast",
+      "source": "target",
+      "sourcePort": "target",
+      "target": "cast",
+      "targetPort": "target",
+      "order": 0
+    },
+    {
+      "id": "cast-delivery",
+      "source": "cast",
+      "sourcePort": "cast",
+      "target": "summon",
+      "targetPort": "execute",
+      "order": 0
+    }
+  ]
+}

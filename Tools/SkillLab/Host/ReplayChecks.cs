@@ -6,7 +6,7 @@ internal static class ReplayChecks
 {
     public static void Run(string root)
     {
-        var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(root,"Content/SkillLab/project.json")));
+        var p=SkillProjectFiles.Read(Path.Combine(root,"Content/SkillLab/project.json"));
         p.Preview.Seed=753;
         using var simulation=new SkillSimulation(p,CombatContentCompiler.Compile(p));
         simulation.Execute(new SkillSimulationCommand{Kind="cast",SkillId="held-spray",X=0,Z=0});

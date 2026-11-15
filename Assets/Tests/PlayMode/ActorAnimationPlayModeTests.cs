@@ -84,7 +84,7 @@ namespace Combat.Tests
         public IEnumerator ArenaUsesScaledTimelineAndIndependentHitstopAndRebuildsExactlyOneFreshView()
         {
             _directory=Path.Combine(Application.streamingAssetsPath,"Combat/.actor-animation-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(_directory);
-            var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,UnityRuntimeContent.DefaultFile)));p.Runtime.Actors.Single(a=>a.Id=="arena-player").ActionSpeed=2;
+            var p=SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,UnityRuntimeContent.DefaultFile));p.Runtime.Actors.Single(a=>a.Id=="arena-player").ActionSpeed=2;
             File.WriteAllText(Path.Combine(_directory,"project.json"),SkillProjectJson.Write(p));File.WriteAllText(Path.Combine(_directory,"f6.json"),SkillPublicationJson.Write(SkillPublicationJson.Create(p,"arena-controlled-shot")));
             yield return SceneManager.LoadSceneAsync("Assets/Scenes/Arena.unity",LoadSceneMode.Single);yield return null;
             _arena=Object.FindFirstObjectByType<ArenaBootstrap>();_arena.AutoAdvance=false;_arena.Configure("Combat/"+Path.GetFileName(_directory)+"/project.json",true);Assert.IsTrue(_arena.Reload(),_arena.LastLoadError);
@@ -99,7 +99,7 @@ namespace Combat.Tests
         public IEnumerator MissingResourceAndAnimatorStateLeaveTheRunningArenaUntouched()
         {
             _directory=Path.Combine(Application.streamingAssetsPath,"Combat/.actor-animation-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(_directory);
-            var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,UnityRuntimeContent.DefaultFile)));string file=Path.Combine(_directory,"project.json");
+            var p=SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,UnityRuntimeContent.DefaultFile));string file=Path.Combine(_directory,"project.json");
             File.WriteAllText(file,SkillProjectJson.Write(p));yield return SceneManager.LoadSceneAsync("Assets/Scenes/Arena.unity",LoadSceneMode.Single);yield return null;
             _arena=Object.FindFirstObjectByType<ArenaBootstrap>();_arena.AutoAdvance=false;_arena.Configure("Combat/"+Path.GetFileName(_directory)+"/project.json",true);Assert.IsTrue(_arena.Reload(false));var previous=_arena.Session;
             p.Runtime.Views[0].States["Fire"]="Base Layer.Missing";File.WriteAllText(file,SkillProjectJson.Write(p));Assert.IsFalse(_arena.Reload(false));Assert.AreSame(previous,_arena.Session);StringAssert.Contains("Missing Animator state",_arena.LastLoadError);

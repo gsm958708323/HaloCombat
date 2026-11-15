@@ -1,0 +1,189 @@
+[
+  {
+    "id": "arena-player-view",
+    "resource": "Combat/Actors/FemaleGunner",
+    "scale": 1.0,
+    "yawOffset": 0.0,
+    "states": {
+      "Stand": "Base Layer.Stand",
+      "MoveForward": "Base Layer.MoveForward",
+      "MoveBack": "Base Layer.MoveBack",
+      "MoveLeft": "Base Layer.MoveLeft",
+      "MoveRight": "Base Layer.MoveRight",
+      "JumpAir": "Base Layer.JumpAir",
+      "Hurt0": "Base Layer.Hurt0",
+      "Hurt1": "Base Layer.Hurt1",
+      "Dead": "Base Layer.Dead",
+      "Fire": "Base Layer.Fire",
+      "RapidFire": "Base Layer.RapidFire",
+      "Reload": "Base Layer.Reload",
+      "RollForward": "Base Layer.RollForward",
+      "RollBack": "Base Layer.RollBack",
+      "RollLeft": "Base Layer.RollLeft",
+      "RollRight": "Base Layer.RollRight",
+      "PowerUp": "Base Layer.PowerUp"
+    },
+    "anchors": [
+      {
+        "key": "Body",
+        "path": "Body02",
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      },
+      {
+        "key": "Head",
+        "path": "Head02",
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      },
+      {
+        "key": "Muzzle",
+        "path": "root/pelvis/spine_01/spine_02/spine_03/clavicle_r/upperarm_r/lowerarm_r/hand_r/PistolPBR",
+        "x": 0.0,
+        "y": 0.2,
+        "z": 0.5
+      }
+    ]
+  },
+  {
+    "id": "arena-enemy-view",
+    "resource": "Combat/Actors/MaleGunner",
+    "scale": 1.0,
+    "yawOffset": 0.0,
+    "states": {
+      "Stand": "Base Layer.Stand",
+      "MoveForward": "Base Layer.MoveForward",
+      "MoveBack": "Base Layer.MoveBack",
+      "MoveLeft": "Base Layer.MoveLeft",
+      "MoveRight": "Base Layer.MoveRight",
+      "JumpAir": "Base Layer.JumpAir",
+      "Hurt0": "Base Layer.Hurt0",
+      "Hurt1": "Base Layer.Hurt1",
+      "Dead": "Base Layer.Dead",
+      "Fire": "Base Layer.Fire",
+      "RapidFire": "Base Layer.RapidFire",
+      "Reload": "Base Layer.Reload",
+      "RollForward": "Base Layer.RollForward",
+      "RollBack": "Base Layer.RollBack",
+      "RollLeft": "Base Layer.RollLeft",
+      "RollRight": "Base Layer.RollRight",
+      "PowerUp": "Base Layer.PowerUp"
+    },
+    "anchors": [
+      {
+        "key": "Body",
+        "path": "Body01",
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      },
+      {
+        "key": "Head",
+        "path": "Head01",
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      },
+      {
+        "key": "Muzzle",
+        "path": "root/pelvis/spine_01/spine_02/spine_03/clavicle_r/upperarm_r/lowerarm_r/hand_r/PistolPBR",
+        "x": 0.0,
+        "y": 0.2,
+        "z": 0.5
+      }
+    ]
+  },
+  {
+    "id": "buff_barrel_view",
+    "resource": "Combat/Bodies/Barrel",
+    "kind": "body",
+    "scale": 1.0,
+    "yawOffset": 0.0,
+    "states": {}
+  },
+  {
+    "id": "buff_projectile_normal_view",
+    "resource": "Combat/Bodies/BulletNormal0",
+    "kind": "body",
+    "scale": 1.0,
+    "yawOffset": 0.0,
+    "states": {}
+  },
+  {
+    "id": "buff_projectile_enemy_view",
+    "resource": "Combat/Bodies/BulletNormal1",
+    "kind": "body",
+    "scale": 1.0,
+    "yawOffset": 0.0,
+    "states": {}
+  },
+  {
+    "id": "buff_projectile_boomerang_view",
+    "resource": "Combat/Bodies/Boomerang",
+    "kind": "body",
+    "spinSpeed": 720.0,
+    "scale": 1.0,
+    "yawOffset": 0.0,
+    "states": {}
+  },
+  {
+    "id": "buff_projectile_teleport_view",
+    "resource": "Combat/Bodies/TeleportBulletEff",
+    "kind": "body",
+    "scale": 1.0,
+    "yawOffset": 0.0,
+    "states": {}
+  },
+  {
+    "id": "buff_projectile_bomb_view",
+    "resource": "Combat/Bodies/BombBall",
+    "kind": "body",
+    "spinSpeed": 200.0,
+    "scale": 1.0,
+    "yawOffset": 0.0,
+    "states": {}
+  },
+  {
+    "id": "buff_aoe_monkey_view",
+    "resource": "Combat/Effects/EffectSpikeBall",
+    "kind": "body",
+    "spinSpeed": 360.0,
+    "scale": 1.0,
+    "yawOffset": 0.0,
+    "states": {}
+  },
+  {
+    "id": "buff_aoe_stayingbomb_view",
+    "resource": "Combat/Bodies/BombBall",
+    "kind": "body",
+    "scale": 1.0,
+    "yawOffset": 0.0,
+    "states": {}
+  },
+  {
+    "id": "buff_aoe_burn_view",
+    "resource": "Combat/Effects/Fire_A",
+    "kind": "body",
+    "scale": 1.0,
+    "yawOffset": 0.0,
+    "states": {}
+  },
+  {
+    "id": "buff_aoe_blackhole_view",
+    "resource": "Combat/Effects/ShockWave",
+    "kind": "body",
+    "scale": 1.0,
+    "yawOffset": 0.0,
+    "states": {}
+  },
+  {
+    "id": "buff_aoe_shield_view",
+    "resource": "Combat/Effects/ShockWave",
+    "kind": "body",
+    "scale": 1.0,
+    "yawOffset": 0.0,
+    "states": {}
+  }
+]

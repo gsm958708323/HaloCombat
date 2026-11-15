@@ -13,7 +13,7 @@ namespace Combat.Tests
         [TestCase("fan-channel")]
         public void IndefiniteChannelSnapshotsContainOnlyFiniteJsonNumbersAndKeepTheActiveAction(string id)
         {
-            var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));
+            var p=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));
             using(var simulation=new SkillSimulation(p,CombatContentCompiler.Compile(p))){
                 simulation.Execute(new SkillSimulationCommand{Kind="cast",SkillId=id,X=0,Z=0});
                 foreach(int steps in new[]{0,5,20}){

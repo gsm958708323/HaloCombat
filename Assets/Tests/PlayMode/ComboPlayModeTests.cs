@@ -23,7 +23,7 @@ namespace Combat.Tests
         [UnityTest]
         public IEnumerator FormalDiskComboRequiresCurrentContactAndRunsTheConfirmedTransition()
         {
-            var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,UnityRuntimeContent.DefaultFile)));
+            var p=SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,UnityRuntimeContent.DefaultFile));
             p.Runtime.Arena.Bindings.Single(b=>b.Action=="Fire1").Input="ConfirmAttack";
             _relative="Combat/.combo-test-"+Guid.NewGuid().ToString("N");_directory=Path.Combine(Application.streamingAssetsPath,_relative);Directory.CreateDirectory(_directory);File.WriteAllText(Path.Combine(_directory,"project.json"),SkillProjectJson.Write(p));
             yield return SceneManager.LoadSceneAsync("Assets/Scenes/Arena.unity",LoadSceneMode.Single);yield return null;
@@ -37,7 +37,7 @@ namespace Combat.Tests
         [UnityTest]
         public IEnumerator RejectedComboTableCannotReplaceTheActiveArenaWorld()
         {
-            var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,UnityRuntimeContent.DefaultFile)));
+            var p=SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,UnityRuntimeContent.DefaultFile));
             _relative="Combat/.combo-test-"+Guid.NewGuid().ToString("N");_directory=Path.Combine(Application.streamingAssetsPath,_relative);Directory.CreateDirectory(_directory);var path=Path.Combine(_directory,"project.json");File.WriteAllText(path,SkillProjectJson.Write(p));
             yield return SceneManager.LoadSceneAsync("Assets/Scenes/Arena.unity",LoadSceneMode.Single);yield return null;
             _arena=Object.FindFirstObjectByType<ArenaBootstrap>();_arena.AutoAdvance=false;_arena.Configure(_relative+"/project.json",true);Assert.IsTrue(_arena.Reload(false));var old=_arena.Session;
@@ -48,7 +48,7 @@ namespace Combat.Tests
         public IEnumerator SkillOnlyPublicationsCannotInventMissingGameplayComboBindings()
         {
             _directory=Path.Combine(Path.GetTempPath(),"HaloCombat-Combo-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(_directory);
-            var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,UnityRuntimeContent.DefaultFile)));p.Preview.Caster.X=0;p.Preview.Targets=new[]{new PreviewActorDocument{Id="target",X=.55f,Hp=1000}};
+            var p=SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,UnityRuntimeContent.DefaultFile));p.Preview.Caster.X=0;p.Preview.Targets=new[]{new PreviewActorDocument{Id="target",X=.55f,Hp=1000}};
             // A publication deliberately excludes gameplay Combo bindings. The real formal
             // table is installed here through the same shared SkillSimulation as the host.
             File.WriteAllText(Path.Combine(_directory,"f6.json"),SkillPublicationJson.Write(SkillPublicationJson.Create(p,"g1")));

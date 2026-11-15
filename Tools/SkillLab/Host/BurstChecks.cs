@@ -7,7 +7,7 @@ internal static class BurstChecks
 {
     public static void Run(string root)
     {
-        var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(root,"Content/SkillLab/project.json")));p.Preview.Targets=Array.Empty<PreviewActorDocument>();
+        var p=SkillProjectFiles.Read(Path.Combine(root,"Content/SkillLab/project.json"));p.Preview.Targets=Array.Empty<PreviewActorDocument>();
         var s=p.Skills.Single(v=>v.Id=="basic-shot");var cast=s.Nodes.Single(n=>n.Kind=="cast");s.Nodes.Single(n=>n.Kind=="target").Parameters["mode"]="direction";
         cast.Parameters=JObject.FromObject(new{mode="instant",burst=true,count=20,interval=.04,delay=0,cost=0,cooldown=0,duration=.9});
         using(var simulation=new SkillSimulation(p,CombatContentCompiler.Compile(p)))

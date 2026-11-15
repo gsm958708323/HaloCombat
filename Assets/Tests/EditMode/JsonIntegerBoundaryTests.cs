@@ -9,7 +9,7 @@ namespace Combat.Tests
 {
     public sealed class JsonIntegerBoundaryTests
     {
-        static JObject Source()=>JObject.Parse(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,"Combat/project.json")));
+        static JObject Source()=>JObject.Parse(SkillProjectJson.Write(SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,"Combat/project.json"))));
         [TestCase("identity")][TestCase("version")][TestCase("team")][TestCase("count")]
         public void FractionalDtoIntegersCannotBeRoundedBeforeDomainValidation(string field)
         {

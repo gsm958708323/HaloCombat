@@ -1,0 +1,129 @@
+{
+  "id": "flight-distance",
+  "runtimeId": 3053,
+  "name": "飞行触发 · 距离脉冲",
+  "category": "枪专精",
+  "nodes": [
+    {
+      "id": "target",
+      "kind": "target",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 0.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "point",
+        "range": 20
+      }
+    },
+    {
+      "id": "cast",
+      "kind": "cast",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 270.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "instant",
+        "cost": 10,
+        "cooldown": 0.7,
+        "delay": 0.1,
+        "duration": 0.3,
+        "count": 1,
+        "interval": 0.1
+      }
+    },
+    {
+      "id": "projectile",
+      "kind": "projectile",
+      "runtimeId": 6513,
+      "enabled": true,
+      "position": {
+        "x": 540.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "speed": 5,
+        "range": 15,
+        "lifetime": 5,
+        "radius": 0.1,
+        "spawnForward": 0,
+        "contactMode": "ignore",
+        "sameTargetMode": "once",
+        "flightTrigger": "distance",
+        "flightInterval": 0.2,
+        "flightDistance": 2
+      }
+    },
+    {
+      "id": "damage",
+      "kind": "damage",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 1130.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "flat": 25,
+        "coefficient": 0,
+        "canCrit": false
+      }
+    },
+    {
+      "id": "flight-area",
+      "kind": "delivery",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 850.0,
+        "y": 80.0
+      },
+      "parameters": {
+        "mode": "area",
+        "center": "point",
+        "radius": 1.25,
+        "maxTargets": 0,
+        "persistent": false
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "target-cast",
+      "source": "target",
+      "sourcePort": "target",
+      "target": "cast",
+      "targetPort": "target",
+      "order": 0
+    },
+    {
+      "id": "cast-delivery",
+      "source": "cast",
+      "sourcePort": "cast",
+      "target": "projectile",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "flight-area",
+      "source": "projectile",
+      "sourcePort": "flight",
+      "target": "flight-area",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "area-damage",
+      "source": "flight-area",
+      "sourcePort": "apply",
+      "target": "damage",
+      "targetPort": "execute",
+      "order": 0
+    }
+  ]
+}

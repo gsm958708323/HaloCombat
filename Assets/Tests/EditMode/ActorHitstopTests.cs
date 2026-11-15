@@ -95,7 +95,7 @@ namespace Combat.Tests
         [Test]
         public void HeldCastingPausesItsOwnEmissionCostAndCooldownAndCanBeReleasedWhileFrozen()
         {
-            var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));var content=CombatContentCompiler.Compile(p);
+            var p=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));var content=CombatContentCompiler.Compile(p);
             var player=content.Skills.All.Single(s=>s.Key=="held-spray");var world=new CombatWorld(new RuntimeActorFactory(content.Runtime?.Data??new BakedCombatData{Combo=new ComboTableDefinition{Entries=Array.Empty<ComboEntry>()},Timelines=content.Timelines},content.Skills,
                 new Dictionary<string,RuntimeActorDefinition>{{"test",new RuntimeActorDefinition{Id="test",Role="player",Team=1,Hp=1000,MoveSpeed=3,DamageDealt=1,DamageTaken=1,Energy=100,InitialEnergy=100}}}));
             try
@@ -145,7 +145,7 @@ namespace Combat.Tests
         [TestCase("source")] [TestCase("target")] [TestCase("feedback")] [TestCase("hurt")]
         public void InvalidJsonStopFramesAndFeedbackLevelsCannotBePublished(string field)
         {
-            var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));var graph=p.Skills.Single(s=>s.Id=="actor-hitstop");
+            var p=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));var graph=p.Skills.Single(s=>s.Id=="actor-hitstop");
             if(field=="source")graph.Nodes.Single(n=>n.Kind=="damage").Parameters["sourceHitstopFrames"]=-1;
             if(field=="target")graph.Nodes.Single(n=>n.Kind=="damage").Parameters["targetHitstopFrames"]=.5f;
             if(field=="feedback")graph.Nodes.Single(n=>n.Kind=="damage").Parameters["feedback"]="custom";

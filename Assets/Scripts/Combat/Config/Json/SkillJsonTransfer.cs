@@ -55,6 +55,7 @@ namespace Combat.Config
             JObject token;
             try{token=JObject.Parse(text,new JsonLoadSettings{DuplicatePropertyNameHandling=DuplicatePropertyNameHandling.Error});}
             catch(JsonException error){throw new ContentValidationException("$",error.Message);}
+            if(token["files"]!=null)throw new ContentValidationException("$.files","这是磁盘工程索引，需要同目录功能文件；请在编辑器导出完整工程JSON后导入。");
             SkillProjectDocument project;
             bool isPublication=token.Property("project")!=null||token.Property("revision")!=null||token.Property("skillId")!=null;
             if(isPublication)

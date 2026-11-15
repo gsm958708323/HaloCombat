@@ -25,7 +25,7 @@ namespace Combat.Tests
         public IEnumerator SetUp()
         {
             _directory=Path.Combine(Path.GetTempPath(),"HaloCombat-ProjectilePolicy-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(_directory);
-            _project=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));
+            _project=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));
             _project.Preview.Caster.X=0;_project.Preview.Caster.Z=0;_project.Preview.Recovery=0;_project.Preview.Obstacles=Array.Empty<PreviewObstacleDocument>();
             _project.Preview.Targets=new[]{new PreviewActorDocument{Id="target",X=2,Z=0,Hp=1000,Def=0}};
             foreach(string id in new[]{"behavior-pierce","behavior-chain","flight-time","flight-distance"})

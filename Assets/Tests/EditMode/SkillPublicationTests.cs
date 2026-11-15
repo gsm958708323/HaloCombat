@@ -11,7 +11,7 @@ namespace Combat.Tests
 {
     public sealed class SkillPublicationTests
     {
-        static SkillProjectDocument Example() => SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath, "../Content/SkillLab/project.json")));
+        static SkillProjectDocument Example() => SkillProjectFiles.Read(Path.Combine(Application.dataPath, "../Content/SkillLab/project.json"));
         static string Publish(SkillProjectDocument project, string key) => SkillPublicationJson.Write(SkillPublicationJson.Create(project, key));
         static Dictionary<string, string> Slots(SkillProjectDocument project) => new Dictionary<string, string>
         { { "f6", Publish(project, "basic-shot") }, { "f7", Publish(project, "burst-shot") } };

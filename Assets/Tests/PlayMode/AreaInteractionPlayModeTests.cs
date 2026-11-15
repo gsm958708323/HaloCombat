@@ -26,7 +26,7 @@ namespace Combat.Tests
             File.WriteAllText(Path.Combine(_directory,"project.json"),SkillProjectJson.Write(project));File.WriteAllText(Path.Combine(_directory,"f6.json"),SkillPublicationJson.Write(SkillPublicationJson.Create(project,orb)));
             File.WriteAllText(Path.Combine(_directory,"f7.json"),SkillPublicationJson.Write(SkillPublicationJson.Create(project,shot)));
         }
-        static SkillProjectDocument Formal()=>SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,UnityRuntimeContent.DefaultFile)));
+        static SkillProjectDocument Formal()=>SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,UnityRuntimeContent.DefaultFile));
         [UnityTest]
         public IEnumerator DiskPublicationsRunTheSameGrowingAreaAndFullSnapshotsInUnityAndCore()
         {
@@ -58,7 +58,7 @@ namespace Combat.Tests
         [UnityTest]
         public IEnumerator RealPublicationReturnsThroughTheSameTargetTwiceAndEndsCleanly()
         {
-            var p=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));p.Preview.Caster.X=0;p.Preview.Targets=new[]{new PreviewActorDocument{Id="target",X=2,Hp=1000}};Files(p,"repeat-contact","absorbing-orb");
+            var p=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));p.Preview.Caster.X=0;p.Preview.Targets=new[]{new PreviewActorDocument{Id="target",X=2,Hp=1000}};Files(p,"repeat-contact","absorbing-orb");
             yield return SceneManager.LoadSceneAsync("Assets/Scenes/HaloCombat/SkillLab.unity",LoadSceneMode.Single);_lab=Object.FindFirstObjectByType<SkillLabRunner>();_lab.AutoAdvance=false;_lab.ConfigureContentDirectory(_directory);Assert.IsTrue(_lab.ReloadPublished(),_lab.LastLoadError);
             Assert.IsTrue(_lab.CastSlot("f6",5,0).Accepted);_lab.StepLogicForTests(80);Assert.AreEqual(2,_lab.Snapshot.Statistics.Hits);Assert.AreEqual(160,_lab.Snapshot.Statistics.Damage,.001);Assert.IsFalse(_lab.Snapshot.Actors.Any(a=>a.Kind=="projectile"));
             yield return null;LogAssert.NoUnexpectedReceived();

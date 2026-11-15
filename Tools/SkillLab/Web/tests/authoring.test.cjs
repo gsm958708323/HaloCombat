@@ -5,10 +5,10 @@ const graph=require('../../.local/web-checks/authoring/graphEdits.js');
 const {mergeProjects}=require('../../.local/web-checks/authoring/mergeProjects.js');
 const {EditorHistory}=require('../../.local/web-checks/authoring/EditorHistory.js');
 const {ProjectSave}=require('../../.local/web-checks/authoring/projectIO.js');
-const example=()=>JSON.parse(fs.readFileSync(path.resolve(__dirname,'../../../../Content/SkillLab/project.json'),'utf8'));
+const example=()=>require('./projectFixture.cjs').readProject(path.resolve(__dirname,'../../../../Content/SkillLab/project.json'));
 const ids=()=>{let number=0;return ()=> 'generated-'+ ++number;};
 const skillKey={kind:'skill',id:'basic-shot'};
-const runtime=()=>JSON.parse(fs.readFileSync(path.resolve(__dirname,'../../../../Assets/StreamingAssets/Combat/project.json'),'utf8'));
+const runtime=()=>require('./projectFixture.cjs').readProject(path.resolve(__dirname,'../../../../Assets/StreamingAssets/Combat/project.json'));
 const areaEdits=require('../../.local/web-checks/authoring/areaEdits.js');
 const {previewFrameBudget,previewSemanticKey}=require('../../.local/web-checks/authoring/previewTiming.js');
 const {setCastExecution}=require('../../.local/web-checks/authoring/castExecution.js');
@@ -404,7 +404,7 @@ test('root deletion is protected and scheduled numeric time arrays are independe
 
 const {currentSkillJson,applySkillConfiguration}=require('../../.local/web-checks/authoring/skillConfiguration.js');
 test('current skill JSON excludes project data and layout; applying preserves other content and raw duplicate validation',()=>{
-  const source=JSON.parse(fs.readFileSync(path.resolve(__dirname,'../../../../Content/SkillLab/project.json'),'utf8'));
+  const source=require('./projectFixture.cjs').readProject(path.resolve(__dirname,'../../../../Content/SkillLab/project.json'));
   const text=currentSkillJson(source,'basic-shot'),value=JSON.parse(text);
   assert.equal(value.id,'basic-shot');assert.equal(value.skills,undefined);assert.equal(value.preview,undefined);assert.equal(value.nodes[0].position,undefined);
   value.nodes.find(n=>n.kind==='damage').parameters.flat=37;

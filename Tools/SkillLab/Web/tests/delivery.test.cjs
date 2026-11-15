@@ -4,7 +4,7 @@ const {extractProjectileBehavior}=require('../../.local/web-checks/authoring/pro
 const {graphOf,updateGraph}=require('../../.local/web-checks/authoring/contentEdits.js');
 const {EditorHistory}=require('../../.local/web-checks/authoring/EditorHistory.js');
 const {nodeFields,nodeOutputs}=require('../../.local/web-checks/model.js');
-const examples=()=>JSON.parse(fs.readFileSync(path.resolve(__dirname,'../../../../Content/SkillLab/project.json'),'utf8'));
+const examples=()=>require('./projectFixture.cjs').readProject(path.resolve(__dirname,'../../../../Content/SkillLab/project.json'));
 const key={kind:'skill',id:'basic-shot'};
 
 test('one delivery control changes all seven modes without changing stable node or cast identities',()=>{

@@ -9,7 +9,7 @@ namespace Combat.Tests
 {
     public sealed class ActorViewContentTests
     {
-        static SkillProjectDocument Project()=>SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.streamingAssetsPath,"Combat/project.json")));
+        static SkillProjectDocument Project()=>SkillProjectFiles.Read(Path.Combine(Application.streamingAssetsPath,"Combat/project.json"));
         [Test]
         public void FormalActorViewsCompileToIndependentReadOnlyBindingsAndKeepTheAuthoredAnimation()
         {
@@ -58,7 +58,7 @@ namespace Combat.Tests
         [Test]
         public void OptionalViewAndAnimationFieldsDoNotChangeUnanimatedDocuments()
         {
-            var project=SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));
+            var project=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));
             string json=SkillProjectJson.Write(project);StringAssert.DoesNotContain("\"views\"",json);StringAssert.DoesNotContain("\"animation\"",json);
             Assert.NotNull(CombatContentCompiler.Compile(project));
         }

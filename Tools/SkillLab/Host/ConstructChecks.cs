@@ -6,7 +6,7 @@ internal static class ConstructChecks
 {
     public static void Run(string root)
     {
-        var project=SkillProjectJson.Read(File.ReadAllText(Path.Combine(root,"Content/SkillLab/project.json")));
+        var project=SkillProjectFiles.Read(Path.Combine(root,"Content/SkillLab/project.json"));
         project.Preview.Targets=new[]{new PreviewActorDocument{Id="target",X=0,Hp=1000}};
         var graph=project.Skills.Single(s=>s.Id=="barrel-chain");graph.Nodes.Single(n=>n.Kind=="cast").Parameters["delay"]=0;
         graph.Nodes.Single(n=>n.Kind=="damage").Parameters["canCrit"]=false;graph.Nodes.Single(n=>n.Kind=="construct").Parameters["decayPeriod"]=0;

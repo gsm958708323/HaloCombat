@@ -11,7 +11,7 @@ namespace Combat.Tests
 {
     public sealed class ScenePlacementTests
     {
-        static SkillProjectDocument Project()=>SkillProjectJson.Read(File.ReadAllText(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json")));
+        static SkillProjectDocument Project()=>SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));
         static SkillSimulation Sim(SkillProjectDocument p)=>new SkillSimulation(p,CombatContentCompiler.Compile(p));
         static SkillActorSnapshot Caster(SkillSimulation s)=>s.Snapshot().Actors.Single(a=>a.Kind=="caster");
         static void Place(SkillSimulation s,SkillActorSnapshot actor,float x,float z)=>s.Execute(new SkillSimulationCommand{Kind="place",ActorId=actor.SceneId,EntityId=actor.Id,X=x,Z=z});

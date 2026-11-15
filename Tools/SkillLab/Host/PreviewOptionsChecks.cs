@@ -7,7 +7,7 @@ internal static class PreviewOptionsChecks
 {
     public static void Run(string root)
     {
-        var project=SkillProjectJson.SelectTemplate(SkillProjectJson.Read(File.ReadAllText(Path.Combine(root,"Content/SkillLab/project.json"))),"basic-shot");
+        var project=SkillProjectJson.SelectTemplate(SkillProjectFiles.Read(Path.Combine(root,"Content/SkillLab/project.json")),"basic-shot");
         project.Preview.Ammo=0;project.Preview.Energy=0;project.Preview.Recovery=0;project.Preview.UnlimitedAmmo=true;
         project.Skills[0].Nodes.First(n=>n.Kind=="cast").Parameters["ammoCost"]=10;
         using(var simulation=new SkillSimulation(project,CombatContentCompiler.Compile(project),false))

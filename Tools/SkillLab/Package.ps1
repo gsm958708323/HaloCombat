@@ -20,6 +20,18 @@ if ($LASTEXITCODE -ne 0) { throw 'Host publish failed. The partial folder is ret
 foreach ($taskRelative in @('Content/SkillLab','Assets/StreamingAssets/Combat','Tools/SkillLab/Web/dist')) { New-Item -ItemType Directory -Force -Path (Join-Path $taskOutput $taskRelative) | Out-Null }
 Copy-Item -LiteralPath (Join-Path $taskRoot 'Content/SkillLab/project.json') -Destination (Join-Path $taskOutput 'Content/SkillLab/project.json')
 Copy-Item -LiteralPath (Join-Path $taskRoot 'Assets/StreamingAssets/Combat/project.json') -Destination (Join-Path $taskOutput 'Assets/StreamingAssets/Combat/project.json')
+foreach($taskRelative in @('Content/SkillLab','Assets/StreamingAssets/Combat')) {
+    $taskSource=Join-Path $taskRoot $taskRelative
+    $taskIndex=Get-Content -LiteralPath (Join-Path $taskSource 'project.json') -Raw -Encoding utf8 | ConvertFrom-Json
+    $taskRefs=@($taskIndex.files.PSObject.Properties | ForEach-Object {
+        if($_.Name -eq 'runtime'){$_.Value.PSObject.Properties.Value}else{$_.Value}
+    })
+    foreach($taskRef in $taskRefs){
+        $taskTarget=Join-Path $taskOutput "$taskRelative/$taskRef"
+        New-Item -ItemType Directory -Force -Path (Split-Path -Parent $taskTarget) | Out-Null
+        Copy-Item -LiteralPath (Join-Path $taskSource $taskRef) -Destination $taskTarget
+    }
+}
 Get-ChildItem -LiteralPath $taskDist | Copy-Item -Destination (Join-Path $taskOutput 'Tools/SkillLab/Web/dist') -Recurse
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'README.md') -Destination (Join-Path $taskOutput 'DEVELOPMENT.md')
 $taskSourceDocs=Join-Path $taskOutput 'docs'
@@ -60,8 +72,10 @@ docs/包含JSON映射、完整范围、ADR与验收记录，DEVELOPMENT.md说明
 '@
 [IO.File]::WriteAllText((Join-Path $taskOutput 'README.md'),$taskReadme,[Text.UTF8Encoding]::new($false))
 $taskRevision=git -C $taskRoot rev-parse HEAD
+$taskRelevant=@('Assets/Scripts/Combat','Tools/SkillLab/Host','Tools/SkillLab/Web/src','Tools/SkillLab/Package.ps1','Content/SkillLab','Assets/StreamingAssets/Combat/project.json','Assets/StreamingAssets/Combat/preview.json')
+foreach($taskPart in @('skills','projectiles','areas','buffs','timelines','summonBlueprints','runtime')){$taskRelevant+='Assets/StreamingAssets/Combat/'+$taskPart}
 $taskHashes=Get-ChildItem -LiteralPath $taskOutput -File -Recurse | ForEach-Object { @{path=[IO.Path]::GetRelativePath($taskOutput,$_.FullName).Replace([IO.Path]::DirectorySeparatorChar,'/');sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash} }
-@{sourceRevision=$taskRevision;sourceDirty=[bool](git -C $taskRoot status --porcelain -- Assets/Scripts/Combat Tools/SkillLab/Host Tools/SkillLab/Web/src Tools/SkillLab/Package.ps1 Content/SkillLab Assets/StreamingAssets/Combat/project.json);createdAt=(Get-Date).ToString('o');runtime='win-x64 self-contained';files=@($taskHashes)} | ConvertTo-Json -Depth 5 | Set-Content -Encoding UTF8 -LiteralPath (Join-Path $taskOutput 'manifest.json')
+@{sourceRevision=$taskRevision;sourceDirty=[bool](git -C $taskRoot status --porcelain -- $taskRelevant);createdAt=(Get-Date).ToString('o');runtime='win-x64 self-contained';files=@($taskHashes)} | ConvertTo-Json -Depth 5 | Set-Content -Encoding UTF8 -LiteralPath (Join-Path $taskOutput 'manifest.json')
 Compress-Archive -LiteralPath $taskOutput -DestinationPath ($taskOutput+'.zip')
 Write-Host "Package: $taskOutput"
 Write-Host "Archive: $taskOutput.zip"
