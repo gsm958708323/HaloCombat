@@ -10,6 +10,23 @@ const ids=()=>{let number=0;return ()=> 'generated-'+ ++number;};
 const skillKey={kind:'skill',id:'basic-shot'};
 const runtime=()=>JSON.parse(fs.readFileSync(path.resolve(__dirname,'../../../../Assets/StreamingAssets/Combat/project.json'),'utf8'));
 const areaEdits=require('../../.local/web-checks/authoring/areaEdits.js');
+const {previewFrameBudget,previewSemanticKey}=require('../../.local/web-checks/authoring/previewTiming.js');
+
+test('quarter speed accumulates partial fixed steps and frame stalls have a bounded budget',()=>{
+  let carry=0,steps=0;
+  for(let i=0;i<4;i++){const next=previewFrameBudget(carry,.06,.25);carry=next.remainder;steps+=next.steps;}
+  assert.equal(steps,3);assert(Math.abs(carry)<1e-8);
+  assert.equal(previewFrameBudget(0,10,1).steps,10);assert.equal(previewFrameBudget(0,10,2).steps,20);
+  assert.equal(previewFrameBudget(0,0,2).steps,0);assert.equal(previewFrameBudget(0,1,0).steps,0);
+  assert.deepEqual(previewFrameBudget(NaN,NaN,NaN),{steps:0,remainder:0});
+});
+
+test('layout and graph inspection preserve the simulation key while seed and semantic edits replace it',()=>{
+  const p=runtime(),key=previewSemanticKey(p,'g1'),next=structuredClone(p);
+  next.skills[0].nodes[0].position={x:999,y:99};next.editor={selectedSkill:'g1',selectedBuff:next.buffs[0].id};
+  assert.equal(previewSemanticKey(next,'g1'),key);next.preview.seed++;
+  assert.notEqual(previewSemanticKey(next,'g1'),key);assert.notEqual(previewSemanticKey(p,'g2'),key);
+});
 const {prepareImportedLayout}=require('../../.local/web-checks/authoring/importLayout.js');
 const {traceLocation}=require('../../.local/web-checks/authoring/traceLocation.js');
 

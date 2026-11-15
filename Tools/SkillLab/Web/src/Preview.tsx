@@ -12,6 +12,7 @@ import { api } from './model';
 import {ComboInput} from './ComboInput';
 import {RuntimeEventTable} from './RuntimeEventTable';
 import './trace.css';
+import {ReplayControls} from './ReplayControls';
 
 export function Preview({ preview, project, update,inspectSource,root }: { inspectSource:(source:AuthorNodeSource)=>void;root:string; preview: ReturnType<typeof usePreview>; project: Project; update: (p: Project) => void }) {
   const [entity,setEntity]=useState('');
@@ -32,6 +33,11 @@ export function Preview({ preview, project, update,inspectSource,root }: { inspe
     finally{setApplying(false);}
   }
   const moveKeys=useRef(new Set<string>());
+  useEffect(()=>{
+    const clear=()=>moveKeys.current.clear(),visibility=()=>{if(document.hidden)clear();};clear();
+    window.addEventListener('blur',clear);document.addEventListener('visibilitychange',visibility);
+    return()=>{window.removeEventListener('blur',clear);document.removeEventListener('visibilitychange',visibility);};
+  },[preview.sessionId]);
   function moveKey(key:string,down:boolean){
     if(!['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(key))return;
     if(down)moveKeys.current.add(key);else moveKeys.current.delete(key);
@@ -49,10 +55,11 @@ export function Preview({ preview, project, update,inspectSource,root }: { inspe
     {entity&&<div className="entity-focus" role="status">{inspected?('实体 '+inspected.name+' · '+entity):('实体已回收 · '+entity)}<button onClick={()=>setEntity('')}>取消定位</button></div>}
     <section className="preview-panel"><div className="panel-title"><b>运行预览</b><span className="grow"/><button className={!configuration?'active':''} onClick={()=>setConfiguration(false)}>测试场景</button><button className={configuration?'active':''} onClick={()=>{setConfiguration(true);setText(JSON.stringify(project,null,2));}}>配置</button></div>
       {configuration?<div className="configuration"><div><button disabled={applying} onClick={()=>void applyConfiguration()}>{applying?'校验中…':'应用当前工程配置'}</button><button onClick={()=>void navigator.clipboard.writeText(text)}>复制</button></div><textarea aria-label="工程 JSON" spellCheck={false} value={text} onChange={e=>setText(e.target.value)}/>{error&&<p role="alert">{error}</p>}</div>:<>
-      <div className="preview-controls"><button className="primary" disabled={!preview.ready} onPointerDown={e=>{e.currentTarget.setPointerCapture(e.pointerId);void preview.cast();}} onPointerUp={()=>void preview.release()} onPointerCancel={()=>void preview.cancel()} onBlur={()=>void preview.cancel()} onKeyDown={e=>{if(!e.repeat&&(e.key===' '||e.key==='Enter')){e.preventDefault();void preview.cast();}}} onKeyUp={e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();void preview.release();}}}><Crosshair size={13}/>施放</button><button disabled={!preview.ready} onClick={()=>preview.setPlaying(!preview.playing)}>{preview.playing?<Pause size={12}/>:<Play size={12}/>} {preview.playing?'暂停':'播放'}</button><button disabled={!preview.ready||preview.playing} onClick={()=>void preview.step()}><SkipForward size={12}/>逐帧</button><button onClick={()=>void preview.reset()}><RotateCcw size={12}/>重置</button><button disabled={!preview.ready} onClick={()=>void preview.interrupt()}>打断</button></div>
+      <div className="preview-controls"><button className="primary" disabled={!preview.ready} onPointerDown={e=>{e.currentTarget.setPointerCapture(e.pointerId);void preview.cast();}} onPointerUp={()=>void preview.release()} onPointerCancel={()=>void preview.cancel()} onBlur={()=>void preview.cancel()} onKeyDown={e=>{if(!e.repeat&&(e.key===' '||e.key==='Enter')){e.preventDefault();void preview.cast();}}} onKeyUp={e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();void preview.release();}}}><Crosshair size={13}/>施放</button><button disabled={!preview.ready} onClick={()=>preview.setPlaying(!preview.playing)}>{preview.playing?<Pause size={12}/>:<Play size={12}/>} {preview.playing?'暂停':'播放'}</button><button disabled={!preview.ready||preview.playing} onClick={()=>void preview.step()}><SkipForward size={12}/>逐帧</button><button disabled={preview.replaying} onClick={()=>void preview.reset()}><RotateCcw size={12}/>重置</button><button disabled={!preview.ready} onClick={()=>void preview.interrupt()}>打断</button></div>
       <div className="preview-options"><label><input type="checkbox" disabled={!preview.ready} checked={preview.continuous} onChange={e=>preview.setContinuous(e.target.checked)}/>连续施放</label><select aria-label="播放速度" value={preview.speed} onChange={e=>preview.setSpeed(Number(e.target.value))}>{[.25,.5,1,2].map(n=><option key={n} value={n}>{n}×</option>)}</select><span>{state?.time.toFixed(2)??'0.00'} s</span></div>
       <div className="preview-readiness" role="status">{!project.skills.length?'空工程：新建技能后可运行预览':preview.ready?'当前配置已应用':preview.error?'配置无效：'+preview.error:'正在校验并应用配置…'}</div>
       <ComboInput project={project} ready={preview.ready} send={preview.input}/>
+      <ReplayControls preview={preview} project={project} update={update}/>
       <div className="preview-settings"><SceneResources project={project} update={update}/>
       <SceneObstacles project={project} update={update}/>
       <SceneActorProperties project={project} update={update}/></div>

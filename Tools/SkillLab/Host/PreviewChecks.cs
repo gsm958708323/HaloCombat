@@ -53,6 +53,7 @@ internal static class PreviewChecks
         TimelineControlChecks.Run(root);
         MotorPhaseChecks.Run(root);
         AuthorTraceChecks.Run(root);
+        ReplayChecks.Run(root);
         Console.WriteLine("PASS: JSON roundtrip, real Core cast/spawn/damage, cooldown/resource rejection, deterministic reset, invalid fields/references/cycles.");
     }
     static void CheckDamageEvents(SkillProjectDocument source)

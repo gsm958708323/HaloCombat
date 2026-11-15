@@ -31,6 +31,9 @@ namespace Combat.Unity
         public IReadOnlyDictionary<string,string> SlotSkills=>_publication.Slots;
         public IReadOnlyDictionary<string,string> SlotRevisions=>_publication.SlotRevisions;
         public bool PendingPublication {get;private set;}
+        public bool ReplayMode {get;private set;}
+        public SkillReplayComparison ReplayComparison {get;private set;}
+        bool _resumeAutoAdvance;
         string _loadedFiles;
         float _nextFileCheck;
 
@@ -56,6 +59,8 @@ namespace Combat.Unity
                 _clock.Reset(); Generation++; CurrentSlot = null; LastLoadError = null;
                 Snapshot = _publication.Simulation.Snapshot();
                 _loadedFiles=FilesStamp();PendingPublication=false;
+                if(ReplayMode)AutoAdvance=_resumeAutoAdvance;
+                ReplayMode=false;ReplayComparison=null;
                 _status = "Loaded " + string.Join(" / ", _publication.Slots.Keys) + " / " + Revision.Substring(0, 12);
                 return true;
             }
@@ -72,7 +77,7 @@ namespace Combat.Unity
             if (_publication.Simulation == null && !ReloadPublished()) return null;
             if (slot == null || !_publication.Slots.ContainsKey(slot)) { _status = "Slot is unavailable; publish it and press F5."; return null; }
             CurrentSlot = slot;
-            var result = _publication.Simulation.Cast(SkillId, x, z);
+            var result = (SkillCastResult)_publication.Simulation.Execute(new SkillSimulationCommand{Kind="cast",SkillId=SkillId,X=x,Z=z});
             Snapshot = _publication.Simulation.Snapshot();
             _status = result.Accepted ? "Cast " + SkillId : result.Reason;
             return result;
@@ -80,27 +85,27 @@ namespace Combat.Unity
 
         public void ReleaseCast()
         {
-            _publication.Simulation?.Release();
+            _publication.Simulation?.Execute(new SkillSimulationCommand{Kind="release"});
             if (_publication.Simulation != null) Snapshot = _publication.Simulation.Snapshot();
             _heldKey = KeyCode.None; _heldMouse = false;
         }
 
-        public void SetMovement(float x, float z) => _publication.Simulation?.Move(x, z);
+        public void SetMovement(float x, float z) => _publication.Simulation?.Execute(new SkillSimulationCommand{Kind="move",X=x,Z=z});
         public void SubmitInput(string action,float x,float z)
-        {if(_publication.Simulation==null)return;_publication.Simulation.Input(action,x,z);Snapshot=_publication.Simulation.Snapshot();}
+        {if(_publication.Simulation==null)return;_publication.Simulation.Execute(new SkillSimulationCommand{Kind="input",Input=action,X=x,Z=z});Snapshot=_publication.Simulation.Snapshot();}
         public void RemoveEntity(string id)
-        {_publication.Simulation?.Remove(id);if(_publication.Simulation!=null)Snapshot=_publication.Simulation.Snapshot();}
+        {_publication.Simulation?.Execute(new SkillSimulationCommand{Kind="remove",EntityId=id});if(_publication.Simulation!=null)Snapshot=_publication.Simulation.Snapshot();}
         public bool RemoveBuff(string actorId,int instanceId)
-        {bool removed=_publication.Simulation!=null&&_publication.Simulation.RemoveBuff(actorId,instanceId);if(_publication.Simulation!=null)Snapshot=_publication.Simulation.Snapshot();return removed;}
+        {bool removed=_publication.Simulation!=null&&(bool)_publication.Simulation.Execute(new SkillSimulationCommand{Kind="remove-buff",ActorId=actorId,InstanceId=instanceId});if(_publication.Simulation!=null)Snapshot=_publication.Simulation.Snapshot();return removed;}
         public void Interrupt(bool death=false)
         {
-            _publication.Simulation?.Interrupt(death);
+            _publication.Simulation?.Execute(new SkillSimulationCommand{Kind=death?"death":"interrupt"});
             if(_publication.Simulation!=null)Snapshot=_publication.Simulation.Snapshot();
         }
 
         public void CancelInput()
         {
-            _publication.Simulation?.CancelInput();
+            _publication.Simulation?.Execute(new SkillSimulationCommand{Kind="cancel"});
             if (_publication.Simulation != null) Snapshot = _publication.Simulation.Snapshot();
             _heldKey = KeyCode.None; _heldMouse = false;
         }
@@ -114,6 +119,7 @@ namespace Combat.Unity
 
         void Update()
         {
+            if(ReplayMode){if(Input.GetKeyDown(KeyCode.F5))ReloadPublished();return;}
             if(Time.unscaledTime>=_nextFileCheck){_nextFileCheck=Time.unscaledTime+.5f;CheckPublications();}
             UpdateAim();
             foreach (var key in new[] { KeyCode.F6, KeyCode.F7 })
@@ -125,15 +131,30 @@ namespace Combat.Unity
             if (Input.GetMouseButtonDown(0))
             { var result = CastSlot(CurrentSlot, _aim.x, _aim.y); _heldMouse = result != null && result.Accepted; }
             if (_heldMouse && Input.GetMouseButtonUp(0)) ReleaseCast();
-            if (AutoAdvance) SetMovement(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+            if (AutoAdvance&&!Paused) SetMovement(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
             if (!AutoAdvance || Paused || _publication.Simulation == null) return;
             int steps = _clock.BeginFrame(Time.unscaledDeltaTime);
             if (steps > 0) StepLogicForTests(steps);
         }
         public void CheckPublications()
         {
+            if(ReplayMode){PendingPublication=false;return;}
             try{PendingPublication=_publication.Simulation==null?File.Exists(Path.Combine(ContentDirectory,"f6.json"))||File.Exists(Path.Combine(ContentDirectory,"f7.json")):FilesStamp()!=_loadedFiles;}catch(IOException){PendingPublication=true;}catch(UnauthorizedAccessException){PendingPublication=true;}
         }
+        public bool LoadReplayFile(string path)
+        {
+            try
+            {
+                _publication.ValidateViews=UnityActorResources.Validate;var comparison=_publication.ReplaceReplay(File.ReadAllText(path));
+                if(!ReplayMode)_resumeAutoAdvance=AutoAdvance;
+                ReplayComparison=comparison;
+                _clock.Reset();_heldKey=KeyCode.None;_heldMouse=false;Generation++;CurrentSlot="f6";ReplayMode=true;PendingPublication=false;LastLoadError=null;
+                Snapshot=_publication.Simulation.Snapshot();AutoAdvance=false;_status="Replay matched "+Snapshot.Step+" steps / "+ReplayComparison.Values+" values";return true;
+            }
+            catch(Exception error) when(error is IOException||error is UnauthorizedAccessException||error is ContentValidationException)
+            {LastLoadError=path+": "+error.Message;_status=LastLoadError;return false;}
+        }
+        public string CaptureReplayJson()=>_publication.Simulation==null?null:SkillReplayJson.Write(_publication.Simulation.CaptureReplay(SkillId??(_publication.Slots.ContainsKey("f6")?_publication.Slots["f6"]:_publication.Slots["f7"])));
         string FilesStamp()
         {
             var values=new List<string>();foreach(string slot in new[]{"f6","f7"}){string path=Path.Combine(ContentDirectory,slot+".json");var info=new FileInfo(path);values.Add(info.Exists?slot+":"+info.Length+":"+info.LastWriteTimeUtc.Ticks:slot+":missing");}return string.Join("|",values);
@@ -148,10 +169,10 @@ namespace Combat.Unity
                 if (new Plane(Vector3.up, Vector3.zero).Raycast(ray, out float distance))
                 { var point = ray.GetPoint(distance); _aim = new Vector2(point.x, point.z); }
             }
-            _publication.Simulation?.Aim(_aim.x, _aim.y);
+            if(AutoAdvance&&!Paused)_publication.Simulation?.Execute(new SkillSimulationCommand{Kind="aim",X=_aim.x,Z=_aim.y});
         }
 
-        void OnApplicationFocus(bool focused) { if (!focused) CancelInput(); }
+        void OnApplicationFocus(bool focused) { if (!focused&&!ReplayMode) CancelInput(); }
 
         void OnGUI()
         {

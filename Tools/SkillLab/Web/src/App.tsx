@@ -53,7 +53,7 @@ function Workbench() {
   const key:GraphKey={kind:area?'area':projectile?'projectile':timeline?'timeline':buff?'buff':'skill',id:area?.id??projectile?.id??timeline?.id??buff?.id??skill?.id??''};
   const graphEditor=useGraphAuthoring(editor,key,setMessage,traceFocus);const graph=graphEditor.graph;
   const root=previewRoot&&project?.skills.some(s=>s.id===previewRoot)?previewRoot:skill?.id??'';
-  const preview=usePreview(project,root,setMessage);preview.skill.current=root;
+  const preview=usePreview(project,root,setMessage,(p,id)=>{setPreviewRoot(id);setTraceFocus(null);editor.endGroup();editor.edit(selectGraph(prepareImportedLayout(p),id));});preview.skill.current=root;
   const mode=String(skill?.nodes.find(n=>n.kind==='cast'&&n.enabled!==false)?.parameters.mode??'instant');
   const castMode=({instant:'瞬发',channel:'引导',charge:'蓄力'} as Record<string,string>)[mode]??mode;
   const actionNodes=skill?.timelineRef?project?.timelines?.find(t=>t.id===skill.timelineRef)?.nodes:skill?.nodes;

@@ -89,34 +89,33 @@ app.MapPost("/api/preview",async(HttpContext context)=>
     var project=await ReadProject(context);var content=CombatContentCompiler.Compile(project);
     if(sessions.Count>=16)return Results.Problem("Close unused preview sessions.",statusCode:409);
     var session=new SkillSimulation(project,content);var id=Guid.NewGuid().ToString("N");sessions[id]=session;
-    return Results.Ok(new{id,state=session.Snapshot()});
+    return Results.Ok(new{id,state=session.Snapshot(),recording=session.Recording});
 });
 app.MapPost("/api/preview/{id}/command",async(string id,HttpContext context)=>
 {
     if(!sessions.TryGetValue(id,out var session))return Results.NotFound();
     var text=await new StreamReader(context.Request.Body).ReadToEndAsync();
-    var command=Newtonsoft.Json.Linq.JObject.Parse(text);
+    var command=SkillSimulationCommands.Read(text);
     lock(session)
     {
-        var kind=command.Value<string>("kind");
-        object result=null;
-        if(kind=="step")session.Advance(command.Value<int?>("steps")??1);
-        else if(kind=="input")session.Input(command.Value<string>("input"),command.Value<float?>("x")??0,command.Value<float?>("z")??0);
-        else if(kind=="cast")result=session.Cast(command.Value<string>("skillId"),command.Value<float?>("x")??0,command.Value<float?>("z")??0);
-        else if(kind=="release")
-        {if(command["x"]!=null&&command["z"]!=null)session.Aim(command.Value<float>("x"),command.Value<float>("z"));session.Release();}
-        else if(kind=="cancel")session.CancelInput();
-        else if(kind=="aim")session.Aim(command.Value<float?>("x")??0,command.Value<float?>("z")??0);
-        else if(kind=="move")session.Move(command.Value<float?>("x")??0,command.Value<float?>("z")??0);
-        else if(kind=="place")session.Place(command.Value<string>("actorId"),command.Value<float?>("x")??0,command.Value<float?>("z")??0);
-        else if(kind=="remove")session.Remove(command.Value<string>("entityId"));
-        else if(kind=="remove-buff")result=session.RemoveBuff(command.Value<string>("actorId"),command.Value<int>("instanceId"));
-        else if(kind=="interrupt")session.Interrupt();
-        else if(kind=="death")session.Interrupt(true);
-        else if(kind=="hitstop")session.RequestHitstop(command.Value<int?>("frames")??10);
-        else if(kind!="snapshot")throw new ContentValidationException("$.kind","Unknown command.");
-        return Results.Ok(new{result,state=session.Snapshot()});
+        var result=session.Execute(command);return Results.Ok(new{result,state=session.Snapshot(),recording=session.Recording});
     }
+});
+app.MapGet("/api/preview/{id}/replay",(string id,HttpContext context)=>
+{
+    if(!sessions.TryGetValue(id,out var session))return Results.NotFound();
+    lock(session)return Results.Text(SkillReplayJson.Write(session.CaptureReplay(context.Request.Query["skillId"])),"application/json");
+});
+app.MapPost("/api/replays",async(HttpContext context)=>
+{
+    var request=await context.Request.ReadFromJsonAsync<Dictionary<string,string>>();
+    if(request==null||!request.TryGetValue("text",out var text))throw new ContentValidationException("$.text","Replay file text is required.");
+    var document=SkillReplayJson.Read(text);
+    if(sessions.Count>=16)return Results.Problem("Close unused preview sessions.",statusCode:409);
+    using var run=new SkillReplayRun(document);
+    if(!run.Comparison.Matches)return Results.BadRequest(new{error="复现结果不同："+run.Comparison.Differences[0].Path,comparison=run.Comparison});
+    string id=Guid.NewGuid().ToString("N");var simulation=run.TakeSimulation();sessions[id]=simulation;
+    return Results.Ok(new{id,state=simulation.Snapshot(),recording=simulation.Recording,comparison=run.Comparison,projectJson=SkillProjectJson.Write(document.Project),rootSkillId=document.RootSkillId});
 });
 app.MapDelete("/api/preview/{id}",(string id)=>
 {if(sessions.TryRemove(id,out var session))lock(session)session.Dispose();return Results.NoContent();});

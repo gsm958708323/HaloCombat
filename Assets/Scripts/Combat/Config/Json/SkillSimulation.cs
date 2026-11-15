@@ -33,6 +33,7 @@ namespace Combat.Config
             _content = content ?? throw new ArgumentNullException(nameof(content));
             var preview = project?.Preview;
             SkillSceneValidation.Validate(preview);
+            InitializeRecording(project);
             _trace=new AuthorExecutionTrace(content.Sources);
             _world = new CombatWorld(new SkillSimulationFactory(content, preview), random: new SeededRandom(preview.Seed), cues: content.Runtime?.Data.Cues??content.Cues,motor:content.Runtime?.Data.Motor,obstacles:SkillSceneValidation.Obstacles(preview),skillEvents:content.SkillEvents,effectObserver:_trace);
             _trace.Executing+=e=>Record("execute",Name(e.Source),e.Node.NodeKind,e.Origin,node:e.Node,sourceId:e.Source,targetId:e.Target);

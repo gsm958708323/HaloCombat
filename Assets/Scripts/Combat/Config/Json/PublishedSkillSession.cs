@@ -100,5 +100,19 @@ namespace Combat.Config
 
         public void Dispose()
         { Simulation?.Dispose(); Simulation = null; Revision = null; Slots = new ReadOnlyDictionary<string, string>(new Dictionary<string, string>()); }
+
+        public SkillReplayComparison ReplaceReplay(string text)
+        {
+            var document=SkillReplayJson.Read(text);
+            using(var run=new SkillReplayRun(document))
+            {
+                ValidateViews?.Invoke(run.Simulation.Views);
+                if(!run.Comparison.Matches)throw new ContentValidationException("$.expectedState","Replay differs at "+run.Comparison.Differences[0].Path);
+                var previous=Simulation;Simulation=run.TakeSimulation();Revision=SkillJsonCodec.Fingerprint(text);
+                Slots=new ReadOnlyDictionary<string,string>(new Dictionary<string,string>{{"f6",document.RootSkillId}});
+                SlotRevisions=new ReadOnlyDictionary<string,string>(new Dictionary<string,string>{{"f6",Revision}});
+                previous?.Dispose();return run.Comparison;
+            }
+        }
     }
 }
