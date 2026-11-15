@@ -27,11 +27,7 @@ namespace Combat.Config
             var content = CombatContentCompiler.Compile(project);
             CheckSkill(content, skillId);
             var selected=SkillContentClosure.Select(project,content,skillId);
-            foreach(var graph in selected.Skills)foreach(var node in graph.Nodes)node.Position=new NodePosition();
-            foreach(var graph in selected.Buffs)foreach(var node in graph.Nodes)node.Position=new NodePosition();
-            foreach(var graph in selected.Timelines)foreach(var node in graph.Nodes)node.Position=new NodePosition();
-            foreach(var graph in selected.Projectiles)foreach(var node in graph.Nodes)node.Position=new NodePosition();
-            foreach(var graph in selected.Areas)foreach(var node in graph.Nodes)node.Position=new NodePosition();
+            SkillJsonTransfer.NormalizeLayout(selected);
             return new SkillPublicationDocument { Project = selected, SkillId = skillId, Revision = Revision(selected, skillId) };
         }
 

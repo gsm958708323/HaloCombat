@@ -25,6 +25,8 @@ import { SharedTimelineControls } from './SharedTimelineControls';
 import { newTimeline } from './authoring/timelineEdits';
 import {newProjectile} from './authoring/projectileEdits';
 import {newArea} from './authoring/areaEdits';
+import {ExportDialog} from './ExportDialog';
+import {prepareImportedLayout} from './authoring/importLayout';
 
 const nodeTypes={skill:SkillNode};
 function Workbench() {
@@ -36,6 +38,7 @@ function Workbench() {
   const [contentAction,setContentAction]=useState<ContentAction|null>(null);
   const [newProjectName,setNewProjectName]=useState<string|null>(null);const [projectTemplate,setProjectTemplate]=useState('empty');
   const [pendingImport,setPendingImport]=useState<Project|null>(null);
+  const [exporting,setExporting]=useState(false);
   const fileInput=useRef<HTMLInputElement>(null);
   const skill=project?.skills.find(s=>s.id===project.editor?.selectedSkill)??project?.skills[0];
   const buff=project?.buffs?.find(b=>b.id===project.editor?.selectedBuff);
@@ -56,11 +59,6 @@ function Workbench() {
   async function openCreate(){
     try{const available=examples.length?examples:(await api<Project>('/examples',undefined,'GET')).skills;setExamples(available);setTemplate(skill?'copy':available[0]?.id??'');setNewName('');}
     catch(error){setMessage(String(error));}
-  }
-  function download(){
-    const p=editor.current.current;if(!p)return;
-    const url=URL.createObjectURL(new Blob([JSON.stringify(p,null,2)],{type:'application/json'}));
-    const anchor=window.document.createElement('a');anchor.href=url;anchor.download=p.id+'.json';anchor.click();URL.revokeObjectURL(url);setMessage('工程 JSON 已导出');
   }
   async function publish(slot:string){
     const p=editor.current.current;if(!p||!skill)return;
@@ -115,7 +113,7 @@ function Workbench() {
     catch(error){setMessage(String(error));}finally{setCreating(false);}
   }
   async function importFile(file:File){
-    try{const value=JSON.parse(await file.text()) as Project;await api('/document/validate',value);setPendingImport(value);}
+    try{const result=await api<{json:string;needsLayout:boolean}>('/document/import',{text:await file.text()});const imported=JSON.parse(result.json) as Project;setPendingImport(result.needsLayout?prepareImportedLayout(imported):imported);}
     catch(error){setMessage(String(error));}
   }
   async function applyImport(merge:boolean){
@@ -142,7 +140,7 @@ function Workbench() {
         <button disabled={!skill} onClick={()=>void publish('f6')}>发布到 F6</button><button disabled={!skill} onClick={()=>void publish('f7')}>发布到 F7</button>
         <button onClick={()=>void api<{message:string}>('/publish/sync',editor.current.current).then(result=>setMessage(result.message)).catch(error=>setMessage(String(error)))}>同步两槽</button>
         {project.runtime&&<button onClick={()=>void api<{message:string}>('/runtime/publish',project).then(result=>setMessage(result.message)).catch(error=>setMessage(String(error)))}>发布正式内容</button>}
-        <button onClick={download}><Download size={13}/>导出</button><button onClick={()=>fileInput.current?.click()}><Upload size={13}/>导入</button>
+        <button onClick={()=>setExporting(true)}><Download size={13}/>导出</button><button onClick={()=>fileInput.current?.click()}><Upload size={13}/>导入</button>
         <input ref={fileInput} type="file" accept=".json,application/json" hidden onChange={event=>{const file=event.target.files?.[0];if(file)void importFile(file);event.target.value='';}}/>
       </div></header>
     <nav className="app-navigation"><span className="active">技能</span><div/><small>{project.name} · {project.skills.length} 个技能</small></nav>
@@ -184,11 +182,12 @@ function Workbench() {
       </aside></div></section>
     </div><footer className={message.startsWith('Error')?'error':''} role="status">{message}<span>JSON 工程 · 真实 C# 预览</span></footer>
     {contentAction&&<ContentDialog key={contentAction.kind+contentAction.id+contentAction.mode} project={project} action={contentAction} close={()=>setContentAction(null)} edit={change=>{editor.endGroup();editor.edit(change);setMessage('内容与引用已更新，可撤销恢复');}} locate={locate}/>}
+    {exporting&&<ExportDialog project={project} skillId={skill?.id??''} close={()=>setExporting(false)} report={setMessage}/>}
     {newName!==null&&<div className="modal-backdrop"><form className="modal" onSubmit={event=>{event.preventDefault();void create();}}><h2>新建技能</h2><label>名称<input aria-label="新技能名称" autoFocus value={newName} onChange={event=>setNewName(event.target.value)}/></label>
       <label>模板<select aria-label="技能模板" value={template} onChange={event=>setTemplate(event.target.value)}>{skill&&<option value="copy">复制当前技能</option>}{examples.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
       <div><button type="button" disabled={creating} onClick={()=>setNewName(null)}>取消</button><button className="primary" disabled={!newName.trim()||creating}>{creating?'创建中…':'确定'}</button></div></form></div>}
     {newProjectName!==null&&<div className="modal-backdrop"><form className="modal" onSubmit={event=>{event.preventDefault();void createProject();}}><h2>新建工程</h2><label>名称<input aria-label="新工程名称" autoFocus value={newProjectName} onChange={event=>setNewProjectName(event.target.value)}/></label><label>初始内容<select aria-label="工程初始内容" value={projectTemplate} onChange={event=>setProjectTemplate(event.target.value)}><option value="empty">空工程</option><option value="examples">恢复全部预置示例</option></select></label><p>当前编辑保留在撤销历史中。保存后更新磁盘工程。</p><div><button type="button" disabled={creating} onClick={()=>setNewProjectName(null)}>取消</button><button className="primary" disabled={creating||!newProjectName.trim()}>创建工程</button></div></form></div>}
-    {pendingImport&&<div className="modal-backdrop"><div className="modal"><h2>导入工程 · {pendingImport.name}</h2><p>{pendingImport.skills.length} 技能、{pendingImport.buffs?.length??0} Buff、{pendingImport.summonBlueprints?.length??0} 蓝图。</p><p>替换恢复文件完整布局和场景；合并保留当前场景，并为冲突身份分配新 ID、同步导入内容的引用。两种操作均可撤销。</p><div><button disabled={creating} onClick={()=>setPendingImport(null)}>取消</button><button disabled={creating} onClick={()=>void applyImport(true)}>合并内容</button><button className="primary" disabled={creating} onClick={()=>void applyImport(false)}>替换工程</button></div></div></div>}
+    {pendingImport&&<div className="modal-backdrop"><div className="modal"><h2>导入工程 · {pendingImport.name}</h2><p>{pendingImport.skills.length} 技能、{pendingImport.buffs?.length??0} Buff、{pendingImport.summonBlueprints?.length??0} 蓝图。</p><p>替换还原文件内容与场景，运行包省略的节点布局会自动生成；合并保留当前场景，并为冲突身份分配新 ID、同步导入内容的引用。两种操作均可撤销。</p><div><button disabled={creating} onClick={()=>setPendingImport(null)}>取消</button><button disabled={creating} onClick={()=>void applyImport(true)}>合并内容</button><button className="primary" disabled={creating} onClick={()=>void applyImport(false)}>替换工程</button></div></div></div>}
   </div>;
 }
 export default function App(){return <ReactFlowProvider><Workbench/></ReactFlowProvider>;}

@@ -67,6 +67,15 @@ app.MapPost("/api/project",async(HttpContext context)=>
 });
 app.MapPost("/api/document/validate",async(HttpContext context)=>
 {var project=await ReadProject(context);SkillProjectStructure.Validate(project);return Results.Ok(new{valid=true});});
+app.MapPost("/api/document/import",async(HttpContext context)=>
+{
+    var request=await context.Request.ReadFromJsonAsync<Dictionary<string,string>>();
+    if(request==null||!request.TryGetValue("text",out var text))throw new ContentValidationException("$.text","Import file text is required.");
+    var imported=SkillJsonTransfer.Import(text);
+    return Results.Ok(new{json=SkillProjectJson.Write(imported.Project),needsLayout=imported.NeedsLayout});
+});
+app.MapPost("/api/export/{kind}",async(string kind,HttpContext context)=>
+{var project=await ReadProject(context);return Results.Ok(SkillJsonTransfer.Export(project,kind,context.Request.Query["skillId"]));});
 app.MapGet("/api/publications",async()=>
 {
     await jsonLock.WaitAsync();

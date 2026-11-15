@@ -10,6 +10,25 @@ const ids=()=>{let number=0;return ()=> 'generated-'+ ++number;};
 const skillKey={kind:'skill',id:'basic-shot'};
 const runtime=()=>JSON.parse(fs.readFileSync(path.resolve(__dirname,'../../../../Assets/StreamingAssets/Combat/project.json'),'utf8'));
 const areaEdits=require('../../.local/web-checks/authoring/areaEdits.js');
+const {prepareImportedLayout}=require('../../.local/web-checks/authoring/importLayout.js');
+
+test('runtime imports acquire readable positions without changing gameplay identities parameters or edge order',()=>{
+  const p=runtime();for(const {graph:g} of edits.allGraphs(p))for(const n of g.nodes)n.position={x:0,y:0};
+  const before=JSON.stringify(p),result=prepareImportedLayout(p);
+  for(const {graph:g} of edits.allGraphs(result)){
+    assert.equal(new Set(g.nodes.map(n=>n.position.x+','+n.position.y)).size,g.nodes.length);
+    for(const n of g.nodes)n.position={x:0,y:0};
+  }
+  assert.equal(JSON.stringify(p),before,'Import layout must not mutate the parsed runtime document');assert.deepEqual(result,p);
+});
+
+test('already authored layouts survive import and disconnected cyclic drafts can still be arranged',()=>{
+  const p=example();assert.deepEqual(prepareImportedLayout(p),p);
+  const s=p.skills[0];for(const n of s.nodes)n.position={x:0,y:0};
+  s.edges.push({id:'draft-cycle',source:s.nodes.at(-1).id,sourcePort:'next',target:s.nodes[0].id,targetPort:'execute',order:0});
+  const result=prepareImportedLayout(p);assert(result.skills[0].nodes.every(n=>Number.isFinite(n.position.x)&&Number.isFinite(n.position.y)));
+  assert.deepEqual(result.skills[0].edges,s.edges);
+});
 
 test('extracting an inline persistent area moves its lifecycle graph and retains placement at the caller',()=>{
   const p=example(),s=p.skills.find(s=>s.nodes.some(n=>n.kind==='delivery'&&n.parameters.mode==='area'&&n.parameters.persistent===true));
