@@ -15,6 +15,9 @@ namespace Combat.Unity
         GameObject _prefab;
         Renderer[] _renderers;
         MaterialPropertyBlock _feedbackBlock;
+        UnityBodyVisual _bodyVisual;
+        readonly System.Collections.Generic.Dictionary<string,Transform> _anchors=new System.Collections.Generic.Dictionary<string,Transform>();
+        public Transform Anchor(string key)=>_anchors.TryGetValue(key,out var anchor)?anchor:transform;
         public UnityAnimatorDriver Animation {get;private set;}
         public void ConfigurePrefab(RuntimeViewDefinition definition,GameObject prefab){_definition=definition;_prefab=prefab!=null?prefab:throw new ContentValidationException("$.runtime.views["+definition.Id+"].resource","Missing Unity prefab resource: "+definition.Resource);}
         bool _dead;
@@ -33,6 +36,7 @@ namespace Combat.Unity
         {
             Id = id;
             _blueprint = blueprintId ?? string.Empty;
+            _anchors.Clear();_bodyVisual=null;Animation=null;
             _dead = false;
             _feedbackBlock=new MaterialPropertyBlock();
             Feedback.Reset();_poseTime=0;_feedbackWallTime=Time.realtimeSinceStartupAsDouble;
@@ -49,6 +53,7 @@ namespace Combat.Unity
             if (_visual == null) return;
             if(!sample.InHitstop&&!_dead)_poseTime=sample.Skill.IsValid?sample.ActionTime:_poseTime+Time.unscaledDeltaTime;
             double now=Time.realtimeSinceStartupAsDouble;Feedback.AdvanceWall((float)(now-_feedbackWallTime));_feedbackWallTime=now;
+            if(_bodyVisual!=null){_bodyVisual.Sample(sample);return;}
             if(Animation!=null)
             {
                 Animation.Sample(sample);_visual.localPosition=new Vector3(0,0,Feedback.Impulse*.05f);
@@ -98,6 +103,12 @@ namespace Combat.Unity
                 var instance=Instantiate(_prefab,_visual,false);instance.transform.localPosition=Vector3.zero;
                 instance.transform.localRotation=Quaternion.Euler(0,_definition.YawOffset,0);instance.transform.localScale*=_definition.Scale;
                 _renderers=instance.GetComponentsInChildren<Renderer>(true);
+                foreach(var binding in _definition.Anchors)
+                {
+                    var parent=binding.Path.Length==0?instance.transform:instance.transform.Find(binding.Path);var anchor=new GameObject("CueAnchor_"+binding.Key).transform;
+                    anchor.SetParent(parent,false);anchor.localPosition=new Vector3(binding.X,binding.Y,binding.Z);_anchors.Add(binding.Key,anchor);
+                }
+                if(_definition.Kind=="body"){_bodyVisual=new UnityBodyVisual(instance,_definition,_visual);return;}
                 Animation=new UnityAnimatorDriver(instance.GetComponentInChildren<Animator>(true),_definition);return;
             }
             string model=_model??_blueprint;

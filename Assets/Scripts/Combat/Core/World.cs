@@ -118,7 +118,7 @@ namespace Combat.Core
             else if (actor.TryGetComp<SummonComp>(out var summon) && summon.OwnerId.IsValid)
                 owner = summon.OwnerId;
             else if(actor.TryGetComp<ConstructComp>(out var construct))owner=construct.OwnerId;
-            string view=actor.TryGetComp<ConstructComp>(out var body)?body.Def?.View:null;
+            string view=actor.TryGetComp<ConstructComp>(out var body)?body.Def?.View:actor.TryGetComp<ProjectileComp>(out var shot)?shot.Def?.View:actor.TryGetComp<AoeComp>(out var area)?area.Def?.View:null;
             _events.Publish(new EvEntitySpawn(id, blueprintId, owner,view));
         }
         public bool TryGetActor(EntityId id, out Actor actor) => _registry.TryGet(id, out actor);

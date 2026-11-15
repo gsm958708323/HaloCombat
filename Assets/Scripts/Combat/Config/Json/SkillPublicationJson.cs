@@ -1,5 +1,6 @@
 using System;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Combat.Config
 {
@@ -42,7 +43,11 @@ namespace Combat.Config
             if (document.FormatVersion != 1) throw new ContentValidationException("$.formatVersion", "Only publication version 1 is supported.");
             var content = CombatContentCompiler.Compile(document.Project);
             CheckSkill(content, document.SkillId);
-            if (!string.Equals(document.Revision, Revision(document.Project, document.SkillId), StringComparison.Ordinal))
+            // Hash the published payload, before float DTO conversion. .NET and Mono can
+            // serialize the same float as 2.9133646 and 2.91336465; neither changes the file.
+            var payload=JObject.Parse(text,new JsonLoadSettings{DuplicatePropertyNameHandling=DuplicatePropertyNameHandling.Error});
+            string revision=SkillJsonCodec.Fingerprint(document.SkillId+"\n"+payload["project"].ToString(Formatting.Indented));
+            if (!string.Equals(document.Revision, revision, StringComparison.Ordinal))
                 throw new ContentValidationException("$.revision", "Published content has changed. Publish the edited project again.");
             return new CompiledSkillPublication(document, content);
         }

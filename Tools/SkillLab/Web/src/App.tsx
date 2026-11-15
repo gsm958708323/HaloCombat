@@ -64,7 +64,7 @@ function Workbench() {
   }
   async function publish(slot:string){
     const p=editor.current.current;if(!p||!skill)return;
-    try{const result=await api<{message:string}>('/publish/'+slot+'?skillId='+encodeURIComponent(skill.id),p);setMessage(result.message);}
+    try{const result=await api<{message:string;revision:string;skillId:string}>('/publish/'+slot+'?skillId='+encodeURIComponent(skill.id),p);setMessage(result.message+' · '+result.skillId+' · '+result.revision.slice(0,8));}
     catch(error){setMessage(String(error));}
   }
   async function create(){
@@ -140,6 +140,7 @@ function Workbench() {
         <button onClick={()=>void api<Project>('/runtime',undefined,'GET').then(value=>{editor.endGroup();editor.edit(value);setMessage('已打开正式JSON内容，可撤销返回原工程');}).catch(error=>setMessage(String(error)))}>打开正式内容</button>
         <small className={editor.dirty?'unsaved':''} role="status">{editor.saveStatus}</small><button disabled={editor.saving} onClick={()=>void editor.save()}><Save size={13}/>保存</button>
         <button disabled={!skill} onClick={()=>void publish('f6')}>发布到 F6</button><button disabled={!skill} onClick={()=>void publish('f7')}>发布到 F7</button>
+        <button onClick={()=>void api<{message:string}>('/publish/sync',editor.current.current).then(result=>setMessage(result.message)).catch(error=>setMessage(String(error)))}>同步两槽</button>
         {project.runtime&&<button onClick={()=>void api<{message:string}>('/runtime/publish',project).then(result=>setMessage(result.message)).catch(error=>setMessage(String(error)))}>发布正式内容</button>}
         <button onClick={download}><Download size={13}/>导出</button><button onClick={()=>fileInput.current?.click()}><Upload size={13}/>导入</button>
         <input ref={fileInput} type="file" accept=".json,application/json" hidden onChange={event=>{const file=event.target.files?.[0];if(file)void importFile(file);event.target.value='';}}/>

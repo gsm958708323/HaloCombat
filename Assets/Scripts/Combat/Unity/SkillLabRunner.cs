@@ -27,6 +27,12 @@ namespace Combat.Unity
         public int Generation { get; private set; }
         public SkillSimulationSnapshot Snapshot { get; private set; }
         public string ContentDirectory => _directory ?? Path.Combine(Application.streamingAssetsPath, "Combat");
+        public IReadOnlyDictionary<string,RuntimeViewDefinition> Views=>_publication.Simulation?.Views;
+        public IReadOnlyDictionary<string,string> SlotSkills=>_publication.Slots;
+        public IReadOnlyDictionary<string,string> SlotRevisions=>_publication.SlotRevisions;
+        public bool PendingPublication {get;private set;}
+        string _loadedFiles;
+        float _nextFileCheck;
 
         public void ConfigureContentDirectory(string directory)
         {
@@ -45,10 +51,11 @@ namespace Combat.Unity
                     path = Path.Combine(ContentDirectory, slot + ".json");
                     if (File.Exists(path)) slots.Add(slot, File.ReadAllText(path));
                 }
-                _publication.Replace(slots);
+                _publication.ValidateViews=UnityActorResources.Validate;_publication.Replace(slots);
                 _heldKey = KeyCode.None; _heldMouse = false;
                 _clock.Reset(); Generation++; CurrentSlot = null; LastLoadError = null;
                 Snapshot = _publication.Simulation.Snapshot();
+                _loadedFiles=FilesStamp();PendingPublication=false;
                 _status = "Loaded " + string.Join(" / ", _publication.Slots.Keys) + " / " + Revision.Substring(0, 12);
                 return true;
             }
@@ -107,6 +114,7 @@ namespace Combat.Unity
 
         void Update()
         {
+            if(Time.unscaledTime>=_nextFileCheck){_nextFileCheck=Time.unscaledTime+.5f;CheckPublications();}
             UpdateAim();
             foreach (var key in new[] { KeyCode.F6, KeyCode.F7 })
                 if (Input.GetKeyDown(key))
@@ -121,6 +129,14 @@ namespace Combat.Unity
             if (!AutoAdvance || Paused || _publication.Simulation == null) return;
             int steps = _clock.BeginFrame(Time.unscaledDeltaTime);
             if (steps > 0) StepLogicForTests(steps);
+        }
+        public void CheckPublications()
+        {
+            try{PendingPublication=_publication.Simulation==null?File.Exists(Path.Combine(ContentDirectory,"f6.json"))||File.Exists(Path.Combine(ContentDirectory,"f7.json")):FilesStamp()!=_loadedFiles;}catch(IOException){PendingPublication=true;}catch(UnauthorizedAccessException){PendingPublication=true;}
+        }
+        string FilesStamp()
+        {
+            var values=new List<string>();foreach(string slot in new[]{"f6","f7"}){string path=Path.Combine(ContentDirectory,slot+".json");var info=new FileInfo(path);values.Add(info.Exists?slot+":"+info.Length+":"+info.LastWriteTimeUtc.Ticks:slot+":missing");}return string.Join("|",values);
         }
 
         void UpdateAim()
@@ -139,11 +155,14 @@ namespace Combat.Unity
 
         void OnGUI()
         {
-            GUILayout.BeginArea(new Rect(12, 12, 470, 200), GUI.skin.box);
+            GUILayout.BeginArea(new Rect(12, 12, 520, 270), GUI.skin.box);
             GUILayout.Label("HaloCombat / JSON Skill Lab");
             GUILayout.Label("F6 / F7: cast slot | Mouse: cast selected slot");
             GUILayout.Label("F5: reload publications + reset | Space: pause");
             GUILayout.Label(_status);
+            foreach(var slot in SlotSkills)GUILayout.Label(slot.Key.ToUpperInvariant()+" loaded: "+slot.Value+" / "+SlotRevisions[slot.Key].Substring(0,8));
+            if(PendingPublication)GUILayout.Label("New publication on disk. Press F5 or Reload to apply.");
+            if(GUILayout.Button("Reload published F6 / F7"))ReloadPublished();
             if (Snapshot != null)
             {
                 GUILayout.Label("Version " + Revision.Substring(0, 12) + " / " + SkillId);

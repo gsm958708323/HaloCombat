@@ -8,8 +8,10 @@ namespace Combat.Config
     public sealed class PublishedSkillSession : IDisposable
     {
         public SkillSimulation Simulation { get; private set; }
+        public Action<IReadOnlyDictionary<string,RuntimeViewDefinition>> ValidateViews {get;set;}
         public string Revision { get; private set; }
         public IReadOnlyDictionary<string, string> Slots { get; private set; } = new ReadOnlyDictionary<string, string>(new Dictionary<string, string>());
+        public IReadOnlyDictionary<string,string> SlotRevisions {get;private set;}=new ReadOnlyDictionary<string,string>(new Dictionary<string,string>());
 
         // Invalid input cannot destroy the last working session. Existing actors keep their
         // original definitions until a fully validated replacement world has been created.
@@ -18,6 +20,7 @@ namespace Combat.Config
             if (slots == null || slots.Count == 0 || slots.Count > 2)
                 throw new ContentValidationException("$.slots", "Expected f6 and/or f7 publications.");
             var mappings = new Dictionary<string, string>();
+            var slotRevisions=new Dictionary<string,string>();
             var skills = new Dictionary<string, SkillGraphDocument>();
             var blueprints=new Dictionary<string,SummonBlueprintDocument>();
             var buffs=new Dictionary<string,BuffDocument>();
@@ -52,6 +55,7 @@ namespace Combat.Config
                     blueprints[blueprint.Id]=blueprint;
                 }
                 mappings.Add(slot.Key,document.SkillId);
+                slotRevisions.Add(slot.Key,document.Revision);
                 foreach(var buff in closure.Buffs)
                 {
                     if(buffs.TryGetValue(buff.Id,out var other)&&SkillJsonCodec.Write(buff)!=SkillJsonCodec.Write(other))
@@ -84,11 +88,13 @@ namespace Combat.Config
             project.Timelines=timelines.Values.ToArray();
             project.Projectiles=projectiles.Values.ToArray();
             project.Areas=areas.Values.ToArray();
-            var candidate = new SkillSimulation(project, CombatContentCompiler.Compile(project));
+            var compiled=CombatContentCompiler.Compile(project);ValidateViews?.Invoke(compiled.Runtime?.Views);
+            var candidate = new SkillSimulation(project,compiled);
             var previous = Simulation;
             Simulation = candidate;
             Revision = SkillJsonCodec.Fingerprint(string.Join("\n", revisions));
             Slots = new ReadOnlyDictionary<string, string>(mappings);
+            SlotRevisions=new ReadOnlyDictionary<string,string>(slotRevisions);
             previous?.Dispose();
         }
 

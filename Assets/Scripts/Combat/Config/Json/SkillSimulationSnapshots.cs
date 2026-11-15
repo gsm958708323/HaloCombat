@@ -30,6 +30,9 @@ namespace Combat.Config
         public string Id { get; internal set; }
         public string Name { get; internal set; }
         public string Kind { get; internal set; }
+        public string View {get;internal set;}
+        public float ViewScale {get;internal set;}=1;
+        public float Yaw {get;internal set;}
         public float X { get; internal set; }
         public float Y { get; internal set; }
         public float Z { get; internal set; }

@@ -43,7 +43,7 @@ namespace Combat.Tests
         public void PublicationRetainsViewCatalogAndActionSemanticAndConflictsKeepTheOldSession()
         {
             var p=Project();var first=SkillPublicationJson.Create(p,"arena-ammo-shot");var text=SkillPublicationJson.Write(first);
-            var read=SkillPublicationJson.Read(text);Assert.AreEqual(2,read.Content.Runtime.Views.Count);
+            var read=SkillPublicationJson.Read(text);Assert.AreEqual(p.Runtime.Views.Length,read.Content.Runtime.Views.Count);
             Assert.AreEqual("Fire",read.Document.Project.Skills.Single(s=>s.Id=="arena-ammo-shot").Timeline.Animation);
             using(var session=new PublishedSkillSession())
             {

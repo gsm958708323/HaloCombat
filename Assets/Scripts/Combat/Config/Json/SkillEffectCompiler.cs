@@ -93,7 +93,7 @@ namespace Combat.Config
                     effects.Add(damage); effects.AddRange(Outputs(node, "next",allowSpatial));
                     break;
                 case "cue":
-                    var cue = new NodeParameters(node, path, "id","name","center","playback","instanceKey","stopWithCast");
+                    var cue = new NodeParameters(node, path, "id","name","center","playback","instanceKey","stopWithCast","anchor");
                     _content.RequiredCues.Add(cue.Integer("id",1,1,1000000));
                     string cueCenter=cue.Choice("center","source","source","point","target");
                     string playback=cue.Choice("playback","once","once","start","stop"),instanceKey=cue.OptionalIdentity("instanceKey");
@@ -101,7 +101,8 @@ namespace Combat.Config
                     if(playback=="once"&&!string.IsNullOrEmpty(instanceKey))throw new ContentValidationException(path+".parameters.instanceKey","One-shot Cue has no instance key.");
                     int cueId=cue.Integer("id",1,1,1000000);string cueName=cue.Text("name","Skill");
                     bool stopWithCast=cue.Boolean("stopWithCast",true);
-                    effects.Add(playback!="once"?new CuePlaybackEffect(cueId,cueName,cueCenter=="target"?EffectCenter.Target:EffectCenter.Source,(CuePlayback)Array.IndexOf(new[]{"once","start","stop"},playback),instanceKey,stopWithCast):
+                    string anchor=cue.OptionalIdentity("anchor");if(anchor.Length>0&&cueCenter=="point")throw new ContentValidationException(path+".parameters.anchor","Anchors need an entity center.");
+                    effects.Add(playback!="once"||anchor.Length>0?new CuePlaybackEffect(cueId,cueName,cueCenter=="target"?EffectCenter.Target:EffectCenter.Source,(CuePlayback)Array.IndexOf(new[]{"once","start","stop"},playback),instanceKey,stopWithCast,anchor):
                         cueCenter=="source"?(IEffect)new PlayCueEffect(cueId,cueName):new PlayPositionedCueEffect(cueId,cueName,cueCenter=="point"?EffectCenter.Point:EffectCenter.Target));
                     effects.AddRange(Outputs(node, "next",allowSpatial));
                     break;
@@ -159,7 +160,7 @@ namespace Combat.Config
         {
             var p=new NodeParameters(node,path,"speed","range","lifetime","radius","maxHits","homingRate",
                 "multi","count","spread","chain","chainCount","chainRadius","chainMode","homingRetarget","homingRadius",
-                "trajectory","acceleration","maxSpeed","returnAfter","returnSpeed","catchRadius","launchHeight","verticalSpeed","gravity","restitution","groundBounces","wallBounces","spawnForward","snapshotAttack","hostileMask","cueId","homingMaxTurn","trackingKey","rampTime","sameTargetDelay","passInvulnerable","returnCurve","groundPhases","bounceHeight","removeOnObstacle");
+                "trajectory","acceleration","maxSpeed","returnAfter","returnSpeed","catchRadius","launchHeight","verticalSpeed","gravity","restitution","groundBounces","wallBounces","spawnForward","snapshotAttack","hostileMask","cueId","homingMaxTurn","trackingKey","rampTime","sameTargetDelay","passInvulnerable","returnCurve","groundPhases","bounceHeight","removeOnObstacle","view");
             CheckId(node,path,_projectiles,"projectile");
             int projectileCue=p.Integer("cueId",0,0,1000000);if(projectileCue>0)_content.RequiredCues.Add(projectileCue);
             int maxHits=p.Integer("maxHits",1,0,1000000);
@@ -188,6 +189,7 @@ namespace Combat.Config
                 HitRadius=p.Number("radius",.18f,.01f,100),MaxHits=maxHits,Chain=chain,
                 SameTargetDelay=p.Number("sameTargetDelay",0,0,3600),PassInvulnerable=p.Boolean("passInvulnerable",false),
                 RemoveOnObstacle=p.Boolean("removeOnObstacle",true),
+                View=BodyView(p),
                 HomingRate=p.Number("homingRate",0,0,36000),HomingRetarget=p.Boolean("homingRetarget",false),HomingAcquireRadius=p.Number("homingRadius",12,.01f,1000),
                 OnHit=Outputs(node,"hit"),OnWall=Outputs(node,"wall"),OnRange=Outputs(node,"range"),OnExpire=Outputs(node,"lifetime"),OnEnd=Outputs(node,"expire"),
                 OnBounce=Outputs(node,"bounce"),OnReturned=Outputs(node,"returned"),OnGround=Outputs(node,"ground")
@@ -201,7 +203,7 @@ namespace Combat.Config
         {
             var p = new NodeParameters(node, path, "mode", "recipient", "center", "radius", "maxTargets", "persistent", "duration", "interval", "pulseOnSpawn",
                 "shape","length","width","angle","startup","activeDuration","movementMode","distance","speed","hitRadius","pierce","blueprint","count","spacing","maxAlive","permanent","cueId","hostileMask",
-                "areaMotion","moveSpeed","removeOnObstacle","absorbProjectiles","absorbForce","radiusPerProjectile","forwardOffset");
+                "areaMotion","moveSpeed","removeOnObstacle","absorbProjectiles","absorbForce","radiusPerProjectile","forwardOffset","view");
             string mode = p.Choice("mode", "target", "target", "area","ray","summon");
             if(mode=="summon")
             {
@@ -249,6 +251,7 @@ namespace Combat.Config
                 SpecId = node.RuntimeId, Radius = radius, Duration = p.Boolean("permanent",false)?0:p.Number("duration", 2, .02f, 120),
                 PulseInterval = p.Number("interval", .5f, 0, 60), PulseOnSpawn = p.Boolean("pulseOnSpawn", true), MaxTargets = maximum,
                 CueId=areaCue,HostileMask=p.Integer("hostileMask",0,0,int.MaxValue),
+                View=BodyView(p),
                 TrackOccupancy = enter.Length + exit.Length + stay.Length > 0,
                 MoveForward=p.Choice("areaMotion","static","static","forward")=="forward",MoveSpeed=p.Number("moveSpeed",0,0,1000),RemoveOnObstacle=p.Boolean("removeOnObstacle",true),
                 AbsorbProjectiles=absorb,ProjectileAbsorbForce=absorb?p.Number("absorbForce",.05f,0,10):0,ProjectileRadiusScale=absorb?p.Number("radiusPerProjectile",.05f,0,10):0,OnAbsorb=absorbed,
@@ -290,6 +293,8 @@ namespace Combat.Config
 
         static EffectCenter Center(NodeParameters parameters)
             => (EffectCenter)Array.IndexOf(new[] { "point", "target", "source","auto" }, parameters.Choice("center", "point", "point", "target", "source","auto"));
+        string BodyView(NodeParameters parameters)
+        {string key=parameters.OptionalIdentity("view");if(key.Length==0)return null;_content.RequiredBodyViews.Add(key);return key;}
         static HitFeedbackLevel Feedback(NodeParameters p)
         {string value=p.Choice("feedback","skill","skill","none","light","confirm","heavy","finisher");return value=="skill"?HitFeedbackLevel.None:(HitFeedbackLevel)Array.IndexOf(new[]{"none","light","confirm","heavy","finisher"},value);}
         DurationSpec Buff(string id,string path)

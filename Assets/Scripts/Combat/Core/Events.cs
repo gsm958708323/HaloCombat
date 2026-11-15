@@ -141,13 +141,15 @@ namespace Combat.Core
         public readonly string InstanceKey;
         public readonly bool StopWithCast;
         public readonly SkillOrigin Origin;
-        public EvCue(int cueId, EntityId source, string name,SimVec3? point=null,CuePlayback playback=CuePlayback.Once,string instanceKey=null,bool stopWithCast=false,SkillOrigin origin=default)
+        public readonly string Anchor;
+        public EvCue(int cueId, EntityId source, string name,SimVec3? point=null,CuePlayback playback=CuePlayback.Once,string instanceKey=null,bool stopWithCast=false,SkillOrigin origin=default,string anchor=null)
         {
             CueId = cueId;
             Source = source;
             Name = name ?? string.Empty;
             Point=point??default;HasPoint=point.HasValue;
             Playback=playback;InstanceKey=instanceKey;StopWithCast=stopWithCast;Origin=origin;
+            Anchor=anchor;
         }
     }
 

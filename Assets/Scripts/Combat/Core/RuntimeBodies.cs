@@ -14,6 +14,7 @@ namespace Combat.Core
         public bool SnapshotAtk = true;
         public int HostileMask;
         public int CueId;
+        public string View;
         public float SpawnForward = 0.4f;
         public float HomingRate;
         public float HomingMaxTurn;
@@ -47,6 +48,7 @@ namespace Combat.Core
         public int HostileMask;
         public int CueId;
         public bool MoveForward;
+        public string View;
         public float MoveSpeed;
         public bool RemoveOnObstacle=true;
         public bool AbsorbProjectiles;

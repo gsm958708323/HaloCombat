@@ -11,9 +11,11 @@ export function mergeProjects(destination:Project,source:Project,newId:()=>strin
   const skillIds=identityMap(source.skills,destination.skills),buffIds=identityMap(source.buffs??[],destination.buffs??[]),blueprintIds=identityMap(source.summonBlueprints??[],destination.summonBlueprints??[]);
   const timelineIds=identityMap(source.timelines??[],destination.timelines??[]);
   const projectileIds=identityMap(source.projectiles??[],destination.projectiles??[]),areaIds=identityMap(source.areas??[],destination.areas??[]);
+  const viewIds=identityMap(source.runtime?.views??[],destination.runtime?.views??[]);
   const skillNumber=numberAllocator(actionNumbers(destination)),buffNumber=numberAllocator((destination.buffs??[]).map(b=>b.runtimeId),8000);
   const definitionNumber=definitionAllocator(destination);
-  const references=(nodes:GraphNode[])=>nodes.map(node=>{
+  const references=(nodes:GraphNode[])=>nodes.map(original=>{
+    const node=typeof original.parameters.view==='string'&&viewIds.has(original.parameters.view)?{...original,parameters:{...original.parameters,view:viewIds.get(original.parameters.view)!}}:original;
     if(node.kind==='area-ref'&&typeof node.parameters.area==='string')return {...node,parameters:{...node.parameters,area:areaIds.get(node.parameters.area)??node.parameters.area}};
     if(node.kind==='projectile-ref'&&typeof node.parameters.projectile==='string')return {...node,parameters:{...node.parameters,projectile:projectileIds.get(node.parameters.projectile)??node.parameters.projectile}};
     if(node.kind==='cast')return {...node,parameters:{...node.parameters,...Object.fromEntries(['fallbackSkill','recastSkill'].filter(field=>typeof node.parameters[field]==='string'&&skillIds.has(String(node.parameters[field]))).map(field=>[field,skillIds.get(String(node.parameters[field]))!]))}};
@@ -29,18 +31,17 @@ export function mergeProjects(destination:Project,source:Project,newId:()=>strin
   const buffs=(source.buffs??[]).map(b=>({...clone(b),...copyGraph(references(b.nodes),b.edges,definitionNumber,newId),id:buffIds.get(b.id)!,runtimeId:buffNumber()}));
   const blueprints=(source.summonBlueprints??[]).map(b=>({...clone(b),id:blueprintIds.get(b.id)!,skillId:skillIds.get(b.skillId)!}));
   const viewports=source.editor?.viewports?.map(v=>({...v,id:(v.kind==='skill'?skillIds:v.kind==='timeline'?timelineIds:v.kind==='projectile'?projectileIds:v.kind==='area'?areaIds:buffIds).get(v.id)!}))??[];
-  const runtime=source.runtime?mergeRuntime(destination,source,skillIds,newId):destination.runtime;
+  const runtime=source.runtime?mergeRuntime(destination,source,skillIds,newId,viewIds):destination.runtime;
   const result={...destination,runtime,skills:[...destination.skills,...skills],timelines:[...(destination.timelines??[]),...timelines],projectiles:[...(destination.projectiles??[]),...projectiles],areas:[...(destination.areas??[]),...areas],buffs:[...(destination.buffs??[]),...buffs],summonBlueprints:[...(destination.summonBlueprints??[]),...blueprints],editor:{...destination.editor,viewports:[...(destination.editor?.viewports??[]),...viewports]}};
   if(allGraphs(result).some(({graph})=>graph.nodes.length>256))throw new Error('图节点数超过上限');
   return result;
 }
-function mergeRuntime(destination:Project,source:Project,skills:Map<string,string>,newId:()=>string) {
+function mergeRuntime(destination:Project,source:Project,skills:Map<string,string>,newId:()=>string,viewIds:Map<string,string>) {
   const incoming=source.runtime!;const current=destination.runtime;
   if(current&&JSON.stringify(current.motor)!==JSON.stringify(incoming.motor))throw new Error('两个工程的 Motor 设置不同，请分别发布或先统一设置后合并');
   const ids=(existing:{id:string}[])=>{const used=new Set(existing.map(v=>v.id));return (id:string)=>{while(used.has(id))id=newId();used.add(id);return id;};};
   const actorId=ids(current?.actors??[]),comboId=ids(current?.combos??[]);
   const actorIds=new Map(incoming.actors.map(a=>[a.id,actorId(a.id)]));
-  const viewId=ids(current?.views??[]),viewIds=new Map((incoming.views??[]).map(v=>[v.id,viewId(v.id)]));
   const views=[...(current?.views??[]),...(incoming.views??[]).map(v=>({...clone(v),id:viewIds.get(v.id)!}))];
   const inputId=ids((current?.combos??[]).map(c=>({id:c.input}))),inputIds=new Map([...new Set(incoming.combos.map(c=>c.input))].map(input=>[input,inputId(input)]));
   const arena=current?.arena??(incoming.arena?{...clone(incoming.arena),player:actorIds.get(incoming.arena.player)!,enemy:actorIds.get(incoming.arena.enemy)!,trainingTarget:actorIds.get(incoming.arena.trainingTarget)!,bindings:incoming.arena.bindings.map(b=>({...b,input:inputIds.get(b.input)!}))}:undefined);

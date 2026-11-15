@@ -19,6 +19,7 @@ namespace Combat.Presentation
         public SimVec3 MoveIntent;
         public bool MoveBlocked;
         public bool PresentationPaused;
+        public float BodyScale;
     }
 
     public interface IActorView

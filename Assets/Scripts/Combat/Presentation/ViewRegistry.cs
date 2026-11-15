@@ -46,6 +46,7 @@ namespace Combat.Presentation
                 var sm = actor.TryGetComp<StateMachineComp>(out var stateMachine) ? stateMachine : null;
                 var director = actor.TryGetComp<SkillDirectorComp>(out var skillDirector) ? skillDirector : null;
                 actor.TryGetComp<LocomotionComp>(out var locomotion);
+                actor.TryGetComp<AoeComp>(out var area);
                 bool stopped=hitstop||world.IsActorStopped(actor);
                 var sample = new PoseSample
                 {
@@ -60,6 +61,7 @@ namespace Combat.Presentation
                     Animation=director?.Animation,CastId=director!=null&&director.IsPlaying?director.CurrentOrigin.CastId:0,ActorTime=(float)actor.Time.Time,
                     MoveIntent=locomotion?.MoveIntent??SimVec3.Zero,MoveBlocked=tags?.Has(CommonTags.BlockMove)??false,
                     PresentationPaused=paused,
+                    BodyScale=area?.Def!=null&&area.Def.Radius>0?area.Radius/area.Def.Radius:1,
                     Alpha = stopped ? 1f : alpha
                 };
                 view.Sample(sample);

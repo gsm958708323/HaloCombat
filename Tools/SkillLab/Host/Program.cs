@@ -111,6 +111,18 @@ app.MapPost("/api/preview/{id}/command",async(string id,HttpContext context)=>
 });
 app.MapDelete("/api/preview/{id}",(string id)=>
 {if(sessions.TryRemove(id,out var session))lock(session)session.Dispose();return Results.NoContent();});
+app.MapPost("/api/publish/sync",async(HttpContext context)=>
+{
+    var project=await ReadProject(context);var directory=Path.Combine(root,"Assets/StreamingAssets/Combat");
+    await jsonLock.WaitAsync();
+    try
+    {
+        var plan=PublicationFiles.PlanSync(project,PublicationFiles.Read(directory));
+        foreach(var pair in plan){string path=Path.Combine(directory,pair.Key+".json"),temporary=path+".tmp";await File.WriteAllTextAsync(temporary,SkillPublicationJson.Write(pair.Value));File.Move(temporary,path,true);}
+        return Results.Ok(new{message="已按当前工程同步现有槽位；SkillLab按F5或点击Reload载入。",slots=plan.ToDictionary(p=>p.Key,p=>new{skillId=p.Value.SkillId,revision=p.Value.Revision})});
+    }
+    finally{jsonLock.Release();}
+});
 app.MapPost("/api/publish/{slot}",async(string slot,HttpContext context)=>
 {
     if(slot!="f6"&&slot!="f7")return Results.BadRequest(new{error="Expected f6 or f7."});
@@ -121,8 +133,9 @@ app.MapPost("/api/publish/{slot}",async(string slot,HttpContext context)=>
     await jsonLock.WaitAsync();
     try {var temporary=path+".tmp";await File.WriteAllTextAsync(temporary,SkillPublicationJson.Write(publication));File.Move(temporary,path,true);}
     finally{jsonLock.Release();}
+    string warning=PublicationFiles.LoadWarning(directory);
     return Results.Ok(new{written=true,path,revision=publication.Revision,skillId=publication.SkillId,
-        message="已发布到 "+slot.ToUpperInvariant()+"；Unity SkillLab 场景按 F5 重载，再按 F6/F7 施放。"});
+        message=warning??"已发布到 "+slot.ToUpperInvariant()+"；Unity SkillLab 场景按 F5 重载，再按 F6/F7 施放。"});
 });
 var dist=Path.Combine(root,"Tools/SkillLab/Web/dist");
 if(Directory.Exists(dist))

@@ -45,6 +45,7 @@ internal static class PreviewChecks
         ProjectFileChecks.Run(root).GetAwaiter().GetResult();
         RuntimeContentChecks.Run(root);
         AmmoRecastChecks.Run(root);
+        PublicationSyncChecks.Run(root);
         ConstructChecks.Run(root);
         ActorFeedbackChecks.Run(root);
         ComboChecks.Run(root);

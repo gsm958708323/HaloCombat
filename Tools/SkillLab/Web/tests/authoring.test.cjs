@@ -223,12 +223,21 @@ test('real transformed project is exported for the C# compiler and HTTP validati
 
 test('merge keeps each imported actor bound to its own view and preserves action semantics',()=>{
   const p=runtime(),before=JSON.stringify(p),next=mergeProjects(p,p,ids());
-  assert.equal(next.runtime.views.length,4);
+  assert.equal(next.runtime.views.length,p.runtime.views.length*2);
   const imported=next.runtime.actors.slice(p.runtime.actors.length).find(a=>a.role==='player'&&a.id!== 'fighter'&&a.view!=='fighter');
   assert(imported);assert.notEqual(imported.view,'arena-player-view');
   const view=next.runtime.views.find(v=>v.id===imported.view);assert.equal(view.resource,'Combat/Actors/FemaleGunner');assert.equal(view.states.Fire,'Base Layer.Fire');
   assert.equal(next.skills.slice(p.skills.length).find(s=>s.name===p.skills.find(s=>s.id==='arena-reload-ammo').name).timeline.animation,'Reload');
   assert.equal(JSON.stringify(p),before);
+});
+
+test('merging body resources rebinds every imported projectile area and construct to the imported catalog',()=>{
+  const p=runtime(),next=mergeProjects(p,p,ids()),views=new Set(next.runtime.views.slice(p.runtime.views.length).map(v=>v.id));
+  const graphs=[...next.skills.slice(p.skills.length),...next.projectiles.slice(p.projectiles.length),...next.areas.slice(p.areas.length)];
+  const references=graphs.flatMap(g=>g.nodes).filter(n=>typeof n.parameters.view==='string'&&p.runtime.views.some(v=>v.id===n.parameters.view));
+  assert.equal(references.length,0);
+  assert(graphs.flatMap(g=>g.nodes).filter(n=>n.parameters.view&&n.parameters.view!=='barrel'&&n.parameters.view!=='crate').every(n=>views.has(n.parameters.view)));
+  const before=p.runtime.views[0].anchors[0].path;next.runtime.views[p.runtime.views.length].anchors[0].path='changed';assert.equal(p.runtime.views[0].anchors[0].path,before);
 });
 
 

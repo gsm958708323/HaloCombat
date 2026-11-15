@@ -1,9 +1,9 @@
 import { Handle, Position, useUpdateNodeInternals } from '@xyflow/react';
 import { useEffect,useState } from 'react';
 import type { Node, NodeProps } from '@xyflow/react';
-import type { GraphNode, Field, SummonBlueprint,BuffDefinition,Skill,SharedProjectile,SharedArea,ParameterValue } from './model';
+import type { GraphNode, Field, SummonBlueprint,BuffDefinition,Skill,SharedProjectile,SharedArea,ParameterValue,RuntimeView } from './model';
 import { kinds, portName, parameterValue, nodeOutputs,effectKinds } from './model';
-type Data = GraphNode & { definitionRoot?:boolean;authoredTimeline?:boolean;counts?:Record<string,number>;blueprints?: SummonBlueprint[];buffs?:BuffDefinition[];skills?:Skill[];projectiles?:SharedProjectile[];areas?:SharedArea[];openArea:(id:string)=>void;extractArea:(id:string)=>void;openProjectile:(id:string)=>void;extractProjectile:(id:string)=>void;changeKind:(id:string,kind:string)=>void; change: (id: string, key: string, value: ParameterValue) => void; toggle: (id: string, enabled: boolean) => void; remove: (id: string) => void };
+type Data = GraphNode & { definitionRoot?:boolean;authoredTimeline?:boolean;counts?:Record<string,number>;blueprints?: SummonBlueprint[];buffs?:BuffDefinition[];skills?:Skill[];projectiles?:SharedProjectile[];areas?:SharedArea[];views?:RuntimeView[];openArea:(id:string)=>void;extractArea:(id:string)=>void;openProjectile:(id:string)=>void;extractProjectile:(id:string)=>void;changeKind:(id:string,kind:string)=>void; change: (id: string, key: string, value: ParameterValue) => void; toggle: (id: string, enabled: boolean) => void; remove: (id: string) => void };
 export type EditorNode = Node<Data & Record<string, unknown>, 'skill'>;
 function TimesInput({field,value,change}:{field:Field;value:ParameterValue;change:(value:ParameterValue)=>void}) {
   const display=Array.isArray(value)?value.join(', '):String(value);const [text,setText]=useState(display);
@@ -27,7 +27,7 @@ export function SkillNode({ data, selected }: NodeProps<EditorNode>) {
   const definitionFields=data.kind==='delivery'?['mode','persistent','center','forwardOffset']:['multi','count','spread'];
   const fields=schema.fields.filter(field=>(!data.definitionRoot||!definitionFields.includes(field.key))&&(!field.when||field.when(data.parameters))&&(!data.authoredTimeline||data.kind!=='cast'||['cost','cooldown','hitFeedback',...routing].includes(field.key)));
   function control(field:Field){
-    const options=field.key==='area'?data.areas?.map(a=>[a.id,a.name] as [string,string]):field.key==='projectile'?data.projectiles?.map(p=>[p.id,p.name] as [string,string]):field.key==='blueprint'?data.blueprints?.map(b=>[b.id,b.name??b.id] as [string,string]):field.key==='buff'?data.buffs?.map(b=>[b.id,b.name??b.id] as [string,string]):
+    const options=field.key==='view'?[...(data.kind==='construct'?[['barrel','木桶'],['crate','箱子']] as [string,string][]:[]),...(data.views??[]).filter(v=>v.kind==='body').map(v=>[v.id,v.id] as [string,string])]:field.key==='area'?data.areas?.map(a=>[a.id,a.name] as [string,string]):field.key==='projectile'?data.projectiles?.map(p=>[p.id,p.name] as [string,string]):field.key==='blueprint'?data.blueprints?.map(b=>[b.id,b.name??b.id] as [string,string]):field.key==='buff'?data.buffs?.map(b=>[b.id,b.name??b.id] as [string,string]):
       field.key==='fallbackSkill'||field.key==='recastSkill'?data.skills?.map(s=>[s.id,s.name] as [string,string]):undefined;
     return <Parameter key={field.key} field={options?{...field,options:[['','无'],...options]}:field} value={parameterValue(field,data.parameters)} change={value=>data.change(data.id,field.key,value)}/>;
   }

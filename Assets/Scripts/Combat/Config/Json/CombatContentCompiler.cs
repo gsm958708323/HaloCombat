@@ -19,6 +19,7 @@ namespace Combat.Config
         public SkillEventCatalog SkillEvents {get;}=new SkillEventCatalog();
         public RuntimeContentSnapshot Runtime {get;internal set;}
         internal HashSet<int> RequiredCues {get;}=new HashSet<int>();
+        internal HashSet<string> RequiredBodyViews {get;}=new HashSet<string>();
         internal Dictionary<string,int> SharedProjectiles {get;}=new Dictionary<string,int>();
         internal Dictionary<string,int> SharedAreas {get;}=new Dictionary<string,int>();
     }

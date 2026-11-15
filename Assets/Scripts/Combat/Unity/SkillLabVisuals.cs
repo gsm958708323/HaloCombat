@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Combat.Config;
+using Combat.Presentation;
 using UnityEngine;
 
 namespace Combat.Unity
@@ -9,6 +10,7 @@ namespace Combat.Unity
     {
         readonly Dictionary<string, GameObject> _objects = new Dictionary<string, GameObject>();
         readonly List<Material> _materials = new List<Material>();
+        readonly Dictionary<string,UnityBodyVisual> _bodies=new Dictionary<string,UnityBodyVisual>();
         SkillLabRunner _runner;
         Material _caster, _target, _projectile, _area,_obstacle,_summon,_construct;
         int _generation = -1;
@@ -48,6 +50,11 @@ namespace Combat.Unity
                 if (!_objects.TryGetValue(actor.Id, out var visual))
                 {
                     visual = Create(actor); _objects.Add(actor.Id, visual);
+                }
+                if(_bodies.TryGetValue(actor.Id,out var body))
+                {
+                    visual.transform.position=new Vector3(actor.X,actor.Y,actor.Z);visual.transform.rotation=Quaternion.Euler(0,90-actor.Yaw,0);
+                    body.Sample(new PoseSample{ActorTime=(float)actor.LogicalTime,BodyScale=actor.ViewScale,InHitstop=actor.Stopped,PresentationPaused=_runner.Paused});continue;
                 }
                 visual.transform.position = new Vector3(actor.X,actor.Y+(actor.Kind == "aoe" ? .03f : .45f), actor.Z);
                 float size = actor.Kind == "projectile" ? Mathf.Max(.12f, actor.Radius * 2) : Mathf.Max(.08f,actor.Radius*2);
@@ -99,11 +106,17 @@ namespace Combat.Unity
             }
             var removed = new List<string>();
             foreach (var item in _objects) if (!alive.Contains(item.Key)) removed.Add(item.Key);
-            foreach (var id in removed) { Destroy(_objects[id]); _objects.Remove(id); }
+            foreach (var id in removed) { Destroy(_objects[id]); _objects.Remove(id);_bodies.Remove(id); }
         }
 
         GameObject Create(SkillActorSnapshot actor)
         {
+            if(actor.View!=null&&_runner.Views!=null&&_runner.Views.TryGetValue(actor.View,out var definition))
+            {
+                var root=new GameObject(actor.Kind+"_"+actor.Name);root.transform.SetParent(transform,false);var visualRoot=new GameObject("Visual").transform;visualRoot.SetParent(root.transform,false);
+                var instance=Instantiate(Resources.Load<GameObject>(definition.Resource),visualRoot,false);instance.transform.localRotation=Quaternion.Euler(0,definition.YawOffset,0);instance.transform.localScale*=definition.Scale;
+                _bodies.Add(actor.Id,new UnityBodyVisual(instance,definition,visualRoot));return root;
+            }
             var visual = GameObject.CreatePrimitive(actor.Kind == "projectile" ? PrimitiveType.Sphere : PrimitiveType.Cylinder);
             visual.name = actor.Kind + "_" + actor.Name;
             visual.transform.SetParent(transform, false);
@@ -130,7 +143,7 @@ namespace Combat.Unity
             }
         }
 
-        void Clear() { foreach (var visual in _objects.Values) if (visual != null) Destroy(visual); _objects.Clear(); }
+        void Clear() { foreach (var visual in _objects.Values) if (visual != null) Destroy(visual); _objects.Clear();_bodies.Clear(); }
         void OnDestroy() { Clear(); foreach (var material in _materials) if (material != null) Destroy(material); }
     }
 }

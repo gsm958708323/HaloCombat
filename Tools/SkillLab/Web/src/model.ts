@@ -10,7 +10,7 @@ export interface SpawnStats {hpPerSpawn:number;attackPerSpawn:number;attackRando
 export interface WanderTiming {firstTurn:number;turnIntervalMin:number;turnIntervalMax:number;turnAngle:number;firstShot:number;shotIntervalMin:number;shotIntervalMax:number}
 export interface RuntimeActor {id:string;role:string;team:number;skillId?:string;dodgeSkill?:string;slots?:string[];view:string;ai?:string;spawnStats?:SpawnStats;wander?:WanderTiming;[key:string]:unknown}
 export interface ArenaSettings {player:string;enemy:string;trainingTarget:string;seed:number;maxEnemies:number;spawnPeriod:number;cleanupDelay:number;halfWidth:number;halfDepth:number;spawnDistance:number;playerX:number;playerZ:number;playerYaw:number;cameraDistance:number;cameraHeight:number;cameraFov:number;cameraFocusHeight:number;bindings:{action:string;input:string}[];obstacles?:ObstacleView[]}
-export interface RuntimeView {id:string;resource:string;scale:number;yawOffset:number;states:Record<string,string>}
+export interface RuntimeView {id:string;resource:string;scale:number;yawOffset:number;kind?:'actor'|'body';spinSpeed?:number;states:Record<string,string>}
 export interface RuntimeContent {motor:{gravity:number;jumpSpeed:number;airSteer:number;groundY:number;stickDeadzone:number};combos:RuntimeCombo[];actors:RuntimeActor[];cues:{id:number;key:string;kind:string;resource?:string;sound?:string;lifetime:number}[];views?:RuntimeView[];arena?:ArenaSettings}
 export interface Skill { id: string; runtimeId: number; name: string; category: string; nodes: GraphNode[]; edges: GraphEdge[];timeline?:AuthoredTimeline;timelineRef?:string }
 export interface BuffModifier {attribute:string;operation:string;value:number;priority:number}
@@ -26,7 +26,7 @@ export interface GraphViewport { kind:'skill'|'buff'|'timeline'|'projectile'|'ar
 export interface EditorMetadata { selectedSkill?:string;selectedBuff?:string;selectedTimeline?:string;selectedProjectile?:string;selectedArea?:string;viewports?:GraphViewport[] }
 export interface Project { formatVersion: number; id: string; name: string; skills: Skill[];timelines?:SharedTimeline[];projectiles?:SharedProjectile[];areas?:SharedArea[]; buffs?:BuffDefinition[]; summonBlueprints?: SummonBlueprint[];editor?:EditorMetadata;runtime?:RuntimeContent; preview: { seed: number; energy: number; initialEnergy?: number | null; recovery: number; ammo?:number;initialAmmo?:number|null;caster: ActorInitial; targets: ActorInitial[]; obstacles?: ObstacleView[] } }
 export interface BuffView {instanceId:number;id:string;name:string;source:string;stacks:number;remaining:number|null}
-export interface ActorView { id: string; name: string; kind: string; x: number; y:number; z: number; hp: number | null; maxHp: number | null; radius: number; remaining: number | null; dead: boolean; owner: string | null; blueprint: string | null; skill: string | null; energy: number | null;ammo:number|null;trackingKey:string|null;group:string|null;damageCap:number|null;nextDecay:number|null;stopped:boolean;hitstopFrames:number;logicalTime:number;hurtLevel:string|null;hurtAge:number|null;comboConfirmed:boolean;currentSkill:string|null;bufferedInput:string|null;actionTime:number|null;actionDuration:number|null;actionRate:number;controlTags:number[];castId:number;generation:number;chainsLeft:number;distance:number|null;range:number|null;speed:number|null;verticalSpeed:number|null;returning:boolean;groundBouncesLeft:number;wallBouncesLeft:number;absorbedProjectiles:number;areaVelocityX:number|null;areaVelocityZ:number|null;buffs:BuffView[];tags:Record<string,number>;attributes:Record<string,number> }
+export interface ActorView { id: string; name: string; kind: string; x: number; y:number; z: number;view?:string|null;viewScale?:number;yaw?:number; hp: number | null; maxHp: number | null; radius: number; remaining: number | null; dead: boolean; owner: string | null; blueprint: string | null; skill: string | null; energy: number | null;ammo:number|null;trackingKey:string|null;group:string|null;damageCap:number|null;nextDecay:number|null;stopped:boolean;hitstopFrames:number;logicalTime:number;hurtLevel:string|null;hurtAge:number|null;comboConfirmed:boolean;currentSkill:string|null;bufferedInput:string|null;actionTime:number|null;actionDuration:number|null;actionRate:number;controlTags:number[];castId:number;generation:number;chainsLeft:number;distance:number|null;range:number|null;speed:number|null;verticalSpeed:number|null;returning:boolean;groundBouncesLeft:number;wallBouncesLeft:number;absorbedProjectiles:number;areaVelocityX:number|null;areaVelocityZ:number|null;buffs:BuffView[];tags:Record<string,number>;attributes:Record<string,number> }
 export interface AreaView { sequence: number; step: number; x: number; z: number; radius: number; targets: number }
 export interface VolumeView { sequence: number; source: string; shape: string; x: number; z: number; yaw: number; length: number; width: number; angle: number }
 export interface DamageBreakdown {kind:string;target:string;base:number;scaled:number;afterDefense:number;afterCritical:number;final:number;absorbed:number;hpLost:number;overkill:number;killed:boolean;feedback:string}
@@ -71,6 +71,7 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
     { key: 'autoRelease', label: '满蓄自动释放', type: 'check', initial: true, when: p => p.mode === 'charge' }
   ] },
   projectile: { title: '效果传递', color: '#887547', inputs: ['execute'], outputs: [['hit','命中结算'],['wall','撞墙终结'],['range','射程耗尽'],['lifetime','寿命结束'],['bounce','成功反弹'],['returned','返回来源'],['ground','落地终结'],['expire','投射物结束']], fields: [
+    {key:'view',label:'实体外观资源',type:'select',initial:''},
     {key:'sameTargetDelay',label:'同目标再次命中间隔 (0=一次)',unit:'秒',min:0,max:3600,step:.01,initial:0},
     {key:'passInvulnerable',label:'穿过无敌目标且保留命中数',type:'check',initial:false},
     {key:'trackingKey',label:'来源追踪键',type:'text',initial:''},
@@ -153,6 +154,7 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
   ]},
   cue: { title: '表现事件', color: '#74667e', inputs: ['execute'], outputs: [['next','继续']], fields: [{ key: 'id', label: 'Cue ID', min: 1, max: 9999, step: 1, initial: 1 },
     {key:'playback',label:'播放方式',type:'select',initial:'once',options:[['once','单次'],['start','开启循环'],['stop','停止循环']]},
+    {key:'anchor',label:'角色表现锚点',type:'text',initial:'',when:p=>p.center!=='point'},
     {key:'instanceKey',label:'循环实例键',type:'text',initial:'',when:p=>p.playback==='start'||p.playback==='stop'},
     {key:'stopWithCast',label:'施法结束自动停止',type:'check',initial:true,when:p=>p.playback==='start'},
     {key:'center',label:'表现位置',type:'select',initial:'source',options:[['source','效果来源'],['point','事件 / 指定点'],['target','当前目标']]}] },
@@ -172,6 +174,7 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
   heal:{title:'恢复生命',color:'#597f76',inputs:['execute'],outputs:[['next','继续']],fields:[{key:'amount',label:'恢复量',min:0,max:1000000,step:1,initial:10}]},
   'buff-events':{title:'Buff 生命周期',color:'#537760',inputs:[],outputs:[['apply','首次施加'],['stack','实际增层'],['period','周期'],['expire','自然到期'],['hurt','持有者受击'],['cast','持有者施法'],['removed','移除清理']],fields:[]},
   delivery: { title: '目标 / 区域 / 动作', color: '#887547', inputs: ['execute'], outputs: [['apply','作用效果'],['enter','进入区域'],['exit','离开区域'],['stay','区域停留'],['expire','自然到期'],['wall','撞墙'],['complete','完成'],['removed','移除'],['absorb','吸收弹体']], fields: [
+    {key:'view',label:'实体外观资源',type:'select',initial:'',when:p=>p.mode==='area'&&p.persistent===true},
     { key:'mode', label:'传递方式', type:'select', initial:'target', options:[['target','目标作用'],['area','区域作用'],['melee','近战判定'],['displacement','位移攻击'],['ray','射线判定'],['summon','召唤分身']] },
     { key:'recipient', label:'作用目标', type:'select', initial:'target', options:[['target','当前目标'],['self','施法者自身']],when:p=>!p.mode||p.mode==='target' },
     { key:'center',label:'作用中心',type:'select',initial:'point',options:[['point','事件 / 指定点'],['target','当前目标位置'],['source','来源位置'],['auto','指定点或来源']],when:p=>p.mode==='area'||p.mode==='summon' },

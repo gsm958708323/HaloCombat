@@ -17,9 +17,10 @@ namespace Combat.Config
     {
         public static RuntimeContentSnapshot Compile(SkillProjectDocument project,CombatContentSnapshot content)
         {
-            var source=project.Runtime;if(source==null)return null;
+            var source=project.Runtime;if(source==null){if(content.RequiredBodyViews.Count>0)Fail("$.runtime","Body views require a runtime resource catalog.");return null;}
             string path="$.runtime";
             var views=RuntimeViewCompiler.Compile(source.Views,project);
+            foreach(string key in content.RequiredBodyViews)if(!views.TryGetValue(key,out var body)||body.Kind!="body")Fail("$.runtime.views["+key+"]","Referenced body view is missing or not a body view.");
             if(source.Motor==null||source.Actors==null||source.Combos==null||source.Cues==null)Fail(path,"Runtime arrays and motor are required.");
             if(source.Actors.Length>256||source.Combos.Length>1024||source.Cues.Length>512)Fail(path,"Runtime collection size is invalid.");
             var m=source.Motor;N(m.Gravity,-1000,-.01f,path+".motor.gravity");N(m.JumpSpeed,.01f,100,path+".motor.jumpSpeed");
@@ -53,6 +54,7 @@ namespace Combat.Config
                 if(actor.Team<0||actor.Team>30)Fail(p+".team","Expected team0..30.");
                 if(actor.Slots==null||actor.Slots.Length>3)Fail(p+".slots","Expected up to3 skill slots.");
                 if(string.IsNullOrWhiteSpace(actor.View)||!RuntimeViewCompiler.Builtin(actor.View)&&!views.ContainsKey(actor.View))Fail(p+".view","Unknown view key.");
+                if(views.TryGetValue(actor.View,out var actorView)&&actorView.Kind!="actor")Fail(p+".view","Character requires an actor view.");
                 var definition=new RuntimeActorDefinition{Id=actor.Id,Role=actor.Role,View=actor.View,Team=actor.Team,Hp=actor.Hp,Attack=actor.Attack,Defense=actor.Defense,MoveSpeed=actor.MoveSpeed,
                     SpawnStats=ActorSpawnCompiler.Compile(actor.SpawnStats,p+".spawnStats"),KeepAssignedTarget=actor.Ai=="wander-shooter",
                     Shield=actor.Shield,CritRate=actor.CritRate,DamageDealt=actor.DamageDealt,DamageTaken=actor.DamageTaken,CollisionRadius=actor.CollisionRadius,Energy=actor.Energy,InitialEnergy=actor.Energy,Recovery=actor.Recovery,Ammo=actor.Ammo,InitialAmmo=actor.InitialAmmo??actor.Ammo,ActionSpeed=actor.ActionSpeed,

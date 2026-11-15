@@ -59,6 +59,7 @@ namespace Combat.Tests
                 if(value is ProjectileDefinition&&field.Name=="SameTargetDelay"&&(float)field.GetValue(value)==0)continue;
                 if(value is ProjectileDefinition&&field.Name=="PassInvulnerable"&&!(bool)field.GetValue(value))continue;
                 if(value is ProjectileDefinition&&field.Name=="RemoveOnObstacle"&&(bool)field.GetValue(value))continue;
+                if((value is ProjectileDefinition||value is AoeDefinition)&&field.Name=="View"&&string.IsNullOrEmpty((string)field.GetValue(value)))continue;
                 if(value is SpawnAoeEffect&&field.Name=="_forwardOffset"&&(float)field.GetValue(value)==0)continue;
                 if(value is AoeDefinition area)
                 {

@@ -10,6 +10,7 @@ namespace Combat.Config
     {
         public const float Step = 0.02f;
         readonly CombatContentSnapshot _content;
+        public IReadOnlyDictionary<string,RuntimeViewDefinition> Views=>_content.Runtime?.Views;
         readonly Dictionary<long, string> _names = new Dictionary<long, string>();
         readonly Dictionary<long, string> _kinds = new Dictionary<long, string>();
         readonly Dictionary<long,(HitFeedbackLevel Level,int Step)> _hurts=new Dictionary<long,(HitFeedbackLevel,int)>();
@@ -229,6 +230,8 @@ namespace Combat.Config
                 return new SkillActorSnapshot
                 {
                     Id = HitboxComp.Pack(a.Id).ToString(), Name = Name(a.Id), Kind = _kinds[HitboxComp.Pack(a.Id)], X = p.X,Y=p.Y, Z = p.Z,
+                    View=projectile?.Def?.View??area?.Def?.View??construct?.Def?.View,Yaw=a.GetComp<TransformComp>().YawDegrees,
+                    ViewScale=area?.Def!=null&&area.Def.Radius>0?area.Radius/area.Def.Radius:1,
                     Hp = attr?.GetBase(AttrId.Hp), MaxHp = attr?.GetFinal(AttrId.MaxHp), Radius = projectile?.Def?.HitRadius ?? area?.Radius ?? (a.TryGetComp<LocomotionComp>(out var locomotion)?locomotion.CollisionRadius:.4f),
                     Remaining = projectile!=null?(float?)Math.Max(0,projectile.Def.Lifetime-projectile.Age):area?.Def != null ? area.Def.Duration>0?(float?)Math.Max(0, area.Def.Duration - area.Age):null : summon!=null&&summon.Lifetime>0?(float?)Math.Max(0,summon.Lifetime-summon.Age):null,
                     Dead = a.TryGetComp<TagComp>(out var tags) && tags.Has(CommonTags.Dead),

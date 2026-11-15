@@ -49,7 +49,9 @@ namespace Combat.Unity
 
             gameObject.name = "Cue_" + e.CueId;
             if(_root!=null)gameObject.transform.SetParent(_root,false);
-            if(e.HasPoint)gameObject.transform.position=new Vector3(e.Point.X,e.Point.Y,e.Point.Z);
+            var anchor=Anchor(e.Source,e.Anchor);
+            if(anchor!=null){gameObject.transform.SetParent(anchor,false);gameObject.transform.localPosition=Vector3.zero;}
+            else if(e.HasPoint)gameObject.transform.position=new Vector3(e.Point.X,e.Point.Y,e.Point.Z);
             else if(_world!=null&&_world.TryGetActor(e.Source,out var actor)){var p=actor.GetComp<TransformComp>().Position;gameObject.transform.position=new Vector3(p.X,p.Y,p.Z);}
             if(_sounds.TryGetValue(e.CueId,out var sound))
             {
@@ -59,9 +61,14 @@ namespace Combat.Unity
             if(e.Playback==CuePlayback.Start)
             {
                 var loop=gameObject.AddComponent<UnityCueLoop>();_loops[key]=loop;
-                loop.Initialize(_world,e,()=>{if(_loops.TryGetValue(key,out var current)&&current==loop)_loops.Remove(key);});
+                loop.Initialize(_world,e,()=>{if(_loops.TryGetValue(key,out var current)&&current==loop)_loops.Remove(key);},anchor);
             }
             else Object.Destroy(gameObject, definition.LifeTime);
+        }
+        Transform Anchor(EntityId id,string key)
+        {
+            if(string.IsNullOrEmpty(key)||_root==null)return null;
+            var parent=_root.parent??_root;foreach(var view in parent.GetComponentsInChildren<UnityActorView>(true))if(view.Id==id)return view.Anchor(key);return null;
         }
     }
 
