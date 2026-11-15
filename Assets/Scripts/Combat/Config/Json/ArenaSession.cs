@@ -51,10 +51,11 @@ namespace Combat.Config
                 if(!FreeInside(_trainingPosition,radius)&&!TryPosition(radius,out _trainingPosition))throw new InvalidOperationException("No free training target spawn.");
             }
         }
-        EntityId Spawn(string blueprint,SimVec3 position,float yaw)
+        EntityId Spawn(string blueprint,SimVec3 position,float yaw,int ordinal=0)
         {
             var id=World.SpawnActor(new ActorSpawnSpec(blueprint),false);World.TryGetActor(id,out var actor);
             var tf=actor.GetComp<TransformComp>();tf.Position=position;tf.YawDegrees=yaw;
+            var definition=_content.Runtime.Actors[blueprint];definition.SpawnStats?.Apply(actor,definition,ordinal,World.Random);
             if(actor.TryGetComp<BehaviorTreeComp>(out var bt)){bt.Board.Target=PlayerId;bt.Board.Home=position;}
             World.PublishSpawn(id,blueprint);return id;
         }
@@ -117,7 +118,7 @@ namespace Combat.Config
         {
             int count=EnemyCount;float radius=_content.Runtime.Actors[Definition.Enemy].CollisionRadius;
             while(count<Definition.MaxEnemies&&TryPosition(radius,out var point))
-            {Spawn(Definition.Enemy,point,90-World.Random.Next01()*360);SpawnedEnemies++;count++;}
+            {Spawn(Definition.Enemy,point,World.Random.Next01()*360,SpawnedEnemies);SpawnedEnemies++;count++;}
         }
         bool TryPosition(float radius,out SimVec3 point)
         {

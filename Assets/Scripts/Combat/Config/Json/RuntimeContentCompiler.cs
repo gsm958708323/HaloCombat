@@ -54,6 +54,7 @@ namespace Combat.Config
                 if(actor.Slots==null||actor.Slots.Length>3)Fail(p+".slots","Expected up to3 skill slots.");
                 if(string.IsNullOrWhiteSpace(actor.View)||!RuntimeViewCompiler.Builtin(actor.View)&&!views.ContainsKey(actor.View))Fail(p+".view","Unknown view key.");
                 var definition=new RuntimeActorDefinition{Id=actor.Id,Role=actor.Role,View=actor.View,Team=actor.Team,Hp=actor.Hp,Attack=actor.Attack,Defense=actor.Defense,MoveSpeed=actor.MoveSpeed,
+                    SpawnStats=ActorSpawnCompiler.Compile(actor.SpawnStats,p+".spawnStats"),KeepAssignedTarget=actor.Ai=="wander-shooter",
                     Shield=actor.Shield,CritRate=actor.CritRate,DamageDealt=actor.DamageDealt,DamageTaken=actor.DamageTaken,CollisionRadius=actor.CollisionRadius,Energy=actor.Energy,InitialEnergy=actor.Energy,Recovery=actor.Recovery,Ammo=actor.Ammo,InitialAmmo=actor.InitialAmmo??actor.Ammo,ActionSpeed=actor.ActionSpeed,
                     AcquireRadius=actor.AcquireRadius,AttackRange=actor.AttackRange,FollowRange=actor.FollowRange,LeashRange=actor.LeashRange,PatrolRadius=actor.PatrolRadius,
                     Slots=actor.Slots.Select(id=>Skill(content,id,p+".slots").Id).ToArray(),DodgeSkill=string.IsNullOrEmpty(actor.DodgeSkill)?SkillNodeId.None:Skill(content,actor.DodgeSkill,p+".dodgeSkill").Id};
@@ -61,10 +62,12 @@ namespace Combat.Config
                 {
                     var skill=Skill(content,actor.SkillId,p+".skillId");definition.Skill=skill.Id;
                     definition.Tree=actor.Ai=="puncher"?BtFactory.MeleePuncher(skill.Id,skill.Timeline):actor.Ai=="guard"?BtFactory.MeleeGuard(skill.Id,skill.Timeline):
-                        actor.Ai=="ranged"?BtFactory.Ranged(skill.Id,skill.Timeline):actor.Ai=="summon"?BtFactory.SummonMelee(skill.Id,skill.Timeline):null;
-                    if(definition.Tree==null)Fail(p+".ai","Expected puncher, guard, ranged or summon.");
+                        actor.Ai=="ranged"?BtFactory.Ranged(skill.Id,skill.Timeline):actor.Ai=="summon"?BtFactory.SummonMelee(skill.Id,skill.Timeline):
+                        actor.Ai=="wander-shooter"?WanderBehavior.Create(skill.Id,ActorSpawnCompiler.Wander(actor.Wander,p+".wander")):null;
+                    if(definition.Tree==null)Fail(p+".ai","Expected puncher, guard, ranged, summon or wander-shooter.");
                 }
                 else if(actor.Ai!="none")Fail(p+".ai","Non-AI role must use none.");
+                if(actor.Ai!="wander-shooter"&&actor.Wander!=null)Fail(p+".wander","Wander timing requires wander-shooter AI.");
                 actors.Add(actor.Id,definition);
             }
             // Shared summon blueprints are the sole source of summon stats in both preview and game.

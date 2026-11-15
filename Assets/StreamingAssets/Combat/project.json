@@ -2964,7 +2964,12 @@
         ],
         "ai": "none",
         "view": "arena-player-view",
-        "ammo": 60
+        "ammo": 60,
+        "spawnStats": {
+          "hpPerSpawn": 0,
+          "attackPerSpawn": 0,
+          "attackRandomRange": 20
+        }
       },
       {
         "id": "arena-enemy",
@@ -2973,19 +2978,40 @@
         "hp": 50,
         "attack": 15,
         "defense": 0,
-        "moveSpeed": 2.2,
+        "moveSpeed": 5,
         "critRate": 0.05,
         "collisionRadius": 0.25,
         "energy": 100,
         "recovery": 10,
         "skillId": "arena-enemy-shot",
-        "ai": "ranged",
+        "ai": "wander-shooter",
         "acquireRadius": 40,
         "attackRange": 4,
         "followRange": 1.5,
         "leashRange": 100,
         "patrolRadius": 0,
-        "view": "arena-enemy-view"
+        "view": "arena-enemy-view",
+        "spawnStats": {
+          "hpPerSpawn": 2,
+          "attackPerSpawn": 1,
+          "attackRandomRange": 15,
+          "moveSpeedCurve": {
+            "base": 50,
+            "randomRange": 20,
+            "scale": 5.6,
+            "divisor": 100,
+            "offset": 0.2
+          }
+        },
+        "wander": {
+          "firstTurn": 2,
+          "turnIntervalMin": 1.6,
+          "turnIntervalMax": 3.2,
+          "turnAngle": 90,
+          "firstShot": 3,
+          "shotIntervalMin": 2,
+          "shotIntervalMax": 5
+        }
       },
       {
         "id": "arena-target",
@@ -2999,7 +3025,12 @@
         "energy": 0,
         "recovery": 0,
         "ai": "none",
-        "view": "stake"
+        "view": "stake",
+        "spawnStats": {
+          "hpPerSpawn": 0,
+          "attackPerSpawn": 0,
+          "attackRandomRange": 0
+        }
       }
     ],
     "cues": [

@@ -14,6 +14,8 @@ namespace Combat.Core
         public float AcquireRadius,AttackRange,FollowRange,LeashRange,PatrolRadius;
         public int Ammo,InitialAmmo;
         public float ActionSpeed=1;
+        public ActorSpawnStats SpawnStats;
+        public bool KeepAssignedTarget;
     }
 
     // Gameplay factories consume domain definitions; they never read authoring JSON or Unity assets.
@@ -50,7 +52,7 @@ namespace Combat.Core
             }
             else
             {
-                actor.AddComp(new PerceptionComp(definition.AcquireRadius));
+                if(!definition.KeepAssignedTarget)actor.AddComp(new PerceptionComp(definition.AcquireRadius));
                 actor.AddComp(new BehaviorTreeComp(definition.Tree,board=>
                 {board.AcquireRadius=definition.AcquireRadius;board.AttackRange=definition.AttackRange;board.FollowRange=definition.FollowRange;board.LeashRange=definition.LeashRange;board.PatrolRadius=definition.PatrolRadius;}));
                 if(definition.Role=="summon")actor.AddComp(new SummonComp());

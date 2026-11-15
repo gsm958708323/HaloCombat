@@ -22,6 +22,7 @@ internal static class RuntimeContentChecks
         }
         finally{world.Shutdown();}
         CheckArena(loaded);
+        WanderGrowthChecks.Run(root);
     }
     static void CheckArena(RuntimeProjectLoader loaded)
     {

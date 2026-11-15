@@ -52,6 +52,8 @@ namespace Combat.Config
         public string DodgeSkill {get;set;}
         public string[] Slots {get;set;}=Array.Empty<string>();
         public string Ai {get;set;}="none";
+        [JsonProperty(NullValueHandling=NullValueHandling.Ignore)]public WanderDocument Wander {get;set;}
+        [JsonProperty(NullValueHandling=NullValueHandling.Ignore)]public ActorSpawnStatsDocument SpawnStats {get;set;}
         public float AcquireRadius {get;set;}=8;
         public float AttackRange {get;set;}=1.15f;
         public float FollowRange {get;set;}=1.5f;
