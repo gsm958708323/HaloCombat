@@ -26,7 +26,7 @@ namespace Combat.Config
         {
             {"step",new[]{"steps"}},{"snapshot",Array.Empty<string>()},{"cast",new[]{"skillId","x","z"}},
             {"input",new[]{"input","x","z"}},{"release",new[]{"x","z"}},{"cancel",Array.Empty<string>()},
-            {"aim",new[]{"x","z"}},{"move",new[]{"x","z"}},{"place",new[]{"actorId","x","z"}},
+            {"aim",new[]{"x","z"}},{"move",new[]{"x","z"}},{"place",new[]{"actorId","entityId","x","z"}},
             {"remove",new[]{"entityId"}},{"remove-buff",new[]{"actorId","instanceId"}},
             {"interrupt",Array.Empty<string>()},{"death",Array.Empty<string>()},{"hitstop",new[]{"frames"}}
         };

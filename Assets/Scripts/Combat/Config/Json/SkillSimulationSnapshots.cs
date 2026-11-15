@@ -28,6 +28,8 @@ namespace Combat.Config
     public sealed class SkillActorSnapshot
     {
         public string Id { get; internal set; }
+        public string SceneId {get;internal set;}
+        public int Team {get;internal set;}
         public string Name { get; internal set; }
         public string Kind { get; internal set; }
         public string View {get;internal set;}

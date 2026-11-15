@@ -3,6 +3,7 @@ import { api } from './model';
 import type { Project, PreviewState } from './model';
 import {previewSemanticKey,previewFrameBudget} from './authoring/previewTiming';
 import type {RecordingStatus,ReplayComparison,ReplayResponse} from './replayModel';
+import {moveSceneActor} from './authoring/scenePlacement';
 
 export function usePreview(project: Project | null, selected: string, report: (message: string) => void,adoptReplay:(project:Project,root:string)=>void) {
   const [state, setState] = useState<PreviewState | null>(null);
@@ -11,7 +12,7 @@ export function usePreview(project: Project | null, selected: string, report: (m
   const [continuous, setContinuous] = useState(false);
   const [appliedKey, setAppliedKey] = useState('');
   const [error, setError] = useState('');
-  const [recording,setRecording]=useState<RecordingStatus|null>(null),[comparison,setComparison]=useState<ReplayComparison|null>(null),[replaying,setReplaying]=useState(false);
+  const [recording,setRecording]=useState<RecordingStatus|null>(null),[comparison,setComparison]=useState<ReplayComparison|null>(null),[replaying,setReplaying]=useState(false),[placing,setPlacing]=useState(false);
   const replacing=useRef(false),adoptRef=useRef(adoptReplay);adoptRef.current=adoptReplay;
   const session = useRef('');
   const version = useRef(0);
@@ -28,7 +29,7 @@ export function usePreview(project: Project | null, selected: string, report: (m
   const semanticKey=previewSemanticKey(project,selected);
   const semanticRef = useRef(semanticKey); semanticRef.current = semanticKey;
   const sessionKey = useRef('');
-  const ready = appliedKey === semanticKey && !!session.current&&!replaying;
+  const ready = appliedKey === semanticKey && !!session.current&&!replaying&&!placing;
   const run = useCallback((command: unknown) => {
     const id = session.current; const generation = version.current;
     if (!id || sessionKey.current !== semanticRef.current||replacing.current) return Promise.resolve();
@@ -59,7 +60,7 @@ export function usePreview(project: Project | null, selected: string, report: (m
     } catch (error) { if(generation===version.current){setError(String(error));reportRef.current(String(error));} }
   }, []);
   useEffect(() => {
-    if(replaying)return;
+    if(replaying||placing)return;
     if(session.current&&sessionKey.current===semanticKey)return;
     ++version.current;
     const old = session.current; session.current = ''; sessionKey.current = '';
@@ -68,7 +69,7 @@ export function usePreview(project: Project | null, selected: string, report: (m
     if (old) void api('/preview/' + old, undefined, 'DELETE').catch(() => {});
     const timer = setTimeout(() => void reset(), 600);
     return () => clearTimeout(timer);
-  }, [reset, semanticKey,replaying]);
+  }, [reset, semanticKey,replaying,placing]);
   useEffect(() => () => { ++version.current; const id = session.current; if (id) void api('/preview/' + id, undefined, 'DELETE').catch(() => {}); }, []);
   const release = useCallback(() => { held.current = false; return run({ kind: 'release', ...aim.current }); }, [run]);
   const cancel = useCallback(() => { held.current = false; return run({ kind: 'cancel' }); }, [run]);
@@ -129,8 +130,24 @@ export function usePreview(project: Project | null, selected: string, report: (m
       anchor.href=url;anchor.download='skill-replay.json';anchor.click();URL.revokeObjectURL(url);reportRef.current('输入记录已导出，含当前JSON、种子、逐步输入与结果快照');
     }finally{replacing.current=false;setReplaying(false);}
   }
+  async function place(sceneId:string,entityId:string,x:number,z:number,update:(project:Project)=>void):Promise<boolean> {
+    if(replacing.current||!session.current||sessionKey.current!==semanticRef.current)return false;
+    replacing.current=true;setPlacing(true);setPlaying(false);setContinuous(false);held.current=false;accumulator.current=0;
+    const generation=version.current,keyBefore=semanticRef.current;
+    try{
+      await queue.current;
+      if(generation!==version.current||keyBefore!==semanticRef.current)return false;
+      moveSceneActor(projectRef.current!,sceneId,{x,z});
+      const result=await api<{state:PreviewState;recording:RecordingStatus}>('/preview/'+session.current+'/command',{kind:'place',actorId:sceneId,entityId,x,z});
+      if(generation!==version.current||keyBefore!==semanticRef.current)return false;
+      const next=moveSceneActor(projectRef.current!,sceneId,{x,z});
+      const key=previewSemanticKey(next,skill.current);sessionKey.current=key;setAppliedKey(key);update(next);
+      setState(result.state);latestState.current=result.state;setRecording(result.recording);setComparison(null);
+      reportRef.current('已更新 '+sceneId+' 的位置；预览时间与现有实例保留');return true;
+    }catch(error){reportRef.current(String(error));return false;}finally{replacing.current=false;setPlacing(false);}
+  }
   return { state, sessionId:session.current,ready, error, playing, setPlaying, speed, setSpeed, continuous, setContinuous, reset, aim, skill, release, cancel,
-    recording,comparison,replaying,replayFile,exportReplay,
+    recording,comparison,replaying,replayFile,exportReplay,placing,place,
     cast: () => { held.current = true; return run({ kind: 'cast', skillId: skill.current, ...aim.current }); },
     input:(input:string)=>run({kind:'input',input,...aim.current}),
     move: (x:number,z:number) => run({ kind:'move',x,z }), interrupt: () => run({ kind:'interrupt' }),

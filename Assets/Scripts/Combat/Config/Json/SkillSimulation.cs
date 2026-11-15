@@ -20,6 +20,7 @@ namespace Combat.Config
         readonly List<SkillRaySnapshot> _rays=new List<SkillRaySnapshot>();
         readonly Dictionary<int,SkillSpatialSnapshot> _volumes = new Dictionary<int,SkillSpatialSnapshot>();
         readonly Dictionary<string, EntityId> _sceneActors = new Dictionary<string, EntityId>();
+        readonly Dictionary<EntityId,string> _sceneIds=new Dictionary<EntityId,string>();
         readonly CombatWorld _world;
         readonly EntityId _caster;
         int _eventSequence, _steps, _casts, _spawned, _hits, _spawnedAreas,_spawnedSummons,_spawnedConstructs;
@@ -84,6 +85,7 @@ namespace Combat.Config
             _world.TryGetActor(id, out var actor);
             actor.GetComp<TransformComp>().Position = new SimVec3(initial.X, 0, initial.Z);
             actor.GetComp<LocomotionComp>().CollisionRadius=initial.CollisionRadius;
+            if(initial.Team.HasValue)actor.GetComp<TeamComp>().SetTeam(initial.Team.Value);
             var attr = actor.GetComp<AttributeSet>();
             attr.SetBase(AttrId.MaxHp, initial.Hp); attr.SetBase(AttrId.Hp, initial.Hp);
             attr.SetBase(AttrId.Atk, initial.Atk); attr.SetBase(AttrId.Def, initial.Def);
@@ -91,6 +93,7 @@ namespace Combat.Config
             attr.SetBase(AttrId.ActionSpeed,initial.ActionSpeed);
             _names[HitboxComp.Pack(id)] = initial.Id;
             _sceneActors.Add(initial.Id, id);
+            _sceneIds.Add(id,initial.Id);
             _world.PublishSpawn(id, blueprint);
             return id;
         }
@@ -176,13 +179,17 @@ namespace Combat.Config
             _movement = new SimVec3(x, 0, z);
         }
 
-        public void Place(string id, float x, float z)
+        public void Place(string id, float x, float z,string expectedEntityId=null)
         {
             EnsureAlive();
             if (!SkillSceneValidation.Finite(x) || !SkillSceneValidation.Finite(z)) throw new ContentValidationException("$.place", "Position must be finite.");
             if (id == null || !_sceneActors.TryGetValue(id, out var entity) || !_world.TryGetActor(entity, out var actor))
                 throw new ContentValidationException("$.actorId", "Unknown scene actor.");
-            if(!actor.GetComp<LocomotionComp>().RequestTeleport(new SimVec3(x, 0, z)))throw new ContentValidationException("$.place","Actor destination overlaps an obstacle.");
+            if(expectedEntityId!=null&&expectedEntityId!=HitboxComp.Pack(entity).ToString())throw new ContentValidationException("$.entityId","Scene actor identity no longer matches this entity generation.");
+            if(actor.GetComp<TagComp>().Has(CommonTags.Dead))throw new ContentValidationException("$.actorId","Cannot reposition a dead scene actor.");
+            float y=actor.GetComp<TransformComp>().Position.Y;
+            if(!actor.GetComp<LocomotionComp>().TryReposition(new SimVec3(x,y,z)))throw new ContentValidationException("$.place","Actor destination overlaps an obstacle.");
+            Record("placement",Name(entity),"Scene position updated",sourceId:entity);
         }
 
         public void Interrupt(bool death = false)
@@ -234,7 +241,7 @@ namespace Combat.Config
                 a.TryGetComp<SkillDirectorComp>(out var director);
                 return new SkillActorSnapshot
                 {
-                    Id = HitboxComp.Pack(a.Id).ToString(), Name = Name(a.Id), Kind = _kinds[HitboxComp.Pack(a.Id)], X = p.X,Y=p.Y, Z = p.Z,Author=ActorSource(a),
+                    Id = HitboxComp.Pack(a.Id).ToString(),SceneId=_sceneIds.TryGetValue(a.Id,out var sceneId)?sceneId:null,Team=a.TryGetComp<TeamComp>(out var team)?team.TeamId:0, Name = Name(a.Id), Kind = _kinds[HitboxComp.Pack(a.Id)], X = p.X,Y=p.Y, Z = p.Z,Author=ActorSource(a),
                     View=projectile?.Def?.View??area?.Def?.View??construct?.Def?.View,Yaw=a.GetComp<TransformComp>().YawDegrees,
                     ViewScale=area?.Def!=null&&area.Def.Radius>0?area.Radius/area.Def.Radius:1,
                     Hp = attr?.GetBase(AttrId.Hp), MaxHp = attr?.GetFinal(AttrId.MaxHp), Radius = projectile?.Def?.HitRadius ?? area?.Radius ?? (a.TryGetComp<LocomotionComp>(out var locomotion)?locomotion.CollisionRadius:.4f),
@@ -355,7 +362,7 @@ namespace Combat.Config
             foreach (var actor in _world.RegistryActive())
             { if (actor.TryGetComp<SkillDirectorComp>(out var director)) director.Stop(DirectorStopReason.Detach); _world.RequestDespawn(actor.Id); }
             _world.Tick(0);
-            _events.Clear(); _trails.Clear(); _areas.Clear(); _rays.Clear(); _volumes.Clear(); _names.Clear(); _kinds.Clear(); _hurts.Clear(); _sceneActors.Clear();
+            _events.Clear(); _trails.Clear(); _areas.Clear(); _rays.Clear(); _volumes.Clear(); _names.Clear(); _kinds.Clear(); _hurts.Clear(); _sceneActors.Clear();_sceneIds.Clear();
             _bodySources.Clear();_bodyOrigins.Clear();
             _disposed = true;
         }

@@ -91,6 +91,8 @@ namespace Combat.Unity
         }
 
         public void SetMovement(float x, float z) => _publication.Simulation?.Execute(new SkillSimulationCommand{Kind="move",X=x,Z=z});
+        public void PlaceActor(string sceneId,string entityId,float x,float z)
+        {_publication.Simulation?.Execute(new SkillSimulationCommand{Kind="place",ActorId=sceneId,EntityId=entityId,X=x,Z=z});if(_publication.Simulation!=null)Snapshot=_publication.Simulation.Snapshot();}
         public void SubmitInput(string action,float x,float z)
         {if(_publication.Simulation==null)return;_publication.Simulation.Execute(new SkillSimulationCommand{Kind="input",Input=action,X=x,Z=z});Snapshot=_publication.Simulation.Snapshot();}
         public void RemoveEntity(string id)

@@ -27,6 +27,7 @@ namespace Combat.Config
         {
             if (actor == null) Fail(path, "Actor is required.");
             if (string.IsNullOrWhiteSpace(actor.Id) || !ids.Add(actor.Id)) Fail(path + ".id", "Missing or duplicate identity.");
+            if(actor.Team.HasValue&&(actor.Team<0||actor.Team>30))Fail(path+".team","Expected team0..30.");
             if (!Finite(actor.X)) Fail(path + ".x", "Position must be finite.");
             if (!Finite(actor.Z)) Fail(path + ".z", "Position must be finite.");
             if (!Finite(actor.Hp) || actor.Hp <= 0) Fail(path + ".hp", "HP must be finite and positive.");

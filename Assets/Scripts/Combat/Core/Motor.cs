@@ -89,6 +89,14 @@ namespace Combat.Core
         public bool RequestTeleport(in SimVec3 pos)
         {if(Self.World!=null&&!Self.World.Collision.IsFree(pos,CollisionRadius))return false;_teleport=pos;return true;}
 
+        // Explicit setup relocation does not advance a combat step or replace a playing action.
+        // Unlike a gameplay teleport request, it also discards an older pending destination.
+        public bool TryReposition(in SimVec3 position)
+        {
+            if(_tf==null||Self.World==null||!Self.World.Collision.IsFree(position,CollisionRadius))return false;
+            _tf.Position=position;_teleport=null;MovementFrom=position;MovementContact=default;return true;
+        }
+
         public void RequestSnapYaw()
         {
             if(_tags.Has(CommonTags.BlockRotate)||Self.World.IsActorStopped(Self))return;

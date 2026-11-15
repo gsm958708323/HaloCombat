@@ -26,7 +26,7 @@ namespace Combat.Config
                 case "cancel":CancelInput();break;
                 case "aim":Aim(command.X??0,command.Z??0);break;
                 case "move":Move(command.X??0,command.Z??0);break;
-                case "place":Place(command.ActorId,command.X??0,command.Z??0);break;
+                case "place":Place(command.ActorId,command.X??0,command.Z??0,command.EntityId);break;
                 case "remove":Remove(command.EntityId);break;
                 case "remove-buff":result=RemoveBuff(command.ActorId,command.InstanceId.Value);break;
                 case "interrupt":Interrupt();break;

@@ -99,6 +99,7 @@ namespace Combat.Config
     public sealed class PreviewActorDocument
     {
         public string Id { get; set; }
+        [JsonProperty(NullValueHandling=NullValueHandling.Ignore),JsonConverter(typeof(NullableIntegerConverter))]public int? Team {get;set;}
         public float X { get; set; }
         public float Z { get; set; }
         public float Hp { get; set; } = 1000;
