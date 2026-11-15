@@ -71,6 +71,15 @@ export function usePreview(project: Project | null, selected: string, report: (m
     return () => clearTimeout(timer);
   }, [reset, semanticKey,replaying,placing]);
   useEffect(() => () => { ++version.current; const id = session.current; if (id) void api('/preview/' + id, undefined, 'DELETE').catch(() => {}); }, []);
+  useEffect(()=>{
+    const leaving=()=>{
+      const id=session.current;session.current='';sessionKey.current='';++version.current;
+      if(id)void fetch('/api/preview/'+id,{method:'DELETE',keepalive:true}).catch(()=>{});
+    };
+    const returning=(event:PageTransitionEvent)=>{if(event.persisted)void reset();};
+    window.addEventListener('pagehide',leaving);window.addEventListener('pageshow',returning);
+    return()=>{window.removeEventListener('pagehide',leaving);window.removeEventListener('pageshow',returning);};
+  },[reset]);
   const release = useCallback(() => { held.current = false; return run({ kind: 'release', ...aim.current }); }, [run]);
   const cancel = useCallback(() => { held.current = false; return run({ kind: 'cancel' }); }, [run]);
   useEffect(() => {

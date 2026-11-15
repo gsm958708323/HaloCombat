@@ -1,10 +1,10 @@
 # HaloCombat：JSON 技能编辑器与战斗核
 
-## 网页技能编辑器（开发中）
+## 网页技能编辑器
 
-在 `codex/web-skill-editor-json` 分支开发 JSON 网页技能编辑器。运行 `./Tools/SkillLab/Start.ps1` 启动本地网页，使用说明见 [Tools/SkillLab/README.md](Tools/SkillLab/README.md)，完整范围和验证记录见 [docs/实施进度.md](docs/实施进度.md)。
+JSON 网页技能编辑器位于 `codex/web-skill-editor-json` 分支。运行 `./Tools/SkillLab/Start.ps1` 启动本地网页，或解压Windows独立包双击`Run.cmd`，无需安装Node/.NET即可试玩。使用说明见 [Tools/SkillLab/README.md](Tools/SkillLab/README.md)，完整范围和证据见 [docs/最终验收.md](docs/最终验收.md)。
 
-网页预览和 Unity `Assets/Scenes/HaloCombat/SkillLab.unity` 共用实际战斗核。网页发布F6/F7后，Unity运行中按F5重载，再按F6/F7施放。已接通瞬发、有限连发、引导、蓄力、目标/范围、近战、位移、射线、召唤、Buff、换弹、传送弹、木桶链爆、完整弹体行为和飞行触发，提供53个模板。工程、当前技能闭包、完整运行内容三种JSON可导出回读；事件支持作者节点定位与输入文件重放。完整验收仍在进行。
+网页预览和 Unity `Assets/Scenes/HaloCombat/SkillLab.unity` 共用实际战斗核。网页发布F6/F7后，Unity运行中按F5重载，再按F6/F7施放。已接通瞬发、有限连发、引导、蓄力、目标/范围、近战、位移、射线、召唤、Buff、换弹、传送弹、木桶链爆、完整弹体行为和飞行触发，提供53个模板。工程、当前技能闭包、完整运行内容三种JSON可导出回读；事件支持作者节点定位与输入文件重放。最终Unity EditMode796/796、PlayMode100/100、前端100/100通过；54份模板记录在Unity对照94917值匹配。
 
 ## JSON 正式内容
 
@@ -31,7 +31,7 @@ dotnet run --project Combat.csproj -- json Assets/StreamingAssets/Combat/project
 
 `Assets/Scenes/Arena.unity`是可直接运行的JSON入口，也位于Build Settings首位。WASD/方向键移动，鼠标瞄准，按住左键/1重复主攻击；2/右键、3/中键、5/鼠标侧键、Space/Q/E走JSON的输入绑定。Esc暂停，HUD可重开/切换训练模式。F5明确重载，F6/F7使用同一正式玩家的消耗/冷却/状态守卫；槽必须从当前正式工程发布，其他工程的槽会报错并保留当前局。首次启动只读正式文件，避免未关联的旧调试槽阻止进入。
 
-当前Arena包含原13技能ID、缺弹换弹/传送弹/木桶链爆、三段确认、双相位Motor、独立顿帧、原角色和实体/Cue资源，以及原游走/生成随机与累计成长。固定对照与实际行为证据见`docs/验证`；完整历史审计与统一交付继续进行。原提交没有音频文件，不能宣称恢复了原音效。
+当前Arena包含原13技能ID、缺弹换弹/传送弹/木桶链爆、三段确认、双相位Motor、独立顿帧、原角色和实体/Cue资源，以及原游走/生成随机与累计成长。历史技能794值、环境84值及实际行为证据见`docs/验证`；统一文件流程和分发结果见最终验收。原提交没有音频文件，不能宣称恢复了原音效。
 
 ## 运行
 
