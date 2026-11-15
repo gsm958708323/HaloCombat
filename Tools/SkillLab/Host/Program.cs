@@ -96,7 +96,7 @@ app.MapPost("/api/preview/{id}/command",async(string id,HttpContext context)=>
     var command=SkillSimulationCommands.Read(text);
     lock(session)
     {
-        var result=session.Execute(command);return Results.Ok(new{result,state=session.Snapshot(),recording=session.Recording});
+        var result=session.Execute(command);return PreviewFrames.Response(session,context,result);
     }
 });
 app.MapPost("/api/preview/{id}/commands",async(string id,HttpContext context)=>
@@ -106,7 +106,7 @@ app.MapPost("/api/preview/{id}/commands",async(string id,HttpContext context)=>
     var raw=Newtonsoft.Json.Linq.JArray.Parse(text,new Newtonsoft.Json.Linq.JsonLoadSettings{DuplicatePropertyNameHandling=Newtonsoft.Json.Linq.DuplicatePropertyNameHandling.Error});
     if(raw.Count<1||raw.Count>32)throw new ContentValidationException("$","Expected 1..32 preview commands.");
     var commands=raw.Select(value=>SkillSimulationCommands.Read(value.ToString(Newtonsoft.Json.Formatting.None))).ToArray();
-    lock(session){foreach(var command in commands)session.Execute(command);return Results.Ok(new{state=session.Snapshot(),recording=session.Recording});}
+    lock(session){foreach(var command in commands)session.Execute(command);return PreviewFrames.Response(session,context);}
 });
 app.MapGet("/api/preview/{id}/replay",(string id,HttpContext context)=>
 {

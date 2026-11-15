@@ -28,6 +28,8 @@ namespace Combat.Config
         int _chains,_splits;
         bool _disposed;
         SimVec3 _movement;
+        SimVec3 _aimPoint;
+        string _continuousSkill;
 
         public SkillSimulation(SkillProjectDocument project, CombatContentSnapshot content,bool recordInputs=true)
         {
@@ -101,6 +103,8 @@ namespace Combat.Config
         }
 
         public SkillCastResult Cast(string key, float x, float z)
+            =>Cast(key,x,z,true);
+        SkillCastResult Cast(string key,float x,float z,bool reportRejection)
         {
             EnsureAlive();
             if (!SkillSceneValidation.Finite(x) || !SkillSceneValidation.Finite(z))
@@ -109,12 +113,12 @@ namespace Combat.Config
                 ?? throw new ContentValidationException("$.skillId", "Unknown skill.");
             if (!_world.TryGetActor(_caster, out var caster)) return new SkillCastResult(false, "Caster is unavailable.");
             var origin = caster.GetComp<TransformComp>().Position;
-            var point = new SimVec3(x, 0, z);
+            var point = new SimVec3(x, 0, z);_aimPoint=point;
             float heading = LocomotionComp.YawFromStick(new SimVec3(point.X - origin.X, 0, point.Z - origin.Z));
             if(caster.TryGetComp<PlayerAimComp>(out var aiming)){aiming.Valid=true;aiming.Aim=new SkillAim(EntityId.Invalid,point,heading);}
             var cast = caster.GetComp<SkillCastComp>();
             bool accepted = cast.TryCast(skill.Id, new SkillAim(EntityId.Invalid, point, heading));
-            if(!accepted)Record("rejected",skill.Name,cast.LastRejection,node:_content.Sources.Definition("skill",skill.Id.Value),sourceId:caster.Id);
+            if(!accepted&&reportRejection)Record("rejected",skill.Name,cast.LastRejection,node:_content.Sources.Definition("skill",skill.Id.Value),sourceId:caster.Id);
             return new SkillCastResult(accepted, cast.LastRejection);
         }
 
@@ -134,7 +138,7 @@ namespace Combat.Config
 
         public void CancelInput()
         {
-            EnsureAlive(); _movement = SimVec3.Zero;
+            EnsureAlive(); _movement = SimVec3.Zero;_continuousSkill=null;
             if (_world.TryGetActor(_caster, out var caster)) caster.GetComp<SkillCastComp>().CancelHeld();
             if(caster!=null&&caster.TryGetComp<InputBufferComp>(out var input))input.Clear();
             if(caster!=null&&caster.TryGetComp<PlayerAimComp>(out var state)){state.Valid=false;state.PrimaryHeld=false;}
@@ -166,6 +170,7 @@ namespace Combat.Config
         {
             EnsureAlive();
             if (!SkillSceneValidation.Finite(x) || !SkillSceneValidation.Finite(z)) throw new ContentValidationException("$.aim", "Aim must be finite.");
+            _aimPoint=new SimVec3(x,0,z);
             if (!_world.TryGetActor(_caster, out var caster)) return;
             var origin = caster.GetComp<TransformComp>().Position;
             var aim=new SkillAim(EntityId.Invalid,new SimVec3(x,0,z),LocomotionComp.YawFromStick(new SimVec3(x-origin.X,0,z-origin.Z)));
@@ -208,17 +213,23 @@ namespace Combat.Config
             if (steps < 1 || steps > 500) throw new ContentValidationException("$.steps", "Expected 1..500.");
             for (int i = 0; i < steps; i++)
             {
+                if(_continuousSkill!=null&&_world.TryGetActor(_caster,out var firing))
+                {
+                    var cast=firing.GetComp<SkillCastComp>();
+                    if(!cast.IsChanneling&&!cast.IsCharging)Cast(_continuousSkill,_aimPoint.X,_aimPoint.Z,false);
+                    else Aim(_aimPoint.X,_aimPoint.Z);
+                }
                 if (_world.TryGetActor(_caster, out var caster)) caster.GetComp<LocomotionComp>().RequestMoveIntent(_movement.X, _movement.Z);
                 var previous=caster?.GetComp<TransformComp>().Position;
                 _steps++; _world.Tick(Step);
-                foreach (var actor in _world.RegistryActive())
+                if(_recordingEnabled)foreach (var actor in _world.RegistryActive())
                     if (actor.TryGetComp<ProjectileComp>(out _))
                     {
                         var p = actor.GetComp<TransformComp>().Position;
                         _trails.Add(new SkillTrailSnapshot { Entity = HitboxComp.Pack(actor.Id).ToString(), X = p.X, Z = p.Z, Step = _steps });
                     }
                 if (_trails.Count > 4000) _trails.RemoveRange(0, _trails.Count - 4000);
-                if(previous.HasValue&&_world.TryGetActor(_caster,out caster))
+                if(_recordingEnabled&&previous.HasValue&&_world.TryGetActor(_caster,out caster))
                 {
                     var position=caster.GetComp<TransformComp>().Position;
                     if(SpatialGeometry.DistanceSquared(previous.Value,position)>.000001f)
@@ -229,7 +240,14 @@ namespace Combat.Config
             }
         }
 
-        public SkillSimulationSnapshot Snapshot()
+        void SetContinuousCast(string key,float x,float z)
+        {
+            if(key!=null&&!_content.Skills.All.Any(s=>s.Key==key))throw new ContentValidationException("$.skillId","Unknown skill.");
+            _continuousSkill=key;if(key!=null)Aim(x,z);
+        }
+
+        public SkillSimulationSnapshot Snapshot()=>Snapshot(0,-1,true);
+        public SkillSimulationSnapshot Snapshot(int afterEvent,int afterTrailStep,bool includeDetails,bool includeTrails=true)
         {
             EnsureAlive();
             var actors = _world.RegistryActive().Select(a =>
@@ -263,16 +281,16 @@ namespace Combat.Config
                     Speed=projectile!=null?(float?)ProjectileKinematics.Speed(projectile):null,VerticalSpeed=projectile?.Def.Motion?.Bounce!=null||projectile?.Def.Motion?.ScheduledBounce!=null?(float?)projectile.VerticalSpeed:null,
                     Returning=projectile?.Returning??false,GroundBouncesLeft=projectile?.GroundBouncesLeft??0,WallBouncesLeft=projectile?.WallBouncesLeft??0,
                     AbsorbedProjectiles=area?.AbsorbedProjectiles??0,AreaVelocityX=area?.Velocity.X,AreaVelocityZ=area?.Velocity.Z,
-                    Buffs=a.TryGetComp<BuffComp>(out var buffs)?buffs.Snapshot().Select(b=>new SkillBuffSnapshot{InstanceId=b.InstanceId,Id=b.Key??b.BuffId.ToString(),Name=b.Name??b.Key??b.BuffId.ToString(),
+                    Buffs=!includeDetails?null:a.TryGetComp<BuffComp>(out var buffs)?buffs.Snapshot().Select(b=>new SkillBuffSnapshot{InstanceId=b.InstanceId,Id=b.Key??b.BuffId.ToString(),Name=b.Name??b.Key??b.BuffId.ToString(),
                         Source=Name(b.Source),Stacks=b.Stacks,Remaining=b.Remaining}).ToArray():Array.Empty<SkillBuffSnapshot>(),
-                    Tags=a.TryGetComp<TagComp>(out var tagValues)?tagValues.Snapshot():new Dictionary<int,int>(),Attributes=Attributes(attr)
+                    Tags=!includeDetails?null:a.TryGetComp<TagComp>(out var tagValues)?tagValues.Snapshot():new Dictionary<int,int>(),Attributes=includeDetails?Attributes(attr):null
                 };
             }).ToArray();
             _world.TryGetActor(_caster, out var caster);
             var cast = caster?.GetComp<SkillCastComp>();
             return new SkillSimulationSnapshot
             {
-                Step = _steps, Time = _steps * Step, Actors = actors, Events = _events.ToArray(), Trails = _trails.ToArray(), Areas = _areas.ToArray(), Volumes=_volumes.Values.ToArray(),
+                Step = _steps, Time = _steps * Step, Actors = actors, Events = _events.Where(e=>e.Sequence>afterEvent).ToArray(), Trails = includeTrails?_trails.Where(t=>t.Step>afterTrailStep).ToArray():Array.Empty<SkillTrailSnapshot>(), Areas = _areas.ToArray(), Volumes=_volumes.Values.ToArray(),
                 Obstacles=_world.Collision.Obstacles.Select(o=>new SkillObstacleSnapshot{Id=o.Id,X=o.X,Z=o.Z,Width=o.Width,Depth=o.Depth}).ToArray(),Rays=_rays.ToArray(),
                 Energy = caster?.GetComp<EnergyComp>().Current ?? 0,
                 Ammo=caster?.GetComp<AmmoComp>().Current??0,AmmoCapacity=caster?.GetComp<AmmoComp>().Capacity??0,

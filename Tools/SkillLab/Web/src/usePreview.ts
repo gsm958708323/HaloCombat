@@ -4,6 +4,7 @@ import type { Project, PreviewState } from './model';
 import {previewSemanticKey,previewFrameBudget} from './authoring/previewTiming';
 import type {RecordingStatus,ReplayComparison,ReplayResponse} from './replayModel';
 import {moveSceneActor} from './authoring/scenePlacement';
+import {mergePreviewFrame} from './authoring/previewFrames';
 
 const sessionSemanticKey=(project:Project|null,selected:string,record:boolean,unlimited:boolean)=>previewSemanticKey(project,selected)+'/'+record+'/'+unlimited;
 
@@ -26,6 +27,7 @@ export function usePreview(project: Project | null, selected: string, report: (m
   const lastTime = useRef(performance.now());
   const accumulator = useRef(0);
   const busy = useRef(false);
+  const lastDetails=useRef(0);
   const latestState = useRef(state); latestState.current = state;
   const held = useRef(false);
   const reportRef = useRef(report); reportRef.current = report;
@@ -39,8 +41,13 @@ export function usePreview(project: Project | null, selected: string, report: (m
     if (!id || sessionKey.current !== semanticRef.current||replacing.current) return Promise.resolve();
     queue.current = queue.current.catch(() => {}).then(async () => {
       if (generation !== version.current || sessionKey.current !== semanticRef.current) return;
-      const result = await api<{ state: PreviewState;recording:RecordingStatus }>('/preview/' + id + (Array.isArray(command)?'/commands':'/command'), command);
-      if (generation === version.current) { latestState.current = result.state; setState(result.state);setRecording(result.recording);setComparison(null); }
+      const previous=latestState.current,now=performance.now(),details=!Array.isArray(command)||now-lastDetails.current>=200;
+      const query='?afterEvent='+(previous?.events.at(-1)?.sequence??0)+'&details='+details;
+      const result = await api<{ state: PreviewState;recording:RecordingStatus }>('/preview/' + id + (Array.isArray(command)?'/commands':'/command')+query, command);
+      if (generation === version.current) {
+        const state=mergePreviewFrame(previous,result.state);latestState.current=state;setState(state);setRecording(result.recording);setComparison(null);
+        if(details)lastDetails.current=now;
+      }
     }).catch(error => reportRef.current(String(error)));
     return queue.current;
   }, []);
@@ -94,7 +101,11 @@ export function usePreview(project: Project | null, selected: string, report: (m
     document.addEventListener('visibilitychange',visibility);
     return () => {window.removeEventListener('blur',stop);document.removeEventListener('visibilitychange',visibility);};
   }, [cancel,run]);
-  useEffect(() => { if (!continuous && !held.current) void release(); }, [continuous,release]);
+  useEffect(() => {
+    if(!ready)return;
+    void run(continuous?{kind:'auto-cast',skillId:skill.current,...aim.current}:{kind:'auto-cast'});
+    if(!continuous&&!held.current)void release();
+  }, [continuous,release,ready,run]);
   useEffect(() => {
     lastTime.current = performance.now(); accumulator.current = 0;
     if (!playing || !ready) return;
@@ -107,8 +118,7 @@ export function usePreview(project: Project | null, selected: string, report: (m
       busy.current = true;
       try {
         const commands:unknown[]=[];
-        if (continuous && !latestState.current?.channeling && !latestState.current?.charging) commands.push({ kind: 'cast', skillId: skill.current, ...aim.current });
-        if (latestState.current?.channeling || latestState.current?.charging) commands.push({ kind: 'aim', ...aim.current });
+        if (continuous || latestState.current?.channeling || latestState.current?.charging) commands.push({ kind: 'aim', ...aim.current });
         commands.push({kind:'step',steps});await run(commands);
       } finally { busy.current = false; }
     }, 20);

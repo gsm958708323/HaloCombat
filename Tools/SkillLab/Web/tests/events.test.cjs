@@ -24,3 +24,14 @@ test('retained count filtering and display limits describe exactly the rows show
   const source=Array.from({length:100},(_,i)=>event(i+1,i,i%2?'damage':'execute')),view=runtimeEventView(source,'damage',0,20);
   assert.equal(view.total,50);assert.equal(view.retained.length,100);assert.equal(view.rows.length,20);assert.equal(view.hidden,30);assert.equal(runtimeEventView(source,'all',0,0).rows.length,0);
 });
+
+const {mergePreviewFrame}=require('../../.local/web-checks/authoring/previewFrames.js');
+test('incremental preview keeps diagnostics by full entity identity, bounds events and drops movement trails',()=>{
+  const actor={id:'1',attributes:{Atk:80},tags:{101:1},buffs:[{id:'burn'}],x:0,z:0};
+  const previous={step:20,actors:[actor],events:Array.from({length:500},(_,i)=>({sequence:i+1})),trails:[{step:20,x:0,z:0}]};
+  const incoming={step:21,actors:[{id:'1',x:1,z:0},{id:'2',x:3,z:0}],events:[{sequence:500},{sequence:501}],trails:[{step:21,x:1,z:0}]};
+  const merged=mergePreviewFrame(previous,incoming);
+  assert.equal(merged.events.length,500);assert.equal(merged.events.at(-1).sequence,501);assert.equal(merged.actors[0].x,1);
+  assert.equal(merged.actors[0].attributes,actor.attributes);assert.deepEqual(merged.actors[1].attributes,{});assert.deepEqual(merged.trails,[]);
+  assert.equal(previous.actors[0].x,0);assert.equal(previous.events.at(-1).sequence,500);
+});

@@ -55,19 +55,20 @@ namespace Combat.Core
         public float Capacity { get; }
         public float Current { get; private set; }
         public float Recovery { get; }
+        public bool Unlimited {get;}
         public override bool WantsTick => true;
-        public EnergyComp(float capacity, float recovery, float? initialEnergy = null)
-        { Capacity = Math.Max(0f, capacity); Current = Math.Max(0, Math.Min(Capacity, initialEnergy ?? Capacity)); Recovery = Math.Max(0f, recovery); }
-        public bool CanSpend(float amount) => amount >= 0f && Current >= amount;
+        public EnergyComp(float capacity, float recovery, float? initialEnergy = null,bool unlimited=false)
+        { Capacity = Math.Max(0f, capacity); Current = Math.Max(0, Math.Min(Capacity, initialEnergy ?? Capacity)); Recovery = Math.Max(0f, recovery);Unlimited=unlimited; }
+        public bool CanSpend(float amount) => amount >= 0f && (Unlimited||Current >= amount);
         public bool TrySpend(float amount)
         {
             if (!CanSpend(amount)) return false;
-            Current -= amount;
+            if(!Unlimited)Current -= amount;
             return true;
         }
         public float SpendDuration(float rate, float duration)
         {
-            if (rate <= 0f) return duration;
+            if (Unlimited||rate <= 0f) return duration;
             float allowed = Math.Min(duration, Current / rate);
             Current = Math.Max(0, Current - allowed * rate);
             return allowed;
