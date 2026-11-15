@@ -253,7 +253,8 @@ namespace Combat.Config
                     Group=construct?.Def?.Group,DamageCap=construct?.Def?.DamageCap,NextDecay=construct?.NextDecay,
                     Stopped=_world.IsActorStopped(a),HitstopFrames=a.Time.HitstopLeft,LogicalTime=a.Time.Time,HurtLevel=hurt?reaction.Level.ToString().ToLowerInvariant():null,HurtAge=hurt?(float?)(_steps-reaction.Step)*Step:null,
                     ComboConfirmed=director?.HasComboConfirmation??false,CurrentSkill=director!=null&&director.IsPlaying?SkillName(director.CurrentOrigin):null,
-                    ActionTime=director!=null&&director.IsPlaying?(float?)director.TimelineTime:null,ActionDuration=director!=null&&director.IsPlaying?(float?)director.TimelineDuration:null,ActionRate=director?.ActionRate??1,
+                    // Indefinite channel duration is a domain sentinel, not a JSON number.
+                    ActionTime=director!=null&&director.IsPlaying?(float?)director.TimelineTime:null,ActionDuration=director!=null&&director.IsPlaying&&!float.IsInfinity(director.TimelineDuration)?(float?)director.TimelineDuration:null,ActionRate=director?.ActionRate??1,
                     ControlTags=director?.ActiveControls.Select(tag=>tag.Value).ToArray()??Array.Empty<int>(),
                     BufferedInput=a.TryGetComp<InputBufferComp>(out var buffer)&&buffer.TryPeek(out var token)?token.Action:null,
                     Ammo=a.TryGetComp<AmmoComp>(out var ammo)?(int?)ammo.Current:null,TrackingKey=projectile?.Def?.TrackingKey,

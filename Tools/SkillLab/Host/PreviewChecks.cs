@@ -7,6 +7,8 @@ internal static class PreviewChecks
 {
     public static void Run(string root)
     {
+        HostPathChecks.Run(root);
+        TemplateAcceptanceChecks.Run(root);
         var json=File.ReadAllText(Path.Combine(root,"Content/SkillLab/project.json"));
         var document=SkillProjectJson.Read(json);
         var content=CombatContentCompiler.Compile(document);

@@ -2,11 +2,7 @@ using Combat.Config;
 using SkillLab;
 using System.Collections.Concurrent;
 
-var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../"));
-// `dotnet run --project` does not change the working directory; find the checked-in project root.
-var cursor = new DirectoryInfo(Directory.GetCurrentDirectory());
-while (cursor != null && !File.Exists(Path.Combine(cursor.FullName, "Combat.csproj"))) cursor=cursor.Parent;
-if(cursor != null)root=cursor.FullName;
+var paths=new HostPaths(args,Directory.GetCurrentDirectory(),AppContext.BaseDirectory);var root=paths.Root;
 if(args.Contains("--self-test"))
 {
     try { PreviewChecks.Run(root); }
@@ -14,11 +10,11 @@ if(args.Contains("--self-test"))
     return;
 }
 var builder=WebApplication.CreateBuilder(args);
-builder.WebHost.UseUrls("http://127.0.0.1:4192");
+builder.WebHost.UseUrls(paths.Url);
 builder.WebHost.ConfigureKestrel(options=>options.Limits.MaxRequestBodySize=4*1024*1024);
 var app=builder.Build();
 var sessions=new ConcurrentDictionary<string,SkillSimulation>();
-var dataDirectory=Path.Combine(root,"Tools/SkillLab/.local");
+var dataDirectory=paths.Data;
 Directory.CreateDirectory(dataDirectory);
 var projectFile=Path.Combine(dataDirectory,"project.json");
 var exampleFile=Path.Combine(root,"Content/SkillLab/project.json");
@@ -29,7 +25,7 @@ app.Use(async(context,next)=>
 {
     // Local tool: reject cross-site writes, including requests from a public site's loopback fetch.
     string origin=context.Request.Headers.Origin;
-    if(!string.IsNullOrEmpty(origin) && origin!="http://127.0.0.1:4192" && origin!="http://localhost:4192" && origin!="http://127.0.0.1:5173")
+    if(!paths.AllowsOrigin(origin))
     {context.Response.StatusCode=403;return;}
     try{await next();}
     catch(ContentValidationException error){context.Response.StatusCode=400;await context.Response.WriteAsJsonAsync(new{error=error.Message,path=error.Path});}
@@ -79,7 +75,7 @@ app.MapPost("/api/export/{kind}",async(string kind,HttpContext context)=>
 app.MapGet("/api/publications",async()=>
 {
     await jsonLock.WaitAsync();
-    try {var directory=Path.Combine(root,"Assets/StreamingAssets/Combat");return Results.Ok(new[]{PublicationInspection.Read(directory,"f6"),PublicationInspection.Read(directory,"f7")});}
+    try {var directory=paths.Publications;return Results.Ok(new[]{PublicationInspection.Read(directory,"f6"),PublicationInspection.Read(directory,"f7")});}
     finally{jsonLock.Release();}
 });
 app.MapPost("/api/validate",async(HttpContext context)=>
@@ -121,7 +117,7 @@ app.MapDelete("/api/preview/{id}",(string id)=>
 {if(sessions.TryRemove(id,out var session))lock(session)session.Dispose();return Results.NoContent();});
 app.MapPost("/api/publish/sync",async(HttpContext context)=>
 {
-    var project=await ReadProject(context);var directory=Path.Combine(root,"Assets/StreamingAssets/Combat");
+    var project=await ReadProject(context);var directory=paths.Publications;
     await jsonLock.WaitAsync();
     try
     {
@@ -136,7 +132,7 @@ app.MapPost("/api/publish/{slot}",async(string slot,HttpContext context)=>
     if(slot!="f6"&&slot!="f7")return Results.BadRequest(new{error="Expected f6 or f7."});
     var project=await ReadProject(context);
     var publication=SkillPublicationJson.Create(project,context.Request.Query["skillId"]);
-    var directory=Path.Combine(root,"Assets/StreamingAssets/Combat");Directory.CreateDirectory(directory);
+    var directory=paths.Publications;Directory.CreateDirectory(directory);
     var path=Path.Combine(directory,slot+".json");
     await jsonLock.WaitAsync();
     try {var temporary=path+".tmp";await File.WriteAllTextAsync(temporary,SkillPublicationJson.Write(publication));File.Move(temporary,path,true);}

@@ -33,8 +33,9 @@ namespace Combat.Tests
             int hurts=0;s.World.Events.Subscribe<EvHurt>(e=>hurts++);_arena.Submit(new ArenaInputFrame{PrimaryHeld=false,Pressed=new[]{"Fire1"},AimValid=true,Aim=new SkillAim(target.Id,new SimVec3(1,0,0),0)});
             for(int i=0;i<30&&hurts==0;i++)_arena.StepForTests(1);Assert.AreEqual(1,hurts);_arena.StepForTests(1);Assert.IsTrue(player.Time.IsStopped);Assert.IsTrue(target.Time.IsStopped);Assert.IsFalse(other.Time.IsStopped);Assert.IsFalse(s.World.InHitstop);
             yield return null;var view=_arena.GetComponentsInChildren<UnityActorView>().Single(v=>v.Id==target.Id);Assert.AreEqual(1,view.Feedback.Sequence);Assert.AreEqual(HitFeedbackLevel.Light,view.Feedback.Level);Assert.Greater(view.Feedback.Flash,0);
-            var visual=view.transform.Find("Visual");var ring=visual.Find("TargetRing");var scale=ring.localScale;float before=view.Feedback.Flash;
-            yield return null;Assert.AreEqual(scale,ring.localScale);Assert.LessOrEqual(view.Feedback.Flash,before);Assert.Less(other.GetComp<TransformComp>().Position.Z,-2);
+            Assert.IsNotNull(view.Animation,"The restored training target uses its original skeletal model.");
+            var animator=view.Animation.Animator;float phase=animator.GetCurrentAnimatorStateInfo(0).normalizedTime;float before=view.Feedback.Flash;
+            yield return null;Assert.AreEqual(phase,animator.GetCurrentAnimatorStateInfo(0).normalizedTime,.00001f);Assert.LessOrEqual(view.Feedback.Flash,before);Assert.Less(other.GetComp<TransformComp>().Position.Z,-2);
             _arena.StepForTests(1);Assert.IsFalse(player.Time.IsStopped);Assert.IsTrue(target.Time.IsStopped);_arena.StepForTests(1);Assert.IsFalse(target.Time.IsStopped);LogAssert.NoUnexpectedReceived();
         }
         [UnityTest]

@@ -19,6 +19,7 @@ namespace Combat.Config
         {
             ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver(),
             MissingMemberHandling = MissingMemberHandling.Error,
+            Converters = new JsonConverter[]{new WholeIntegerConverter()},
             TypeNameHandling = TypeNameHandling.None, MaxDepth = 64, FloatParseHandling = FloatParseHandling.Double
         };
 

@@ -31,6 +31,7 @@ import {traceLocation} from './authoring/traceLocation';
 import type {AuthorNodeSource} from './model';
 import {SkillSummary} from './SkillSummary';
 import {Dialog} from './Dialog';
+import {ImportDialog} from './ImportDialog';
 
 const nodeTypes={skill:SkillNode};
 function Workbench() {
@@ -42,11 +43,11 @@ function Workbench() {
   const [contentAction,setContentAction]=useState<ContentAction|null>(null);
   const [newProjectName,setNewProjectName]=useState<string|null>(null);const [projectTemplate,setProjectTemplate]=useState('empty');
   const [pendingImport,setPendingImport]=useState<Project|null>(null);
+  const [importing,setImporting]=useState(false);
   const [exporting,setExporting]=useState(false);
   const [previewRoot,setPreviewRoot]=useState<string|null>(null);
   const [traceFocus,setTraceFocus]=useState<{key:GraphKey;nodeId:string;request:number}|null>(null);
   const traceRequest=useRef(0);
-  const fileInput=useRef<HTMLInputElement>(null);
   const skill=project?.skills.find(s=>s.id===project.editor?.selectedSkill)??project?.skills[0];
   const buff=project?.buffs?.find(b=>b.id===project.editor?.selectedBuff);
   const timeline=project?.timelines?.find(t=>t.id===project.editor?.selectedTimeline);
@@ -127,10 +128,6 @@ function Workbench() {
       editor.endGroup();editor.edit(base);setNewProjectName(null);setMessage('新工程已创建，可撤销返回原工程；保存后写入磁盘');}
     catch(error){setMessage(String(error));}finally{setCreating(false);}
   }
-  async function importFile(file:File){
-    try{const result=await api<{json:string;needsLayout:boolean}>('/document/import',{text:await file.text()});const imported=JSON.parse(result.json) as Project;setPendingImport(result.needsLayout?prepareImportedLayout(imported):imported);}
-    catch(error){setMessage(String(error));}
-  }
   async function applyImport(merge:boolean){
     if(!pendingImport)return;setCreating(true);
     try{const p=editor.current.current!;const next=merge?mergeProjects(p,pendingImport):pendingImport;
@@ -155,8 +152,7 @@ function Workbench() {
         <button disabled={!skill} onClick={()=>void publish('f6')}>发布到 F6</button><button disabled={!skill} onClick={()=>void publish('f7')}>发布到 F7</button>
         <button onClick={()=>void api<{message:string}>('/publish/sync',editor.current.current).then(result=>setMessage(result.message)).catch(error=>setMessage(String(error)))}>同步两槽</button>
         {project.runtime&&<button onClick={()=>void api<{message:string}>('/runtime/publish',project).then(result=>setMessage(result.message)).catch(error=>setMessage(String(error)))}>发布正式内容</button>}
-        <button onClick={()=>setExporting(true)}><Download size={13}/>导出</button><button onClick={()=>fileInput.current?.click()}><Upload size={13}/>导入</button>
-        <input ref={fileInput} type="file" accept=".json,application/json" hidden onChange={event=>{const file=event.target.files?.[0];if(file)void importFile(file);event.target.value='';}}/>
+        <button onClick={()=>setExporting(true)}><Download size={13}/>导出</button><button onClick={()=>setImporting(true)}><Upload size={13}/>导入</button>
       </div></header>
     <nav className="app-navigation"><span className="active">技能</span><div/><small>{project.name} · {project.skills.length} 个技能</small></nav>
     <div className="workspace"><Preview key={project.id} preview={preview} project={project} update={editor.edit} inspectSource={inspectSource} root={root}/>
@@ -198,6 +194,7 @@ function Workbench() {
     </div><footer className={message.startsWith('Error')?'error':''} role="status">{message}<span>JSON 工程 · 真实 C# 预览</span></footer>
     {contentAction&&<ContentDialog key={contentAction.kind+contentAction.id+contentAction.mode} project={project} action={contentAction} close={()=>setContentAction(null)} edit={change=>{editor.endGroup();editor.edit(change);setMessage('内容与引用已更新，可撤销恢复');}} locate={locate}/>}
     {exporting&&<ExportDialog project={project} skillId={skill?.id??''} close={()=>setExporting(false)} report={setMessage}/>}
+    {importing&&<ImportDialog close={()=>setImporting(false)} ready={value=>{setPendingImport(value);setImporting(false);}}/>}
     {newName!==null&&<Dialog label="新建技能" close={()=>setNewName(null)} busy={creating}><form className="modal" onSubmit={event=>{event.preventDefault();void create();}}><h2>新建技能</h2><label>名称<input aria-label="新技能名称" autoFocus value={newName} onChange={event=>setNewName(event.target.value)}/></label>
       <label>模板<select aria-label="技能模板" value={template} onChange={event=>setTemplate(event.target.value)}>{skill&&<option value="copy">复制当前技能</option>}{examples.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
       <div><button type="button" disabled={creating} onClick={()=>setNewName(null)}>取消</button><button className="primary" disabled={!newName.trim()||creating}>{creating?'创建中…':'确定'}</button></div></form></Dialog>}
