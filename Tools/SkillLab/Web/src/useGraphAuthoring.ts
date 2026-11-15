@@ -13,6 +13,7 @@ import { connectGraph, copySelection, deleteSelection, pasteSelection } from './
 import type { GraphClipboard } from './authoring/graphEdits';
 import {setCastExecution,setBurst} from './authoring/castExecution';
 import {extractProjectileBehavior} from './authoring/projectileBehavior';
+import {switchDelivery,reconcileNodeOutputs} from './authoring/deliveryEdits';
 
 export function useGraphAuthoring(document:ReturnType<typeof useProjectDocument>,key:GraphKey,report:(text:string)=>void,focus:{key:GraphKey;nodeId:string;request:number}|null=null) {
   const flow=useReactFlow<EditorNode>();const initialized=useNodesInitialized();
@@ -49,8 +50,7 @@ export function useGraphAuthoring(document:ReturnType<typeof useProjectDocument>
   },[document.edit,document.endGroup,key.kind,key.id]);
   const parameter=useCallback((id:string,field:string,value:ParameterValue)=>editGraph(g=>{
     const nodes=g.nodes.map(n=>n.id!==id?n:n.kind==='cast'&&field==='execution'?setCastExecution(n,String(value)):n.kind==='cast'&&field==='burst'?setBurst(n,!!value):{...n,parameters:{...n.parameters,[field]:value}});
-    const ports=nodeOutputs(nodes.find(n=>n.id===id)!).map(([p])=>p);
-    return {...g,nodes,edges:g.edges.filter(e=>e.source!==id||ports.includes(e.sourcePort))};
+    return reconcileNodeOutputs(g,nodes,id);
   }),[editGraph]);
   const changeKind=useCallback((id:string,kind:string)=>editGraph(g=>{
     const nodes=g.nodes.map(n=>n.id===id?{...n,kind,parameters:Object.fromEntries(kinds[kind].fields.map(f=>[f.key,f.initial]))}:n);
@@ -65,6 +65,10 @@ export function useGraphAuthoring(document:ReturnType<typeof useProjectDocument>
     openProjectile:(id:string)=>document.edit(p=>selectGraph(p,p.editor?.selectedSkill??p.skills[0]?.id??'','','',id),false),
     extractProjectile:(id:string)=>{try{document.endGroup();document.edit(p=>extractProjectile(p,key,id).project);}catch(e){report(String(e));}},
     extractBehavior:(id:string)=>{try{document.endGroup();editGraph(g=>extractProjectileBehavior(g,id));}catch(e){report(String(e));}},
+    changeDelivery:(id:string,mode:string)=>{try{
+      const current=document.current.current;if(!current)return;const result=switchDelivery(current,key,id,mode);document.endGroup();document.edit(result.project);
+      report('传递方式已切换'+(result.disabledNodes?'，停用'+result.disabledNodes+'个不适用分支节点':'')+'；可撤销恢复');
+    }catch(e){report(String(e));}},
     toggle:(id,enabled)=>editGraph(g=>({...g,nodes:g.nodes.map(v=>v.id===id?{...v,enabled}:v)}))}}))??[],[graph,project?.summonBlueprints,project?.buffs,project?.skills,project?.projectiles,project?.areas,project?.runtime?.views,selectedNodes,parameter,changeKind,remove,editGraph,measurements,keyString]);
   const edges=useMemo<Edge[]>(()=>graph?.edges.map(e=>({id:e.id,source:e.source,sourceHandle:e.sourcePort,target:e.target,targetHandle:e.targetPort,
       selected:selectedEdges.includes(e.id),type:'default',reconnectable:true,style:{stroke:selectedEdges.includes(e.id)?'#f4d890':e.sourcePort==='target'?'#85abbc':e.sourcePort==='behavior'?'#88ad91':'#d1b66e',strokeWidth:selectedEdges.includes(e.id)?3:2},animated:false}))??[],[graph,selectedEdges]);

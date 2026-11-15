@@ -6,11 +6,10 @@ import { SceneResources } from './SceneResources';
 import {PreviewWorld} from './PreviewWorld';
 import { SceneObstacles } from './SceneObstacles';
 import { SceneActorProperties } from './SceneActorProperties';
-import { DamageInspector } from './DamageInspector';
+import {RuntimePanel} from './RuntimePanel';
 import './preview-input.css';
 import { api } from './model';
 import {ComboInput} from './ComboInput';
-import {RuntimeEventTable} from './RuntimeEventTable';
 import './trace.css';
 import {ReplayControls} from './ReplayControls';
 
@@ -21,8 +20,6 @@ export function Preview({ preview, project, update,inspectSource,root }: { inspe
   const [configuration,setConfiguration] = useState(false);
   const [text,setText] = useState('');
   const [error,setError] = useState('');
-  const [filter,setFilter] = useState('all');
-  const [instances,setInstances] = useState(false);
   const [applying,setApplying] = useState(false);
   const latestProject=useRef(project);latestProject.current=project;
   async function applyConfiguration(){
@@ -47,12 +44,9 @@ export function Preview({ preview, project, update,inspectSource,root }: { inspe
   }
   function stopMovement(){if(!moveKeys.current.size)return;moveKeys.current.clear();void preview.move(0,0);}
   const state=preview.state;
-  const events=state?.events.filter(e=>filter==='all'||e.kind===filter||filter==='damage'&&e.kind==='critical').slice(-80).reverse()??[];
   const number=(value:number)=>value.toLocaleString('zh-CN',{ maximumFractionDigits: 1 });
   return <aside className="left-column" onKeyDown={e=>{if(e.target instanceof HTMLInputElement||e.target instanceof HTMLTextAreaElement||e.target instanceof HTMLSelectElement)return;moveKey(e.key.toLowerCase(),true);}} onKeyUp={e=>moveKey(e.key.toLowerCase(),false)}>
-    <section className="events-panel"><div className="panel-title"><div className="text-tabs"><button className={!instances?'active':''} onClick={()=>setInstances(false)}>事件记录</button><button className={instances?'active':''} onClick={()=>setInstances(true)}>运行实例</button></div><select aria-label="筛选事件" value={filter} onChange={e=>setFilter(e.target.value)}><option value="all">全部事件</option><option value="damage">伤害</option><option value="cast">施放</option><option value="spawn">生成</option><option value="rejected">拒绝</option><option value="execute">节点执行</option><option value="placement">布置</option></select><small>{state?.events.length??0} 条</small></div>
-      <div className="event-scroll"><DamageInspector events={state?.events??[]}/>{instances?<div className="instances">{state?.actors.map(a=><div key={a.id}><button className="entity-link" onClick={()=>setEntity(a.id)}>{a.name}</button>{a.author&&<button className="runtime-source" disabled={!preview.ready} onClick={()=>inspectSource(a.author!)}>定位定义</button>}<span>{a.kind}{a.remaining!=null?` · ${a.remaining.toFixed(2)}s`:a.dead?' · 已死亡':''}</span><small>{a.id}</small>{a.kind==="projectile"&&<div className="instance-owner">归属 {a.owner} · 追踪键 {a.trackingKey||"无"} · 技能 {a.skill} · Cast {a.castId} · 第{a.generation}代 · 剩余连锁 {a.chainsLeft} · 路径 {a.distance?.toFixed(2)}/{a.range?.toFixed(2)}m · 速度 {a.speed?.toFixed(2)} · 高度 {a.y?.toFixed(2)} · {a.returning?"返程":"出程"} · 地面/墙剩余 {a.groundBouncesLeft}/{a.wallBouncesLeft}</div>}{a.buffs?.map(buff=><div className="instance-buffs" key={buff.instanceId}>{buff.name} ×{buff.stacks} · {buff.remaining?.toFixed(2)??'永久'}s · 来源 {buff.source}<button aria-label={`移除${a.name}的${buff.name}`} onClick={()=>void preview.removeBuff(a.id,buff.instanceId)}>驱散</button></div>)}<div className="instance-owner">{a.stopped?"停止":"运行"} · 顿帧剩余 {a.hitstopFrames} · 角色时间 {a.logicalTime?.toFixed(2)}s{a.hurtLevel&&a.hurtAge!=null&&a.hurtAge<.3?` · 反馈 ${a.hurtLevel}`:""}</div><div className="instance-owner">动作 {a.actionTime?.toFixed(2)??"-"}/{a.actionDuration?.toFixed(2)??"-"}s · {a.actionRate?.toFixed(2)}× · 控制 {a.controlTags?.join(" / ")||"无"}</div>{(a.currentSkill||a.bufferedInput||a.comboConfirmed)&&<div className="instance-owner">技能 {a.currentSkill??'空闲'} · Cast {a.castId} · 确认 {a.comboConfirmed?'可用':'无'} · 输入 {a.bufferedInput??'无'}</div>}{a.hp!=null&&<div className="instance-owner">护盾 {a.attributes?.Shield?.toFixed(1)} · 高度 {a.y?.toFixed(2)} · 攻击 {a.attributes?.Atk?.toFixed(1)} · 防御 {a.attributes?.Def?.toFixed(1)} · 移速 {a.attributes?.MoveSpeed?.toFixed(1)} · Tag {Object.entries(a.tags??{}).map(([key,value])=>`${key}×${value}`).join(' / ')}</div>}{a.kind==='aoe'&&<div className="instance-owner">区域半径 {a.radius?.toFixed(3)}m · 吸收 {a.absorbedProjectiles} · 冲量速度 {a.areaVelocityX?.toFixed(3)} / {a.areaVelocityZ?.toFixed(3)}</div>}{a.kind==='construct'&&<div className="instance-owner">归属 {a.owner} · 连爆组 {a.group} · 受伤上限 {a.damageCap===0?'不限':a.damageCap} · 下次自伤 {a.nextDecay?.toFixed(2)??'关闭'}s</div>}{(a.kind==='summon'||a.kind==='construct')&&<>{a.kind==='summon'&&<div className="instance-owner">归属 {a.owner} · 技能 {a.skill} · 能量 {a.energy?.toFixed(1)}</div>}<button onClick={()=>void preview.remove(a.id)}>移除</button></>}</div>)}</div>:<RuntimeEventTable events={events} inspectSource={inspectSource} inspectEntity={setEntity} ready={preview.ready}/>}</div>
-    </section>
+    <RuntimePanel state={state} sessionId={preview.sessionId} ready={preview.ready} inspectSource={inspectSource} inspectEntity={setEntity} remove={preview.remove} removeBuff={preview.removeBuff}/>
     <div className="preview-root">预览技能：{project.skills.find(s=>s.id===root)?.name??root}</div>
     {entity&&<div className="entity-focus" role="status">{inspected?('实体 '+inspected.name+' · '+entity):('实体已回收 · '+entity)}<button onClick={()=>setEntity('')}>取消定位</button></div>}
     <section className="preview-panel"><div className="panel-title"><b>运行预览</b><span className="grow"/><button className={!configuration?'active':''} onClick={()=>setConfiguration(false)}>测试场景</button><button className={configuration?'active':''} onClick={()=>{setConfiguration(true);setText(JSON.stringify(project,null,2));}}>配置</button></div>

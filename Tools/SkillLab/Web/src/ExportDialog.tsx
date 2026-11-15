@@ -1,6 +1,7 @@
 import {useState} from 'react';
 import {api} from './model';
 import type {Project} from './model';
+import {Dialog} from './Dialog';
 
 interface Exported {filename:string;json:string;revision:string;skills:number;buffs:number;projectiles:number;areas:number;actors:number}
 export function ExportDialog({project,skillId,close,report}:{project:Project;skillId:string;close:()=>void;report:(text:string)=>void}) {
@@ -14,7 +15,7 @@ export function ExportDialog({project,skillId,close,report}:{project:Project;ski
       anchor.href=url;anchor.download=value.filename;anchor.click();URL.revokeObjectURL(url);setResult(value);report('已导出 '+value.filename+' · '+value.revision.slice(0,8));
     }catch(error){setError(String(error));}finally{setBusy(false);}
   }
-  return <div className="modal-backdrop"><form className="modal content-dialog" onSubmit={e=>{e.preventDefault();void download();}}>
+  return <Dialog label="导出 JSON" close={close} busy={busy}><form className="modal content-dialog" onSubmit={e=>{e.preventDefault();void download();}}>
     <h2>导出 JSON</h2>
     <label>导出类型<select aria-label="导出类型" value={kind} disabled={busy} onChange={e=>{setKind(e.target.value);setResult(null);setError('');}}>
       <option value="project">完整工程（保留编辑布局）</option><option value="skill" disabled={!skill}>当前技能运行包（包含依赖）</option><option value="runtime">完整运行内容（全部技能）</option>
@@ -24,5 +25,5 @@ export function ExportDialog({project,skillId,close,report}:{project:Project;ski
     {result&&<section role="status"><h3>已导出 {result.filename}</h3><p>{result.skills} 技能 · {result.buffs} Buff · {result.projectiles} 弹体定义 · {result.areas} 区域定义 · {result.actors} 角色</p><small>版本 {result.revision.slice(0,12)}</small></section>}
     {error&&<p role="alert">{error}</p>}
     <div><button type="button" disabled={busy} onClick={close}>关闭</button><button className="primary" disabled={busy}>{busy?'正在校验…':'导出文件'}</button></div>
-  </form></div>;
+  </form></Dialog>;
 }

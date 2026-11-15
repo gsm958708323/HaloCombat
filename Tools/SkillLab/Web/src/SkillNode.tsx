@@ -5,7 +5,8 @@ import type { GraphNode, Field, SummonBlueprint,BuffDefinition,Skill,SharedProje
 import { kinds, portName, parameterValue,effectKinds } from './model';
 import {NumericParameter} from './NumericParameter';
 import {nodeFieldGroups,nodePortGroups,targetTimingDescription} from './authoring/nodePresentation';
-type Data = GraphNode & { beginEdit:()=>void;endEdit:()=>void; definitionRoot?:boolean;behaviorLinked?:boolean;extractBehavior:(id:string)=>void;authoredTimeline?:boolean;counts?:Record<string,number>;blueprints?: SummonBlueprint[];buffs?:BuffDefinition[];skills?:Skill[];projectiles?:SharedProjectile[];areas?:SharedArea[];views?:RuntimeView[];openArea:(id:string)=>void;extractArea:(id:string)=>void;openProjectile:(id:string)=>void;extractProjectile:(id:string)=>void;changeKind:(id:string,kind:string)=>void; change: (id: string, key: string, value: ParameterValue) => void; toggle: (id: string, enabled: boolean) => void; remove: (id: string) => void };
+import {deliveryMode,deliveryModes} from './authoring/deliveryEdits';
+type Data = GraphNode & { beginEdit:()=>void;endEdit:()=>void; definitionRoot?:boolean;behaviorLinked?:boolean;extractBehavior:(id:string)=>void;changeDelivery:(id:string,mode:string)=>void;authoredTimeline?:boolean;counts?:Record<string,number>;blueprints?: SummonBlueprint[];buffs?:BuffDefinition[];skills?:Skill[];projectiles?:SharedProjectile[];areas?:SharedArea[];views?:RuntimeView[];openArea:(id:string)=>void;extractArea:(id:string)=>void;openProjectile:(id:string)=>void;extractProjectile:(id:string)=>void;changeKind:(id:string,kind:string)=>void; change: (id: string, key: string, value: ParameterValue) => void; toggle: (id: string, enabled: boolean) => void; remove: (id: string) => void };
 export type EditorNode = Node<Data & Record<string, unknown>, 'skill'>;
 function TimesInput({field,value,change}:{field:Field;value:ParameterValue;change:(value:ParameterValue)=>void}) {
   const display=Array.isArray(value)?value.join(', '):String(value);const [text,setText]=useState(display);
@@ -44,10 +45,11 @@ export function SkillNode({ data, selected }: NodeProps<EditorNode>) {
     <div className="node-fields">
       {effectKinds.some(([kind])=>kind===data.kind)&&<label className="parameter nodrag nowheel"><span>结算类型</span><select aria-label="结算类型" value={data.kind} onChange={e=>data.changeKind(data.id,e.target.value)}>{effectKinds.map(([key,name])=><option key={key} value={key}>{name}</option>)}</select></label>}
       {!data.definitionRoot&&data.kind !== 'target' && data.kind !== 'cast' && data.kind!=='buff-events'&&data.kind!=='skill-events'&&<label className="enable-row nodrag"><span>启用节点</span><input type="checkbox" checked={data.enabled !== false} onChange={e => data.toggle(data.id,e.target.checked)} /></label>}
-      {data.kind === 'projectile' && <div className="module-label">效果传递 <b>投射物</b></div>}
+      {['projectile','delivery'].includes(data.kind)&&!data.definitionRoot&&<label className="parameter nodrag nowheel"><span>效果传递</span><select aria-label="效果传递" value={deliveryMode(data)} onChange={e=>data.changeDelivery(data.id,e.target.value)}>{deliveryModes.map(([key,name])=><option key={key} value={key}>{name}</option>)}</select></label>}
       {data.kind === 'damage' && <div className="module-label">效果结算 <b>伤害结算</b></div>}
       {data.kind==='cast'&&data.authoredTimeline&&<small>时序由右侧显式时间轴管理</small>}
-      {fields.main.map(control)}
+      {fields.main.filter(f=>data.kind!=='delivery'||f.key!=='mode').map(control)}
+      {data.kind==='delivery'&&data.parameters.mode==='summon'&&!data.parameters.blueprint&&<small>选择或新建召唤蓝图后可运行；攻击技能不能循环召唤自身。</small>}
       {data.kind==='target'&&targetTimingDescription(data)&&<small>{targetTimingDescription(data)}</small>}
       {data.kind==='projectile'&&!data.behaviorLinked&&<button className="nodrag" onClick={()=>data.extractBehavior(data.id)}>提取行为节点</button>}{fields.behaviors.length>0&&<details className="node-more-fields nodrag nowheel" onToggle={updatePorts}><summary>投射物行为</summary><div>
         <label className="enable-row"><span>无限穿透</span><input aria-label="无限穿透" type="checkbox" checked={data.parameters.maxHits===0} onChange={e=>data.change(data.id,'maxHits',e.target.checked?0:1)}/></label>{fields.behaviors.map(control)}</div></details>}

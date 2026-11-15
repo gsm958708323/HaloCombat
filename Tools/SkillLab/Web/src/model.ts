@@ -192,7 +192,7 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
   ]},
   heal:{title:'恢复生命',color:'#597f76',inputs:['execute'],outputs:[['next','继续']],fields:[{key:'amount',label:'恢复量',min:0,max:1000000,step:1,initial:10}]},
   'buff-events':{title:'Buff 生命周期',color:'#537760',inputs:[],outputs:[['apply','首次施加'],['stack','实际增层'],['period','周期'],['expire','自然到期'],['hurt','持有者受击'],['cast','持有者施法'],['removed','移除清理']],fields:[]},
-  delivery: { title: '目标 / 区域 / 动作', color: '#887547', inputs: ['execute'], outputs: [['apply','作用效果'],['enter','进入区域'],['exit','离开区域'],['stay','区域停留'],['expire','自然到期'],['wall','撞墙'],['complete','完成'],['removed','移除'],['absorb','吸收弹体']], fields: [
+  delivery: { title: '效果传递', color: '#887547', inputs: ['execute'], outputs: [['apply','作用效果'],['enter','进入区域'],['exit','离开区域'],['stay','区域停留'],['expire','自然到期'],['wall','撞墙'],['complete','完成'],['removed','移除'],['absorb','吸收弹体']], fields: [
     {key:'view',label:'实体外观资源',type:'select',initial:'',when:p=>p.mode==='area'&&p.persistent===true},
     { key:'mode', label:'传递方式', type:'select', initial:'target', options:[['target','目标作用'],['area','区域作用'],['melee','近战判定'],['displacement','位移攻击'],['ray','射线判定'],['summon','召唤分身']] },
     { key:'recipient', label:'作用目标', type:'select', initial:'target', options:[['target','当前目标'],['self','施法者自身']],when:p=>!p.mode||p.mode==='target' },

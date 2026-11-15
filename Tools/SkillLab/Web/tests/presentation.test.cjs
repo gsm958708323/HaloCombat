@@ -54,3 +54,25 @@ test('missing shared content and recursive drafts yield explicit local warnings'
   const q=examples(),g=q.skills[0],d=g.nodes.find(n=>n.kind==='damage');g.edges.push({id:'cycle',source:d.id,sourcePort:'next',target:d.id,targetPort:'execute',order:0});
   assert(skillSummary(q,g).items.some(i=>i.warning?.includes('循环')));
 });
+
+test('every supplied template produces finite independent summary rows from its actual definitions',()=>{
+  const p=examples(),before=JSON.stringify(p);
+  for(const skill of p.skills){const summary=skillSummary(p,skill);assert.equal(summary.warnings.length,0,skill.id);assert(summary.description.length>0);assert(summary.items.length>0);
+    for(const item of summary.items)for(const field of [...item.main,...item.more])assert(!/undefined|NaN/.test(field.value),skill.id+'/'+item.key+'/'+field.key);
+  }
+  assert.equal(JSON.stringify(p),before);
+});
+
+test('shared Buff and summon summaries expose their actual stack modifiers attributes and attack skill',()=>{
+  const p=examples(),burn=p.buffs.find(b=>b.id==='burn');let row=skillSummary(p,p.skills.find(s=>s.id==='burn-shot')).items.find(i=>i.main.some(f=>f.key==='buff'));
+  assert.equal(row.main.find(f=>f.key==='buff-max').value,String(burn.maxStacks));assert(row.more.some(f=>f.key==='buff-modifier-0'&&f.value.includes(String(burn.modifiers[0].value))));
+  const summon=p.skills.find(s=>s.id==='summon-gunners'),blueprint=p.summonBlueprints.find(b=>b.id===summon.nodes.find(n=>n.kind==='delivery').parameters.blueprint);
+  blueprint.hp=172.5;row=skillSummary(p,summon).items.find(i=>i.main.some(f=>f.key==='blueprint-hp'));assert.equal(row.main.find(f=>f.key==='blueprint-hp').value,'172.5');assert.equal(row.main.find(f=>f.key==='blueprint-skill').value,p.skills.find(s=>s.id===blueprint.skillId).name);
+});
+
+test('missing roots and missing Buff or summon definitions explain their invalid state',()=>{
+  const p=examples(),skill=p.skills[0];skill.nodes.find(n=>n.kind==='cast').enabled=false;
+  assert(skillSummary(p,skill).warnings.some(w=>w.includes('施放规则')));assert(skillSummary(p,skill).description.includes('缺少'));assert(!skillSummary(p,skill).items.some(i=>i.title==='效果传递'));
+  p.buffs=[];assert(skillSummary(p,p.skills.find(s=>s.id==='burn-shot')).items.some(i=>i.warning?.includes('Buff')));
+  p.summonBlueprints=[];assert(skillSummary(p,p.skills.find(s=>s.id==='summon-gunners')).items.some(i=>i.warning?.includes('蓝图')));
+});

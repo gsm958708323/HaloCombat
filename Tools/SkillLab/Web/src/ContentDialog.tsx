@@ -3,6 +3,7 @@ import { api } from './model';
 import type { Project } from './model';
 import { contentItems, contentLabel, deleteContent, referencesTo, renameContent } from './authoring/contentEdits';
 import type { ContentKind, ContentReference } from './authoring/contentEdits';
+import {Dialog} from './Dialog';
 
 export interface ContentAction { kind:ContentKind;id:string;mode:'rename'|'delete' }
 interface Publication {slot:string;projectId:string;skills:string[];buffs:string[];blueprints:string[];timelines:string[];projectiles:string[];areas:string[];error:string|null}
@@ -18,7 +19,7 @@ export function ContentDialog({project,action,close,edit,locate}:{project:Projec
     try{edit(p=>action.mode==='rename'?renameContent(p,action.kind,action.id,id):deleteContent(p,action.kind,action.id,replacement));close();}
     catch(error){setError(String(error));}
   }
-  return <div className="modal-backdrop"><form className="modal content-dialog" onSubmit={event=>{event.preventDefault();submit();}}>
+  return <Dialog label={action.mode==='rename'?'修改内容 ID':'删除内容'} close={close}><form className="modal content-dialog" onSubmit={event=>{event.preventDefault();submit();}}>
     <h2>{action.mode==='rename'?'修改':'删除'}{contentLabel[action.kind]}{action.mode==='rename'?' ID':''} · {value?.name??action.id}</h2>
     {action.mode==='rename'?<label>新 ID<input aria-label="新的内容ID" autoFocus value={id} onChange={event=>setId(event.target.value)}/></label>:<p>删除后可撤销恢复。{references.length?'请选择替代内容，或先修改下列引用。':'没有其他内容引用此项。'}</p>}
     <section><h3>工程引用 · {references.length}</h3>{references.length>0&&<ul>{references.map((r,i)=><li key={i}><button type="button" onClick={()=>locate(r)}>{contentLabel[r.kind]}：{r.name}<small>{r.nodeId??r.id} / {r.field}</small></button></li>)}</ul>}
@@ -31,5 +32,5 @@ export function ContentDialog({project,action,close,edit,locate}:{project:Projec
     </section>
     {error&&<p role="alert">{error}</p>}
     <div><button type="button" onClick={close}>取消</button><button className={action.mode==='delete'?'danger':'primary'} disabled={!slots||action.mode==='delete'&&references.length>0&&!replacement}>{action.mode==='rename'?'应用 ID 与引用':'删除'+(replacement?'并替换引用':'')}</button></div>
-  </form></div>;
+  </form></Dialog>;
 }
