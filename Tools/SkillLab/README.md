@@ -2,13 +2,15 @@
 
 独立网页技能编辑器，JSON 校验/转换和预览使用实际 Combat.Core。已接通目标选择、瞬发/有限连发/引导/蓄力、分段耗能、投射物、目标/区域传递、范围伤害、持续区生命周期、近战/冲刺/闪现、射线与矩形障碍、召唤蓝图与分身 AI、共享 Buff 生命周期图、驱散/治疗、多重散射/穿透/连锁/分裂、Cue 和 Unity 试验槽；53模板、完整文件发布流程与独立Windows分发已验收，完整范围与证据见仓库 docs/最终验收.md。
 
-在仓库根目录运行（需要 Node.js 22 与 .NET SDK 10）：
+源码版需要 Node.js 22 与 .NET SDK 10。在仓库根目录双击 `StartSkillLab.bat`，会自动构建、启动并在网页就绪后打开浏览器；保持启动窗口开启，按 Ctrl+C 停止服务。重复启动会等待已有构建完成，再打开已有网页，避免并行编译争用输出文件；修改代码后需先停止服务，再启动以重新构建。
+
+也可以在仓库根目录运行：
 
 ```powershell
 ./Tools/SkillLab/Start.ps1
 ```
 
-浏览器打开 `http://127.0.0.1:4192/`。已有构建时可传 `-SkipBuild`。
+默认地址为 `http://127.0.0.1:4192/`。已有构建时可传 `-SkipBuild`，更换端口传 `-Port 4193`，不自动打开浏览器传 `-NoBrowser`；BAT 同样支持这些参数。失败时 BAT 会保留窗口显示错误。
 
 磁盘工程采用小索引和功能文件：`project.json`只保存身份及files路径；`skills/<id>.json`、`projectiles/`、`areas/`、`buffs/`、`timelines/`、`summonBlueprints/`分别保存独立定义，`runtime/`按角色/连招/Motor/Cue/View/Arena拆分，试验布置和布局在preview/editor文件。示例、正式内容、`.local`工作工程都使用此结构；保存只改发生变化的模块，ETag覆盖展开内容。复制工程需携带索引及其引用目录，浏览器传递使用“导出→完整工程”的可携带JSON。
 

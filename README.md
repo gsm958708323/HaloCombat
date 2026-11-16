@@ -2,7 +2,7 @@
 
 ## 网页技能编辑器
 
-JSON 网页技能编辑器位于 `codex/web-skill-editor-json` 分支。运行 `./Tools/SkillLab/Start.ps1` 启动本地网页，或解压Windows独立包双击`Run.cmd`，无需安装Node/.NET即可试玩。使用说明见 [Tools/SkillLab/README.md](Tools/SkillLab/README.md)，完整范围和证据见 [docs/最终验收.md](docs/最终验收.md)。
+JSON 网页技能编辑器位于 `codex/web-skill-editor-json` 分支。源码版双击根目录 [StartSkillLab.bat](StartSkillLab.bat)，自动构建、启动并打开网页（需要 Node.js 22 与 .NET SDK 10）；也可运行 `./Tools/SkillLab/Start.ps1`。Windows独立包解压后双击`Run.cmd`，无需安装Node/.NET即可试玩。使用说明见 [Tools/SkillLab/README.md](Tools/SkillLab/README.md)，完整范围和证据见 [docs/最终验收.md](docs/最终验收.md)。
 
 网页预览和 Unity `Assets/Scenes/HaloCombat/SkillLab.unity` 共用实际战斗核。网页发布F6/F7后，Unity运行中按F5重载，再按F6/F7施放。已接通瞬发、有限连发、引导、蓄力、目标/范围、近战、位移、射线、召唤、Buff、换弹、传送弹、木桶链爆、完整弹体行为和飞行触发，提供53个模板。工程、当前技能闭包、完整运行内容三种JSON可导出回读；事件支持作者节点定位与输入文件重放。最终Unity EditMode796/796、PlayMode100/100、前端100/100通过；54份模板记录在Unity对照94917值匹配。
 
