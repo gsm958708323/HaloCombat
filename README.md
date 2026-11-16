@@ -72,6 +72,70 @@ IEffect.Apply(ref EffectContext) + World.Deliver
 位姿：Request* → Locomotion.IntegrateBeforeHitDetection（自主/技能位移）→ 命中结算 → IntegrateAfterHitDetection（受击位移/重力）。Timeline到期判定和控制在接触结算后收尾，最后有效步不会漏判。
 血量：AttributeSet.SetBase(Hp)
 
+## 如何拓展技能
+
+新增技能按“拆解需求 → 组合已有能力 → 补齐缺失能力 → 验证”的顺序推进。优先使用效果系统组合效果节点，缺少触发时机时补充对应事件，作为效果链的执行入口。
+
+### 1. 拆解技能需求，确定职责
+
+先明确触发时机、执行操作、上下文和需要保存的状态，再查已有节点、定义、代码与测试。
+
+| 需求 | 对应职责 | 例子 |
+| --- | --- | --- |
+| 什么时候执行 | 触发事件或生命周期入口 | 投射物命中、Buff 周期、技能自然完成 |
+| 执行什么操作 | 效果节点 | 伤害、治疗、施加 Buff、生成区域、播放 Cue |
+| 对谁执行、在哪里执行 | EffectContext | Source、Target、Point、Dir、Power、SkillOrigin、DamageResult |
+| 持续多久、保存哪些状态 | Buff、Timeline、组件或独立运行实例 | Buff 年龄、动作区间、每颗弹体的命中记录 |
+
+### 2. 已有能力能够表达时，直接组合配置
+
+在网页中新增或复制技能，设置目标、施放与时间轴，再连接效果节点并引用已有的弹体、区域和 Buff 定义。技能差异通过 JSON 中的参数、连线和定义引用表达。
+
+以“命中附加灼烧，灼烧结束后爆炸”为例，组合方式如下：
+
+```text
+投射物命中   → 伤害 → 施加灼烧 Buff
+Buff 周期    → 对持有者造成伤害
+Buff 自然到期 → 以持有者位置做范围伤害 → 爆炸 Cue
+```
+
+若要求实际扣血才附加灼烧，将施加 Buff 接到“扣血后条件”的 apply 端口。普通 next 连线只保证执行顺序，条件应通过明确的条件节点表达。
+
+工程读取与保存统一走 SkillProjectFiles：用户工作工程位于 `Tools/SkillLab/.local/project.json` 及其引用模块，正式内容从 `Assets/StreamingAssets/Combat/project.json` 索引加载。具体作者操作见 [技能工作台使用说明](Tools/SkillLab/README.md)。
+
+### 3. 效果能力已有、缺少执行时机时，补触发入口
+
+例如，假设要实现“护盾破裂时击退周围敌人”，且范围查询和击退已能复用，就在护盾系统确认破裂的位置增加事件入口，再连接范围查询与击退效果链。
+
+新增入口时明确触发条件、次数、来源/目标/位置语义，以及自然结束、打断和清理的差别。携带完整实体与原始施法身份，遵守既有递归抑制规则，并在协议校验、转换和网页端口中接通。事件可以是生命周期回调或作者图输出端口，按已有边界接入。
+
+可参考 [投射物命中投递](Assets/Scripts/Combat/Core/ProjectileService.cs)、[Buff 生命周期入口](Assets/Scripts/Combat/Core/BuffDefinition.cs)和[技能事件路由](Assets/Scripts/Combat/Core/SkillEvents.cs)。这些入口都应将效果交给统一执行管线：
+
+```text
+命中 / 生命周期 / 技能事件
+    → 对应效果包 + EffectContext
+    → World.Deliver → EffectPipeline → IEffect.Apply
+```
+
+### 4. 基础操作缺失时，补通用效果节点
+
+在 Combat.Core 中实现职责明确、可复用的 IEffect，再补齐 JSON 字段、参数与端口校验、独立转换、网页作者控件和相关验证。命名围绕实际能力，新增技能继续组合这些能力。
+
+接口见 [Pipeline.cs](Assets/Scripts/Combat/Core/Pipeline.cs)，节点转换参考 [SkillEffectCompiler.cs](Assets/Scripts/Combat/Config/Json/SkillEffectCompiler.cs)，连接和上下文校验参考 [EffectGraphIndex.cs](Assets/Scripts/Combat/Config/Json/EffectGraphIndex.cs)。作者图由 Combat.Config/Json 转换成领域定义与有序效果包，Core 执行领域能力；表现资源绑定与播放归 Combat.Presentation/Combat.Unity。
+
+持续行为先确定状态归属：动作区间由 Timeline 推进，持续属性和周期效果由 Buff 管理，独立寿命对象由运行实例管理。效果节点负责发起操作，计时、命中记录等可变状态保存在对应实例中。技能资源、冷却与状态守卫通过统一施放入口处理。
+
+### 5. 按改动范围完成验证
+
+使用独立临时工程验证正常触发、无效目标、打断/清理、重复触发及必要的嵌套组合，保留用户工作工程和发布槽数据。根据改动范围执行相关检查：
+
+- 核心行为：`dotnet run --project Combat.csproj -- regress`。
+- JSON 与预览宿主：`dotnet run --project Tools/SkillLab/SkillLab.Host.csproj -- --self-test`。
+- 网页作者操作：在 `Tools/SkillLab/Web` 执行 `npm run test:authoring` 和 `npm run build`。
+- JSON 或输入链路：使用实际文件验证网页与 Unity；通过 Coplay Unity MCP 检查编译、相关 EditMode/PlayMode、真实场景和 Error 日志。
+
+非显然的设计决策、限制与风险写入 ADR，验收证据记录到 `docs/验证`。完成相关验证后按工程约定本地提交。
+
 ## Unity
 
 运行时源码位于 `Assets/Scripts/Combat/Core`。第一、二季共 16 个 Demo 都有对应 Unity
