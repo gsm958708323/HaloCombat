@@ -5,6 +5,8 @@ namespace Combat.Config
     public sealed partial class SkillSimulation
     {
         readonly AuthorExecutionTrace _trace;
+        readonly System.Collections.Generic.Dictionary<int,AuthorSourceMap> _actionSources=new System.Collections.Generic.Dictionary<int,AuthorSourceMap>();
+        AuthorSourceMap ActionSources(SkillOrigin origin)=>_actionSources.TryGetValue(origin.CastId,out var map)?map:_content.Sources;
         readonly System.Collections.Generic.Dictionary<long,AuthorNodeSource> _bodySources=new System.Collections.Generic.Dictionary<long,AuthorNodeSource>();
         readonly System.Collections.Generic.Dictionary<long,SkillOrigin> _bodyOrigins=new System.Collections.Generic.Dictionary<long,SkillOrigin>();
         AuthorNodeSource BodySource(EntityId id)=>_bodySources.TryGetValue(HitboxComp.Pack(id),out var source)?source:null;
@@ -24,7 +26,7 @@ namespace Combat.Config
             if(a.TryGetComp<AoeComp>(out var area)&&area.Def!=null)return _content.Sources.Definition("area",area.Def.SpecId);
             if(a.TryGetComp<ConstructComp>(out var c)&&c.Def!=null)return _content.Sources.Definition("construct",c.Def.SpecId);
             if(a.TryGetComp<SummonComp>(out var s)&&s.Def!=null)return _content.Sources.Definition("summon",s.Def.SpecId);
-            return a.TryGetComp<SkillDirectorComp>(out var d)&&d.IsPlaying?_content.Sources.Definition("skill",d.CurrentSkill.Value):null;
+            return a.TryGetComp<SkillDirectorComp>(out var d)&&d.IsPlaying?ActionSources(d.CurrentOrigin).Definition("skill",d.CurrentSkill.Value):null;
         }
     }
 }

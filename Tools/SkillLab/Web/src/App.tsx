@@ -34,6 +34,7 @@ import {Dialog} from './Dialog';
 import {ImportDialog} from './ImportDialog';
 import {ComboEditor} from './ComboEditor';
 import {createPreviewRuntime} from './previewRuntime';
+import {restoreDefaultFormation} from './authoring/defaultScene';
 
 const nodeTypes={skill:SkillNode};
 function Workbench() {
@@ -130,7 +131,7 @@ function Workbench() {
     const before=editor.current.current;
     try{const base=projectTemplate==='empty'?emptyProject(newProjectName.trim()):{...await api<Project>('/examples',undefined,'GET'),id:crypto.randomUUID(),name:newProjectName.trim()};
       if(editor.current.current!==before)throw new Error('载入示例期间工程已更改，请重新创建工程');
-      editor.endGroup();editor.edit(base);setNewProjectName(null);setMessage('新工程已创建，可撤销返回原工程；保存后写入磁盘');}
+      editor.endGroup();editor.edit({...base,preview:restoreDefaultFormation(base.preview)});setNewProjectName(null);setMessage('新工程已创建，可撤销返回原工程；保存后写入磁盘');}
     catch(error){setMessage(String(error));}finally{setCreating(false);}
   }
   async function applyImport(merge:boolean){
@@ -152,7 +153,7 @@ function Workbench() {
     <header className="app-header"><div className="brand"><span>S / L</span><strong>技能实验室</strong><small>HaloCombat</small></div>
       <div className="header-actions"><details className="project-menu"><summary>工程 ▾</summary><div><label>工程名称<input aria-label="工程名称" value={project.name??''} onChange={event=>editor.edit(p=>({...p,name:event.target.value}))}/></label><small>{project.skills.length} 技能 · {project.buffs?.length??0} Buff · {project.summonBlueprints?.length??0} 蓝图</small>
         <button onClick={()=>{setNewProjectName('新工程');setProjectTemplate('empty');}}>新建工程</button><button disabled={editor.saving} onClick={()=>void editor.load().catch(e=>setMessage(String(e)))}>重新载入磁盘</button><p>手动保存。刷新恢复最近磁盘版本。</p></div></details>
-        <button onClick={()=>void api<Project>('/runtime',undefined,'GET').then(value=>{editor.endGroup();editor.edit(value);setMessage('已打开正式JSON内容，可撤销返回原工程');}).catch(error=>setMessage(String(error)))}>打开正式内容</button>
+        <button onClick={()=>void api<Project>('/runtime',undefined,'GET').then(value=>{editor.endGroup();editor.edit({...value,preview:restoreDefaultFormation(value.preview)});setMessage('已打开正式JSON内容，预览使用默认布阵；可撤销返回原工程');}).catch(error=>setMessage(String(error)))}>打开正式内容</button>
         <small className={editor.dirty?'unsaved':''} role="status">{editor.saveStatus}</small><button disabled={editor.saving} onClick={()=>void editor.save()}><Save size={13}/>保存</button>
         <button disabled={!skill} onClick={()=>void publish('f6')}>发布到 F6</button><button disabled={!skill} onClick={()=>void publish('f7')}>发布到 F7</button>
         <button onClick={()=>void api<{message:string}>('/publish/sync',editor.current.current).then(result=>setMessage(result.message)).catch(error=>setMessage(String(error)))}>同步两槽</button>

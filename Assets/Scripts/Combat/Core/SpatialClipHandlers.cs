@@ -32,7 +32,7 @@ namespace Combat.Core
             float length=dash?(float)Math.Sqrt(SpatialGeometry.DistanceSquared(origin,position)):runtime.Clip.Length;
             float yaw=dash&&length>.000001f?LocomotionComp.YawFromStick(new SimVec3(position.X-origin.X,0,position.Z-origin.Z)):MeleeClipHandler.Yaw(runtime);
             var shape=dash?HitShape.Capsule:runtime.Clip.Shape;
-            float angle=dash?360:runtime.Clip.Angle;
+            float angle=dash||shape==HitShape.Circle?360:runtime.Clip.Angle;
             float progress=self.TryGetComp<SkillDirectorComp>(out var director)?Math.Max(0,Math.Min(1,(director.TimelineTime-runtime.Start)/Math.Max(.00001f,runtime.End-runtime.Start))):0;
             world.Events.Publish(new EvSpatialVolume(self.Id,runtime.Sequence,origin,yaw,shape,length,runtime.Clip.Width,angle,false,runtime.Clip.DiagnosticSite,runtime.Origin,progress));
             Apply(runtime,SpatialGeometry.Query(world,self,origin,yaw,shape,length,runtime.Clip.Width,angle),yaw);

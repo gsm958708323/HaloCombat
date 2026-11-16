@@ -36,7 +36,7 @@ Get-ChildItem -LiteralPath $taskDist | Copy-Item -Destination (Join-Path $taskOu
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'README.md') -Destination (Join-Path $taskOutput 'DEVELOPMENT.md')
 $taskSourceDocs=Join-Path $taskOutput 'docs'
 New-Item -ItemType Directory -Path $taskSourceDocs | Out-Null
-foreach ($taskRelative in @('网页技能编辑器功能清单.md','网页节点与运行时映射.md','实施进度.md','JSON协议.md')) { Copy-Item -LiteralPath (Join-Path $taskRoot "docs/$taskRelative") -Destination (Join-Path $taskSourceDocs $taskRelative) }
+foreach ($taskRelative in @('网页技能编辑器功能清单.md','网页节点与运行时映射.md','实施进度.md','JSON协议.md','优化实施-2026-11-16.md','需求复查-2026-11-16.md','技术债务.md')) { Copy-Item -LiteralPath (Join-Path $taskRoot "docs/$taskRelative") -Destination (Join-Path $taskSourceDocs $taskRelative) }
 if (Test-Path -LiteralPath (Join-Path $taskRoot 'docs/最终验收.md')) { Copy-Item -LiteralPath (Join-Path $taskRoot 'docs/最终验收.md') -Destination $taskSourceDocs }
 Copy-Item -LiteralPath (Join-Path $taskRoot 'docs/adr') -Destination $taskSourceDocs -Recurse
 Copy-Item -LiteralPath (Join-Path $taskRoot 'docs/验证') -Destination $taskSourceDocs -Recurse

@@ -26,6 +26,13 @@ builder.Logging.AddFilter("Microsoft.AspNetCore",LogLevel.Warning);
 builder.WebHost.UseUrls(paths.Url);
 builder.WebHost.ConfigureKestrel(options=>options.Limits.MaxRequestBodySize=4*1024*1024);
 var app=builder.Build();
+app.Use(async(context,next)=>
+{
+    // Hashed assets may be cached; the HTML entry must discover the current hash.
+    context.Response.OnStarting(()=>
+    {if(context.Response.ContentType?.StartsWith("text/html",StringComparison.OrdinalIgnoreCase)==true)context.Response.Headers.CacheControl="no-store";return Task.CompletedTask;});
+    await next();
+});
 var sessions=new ConcurrentDictionary<string,SkillSimulation>();
 var dataDirectory=paths.Data;
 Directory.CreateDirectory(dataDirectory);

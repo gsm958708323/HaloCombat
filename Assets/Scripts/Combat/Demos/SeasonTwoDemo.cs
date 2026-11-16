@@ -179,7 +179,10 @@ namespace Combat.Demos
             stakeAura.GetComp<TransformComp>().Position = new SimVec3(20f, 0f, 0f);
             world.Deliver(
                 new IEffect[] { new SpawnProjectileEffect(CombatIds.HomingBolt) },
-                player, null, pAttr.GetFinal(AttrId.Atk));
+                // The straight initial lane crosses the melee stake when it is
+                // restored below. Launch sideways toward the designated homing
+                // target so this freeze test remains isolated from that stake's body.
+                player, stakeHoming, pAttr.GetFinal(AttrId.Atk),dir:new SimVec3(0,0,1));
             Actor bolt = null;
             trace.AdvanceUntil("生成 Homing Projectile", () =>
             {
@@ -223,7 +226,7 @@ namespace Combat.Demos
             int freezeFrame = time.Frame;
             trace.AdvanceFor("顿帧窗口内冻结 Actor 与 Projectile", 0.02f, 2,
                 () => $"frame={time.Frame} InHitstop={world.InHitstop} actorPos={ptf.Position.X.ToString("F3")} projectilePos={boltTf.Position.X.ToString("F3")}");
-            trace.Check("顿帧期间 Actor 与 Projectile 位置不变", Math.Abs(boltTf.Position.X - frozen.X) <= 1e-4f &&
+            trace.Check("顿帧期间 Actor 与 Projectile 位置不变", bolt.IsActive && Math.Abs(boltTf.Position.X - frozen.X) <= 1e-4f &&
                 Math.Abs(boltTf.Position.Z - frozen.Z) <= 1e-4f && Math.Abs(ptf.Position.X - frozenActorX) <= 1e-4f &&
                 Math.Abs(ptf.Position.Z - frozenActorZ) <= 1e-4f,
                 "顿帧期间 Actor 与 Projectile 位置保持不变", $"冻结前Actor={frozenActorX.ToString("F3")},{frozenActorZ.ToString("F3")} 当前Actor={ptf.Position.X.ToString("F3")},{ptf.Position.Z.ToString("F3")} 冻结前Projectile={frozen.X.ToString("F3")},{frozen.Z.ToString("F3")} 当前Projectile={boltTf.Position.X.ToString("F3")},{boltTf.Position.Z.ToString("F3")} freezeFrame={freezeFrame} currentFrame={time.Frame}",

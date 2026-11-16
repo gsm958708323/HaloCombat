@@ -72,5 +72,31 @@ namespace Combat.Tests
                 Assert.AreEqual(0,state.Statistics.Hits);Assert.Less(state.Actors.Single(a=>a.Kind=="caster").X,2.21f);
             }
         }
+        [Test]
+        public void EditingAnActiveSpatialNodeKeepsItsCapturedDiagnosticIdentityUntilTheActionEnds()
+        {
+            var p=Project();var action=Node(p,"projectile");action.Kind="delivery";
+            action.Parameters=JObject.FromObject(new{mode="melee",shape="fan",length=5,angle=90,startup=.1,activeDuration=.4});
+            p.Skills[0].Edges.Single(e=>e.Source==action.Id).SourcePort="apply";
+            using(var sim=new SkillSimulation(p,CombatContentCompiler.Compile(p)))
+            {
+                sim.Cast("basic-shot",10,0);sim.Advance(12);
+                var updated=SkillProjectJson.Read(SkillProjectJson.Write(p));Node(updated,"delivery").Id="edited-sweep";
+                foreach(var edge in updated.Skills[0].Edges){if(edge.Source==action.Id)edge.Source="edited-sweep";if(edge.Target==action.Id)edge.Target="edited-sweep";}
+                sim.ApplyConfiguration(updated);sim.Advance(40);
+                Assert.AreEqual(action.Id,sim.Snapshot().Events.Last(e=>e.Kind=="action-close").Node.NodeId);
+                sim.Cast("basic-shot",10,0);sim.Advance(50);
+                Assert.AreEqual("edited-sweep",sim.Snapshot().Events.Last(e=>e.Kind=="action-close").Node.NodeId);
+            }
+        }
+        [Test]
+        public void AFullCircleReportsItsActualSweepAngleEvenWhenTheHiddenFanAngleIsRetained()
+        {
+            var p=Project();var action=Node(p,"projectile");action.Kind="delivery";
+            action.Parameters=JObject.FromObject(new{mode="melee",shape="circle",length=5,angle=12,startup=0,activeDuration=.4});
+            p.Skills[0].Edges.Single(e=>e.Source==action.Id).SourcePort="apply";
+            using(var sim=new SkillSimulation(p,CombatContentCompiler.Compile(p)))
+            {sim.Cast("basic-shot",10,0);sim.Advance(3);Assert.AreEqual(360,sim.Snapshot().Volumes.Single().Angle);}
+        }
     }
 }

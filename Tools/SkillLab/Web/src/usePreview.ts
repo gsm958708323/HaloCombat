@@ -40,13 +40,16 @@ export function usePreview(project: Project | null, selected: string, report: (m
   const ready = appliedKey === semanticKey && !!session.current&&!replaying&&!placing;
   const run = useCallback((command: unknown) => {
     const id = session.current; const generation = version.current;
-    if (!id || sessionKey.current !== semanticRef.current||replacing.current) return Promise.resolve();
+    // Releasing a key or cancelling input belongs to the existing world even
+    // while a candidate draft is being validated (or is invalid).
+    const control=!!command&&!Array.isArray(command)&&['move','release','cancel'].includes((command as {kind?:string}).kind??'');
+    if (!id || !control&&sessionKey.current !== semanticRef.current||replacing.current) return Promise.resolve();
     queue.current = queue.current.catch(() => {}).then(async () => {
-      if (generation !== version.current || sessionKey.current !== semanticRef.current) return;
+      if (session.current!==id||!control&&(generation !== version.current || sessionKey.current !== semanticRef.current)) return;
       const previous=latestState.current,now=performance.now(),details=!Array.isArray(command)||now-lastDetails.current>=200;
       const query='?afterEvent='+(previous?.events.at(-1)?.sequence??0)+'&details='+details;
       const result = await api<{ state: PreviewState;recording:RecordingStatus }>('/preview/' + id + (Array.isArray(command)?'/commands':'/command')+query, command);
-      if (generation === version.current) {
+      if (session.current===id&&(control||generation === version.current)) {
         const state=mergePreviewFrame(previous,result.state);latestState.current=state;setState(state);setRecording(result.recording);setComparison(null);
         if(details)lastDetails.current=now;
       }

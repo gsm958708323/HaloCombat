@@ -57,7 +57,8 @@ namespace Combat.Config
             _world.Events.Subscribe<EvSkillOperation>(e=>
             {_content.Skills.TryGet(e.Skill,out var skill);Record("operation",Name(e.Source),skill?.Name??e.Skill.ToString(),new SkillOrigin(e.Skill,0,caster:e.Source),node:_content.Sources.Definition("skill",e.Skill.Value),sourceId:e.Source);});
             _world.Events.Subscribe<EvSkillStarted>(e=>
-            {_casts++;_content.Skills.TryGet(e.Skill,out var skill);Record("cast",Name(e.Source),skill?.Name??e.Skill.ToString(),OriginOf(e.Source),node:_content.Sources.Definition("skill",e.Skill.Value),sourceId:e.Source);});
+            {_casts++;var origin=OriginOf(e.Source);if(origin.CastId>0)_actionSources[origin.CastId]=_content.Sources;
+                _content.Skills.TryGet(e.Skill,out var skill);Record("cast",Name(e.Source),skill?.Name??e.Skill.ToString(),origin,node:_content.Sources.Definition("skill",e.Skill.Value),sourceId:e.Source);});
             _world.Events.Subscribe<EvSummonLifecycle>(e=>Record("summon-"+e.Kind.ToString().ToLowerInvariant(),Name(e.Owner),e.Detail??Name(e.Id)));
             _world.Events.Subscribe<EvConstructLifecycle>(e=>Record("construct-"+e.Kind.ToString().ToLowerInvariant(),Name(e.Owner),e.Detail+" / "+Name(e.Id),e.Origin,node:_content.Sources.Definition("construct",e.SpecId),sourceId:e.Owner,bodyId:e.Id));
             _world.Events.Subscribe<EvEntityCleanup>(OnCleanup);
@@ -343,8 +344,8 @@ namespace Combat.Config
         }
         void OnVolume(EvSpatialVolume e)
         {
-            if(e.Closed){_volumes.Remove(e.Sequence);Record("action-close",Name(e.Source),e.Shape.ToString(),e.SkillOrigin,node:_content.Sources.Site(e.DiagnosticSite),sourceId:e.Source);return;}
-            if(!_volumes.ContainsKey(e.Sequence))Record("action-open",Name(e.Source),e.Shape.ToString(),e.SkillOrigin,node:_content.Sources.Site(e.DiagnosticSite),sourceId:e.Source);
+            if(e.Closed){_volumes.Remove(e.Sequence);Record("action-close",Name(e.Source),e.Shape.ToString(),e.SkillOrigin,node:ActionSources(e.SkillOrigin).Site(e.DiagnosticSite),sourceId:e.Source);return;}
+            if(!_volumes.ContainsKey(e.Sequence))Record("action-open",Name(e.Source),e.Shape.ToString(),e.SkillOrigin,node:ActionSources(e.SkillOrigin).Site(e.DiagnosticSite),sourceId:e.Source);
             _volumes[e.Sequence]=new SkillSpatialSnapshot {Sequence=e.Sequence,Source=Name(e.Source),Shape=e.Shape.ToString().ToLowerInvariant(),
                 X=e.Origin.X,Z=e.Origin.Z,Yaw=e.Yaw,Length=e.Length,Width=e.Width,Angle=e.Angle,Progress=e.Progress};
         }
@@ -356,7 +357,8 @@ namespace Combat.Config
         }
         void OnSkillEnded(EvSkillEnded e)
         {
-            Record(e.Reason == DirectorStopReason.Finished ? "completed" : "cancelled", Name(e.Source), e.Reason.ToString(),e.Origin,node:_content.Sources.Definition("skill",e.Skill.Value),sourceId:e.Source);
+            Record(e.Reason == DirectorStopReason.Finished ? "completed" : "cancelled", Name(e.Source), e.Reason.ToString(),e.Origin,node:ActionSources(e.Origin).Definition("skill",e.Skill.Value),sourceId:e.Source);
+            _actionSources.Remove(e.Origin.CastId);
             if (e.Source==_caster&&(e.Reason == DirectorStopReason.Hit || e.Reason == DirectorStopReason.Dead || e.Reason == DirectorStopReason.Knockdown))
                 _movement = SimVec3.Zero;
         }
@@ -389,7 +391,7 @@ namespace Combat.Config
             { if (actor.TryGetComp<SkillDirectorComp>(out var director)) director.Stop(DirectorStopReason.Detach); _world.RequestDespawn(actor.Id); }
             _world.Tick(0);
             _events.Clear(); _trails.Clear(); _areas.Clear(); _rays.Clear(); _volumes.Clear(); _names.Clear(); _kinds.Clear(); _hurts.Clear(); _sceneActors.Clear();_sceneIds.Clear();
-            _bodySources.Clear();_bodyOrigins.Clear();
+            _bodySources.Clear();_bodyOrigins.Clear();_actionSources.Clear();
             _disposed = true;
         }
     }

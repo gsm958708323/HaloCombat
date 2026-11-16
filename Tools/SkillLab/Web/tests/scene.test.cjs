@@ -1,6 +1,18 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const {addSceneTarget,addSceneObstacle,moveSceneActor,removeSceneTarget,scenePlacementFree,sceneBounds,fitScene,zoomScene}=require('../../.local/web-checks/authoring/scenePlacement.js');
 const project=()=>require('./projectFixture.cjs').readProject(path.resolve(__dirname,'../../../../Content/SkillLab/project.json'));
+const {restoreDefaultFormation}=require('../../.local/web-checks/authoring/defaultScene.js');
+
+test('restoring eight-target formation preserves authored identities resources stats and input options',()=>{
+  const p=project(),before=JSON.stringify(p),scene={...p.preview,inputBufferSeconds:.8,seed:92,energy:45,initialEnergy:20};
+  scene.caster={...scene.caster,id:'target-5',hp:123,atk:17};scene.targets=scene.targets.slice(0,1);
+  scene.targets[0]={...scene.targets[0],id:'test-target',hp:456};const next=restoreDefaultFormation(scene);
+  assert.equal(next.targets.length,8);assert.equal(next.caster.x,-9);assert.equal(next.caster.hp,123);assert.equal(next.caster.atk,17);
+  assert.equal(next.targets[0].id,'test-target');assert(next.targets.every(t=>t.hp===456));
+  assert.equal(next.energy,45);assert.equal(next.initialEnergy,20);assert.equal(next.inputBufferSeconds,.8);assert.equal(next.seed,92);
+  assert.equal(new Set([next.caster.id,...next.targets.map(t=>t.id)]).size,9);assert.equal(JSON.stringify(p),before);
+  assert([next.caster,...next.targets].every(actor=>scenePlacementFree(actor,actor.collisionRadius??.4,next.obstacles)));
+});
 
 test('target and obstacle creation are deterministic independent snapshots with free placement and stable identities',()=>{
   const p=project(),before=JSON.stringify(p),a=addSceneTarget(p),b=addSceneTarget(p);
