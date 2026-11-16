@@ -32,7 +32,8 @@ export function mergeProjects(destination:Project,source:Project,newId:()=>strin
   const blueprints=(source.summonBlueprints??[]).map(b=>({...clone(b),id:blueprintIds.get(b.id)!,skillId:skillIds.get(b.skillId)!}));
   const viewports=source.editor?.viewports?.map(v=>({...v,id:(v.kind==='skill'?skillIds:v.kind==='timeline'?timelineIds:v.kind==='projectile'?projectileIds:v.kind==='area'?areaIds:buffIds).get(v.id)!}))??[];
   const runtime=source.runtime?mergeRuntime(destination,source,skillIds,newId,viewIds):destination.runtime;
-  const result={...destination,runtime,skills:[...destination.skills,...skills],timelines:[...(destination.timelines??[]),...timelines],projectiles:[...(destination.projectiles??[]),...projectiles],areas:[...(destination.areas??[]),...areas],buffs:[...(destination.buffs??[]),...buffs],summonBlueprints:[...(destination.summonBlueprints??[]),...blueprints],editor:{...destination.editor,viewports:[...(destination.editor?.viewports??[]),...viewports]}};
+  const comboPositions=(source.editor?.comboPositions??[]).filter(v=>v.skillId!=='$start').map(v=>({...v,skillId:skillIds.get(v.skillId)!}));
+  const result={...destination,runtime,skills:[...destination.skills,...skills],timelines:[...(destination.timelines??[]),...timelines],projectiles:[...(destination.projectiles??[]),...projectiles],areas:[...(destination.areas??[]),...areas],buffs:[...(destination.buffs??[]),...buffs],summonBlueprints:[...(destination.summonBlueprints??[]),...blueprints],editor:{...destination.editor,viewports:[...(destination.editor?.viewports??[]),...viewports],comboPositions:[...(destination.editor?.comboPositions??[]),...comboPositions]}};
   if(allGraphs(result).some(({graph})=>graph.nodes.length>256))throw new Error('图节点数超过上限');
   return result;
 }

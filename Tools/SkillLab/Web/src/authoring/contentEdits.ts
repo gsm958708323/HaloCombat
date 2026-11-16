@@ -1,4 +1,5 @@
 import { clone } from '../model';
+import {defaultScene} from './defaultScene';
 import type { AuthoredTimeline,BuffDefinition, GraphEdge, GraphNode, GraphViewport, Project, Skill } from '../model';
 
 export type ContentKind = 'skill' | 'buff' | 'blueprint'|'timeline'|'projectile'|'area';
@@ -58,6 +59,7 @@ export function renameContent(p:Project,kind:ContentKind,id:string,input:string)
   let result=mapContent(rewriteReferences(p,kind,id,next),kind,id,next);
   if(kind!=='blueprint'&&p.editor)result={...result,editor:{...p.editor,
     selectedSkill:kind==='skill'&&p.editor.selectedSkill===id?next:p.editor.selectedSkill,
+    comboPositions:p.editor.comboPositions?.map(v=>kind==='skill'&&v.skillId===id?{...v,skillId:next}:v),
     selectedBuff:kind==='buff'&&p.editor.selectedBuff===id?next:p.editor.selectedBuff,
     selectedTimeline:kind==='timeline'&&p.editor.selectedTimeline===id?next:p.editor.selectedTimeline,
     selectedProjectile:kind==='projectile'&&p.editor.selectedProjectile===id?next:p.editor.selectedProjectile,
@@ -83,7 +85,7 @@ export function deleteContent(p:Project,kind:ContentKind,id:string,replacement='
     selectedTimeline:kind==='timeline'&&p.editor.selectedTimeline===id?undefined:p.editor.selectedTimeline,
     selectedProjectile:kind==='projectile'&&p.editor.selectedProjectile===id?undefined:p.editor.selectedProjectile,
     selectedArea:kind==='area'&&p.editor.selectedArea===id?undefined:p.editor.selectedArea,
-    viewports:p.editor.viewports?.filter(v=>v.kind!==kind||v.id!==id)}};
+    comboPositions:p.editor.comboPositions?.filter(v=>kind!=='skill'||v.skillId!==id),viewports:p.editor.viewports?.filter(v=>v.kind!==kind||v.id!==id)}};
   return result;
 }
 export function numberAllocator(values:number[],floor=0) {
@@ -133,6 +135,5 @@ export function saveViewport(p:Project,key:GraphKey,viewport:{x:number;y:number;
   return {...p,editor:{...p.editor,viewports:[...(p.editor?.viewports??[]).filter(v=>v.kind!==key.kind||v.id!==key.id),value]}};
 }
 export function emptyProject(name='新工程'):Project {
-  return {formatVersion:1,id:crypto.randomUUID(),name,skills:[],buffs:[],summonBlueprints:[],preview:{seed:1,energy:100,recovery:10,
-    caster:{id:'caster',x:-6,z:0,hp:1000,atk:80,def:0},targets:[0,3,6].map((x,i)=>({id:'target-'+(i+1),x,z:0,hp:1000,atk:0,def:0}))}};
+  return {formatVersion:1,id:crypto.randomUUID(),name,skills:[],buffs:[],summonBlueprints:[],preview:defaultScene()};
 }

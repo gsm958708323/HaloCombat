@@ -7,10 +7,10 @@ import {deliveryMode,deliveryModes} from './authoring/deliveryEdits';
 import './shared-timelines.css';
 
 export type NodeData = GraphNode & {
-  beginEdit:()=>void;endEdit:()=>void;movementDefault?:boolean;definitionRoot?:boolean;behaviorLinked?:boolean;authoredTimeline?:boolean;counts?:Record<string,number>;
+  beginEdit:()=>void;endEdit:()=>void;movementDefault?:boolean;definitionRoot?:boolean;authoredTimeline?:boolean;counts?:Record<string,number>;
   sharedTimeline?:{id:string;name:string;users:number;missing:boolean};openTimeline:(id:string)=>void;
   blueprints?:SummonBlueprint[];buffs?:BuffDefinition[];skills?:Skill[];projectiles?:SharedProjectile[];areas?:SharedArea[];views?:RuntimeView[];
-  extractBehavior:(id:string)=>void;changeDelivery:(id:string,mode:string)=>void;
+  changeDelivery:(id:string,mode:string)=>void;
   openArea:(id:string)=>void;extractArea:(id:string)=>void;openProjectile:(id:string)=>void;extractProjectile:(id:string)=>void;
   changeKind:(id:string,kind:string)=>void;change:(id:string,key:string,value:ParameterValue)=>void;toggle:(id:string,enabled:boolean)=>void;remove:(id:string)=>void;
 };
@@ -28,7 +28,7 @@ function Parameter({ field, value, change,beginEdit,endEdit }: { field: Field; v
   </label>;
 }
 export function NodeParameters({data,onToggle}:{data:NodeData;onToggle?:()=>void}) {
-  const fields=nodeFieldGroups(data,{definitionRoot:data.definitionRoot,authoredTimeline:data.authoredTimeline,behaviorLinked:data.behaviorLinked});
+  const fields=nodeFieldGroups(data,{definitionRoot:data.definitionRoot,authoredTimeline:data.authoredTimeline});
   function control(field:Field){
     const options=field.key==='view'?[...(data.kind==='construct'?[['barrel','木桶'],['crate','箱子']] as [string,string][]:[]),...(data.views??[]).filter(v=>v.kind==='body').map(v=>[v.id,v.id] as [string,string])]:field.key==='area'?data.areas?.map(a=>[a.id,a.name] as [string,string]):field.key==='projectile'?data.projectiles?.map(p=>[p.id,p.name] as [string,string]):field.key==='blueprint'?data.blueprints?.map(b=>[b.id,b.name??b.id] as [string,string]):field.key==='buff'?data.buffs?.map(b=>[b.id,b.name??b.id] as [string,string]):
       field.key==='fallbackSkill'||field.key==='recastSkill'?data.skills?.map(s=>[s.id,s.name] as [string,string]):undefined;
@@ -40,6 +40,7 @@ export function NodeParameters({data,onToggle}:{data:NodeData;onToggle?:()=>void
       {!data.definitionRoot&&data.kind !== 'target' && data.kind !== 'cast' && data.kind!=='buff-events'&&data.kind!=='skill-events'&&<label className="enable-row nodrag"><span>启用节点</span><input type="checkbox" checked={data.enabled !== false} onChange={e => data.toggle(data.id,e.target.checked)} /></label>}
       {['projectile','delivery'].includes(data.kind)&&!data.definitionRoot&&<label className="parameter nodrag nowheel"><span>效果传递</span><select aria-label="效果传递" value={deliveryMode(data)} onChange={e=>data.changeDelivery(data.id,e.target.value)}>{deliveryModes.map(([key,name])=><option key={key} value={key}>{name}</option>)}</select></label>}
       {data.kind === 'damage' && <div className="module-label">效果结算 <b>伤害结算</b></div>}
+      {data.kind==='pierce'&&<label className="enable-row nodrag"><span>无限穿透</span><input aria-label="无限穿透" type="checkbox" checked={data.parameters.maxHits===0} onChange={e=>data.change(data.id,'maxHits',e.target.checked?0:3)}/></label>}
       {data.kind==='cast'&&(data.sharedTimeline?<div className={`node-timeline-source shared nodrag nowheel${data.sharedTimeline.missing?' missing':''}`} aria-label="技能时间轴来源">
         <span>共享时间轴</span><strong>{data.sharedTimeline.name}</strong><small>{data.sharedTimeline.id}</small>
         {data.sharedTimeline.missing?<small role="alert">引用的共享时间轴不存在</small>:<><small>{data.sharedTimeline.users} 个技能共用；修改会影响全部引用者。</small><button type="button" onClick={()=>data.openTimeline(data.sharedTimeline!.id)}>打开共享时间轴</button></>}
@@ -47,8 +48,6 @@ export function NodeParameters({data,onToggle}:{data:NodeData;onToggle?:()=>void
       {fields.main.filter(f=>data.kind!=='delivery'||f.key!=='mode').map(control)}
       {data.kind==='delivery'&&data.parameters.mode==='summon'&&!data.parameters.blueprint&&<small>选择或新建召唤蓝图后可运行；攻击技能不能循环召唤自身。</small>}
       {data.kind==='target'&&targetTimingDescription(data)&&<small>{targetTimingDescription(data)}</small>}
-      {data.kind==='projectile'&&!data.behaviorLinked&&<button className="nodrag" onClick={()=>data.extractBehavior(data.id)}>提取行为节点</button>}{fields.behaviors.length>0&&<details className="node-more-fields nodrag nowheel" onToggle={onToggle}><summary>投射物行为</summary><div>
-        <label className="enable-row"><span>无限穿透</span><input aria-label="无限穿透" type="checkbox" checked={data.parameters.maxHits===0} onChange={e=>data.change(data.id,'maxHits',e.target.checked?0:1)}/></label>{fields.behaviors.map(control)}</div></details>}
       {fields.advanced.length>0&&<details className="node-more-fields nodrag nowheel" onToggle={onToggle}><summary>更多参数</summary><div>{fields.advanced.map(control)}</div></details>}
       {data.kind==='delivery'&&data.parameters.mode==='area'&&data.parameters.persistent===true&&!data.definitionRoot&&<button className="nodrag" onClick={()=>data.extractArea(data.id)}>提取为共享区域</button>}
       {data.kind==='area-ref'&&<button className="nodrag" disabled={!data.parameters.area} onClick={()=>data.openArea(String(data.parameters.area))}>编辑区域定义</button>}

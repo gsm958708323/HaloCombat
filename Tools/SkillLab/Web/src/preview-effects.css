@@ -1,0 +1,6 @@
+.damage-floater{font-size:.44px;font-weight:500;fill:#f4ebd2;stroke:#182125;stroke-width:.045px;paint-order:stroke fill;animation:damage-rise 1.1s ease-out forwards}
+.damage-floater.critical{font-size:.58px;fill:#ffdc82}
+@keyframes damage-rise{0%{opacity:1;transform:translateY(0)}55%{opacity:1}100%{opacity:0;transform:translateY(-.9px)}}
+.sweep-edge{stroke:#f8dfa0;stroke-width:.09;stroke-linecap:round;fill:none}
+.sweep-trail{fill:#e0bf78;fill-opacity:.22;stroke:#e6c885;stroke-width:.025}
+@media(prefers-reduced-motion:reduce){.damage-floater{animation:none}}

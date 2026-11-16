@@ -7,7 +7,7 @@ import type { Project, Skill, BuffDefinition } from './model';
 import { SkillNode } from './SkillNode';
 import type { EditorNode } from './SkillNode';
 import {PreviewSession} from './PreviewSession';
-import {NodeInspector} from './NodeInspector';
+import {SkillOverview} from './SkillOverview';
 import { SummonBlueprints } from './SummonBlueprints';
 import { BuffProperties } from './BuffProperties';
 import { SkillLibrary } from './SkillLibrary';
@@ -32,10 +32,13 @@ import type {AuthorNodeSource} from './model';
 import {SkillSummary} from './SkillSummary';
 import {Dialog} from './Dialog';
 import {ImportDialog} from './ImportDialog';
+import {ComboEditor} from './ComboEditor';
+import {createPreviewRuntime} from './previewRuntime';
 
 const nodeTypes={skill:SkillNode};
 function Workbench() {
   const [message,setMessage]=useState('正在连接本地 C# 宿主…');
+  const [view,setView]=useState<'skill'|'combo'>('skill');const [previewStore]=useState(createPreviewRuntime);
   const editor=useProjectDocument(setMessage);const project=editor.project;
   const [library,setLibrary]=useState(false);const [adding,setAdding]=useState(false);
   const [newName,setNewName]=useState<string|null>(null);const [template,setTemplate]=useState('copy');
@@ -153,12 +156,12 @@ function Workbench() {
         <small className={editor.dirty?'unsaved':''} role="status">{editor.saveStatus}</small><button disabled={editor.saving} onClick={()=>void editor.save()}><Save size={13}/>保存</button>
         <button disabled={!skill} onClick={()=>void publish('f6')}>发布到 F6</button><button disabled={!skill} onClick={()=>void publish('f7')}>发布到 F7</button>
         <button onClick={()=>void api<{message:string}>('/publish/sync',editor.current.current).then(result=>setMessage(result.message)).catch(error=>setMessage(String(error)))}>同步两槽</button>
-        {project.runtime&&<button onClick={()=>void api<{message:string}>('/runtime/publish',project).then(result=>setMessage(result.message)).catch(error=>setMessage(String(error)))}>发布正式内容</button>}
+        {!!project.runtime?.actors.length&&<button onClick={()=>void api<{message:string}>('/runtime/publish',project).then(result=>setMessage(result.message)).catch(error=>setMessage(String(error)))}>发布正式内容</button>}
         <button onClick={()=>setSettings('project')}>工程设置</button><button onClick={()=>setExporting(true)}><Download size={13}/>导出</button><button onClick={()=>setImporting(true)}><Upload size={13}/>导入</button>
       </div></header>
-    <nav className="app-navigation"><span className="active">技能</span><div/><small>{project.name} · {project.skills.length} 个技能</small></nav>
-    <div className="workspace"><PreviewSession key={project.id} project={project} update={editor.edit} inspectSource={inspectSource} root={root} report={setMessage} adoptReplay={adoptReplay}/>
-      <section className="editor-panel"><div className="editor-heading"><span>节点编辑</span><div className="popover-anchor"><button onClick={()=>setLibrary(!library)}>技能库 ▾</button>{library&&<SkillLibrary project={project} selected={skill?.id??''} select={id=>select(id)}/>}</div>
+    <nav className="app-navigation"><button className={view==='skill'?'active':''} onClick={()=>setView('skill')}>技能</button><button className={view==='combo'?'active':''} onClick={()=>setView('combo')}>连招</button><div/><small>{project.name} · {project.skills.length} 个技能</small></nav>
+    <div className="workspace"><PreviewSession key={project.id} project={project} update={editor.edit} inspectSource={inspectSource} root={root} report={setMessage} adoptReplay={adoptReplay} store={previewStore}/>
+      {view==='combo'?<ComboEditor project={project} update={editor.edit} store={previewStore} report={setMessage} beginEdit={editor.beginGroup} endEdit={editor.endGroup} openSkill={id=>{select(id);setView('skill');}}/>:<section className="editor-panel"><div className="editor-heading"><span>节点编辑</span><div className="popover-anchor"><button onClick={()=>setLibrary(!library)}>技能库 ▾</button>{library&&<SkillLibrary project={project} selected={skill?.id??''} select={id=>select(id)}/>}</div>
         <button onClick={()=>void openCreate()}><Plus size={12}/>新建</button><button onClick={()=>{if(buff)select(skill?.id??'');else if(project.buffs?.length)select(skill?.id??'',project.buffs[0].id);else newBuff();}}>{buff?'返回技能':'Buff定义'}</button>
         <button onClick={()=>{if(timeline)select(skill?.id??'');else if(project.timelines?.length)select(skill?.id??'','',project.timelines[0].id);else newShared();}}>{timeline?'返回技能':'共享时间轴'}</button>
         {timeline&&<><select aria-label="当前共享时间轴" value={timeline.id} onChange={e=>select(skill?.id??'','',e.target.value)}>{project.timelines?.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select><button onClick={newShared}>新建共享轴</button></>}
@@ -183,7 +186,7 @@ function Workbench() {
           <Background variant={BackgroundVariant.Dots} gap={18} size={1} color="#48565d"/></ReactFlow>:
           <div className="empty-project"><Workflow size={34}/><h2>工程中暂无技能</h2><p>创建技能后编辑节点并运行预览。</p><button className="primary" onClick={()=>void openCreate()}>新建技能</button></div>}
         <small className="canvas-help">Shift 框选 · Ctrl C / V 复制粘贴 · Delete 删除 · Ctrl Z 撤销</small>
-      </div><NodeInspector node={graphEditor.nodes.find(n=>n.id===graphEditor.selectedNodes.at(-1))} count={graphEditor.selectedNodes.length}/></div></section>
+      </div><SkillOverview project={project} skill={skill} openTimeline={id=>select(skill?.id??'','',id)}/></div></section>}
     </div><footer className={message.startsWith('Error')?'error':''} role="status">{message}<span>JSON 工程 · 真实 C# 预览</span></footer>
     {settings&&<Dialog label={settings==='graph'?'当前定义设置':settings==='connections'?'连线顺序':'工程设置'} close={()=>setSettings(null)}><div className="modal settings-dialog"><div className="settings-heading"><h2>{settings==='graph'?'当前定义设置':settings==='connections'?'连线顺序':'工程设置'}</h2><button onClick={()=>setSettings(null)}>关闭</button></div>
       {settings==='graph'&&<>{area?<><h3>共享区域定义</h3><p>本图保存范围、运动和生命周期效果；生成位置由引用节点配置。修改后重新发布使用者。</p><small>定义 ID {area.nodes.find(n=>n.id===area.root)?.runtimeId} · 当前预览技能：{skill?.name??'无'}</small></>:projectile?<><h3>共享弹体定义</h3><p>本图保存飞行、接触和终结行为；发射数量/散射由引用节点配置。修改后重新发布使用者。</p><small>定义 ID {projectile.nodes.find(n=>n.id===projectile.root)?.runtimeId} · 当前预览技能：{skill?.name??'无'}</small></>:timeline?<><h3>共享时间轴</h3><p>{project.skills.filter(s=>s.timelineRef===timeline.id).length} 个技能引用；修改后重新发布使用者。</p><TimelineProperties skill={timeline} change={value=>graphEditor.editGraph(g=>({...g,timeline:value}))}/><small>当前预览技能：{skill?.name??'无'}</small></>:buff?<><BuffProperties buff={buff} change={value=>editor.edit(p=>({...p,buffs:p.buffs?.map(b=>b.id===value.id?value:b)}))}/><small>当前预览技能：{skill?.name??'无'}</small></>:skill?<>

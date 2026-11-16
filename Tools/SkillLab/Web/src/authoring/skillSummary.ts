@@ -2,9 +2,10 @@ import {burstEnabled,deliveryLabel,kinds,nodeOutputs,parameterValue,effectKinds}
 import type {Field,GraphNode,GraphEdge,Project,Skill} from '../model';
 import {formatFieldValue} from './numericParameters';
 import {nodeFieldGroups} from './nodePresentation';
+import {defaultCastMovement} from './castExecution';
 
 type Graph={id:string;nodes:GraphNode[];edges:GraphEdge[];root?:string};
-interface DraftItem {key:string;node:GraphNode;labels:string[];references:number;authoredTimeline:boolean;definitionRoot:boolean;behaviorLinked:boolean;warning?:string}
+interface DraftItem {key:string;node:GraphNode;labels:string[];references:number;authoredTimeline:boolean;definitionRoot:boolean;warning?:string}
 export interface SummaryProperty {key:string;label:string;value:string}
 export interface SummaryItem {key:string;title:string;labels:string[];references:number;main:SummaryProperty[];more:SummaryProperty[];warning?:string}
 export function skillSummary(project:Project,skill:Skill) {
@@ -15,11 +16,8 @@ export function skillSummary(project:Project,skill:Skill) {
     if(path.has(key)){const previous=seen.get(key);if(previous)previous.warning='此分支存在循环引用，请修复后运行';return;}
     const previous=seen.get(key);
     if(previous){previous.references++;if(!previous.labels.includes(label))previous.labels.push(label);return;}
-    const behavior=graph.edges.find(e=>e.target===id&&e.targetPort==='behavior'&&graph.nodes.find(n=>n.id===e.source)?.enabled!==false);
-    const row:DraftItem={key,node,labels:[label],references:1,authoredTimeline:authored,definitionRoot:graph.root===id,behaviorLinked:!!behavior};items.push(row);seen.set(key,row);
+    const row:DraftItem={key,node,labels:[label],references:1,authoredTimeline:authored,definitionRoot:graph.root===id};items.push(row);seen.set(key,row);
     const nextPath=new Set(path);nextPath.add(key);
-    if(node.kind==='projectile-behavior')return;
-    if(behavior)walk(graph,kind,behavior.source,'投射物行为',false,nextPath);
     if(node.kind==='projectile-ref'||node.kind==='area-ref') {
       const area=node.kind==='area-ref',definitions=area?project.areas:project.projectiles,ref=String(node.parameters[area?'area':'projectile']??'');
       const definition=definitions?.find(d=>d.id===ref);
@@ -51,21 +49,19 @@ export function skillSummary(project:Project,skill:Skill) {
   const casting=operation?'即时操作':mode==='channel'?'按住引导，松开停止':mode==='charge'?'保持蓄力，松开释放':burstEnabled(cast?.parameters??{})?'有限连发 '+Number(cast?.parameters.count??3)+' 次':'瞬发';
   const targeting=target?.parameters.mode==='direction'?'每次触发独立抽取方向':target?.parameters.mode==='random'?'每次触发随机选择当前合法目标':target?({point:'朝指定位置施放',entity:'作用于指定目标',nearest:'选择最近合法目标',self:'作用于施法者自身',facing:'朝当前方向施放'} as Record<string,string>)[String(target.parameters.mode??'point')]:'';
   const transfer=items.find(r=>['projectile','delivery','construct','teleport-projectile'].includes(r.node.kind));
-  const title=(node:GraphNode)=>node.kind==='projectile-behavior'?(node.parameters.mode==='chain'?'连锁行为':'穿透行为'):effectKinds.find(([kind])=>kind===node.kind)?.[1]??kinds[node.kind]?.title??node.kind;
+  const title=(node:GraphNode)=>effectKinds.find(([kind])=>kind===node.kind)?.[1]??kinds[node.kind]?.title??node.kind;
   const settlement=items.filter(r=>['damage','buff','heal','dispel','split'].includes(r.node.kind)).map(r=>title(r.node)).filter((v,i,a)=>a.indexOf(v)===i).join('、');
-  const behavior=items.find(r=>r.node.kind==='projectile-behavior')?.node;
-  const projectile=items.find(r=>r.node.kind==='projectile')?.node;
-  const chain=behavior?.parameters.mode==='chain'?behavior.parameters.chainCount??3:!behavior&&projectile?.parameters.chain?projectile.parameters.chainCount??2:null;
-  const unlimited=behavior?.parameters.mode==='pierce'?behavior.parameters.unlimited===true:!behavior&&projectile?.parameters.maxHits===0;
+  const chain=items.find(r=>r.node.kind==='chain')?.node.parameters.count;
+  const unlimited=items.some(r=>r.node.kind==='pierce'&&r.node.parameters.maxHits===0);
   const damageKinds=[...new Set(items.filter(r=>r.node.kind==='damage').map(r=>r.node.parameters.damageType==='elemental'?'通用元素':'物理'))];
   const description=cast?[casting,targeting,transfer?deliveryLabel(transfer.node):'',chain!=null?'额外连锁'+chain+'次':unlimited?'无限穿透':'',settlement?'包含'+settlement:'',damageKinds.length?'造成'+damageKinds.join('和')+'伤害':''].filter(Boolean).join('，')+'。':'当前图缺少有效施放规则。';
   function property(field:Field,node:GraphNode):SummaryProperty {
-    const raw=parameterValue(field,node.parameters),catalog=field.key==='buff'?project.buffs:field.key==='projectile'?project.projectiles:field.key==='area'?project.areas:field.key==='blueprint'?project.summonBlueprints:undefined;
+    const raw=field.key==='allowMovement'?(node.parameters.allowMovement??defaultCastMovement(project,skill)):parameterValue(field,node.parameters),catalog=field.key==='buff'?project.buffs:field.key==='projectile'?project.projectiles:field.key==='area'?project.areas:field.key==='blueprint'?project.summonBlueprints:undefined;
     return {key:field.key,label:field.label,value:(catalog?.find(d=>d.id===raw)?.name??formatFieldValue(field,raw))+(field.unit??'')};
   }
   const rows:SummaryItem[]=items.map(item=>{
-    const fields=nodeFieldGroups(item.node,{authoredTimeline:item.authoredTimeline,definitionRoot:item.definitionRoot,behaviorLinked:item.behaviorLinked}),main=fields.main.map(f=>property(f,item.node));
-    const more=[...fields.behaviors,...fields.advanced].map(f=>property(f,item.node));let warning=item.warning;
+    const fields=nodeFieldGroups(item.node,{authoredTimeline:item.authoredTimeline,definitionRoot:item.definitionRoot}),main=fields.main.map(f=>property(f,item.node));
+    const more=fields.advanced.map(f=>property(f,item.node));let warning=item.warning;
     const buff=item.node.kind==='buff'?project.buffs?.find(b=>b.id===item.node.parameters.buff):null;
     if(buff){main.push({key:'buff-duration',label:'持续时间',value:buff.permanent?'永久':buff.duration+'秒'},{key:'buff-stack',label:'叠层策略',value:({refresh:'刷新时长',add:'增层并刷新',independent:'独立实例',reject:'已有则拒绝'} as Record<string,string>)[buff.stack]??buff.stack},{key:'buff-max',label:'最大层数',value:String(buff.maxStacks)});if(buff.interval>0)main.push({key:'buff-interval',label:'周期',value:buff.interval+'秒'});
       more.push({key:'buff-tags',label:'授予 Tag',value:buff.tags.length?buff.tags.join(' / '):'无'});

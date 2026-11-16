@@ -14,19 +14,20 @@ function reachable(graph:EditableGraph):Set<string> {
   const visited=new Set<string>(),pending=roots(graph);
   while(pending.length){
     const id=pending.pop()!,node=graph.nodes.find(n=>n.id===id);if(!node||node.enabled===false||visited.has(id))continue;
-    visited.add(id);for(const edge of graph.edges){if(edge.source===id)pending.push(edge.target);if(node.kind==='projectile'&&edge.target===id&&edge.targetPort==='behavior')pending.push(edge.source);}
+    visited.add(id);for(const edge of graph.edges)if(edge.source===id)pending.push(edge.target);
   }
   return visited;
 }
-function unboundSplits(graph:EditableGraph):Set<string> {
+function unboundContactEffects(graph:EditableGraph):Set<string> {
   const invalid=new Set<string>(),visited=new Set<string>();
-  function visit(id:string,hit:boolean){
-    const node=graph.nodes.find(n=>n.id===id),key=id+':'+hit;if(!node||node.enabled===false||visited.has(key))return;visited.add(key);
-    if(node.kind==='split'&&!hit)invalid.add(id);
+  function visit(id:string,hit:boolean,contact=false){
+    const node=graph.nodes.find(n=>n.id===id),key=id+':'+hit+':'+contact;if(!node||node.enabled===false||visited.has(key))return;visited.add(key);
+    if(['split','chain'].includes(node.kind)&&!hit||node.kind==='pierce'&&!hit&&!contact)invalid.add(id);
     for(const edge of graph.edges.filter(e=>e.source===id&&e.targetPort==='execute')){
-      let next=hit;if(node.kind==='projectile')next=edge.sourcePort==='hit';
-      if(node.kind==='construct'||node.kind==='delivery'&&(!['target','area'].includes(String(node.parameters.mode??'target'))||node.parameters.persistent===true))next=false;
-      visit(edge.target,next);
+      let next=hit,nextContact=contact;if(node.kind==='projectile'){next=edge.sourcePort==='hit';nextContact=false;}
+      if(node.kind==='construct'){next=false;nextContact=false;}
+      if(node.kind==='delivery'&&(!['target','area'].includes(String(node.parameters.mode??'target'))||node.parameters.persistent===true)){next=false;nextContact=node.parameters.mode==='ray'&&edge.sourcePort==='apply';}
+      visit(edge.target,next,nextContact);
     }
   }
   for(const id of roots(graph))visit(id,false);return invalid;
@@ -64,12 +65,12 @@ export function switchDelivery(project:Project,key:GraphKey,id:string,mode:strin
   if(mode==='summon'&&!changed.parameters.blueprint){const blueprint=project.summonBlueprints?.find(b=>key.kind!=='skill'||b.skillId!==key.id);if(blueprint)changed.parameters.blueprint=blueprint.id;}
   const primary=node.kind==='projectile'?'hit':'apply',destination=kind==='projectile'?'hit':'apply';
   const available=new Set(nodeOutputs(changed).map(([port])=>port));
-  const edges=graph.edges.filter(e=>!(e.target===id&&e.targetPort==='behavior'&&kind!=='projectile'))
+  const edges=graph.edges
     .map(e=>e.source===id&&e.sourcePort===primary?{...e,sourcePort:destination}:e)
     .filter(e=>e.source!==id||available.has(e.sourcePort));
   const next={...graph,nodes:graph.nodes.map(n=>n.id===id?changed:n),edges};
-  const oldInvalid=unboundSplits(graph),invalid=[...unboundSplits(next)].find(id=>!oldInvalid.has(id));
-  if(invalid)throw new Error('节点 '+invalid+' 需要投射物命中上下文；请先断开其分支，再切换传递方式');
+  const oldInvalid=unboundContactEffects(graph),invalid=[...unboundContactEffects(next)].find(id=>!oldInvalid.has(id));
+  if(invalid)throw new Error('节点 '+invalid+' 需要投射物命中上下文或射线接触；请先断开其分支，再切换传递方式');
   const result=disableDetached(graph,next);
   return {project:updateGraph(project,key,()=>result.graph),removedEdges:graph.edges.length-edges.length,disabledNodes:result.disabledNodes};
 }

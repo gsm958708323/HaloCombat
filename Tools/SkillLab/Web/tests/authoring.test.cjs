@@ -10,7 +10,14 @@ const ids=()=>{let number=0;return ()=> 'generated-'+ ++number;};
 const skillKey={kind:'skill',id:'basic-shot'};
 const runtime=()=>require('./projectFixture.cjs').readProject(path.resolve(__dirname,'../../../../Assets/StreamingAssets/Combat/project.json'));
 const areaEdits=require('../../.local/web-checks/authoring/areaEdits.js');
-const {previewFrameBudget,previewSemanticKey}=require('../../.local/web-checks/authoring/previewTiming.js');
+const {previewFrameBudget,previewSemanticKey,previewSceneKey}=require('../../.local/web-checks/authoring/previewTiming.js');
+
+test('combat edits and input buffering preserve the world key while scene construction changes replace it',()=>{
+  const p=example(),key=previewSceneKey(p,'basic-shot',false,true),changed=structuredClone(p);
+  changed.skills[0].nodes.find(n=>n.kind==='damage').parameters.flat=90;changed.preview.inputBufferSeconds=.5;
+  assert.equal(previewSceneKey(changed,'basic-shot',false,true),key);assert.notEqual(previewSemanticKey(changed,'basic-shot'),previewSemanticKey(p,'basic-shot'));
+  changed.preview.caster.x+=2;assert.notEqual(previewSceneKey(changed,'basic-shot',false,true),key);
+});
 const {setCastExecution}=require('../../.local/web-checks/authoring/castExecution.js');
 
 test('an operation transition removes timed schedule fields while preserving identity resources and invalid unknown parameters',()=>{

@@ -23,15 +23,15 @@ export interface SharedTimeline {id:string;name:string;nodes:GraphNode[];edges:G
 export interface SharedProjectile {id:string;name:string;root:string;nodes:GraphNode[];edges:GraphEdge[]}
 export interface SharedArea {id:string;name:string;root:string;nodes:GraphNode[];edges:GraphEdge[]}
 export interface GraphViewport { kind:'skill'|'buff'|'timeline'|'projectile'|'area';id:string;x:number;y:number;zoom:number }
-export interface EditorMetadata { selectedSkill?:string;selectedBuff?:string;selectedTimeline?:string;selectedProjectile?:string;selectedArea?:string;viewports?:GraphViewport[] }
-export interface Project { formatVersion: number; id: string; name: string; skills: Skill[];timelines?:SharedTimeline[];projectiles?:SharedProjectile[];areas?:SharedArea[]; buffs?:BuffDefinition[]; summonBlueprints?: SummonBlueprint[];editor?:EditorMetadata;runtime?:RuntimeContent; preview: { seed: number; energy: number; initialEnergy?: number | null; recovery: number; ammo?:number;initialAmmo?:number|null;unlimitedAmmo?:boolean;caster: ActorInitial; targets: ActorInitial[]; obstacles?: ObstacleView[] } }
+export interface EditorMetadata {comboPositions?:{skillId:string;x:number;y:number}[]; selectedSkill?:string;selectedBuff?:string;selectedTimeline?:string;selectedProjectile?:string;selectedArea?:string;viewports?:GraphViewport[] }
+export interface Project { formatVersion: number; id: string; name: string; skills: Skill[];timelines?:SharedTimeline[];projectiles?:SharedProjectile[];areas?:SharedArea[]; buffs?:BuffDefinition[]; summonBlueprints?: SummonBlueprint[];editor?:EditorMetadata;runtime?:RuntimeContent; preview: { inputBufferSeconds?:number;seed: number; energy: number; initialEnergy?: number | null; recovery: number; ammo?:number;initialAmmo?:number|null;unlimitedAmmo?:boolean;caster: ActorInitial; targets: ActorInitial[]; obstacles?: ObstacleView[] } }
 export interface BuffView {instanceId:number;id:string;name:string;source:string;stacks:number;remaining:number|null}
-export interface ActorView { sceneId:string|null;team:number; author:AuthorNodeSource|null; id: string; name: string; kind: string; x: number; y:number; z: number;view?:string|null;viewScale?:number;yaw?:number; hp: number | null; maxHp: number | null; radius: number; remaining: number | null; dead: boolean; owner: string | null; blueprint: string | null; skill: string | null; energy: number | null;ammo:number|null;trackingKey:string|null;group:string|null;damageCap:number|null;nextDecay:number|null;stopped:boolean;hitstopFrames:number;logicalTime:number;hurtLevel:string|null;hurtAge:number|null;comboConfirmed:boolean;currentSkill:string|null;bufferedInput:string|null;actionTime:number|null;actionDuration:number|null;actionRate:number;controlTags:number[];castId:number;generation:number;chainsLeft:number;distance:number|null;range:number|null;speed:number|null;verticalSpeed:number|null;returning:boolean;groundBouncesLeft:number;wallBouncesLeft:number;absorbedProjectiles:number;areaVelocityX:number|null;areaVelocityZ:number|null;buffs:BuffView[];tags:Record<string,number>;attributes:Record<string,number> }
+export interface ActorView {comboFailure?:string|null; sceneId:string|null;team:number; author:AuthorNodeSource|null; id: string; name: string; kind: string; x: number; y:number; z: number;view?:string|null;viewScale?:number;yaw?:number; hp: number | null; maxHp: number | null; radius: number; remaining: number | null; dead: boolean; owner: string | null; blueprint: string | null; skill: string | null; energy: number | null;ammo:number|null;trackingKey:string|null;group:string|null;damageCap:number|null;nextDecay:number|null;stopped:boolean;hitstopFrames:number;logicalTime:number;hurtLevel:string|null;hurtAge:number|null;comboConfirmed:boolean;currentSkill:string|null;bufferedInput:string|null;actionTime:number|null;actionDuration:number|null;actionRate:number;controlTags:number[];castId:number;generation:number;chainsLeft:number;distance:number|null;range:number|null;speed:number|null;verticalSpeed:number|null;returning:boolean;groundBouncesLeft:number;wallBouncesLeft:number;absorbedProjectiles:number;areaVelocityX:number|null;areaVelocityZ:number|null;buffs:BuffView[];tags:Record<string,number>;attributes:Record<string,number> }
 export interface AreaView { sequence: number; step: number; x: number; z: number; radius: number; targets: number }
-export interface VolumeView { sequence: number; source: string; shape: string; x: number; z: number; yaw: number; length: number; width: number; angle: number }
+export interface VolumeView {progress?:number; sequence: number; source: string; shape: string; x: number; z: number; yaw: number; length: number; width: number; angle: number }
 export interface DamageBreakdown {kind:string;target:string;base:number;scaled:number;afterDefense:number;afterCritical:number;final:number;absorbed:number;hpLost:number;overkill:number;killed:boolean;feedback:string}
 export interface AuthorNodeSource {graphKind:string;graphId:string;graphName:string;nodeId:string;nodeKind:string}
-export interface RunEvent { node:AuthorNodeSource|null;step:number;sourceId:string|null;targetId:string|null;bodyId:string|null;executionId:number;parentExecutionId:number; sequence: number; time: number; kind: string; source: string; flight?:{clock:string;index:number;age:number;distance:number}|null; result: string;castId:number;skill:string|null;hitIndex:number;damage:DamageBreakdown|null }
+export interface RunEvent {targetX?:number|null;targetZ?:number|null; node:AuthorNodeSource|null;step:number;sourceId:string|null;targetId:string|null;bodyId:string|null;executionId:number;parentExecutionId:number; sequence: number; time: number; kind: string; source: string; flight?:{clock:string;index:number;age:number;distance:number}|null; result: string;castId:number;skill:string|null;hitIndex:number;damage:DamageBreakdown|null }
 export interface PreviewState { step: number; time: number; actors: ActorView[]; events: RunEvent[]; areas: AreaView[]; volumes: VolumeView[]; obstacles: ObstacleView[]; rays: RayView[]; trails: { entity: string; x: number; z: number; step: number }[]; energy: number; ammo:number;ammoCapacity:number;channeling: boolean; charging: boolean; chargeProgress: number; castPower: number; cooldowns: Record<string, number>; statistics: { damage: number; hits: number; casts: number; projectiles: number; chains:number; splits:number; areas: number; summons: number;constructs:number } }
 export interface Field { key: string; label: string; type?: 'select' | 'check' | 'text'|'times'; unit?: string; min?: number; max?: number; step?: number; integer?:boolean; displayScale?:number; options?: [string, string][]; initial: ParameterValue; when?: (parameters: Parameters) => boolean }
 export const kinds: Record<string, { title: string; color: string; fields: Field[]; inputs: string[]; outputs: [string, string][] }> = {
@@ -48,6 +48,8 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
     { key: 'range', label: '索敌距离', unit: '米', min: .1, max: 50, step: .1, initial: 20,when:p=>['entity','nearest','random','direction'].includes(String(p.mode)) }
   ] },
   cast: { title: '施放规则', color: '#5b7164', inputs: ['target'], outputs: [['cast','施放']], fields: [
+    {key:'cancelEnd',label:'接续窗口结束 (0=关闭)',unit:'秒',min:0,max:120,step:.02,initial:0},
+    {key:'cancelStart',label:'接续窗口开始',unit:'秒',min:0,max:120,step:.02,initial:0,when:p=>Number(p.cancelEnd)>0},
     {key:'execution',label:'执行方式',type:'select',initial:'timeline',options:[['timeline','时间轴动作'],['operation','即时操作']]},
     {key:'hitFeedback',label:'技能默认命中反馈',type:'select',initial:'none',options:[['none','基础'],['light','轻'],['confirm','连段'],['heavy','重'],['finisher','终结']]},
     {key:'allowMovement',label:'施放时允许移动',type:'check',initial:true},
@@ -74,22 +76,21 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
     { key: 'powerMax', label: '满蓄倍率', unit: '×', min: .01, max: 10, step: .1, initial: 3, when: p => p.mode === 'charge' },
     { key: 'autoRelease', label: '满蓄自动释放', type: 'check', initial: true, when: p => p.mode === 'charge' }
   ] },
-  'projectile-behavior':{title:'投射物行为',color:'#68796e',inputs:[],outputs:[['behavior','行为']],fields:[
-    {key:'mode',label:'投射物行为',type:'select',initial:'pierce',options:[['pierce','穿透'],['chain','连锁']]},
-    {key:'unlimited',label:'无限穿透',type:'check',initial:false,when:p=>p.mode!=='chain'},
-    {key:'maxHits',label:'每段命中上限',integer:true,min:1,max:1000000,step:1,initial:2,when:p=>p.mode!=='chain'&&p.unlimited!==true},
-    {key:'chainCount',label:'额外连锁次数',integer:true,min:1,max:64,step:1,initial:3,when:p=>p.mode==='chain'},
-    {key:'chainRadius',label:'连锁搜索距离',unit:'米',min:.01,max:1000,step:.01,initial:6,when:p=>p.mode==='chain'},
-    {key:'chainMode',label:'连锁选敌',type:'select',initial:'nearest',options:[['nearest','最近目标'],['random','随机目标']],when:p=>p.mode==='chain'}]},
-  projectile: { title: '效果传递', color: '#887547', inputs: ['execute','behavior'], outputs: [['flight','飞行触发'],['hit','命中结算'],['wall','撞墙终结'],['range','射程耗尽'],['lifetime','寿命结束'],['bounce','成功反弹'],['returned','返回来源'],['ground','落地终结'],['expire','投射物结束']], fields: [
+  chain:{title:'连锁效果',color:'#68796e',inputs:['execute'],outputs:[['next','继续']],fields:[
+    {key:'count',label:'额外连锁次数',integer:true,min:1,max:64,step:1,initial:3},
+    {key:'radius',label:'连锁距离',unit:'米',min:.01,max:1000,step:.01,initial:6},
+    {key:'selection',label:'链接目标',type:'select',initial:'nearest',options:[['nearest','范围内最近敌人'],['random','范围内随机敌人']]}]},
+  pierce:{title:'穿透效果',color:'#68796e',inputs:['execute'],outputs:[['next','继续']],fields:[
+    {key:'maxHits',label:'最多命中目标',integer:true,min:1,max:1000000,step:1,initial:3,when:p=>p.maxHits!==0}]},
+  projectile: { title: '效果传递', color: '#887547', inputs: ['execute'], outputs: [['flight','飞行触发'],['hit','命中结算'],['wall','撞墙终结'],['range','射程耗尽'],['lifetime','寿命结束'],['bounce','成功反弹'],['returned','返回来源'],['ground','落地终结'],['expire','投射物结束']], fields: [
     {key:'view',label:'实体外观资源',type:'select',initial:''},
-    {key:'contactMode',label:'接触敌人',type:'select',initial:'behavior',options:[['behavior','按投射物行为'],['end','命中即结束'],['continue','穿过并结算'],['ignore','忽略敌人']]},
-    {key:'sameTargetMode',label:'同目标命中',type:'select',initial:'once',options:[['once','全程一次'],['per-leg','去程/返程各一次'],['interval','按间隔重复']]},
+    {key:'contactMode',label:'接触敌人',type:'select',initial:'behavior',options:[['behavior','按命中效果'],['end','命中即结束'],['continue','穿过并结算'],['ignore','忽略敌人']]},
+    {key:'sameTargetMode',label:'同目标命中',type:'select',initial:'once',options:[['once','全程一次'],['per-leg','去程/返程各一次'],['interval','按间隔重复']],when:p=>p.contactMode!=='ignore'},
     {key:'flightTrigger',label:'飞行触发',type:'select',initial:'none',options:[['none','不触发'],['time','按时间间隔'],['distance','按距离间隔']]},
     {key:'flightInterval',label:'飞行触发间隔',unit:'秒',min:.001,max:3600,step:.01,initial:.2,when:p=>p.flightTrigger==='time'},
     {key:'flightDistance',label:'飞行触发距离',unit:'米',min:.01,max:1000,step:.1,initial:1,when:p=>p.flightTrigger==='distance'},
-    {key:'sameTargetDelay',label:'同目标再次命中间隔 (0=一次)',unit:'秒',min:0,max:3600,step:.01,initial:.2,when:p=>(p.sameTargetMode??(Number(p.sameTargetDelay)>0?'interval':'once'))==='interval'},
-    {key:'passInvulnerable',label:'穿过无敌目标且保留命中数',type:'check',initial:false},
+    {key:'sameTargetDelay',label:'同目标再次命中间隔 (0=一次)',unit:'秒',min:0,max:3600,step:.01,initial:.2,when:p=>p.contactMode!=='ignore'&&(p.sameTargetMode??(Number(p.sameTargetDelay)>0?'interval':'once'))==='interval'},
+    {key:'passInvulnerable',label:'穿过无敌目标且保留命中数',type:'check',initial:false,when:p=>p.contactMode!=='ignore'},
     {key:'trackingKey',label:'来源追踪键',type:'text',initial:''},
     {key:'trajectory',label:'飞行轨迹',type:'select',initial:'linear',options:[['linear','方向飞行'],['accelerate','加减速'],['ramp','渐进加速曲线'],['return','回旋返回'],['bounce','地面弹跳'],['phase-bounce','按时间表弹跳']]},
     {key:'returnCurve',label:'回旋速度曲线',type:'select',initial:'constant',options:[['constant','恒定速度'],['sine','正弦采样曲线']],when:p=>p.trajectory==='return'},
@@ -116,11 +117,6 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
     { key: 'multi', label: '多重发射', type: 'check', initial: false },
     { key: 'count',integer:true, label: '同时发射数量', min: 1, max: 64, step: 1, initial: 3, when:p=>p.multi===true },
     { key: 'spread', label: '散射角度', unit:'°', min: 0, max: 360, step: 1, initial: 45, when:p=>p.multi===true },
-    { key: 'maxHits',integer:true, label: '每段命中上限 (0=无限穿透)', min: 0, max: 10000, step: 1, initial: 1 },
-    { key: 'chain', label: '命中后连锁', type: 'check', initial:false },
-    { key: 'chainCount',integer:true, label: '额外连锁次数', min: 1, max: 64, step: 1, initial: 2, when:p=>p.chain===true },
-    { key: 'chainRadius', label: '连锁搜索距离', unit:'米', min:.01,max:1000,step:.01,initial:6,when:p=>p.chain===true },
-    { key: 'chainMode', label: '连锁选敌', type:'select',initial:'nearest',options:[['nearest','最近目标'],['random','随机目标']],when:p=>p.chain===true },
     { key: 'homingRate', label: '追踪转速', unit: '度/秒', min: 0, max: 36000, step: 10, initial: 0 },
     { key: 'homingRetarget', label: '追踪丢失后重选', type:'check', initial:false,when:p=>Number(p.homingRate)>0 },
     { key: 'homingRadius', label: '追踪搜索距离', unit:'米', min:.01,max:1000,step:.01,initial:12,when:p=>Number(p.homingRate)>0 }
@@ -137,17 +133,13 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
     {key:'feedbackHitstop',label:'按反馈推导最低顿帧',type:'check',initial:false},
     {key:'damageType',label:'伤害类型',type:'select',initial:'physical',options:[['physical','物理'],['elemental','通用元素']]},
     {key:'includeBonuses',label:'计入加成',type:'check',initial:true},
-    { key: 'scope', label: '结算范围', type: 'select', initial: 'target', options: [['target','当前目标'],['area','范围结算']] },
-    { key: 'center', label: '范围中心', type: 'select', initial: 'point', options: [['point','事件 / 指定点'],['target','当前目标位置'],['source','来源位置']], when: p=>p.scope==='area' },
-    { key: 'radius', label: '结算半径', unit: '米', min: .1, max: 20, step: .1, initial: 3, when:p=>p.scope==='area' },
-    { key: 'maxTargets',integer:true, label: '目标上限 (0=全部)', min: 0, max: 128, step: 1, initial: 0, when:p=>p.scope==='area' },
     { key: 'flat', label: '基础伤害', min: 0, max: 500, step: 1, initial: 80 },
-    { key: 'coefficient', label: '攻击系数', unit: '×', min: 0, max: 5, step: .1, initial: 0 },
+    { key: 'coefficient', label: '攻击系数', unit: '×', min: 0, max: 5, step: .1, initial: 0,when:p=>p.includeBonuses!==false },
     { key:'canCrit',label:'允许暴击',type:'check',initial:true },
     { key:'critFromAttribute',label:'使用角色暴击率',type:'check',initial:false,when:p=>p.canCrit!==false },
     { key: 'critChance', label: '暴击概率', unit:'%',displayScale:100, min: 0, max: 1, step: .01, initial: .15,when:p=>p.canCrit!==false&&p.critFromAttribute!==true },
-    { key:'snapshotAttack',label:'使用攻击快照',type:'check',initial:true },
-    { key: 'critMultiplier', label: '暴击倍率', unit: '×', min: 1, max: 5, step: .1, initial: 1.8 },
+    { key:'snapshotAttack',label:'使用攻击快照',type:'check',initial:true,when:p=>p.includeBonuses!==false&&Number(p.coefficient??0)>0 },
+    { key: 'critMultiplier', label: '暴击倍率', unit: '×', min: 1, max: 5, step: .1, initial: 1.8,when:p=>p.canCrit!==false&&(p.critFromAttribute===true||Number(p.critChance??.15)>0) },
     { key: 'ignoreDefense', label: '忽略防御', type: 'check', initial: false },
     {key:'scaleByStacks',label:'按Buff层数缩放',type:'check',initial:false},
     {key:'notifyHurt',label:'通知受击Buff',type:'check',initial:true},
@@ -176,7 +168,7 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
     {key:'instanceKey',label:'循环实例键',type:'text',initial:'',when:p=>p.playback==='start'||p.playback==='stop'},
     {key:'stopWithCast',label:'施法结束自动停止',type:'check',initial:true,when:p=>p.playback==='start'},
     {key:'stacksAsTier',label:'按Buff层数分级',type:'check',initial:false,when:p=>p.playback==='start'||p.playback==='stop'},
-    {key:'maxTier',integer:true,label:'表现层数上限',min:1,max:128,step:1,initial:3,when:p=>!!p.stacksAsTier},
+    {key:'maxTier',integer:true,label:'表现层数上限',min:1,max:128,step:1,initial:3,when:p=>(p.playback==='start'||p.playback==='stop')&&!!p.stacksAsTier},
     {key:'center',label:'表现位置',type:'select',initial:'source',options:[['source','效果来源'],['point','事件 / 指定点'],['target','当前目标']]}] },
   buff:{title:'施加 Buff',color:'#5c7e68',inputs:['execute'],outputs:[['next','继续']],fields:[
     {key:'buff',label:'Buff定义',type:'select',initial:'',options:[]},
@@ -200,7 +192,7 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
     { key:'center',label:'作用中心',type:'select',initial:'point',options:[['point','事件 / 指定点'],['target','当前目标位置'],['source','来源位置'],['auto','指定点或来源']],when:p=>p.mode==='area'||p.mode==='summon' },
     { key:'radius',label:'作用半径',unit:'米',min:.1,max:20,step:.1,initial:3,when:p=>p.mode==='area' },
     {key:'hostileMask',integer:true,label:'目标阵营掩码 (0=敌对)',min:0,max:2147483647,step:1,initial:0,when:p=>p.mode==='area'},
-    { key:'maxTargets',integer:true,label:'目标上限 (0=全部)',min:0,max:128,step:1,initial:0,when:p=>p.mode==='area'||p.mode==='melee'||p.mode==='displacement'||(p.mode==='ray'&&p.pierce===true) },
+    { key:'maxTargets',integer:true,label:'目标上限 (0=全部)',min:0,max:128,step:1,initial:0,when:p=>p.mode==='area'||p.mode==='melee'||p.mode==='displacement'||p.mode==='ray' },
     { key:'persistent',label:'持续区域',type:'check',initial:false,when:p=>p.mode==='area' },
     { key:'permanent',label:'永久存在',type:'check',initial:false,when:p=>p.mode==='summon'||p.mode==='area'&&p.persistent===true },
     { key:'duration',label:'持续时间',unit:'秒',min:.02,max:120,step:.02,initial:2,when:p=>p.permanent!==true&&(p.mode==='area'&&p.persistent===true||p.mode==='summon') },
@@ -216,7 +208,6 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
     { key:'shape',label:'判定形状',type:'select',initial:'thrust',options:[['thrust','刺击'],['fan','扇形横扫'],['circle','360° 旋风']],when:p=>p.mode==='melee' },
     { key:'length',label:'攻击距离',unit:'米',min:.1,max:1000,step:.1,initial:3,when:p=>p.mode==='melee'||p.mode==='ray' },
     { key:'width',label:'判定宽度',unit:'米',min:.01,max:100,step:.01,initial:1,when:p=>p.mode==='ray'||(p.mode==='melee'&&(!p.shape||p.shape==='thrust')) },
-    { key:'pierce',label:'射线穿透',type:'check',initial:false,when:p=>p.mode==='ray' },
     { key:'angle',label:'横扫角度',unit:'°',min:1,max:360,step:1,initial:90,when:p=>p.mode==='melee'&&p.shape==='fan' },
     { key:'startup',label:'启动前摇',unit:'秒',min:0,max:3,step:.01,initial:.1,when:p=>p.mode==='melee'||p.mode==='displacement' },
     { key:'activeDuration',label:'攻击时长',unit:'秒',min:.001,max:5,step:.001,initial:.2,when:p=>p.mode==='melee' },
@@ -246,7 +237,7 @@ export const kinds: Record<string, { title: string; color: string; fields: Field
     {key:'team',integer:true,label:'物体阵营',min:0,max:30,step:1,initial:0},
     {key:'damageCap',label:'单次受伤上限 (0=不限)',min:0,max:10000000,step:1,initial:1},
     {key:'decayPeriod',label:'自伤周期 (0=关闭)',unit:'秒',min:0,max:3600,step:.02,initial:5},
-    {key:'decayDamage',label:'每次自伤',min:0,max:10000000,step:1,initial:1},
+    {key:'decayDamage',label:'每次自伤',min:0,max:10000000,step:1,initial:1,when:p=>Number(p.decayPeriod??5)>0},
     {key:'count',integer:true,label:'物体数量',min:1,max:16,step:1,initial:1},
     {key:'spacing',label:'物体布置半径',unit:'米',min:0,max:20,step:.01,initial:1},
     {key:'maxAlive',integer:true,label:'同来源物体上限',min:1,max:128,step:1,initial:64},
@@ -269,17 +260,16 @@ export function nodeOutputs(node: GraphNode): [string,string][] {
   return ports.filter(([port])=>allowed.includes(port));
 }
 export const deliveryLabel = (node: GraphNode) => node.kind==='teleport-projectile'?'传送到追踪弹':node.kind==='area-ref'?'持续区域':node.kind==='projectile'||node.kind==='projectile-ref'?'投射物':node.kind==='construct'?'可破坏物':node.parameters.mode==='summon'?'召唤分身':node.parameters.mode==='area'?(node.parameters.persistent?'持续区域':'瞬时区域'):node.parameters.mode==='ray'?'射线判定':node.parameters.mode==='melee'?'近战判定':node.parameters.mode==='displacement'?(node.parameters.movementMode==='blink'?'闪现打击':'冲刺打击'):'目标作用';
-export const portName = (port: string) => port==='behavior'?'投射物行为':port === 'target' ? '目标数据' : '执行';
-export const effectKinds:[string,string][]=[['damage','伤害结算'],['impact','受击与状态'],['heal','治疗'],['buff','施加 Buff'],['dispel','驱散 Buff'],['cue','表现事件'],['split','命中分裂'],['after-damage','扣血后条件'],['refill-ammo','补充弹药'],['teleport-projectile','传送到追踪弹'],['construct-chain','范围引爆物体'],['hurt-feedback','受伤反馈']];
+export const portName = (port: string) => port === 'target' ? '目标数据' : '执行';
+export const effectKinds:[string,string][]=[['chain','连锁效果'],['pierce','穿透效果'],['damage','伤害结算'],['impact','受击与状态'],['heal','治疗'],['buff','施加 Buff'],['dispel','驱散 Buff'],['cue','表现事件'],['split','命中分裂'],['after-damage','扣血后条件'],['refill-ammo','补充弹药'],['teleport-projectile','传送到追踪弹'],['construct-chain','范围引爆物体'],['hurt-feedback','受伤反馈']];
 export const burstEnabled=(p:Parameters)=>typeof p.burst==='boolean'?p.burst:Number(p.count??1)>1;
 export const parameterValue = (field: Field, parameters: Parameters) => parameters[field.key] ?? (field.key==='sameTargetMode'?(Number(parameters.sameTargetDelay)>0?'interval':'once'):field.key==='burst'?burstEnabled(parameters):(field.key === 'energyPerSecond' && parameters.mode === 'charge' ? 0 : field.initial));
 export const castRoutingFields=['ammoCost','fallbackSkill','recastProjectile','recastSkill','requiredProjectile'];
-export function nodeFields(node:GraphNode,options:{definitionRoot?:boolean;authoredTimeline?:boolean;behaviorLinked?:boolean}={}):Field[] {
+export function nodeFields(node:GraphNode,options:{definitionRoot?:boolean;authoredTimeline?:boolean}={}):Field[] {
   const definitionFields=node.kind==='delivery'?['mode','persistent','center','forwardOffset']:['multi','count','spread'];
   const rules=['cost','cooldown','hitFeedback','allowMovement',...castRoutingFields];
   return (kinds[node.kind]?.fields??[]).filter(f=>(!f.when||f.when(node.parameters))&&
     (!options.definitionRoot||!definitionFields.includes(f.key))&&
-    (!options.behaviorLinked||!['maxHits','chain','chainCount','chainRadius','chainMode'].includes(f.key))&&
     (!options.authoredTimeline||node.kind!=='cast'||rules.includes(f.key))&&
     (node.kind!=='cast'||node.parameters.execution!=='operation'||['execution',...rules].includes(f.key)));
 }

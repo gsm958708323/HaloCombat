@@ -13,13 +13,13 @@ test('burst switching preserves configured count interval payment and identity a
   assert(!nodeFields(off).some(f=>f.key==='count'));assert(nodeFields(on).some(f=>f.key==='count'));
   assert.equal(setBurst({...node,parameters:{}},true).parameters.count,3);assert.equal(setCastExecution(on,'operation').parameters.burst,undefined);
 });
-test('main advanced and behavior groups preserve every applicable field exactly once',()=>{
+test('main and advanced groups preserve every applicable field exactly once',()=>{
   const p=examples();for(const node of p.skills.flatMap(s=>s.nodes)){
-    const groups=nodeFieldGroups(node),all=[...groups.main,...groups.advanced,...groups.behaviors].map(f=>f.key);
+    const groups=nodeFieldGroups(node),all=[...groups.main,...groups.advanced].map(f=>f.key);
     assert.deepEqual([...all].sort(),nodeFields(node).map(f=>f.key).sort());assert.equal(new Set(all).size,all.length);
   }
   const damage=p.skills[0].nodes.find(n=>n.kind==='damage'),groups=nodeFieldGroups(damage);
-  assert(groups.main.some(f=>f.key==='flat'));assert(groups.advanced.some(f=>f.key==='snapshotAttack'));assert(groups.main.length<nodeFields(damage).length);
+  assert(groups.main.some(f=>f.key==='flat'));assert.equal(groups.advanced.some(f=>f.key==='snapshotAttack'),Number(damage.parameters.coefficient??0)>0&&damage.parameters.includeBonuses!==false);assert(groups.main.length<nodeFields(damage).length);
 });
 test('folded optional event ports never conceal a connected wire or change the available contract',()=>{
   const node=examples().skills[0].nodes.find(n=>n.kind==='projectile'),before=JSON.stringify(node);
@@ -34,6 +34,13 @@ test('shared projectile edits reach the summary through references without copyi
   p.projectiles.find(d=>d.id==='arena-normal-projectile').nodes[0].parameters.speed=9;summary=skillSummary(p,s);
   assert.equal(summary.items.find(i=>i.key===row.key).main.find(f=>f.key==='speed').value,'9米/秒');
   assert(!('node' in row));row.main[0].value='changed view';assert.notEqual(p.projectiles[0].nodes[0].parameters.speed,'changed view');
+});
+
+test('movement defaults in the overview agree with spatial delivery and explicit author overrides',()=>{
+  const p=examples(),melee=p.skills.find(s=>s.id==='melee-fan'),cast=melee.nodes.find(n=>n.kind==='cast');
+  delete cast.parameters.allowMovement;
+  const value=()=>skillSummary(p,melee).items.flatMap(i=>i.main).find(f=>f.key==='allowMovement').value;
+  assert.equal(value(),'关闭');cast.parameters.allowMovement=true;assert.equal(value(),'开启');
 });
 test('disabled branches and disconnected draft effects cannot masquerade as effective summary content',()=>{
   const p=examples(),s=p.skills[0],damage=s.nodes.find(n=>n.kind==='damage');damage.enabled=false;

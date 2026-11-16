@@ -15,9 +15,8 @@ export function prepareImportedLayout(project:Project):Project {
     }
     result=updateGraph(result,{kind,id:graph.id},g=>({...g,nodes:g.nodes.map(n=>{
       const level=depth(n.id),y=rows.get(level)??60;
-      const behaviorLinked=g.edges.some(e=>e.target===n.id&&e.targetPort==='behavior'&&g.nodes.find(v=>v.id===e.source)?.enabled!==false);
-      const groups=nodeFieldGroups(n,{definitionRoot:n.id===g.root,authoredTimeline:!!(g.timeline||g.timelineRef),behaviorLinked}),ports=nodePortGroups(n);
-      const fields=groups.main.length+Number(groups.advanced.length>0)+Number(groups.behaviors.length>0);
+      const groups=nodeFieldGroups(n,{definitionRoot:n.id===g.root,authoredTimeline:!!(g.timeline||g.timelineRef)}),ports=nodePortGroups(n);
+      const fields=groups.main.length+Number(groups.advanced.length>0);
       rows.set(level,y+Math.max(260,fields*38+ports.main.length*28+150));return {...n,position:{x:level*320,y}};
     })}));
   }

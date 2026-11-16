@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from './model';
 import type { Project, PreviewState } from './model';
-import {previewSemanticKey,previewFrameBudget} from './authoring/previewTiming';
+import {previewSemanticKey,previewSceneKey,previewFrameBudget} from './authoring/previewTiming';
 import type {RecordingStatus,ReplayComparison,ReplayResponse} from './replayModel';
 import {moveSceneActor} from './authoring/scenePlacement';
 import {mergePreviewFrame} from './authoring/previewFrames';
@@ -35,6 +35,8 @@ export function usePreview(project: Project | null, selected: string, report: (m
   const semanticKey=useMemo(()=>sessionSemanticKey(project,selected,recordInputs,unlimitedAmmo),[project,selected,recordInputs,unlimitedAmmo]);
   const semanticRef = useRef(semanticKey); semanticRef.current = semanticKey;
   const sessionKey = useRef('');
+  const sceneKey=useMemo(()=>previewSceneKey(project,selected,recordInputs,unlimitedAmmo),[project,selected,recordInputs,unlimitedAmmo]);
+  const appliedScene=useRef('');
   const ready = appliedKey === semanticKey && !!session.current&&!replaying&&!placing;
   const run = useCallback((command: unknown) => {
     const id = session.current; const generation = version.current;
@@ -67,13 +69,29 @@ export function usePreview(project: Project | null, selected: string, report: (m
       const result = await api<{ id: string; state: PreviewState;recording:RecordingStatus }>('/preview?recordInputs='+settings.recordInputs+'&unlimitedAmmo='+settings.unlimitedAmmo, document);
       if (generation !== version.current || key !== semanticRef.current) { await api('/preview/' + result.id, undefined, 'DELETE'); return; }
       session.current = result.id; sessionKey.current = key; setAppliedKey(key); setState(result.state); latestState.current = result.state;
+      appliedScene.current=sceneKey;
       setRecording(result.recording);
       reportRef.current('真实 C# 预览已就绪');
     } catch (error) { if(generation===version.current){setError(String(error));reportRef.current(String(error));} }
-  }, []);
+  }, [sceneKey]);
   useEffect(() => {
     if(replaying||placing)return;
     if(session.current&&sessionKey.current===semanticKey)return;
+    if(session.current&&appliedScene.current===sceneKey){
+      const generation=++version.current,key=semanticKey,id=session.current;
+      const timer=setTimeout(()=>{
+        queue.current=queue.current.catch(()=>{}).then(async()=>{
+          if(generation!==version.current)return;
+          try{
+            const result=await api<{state:PreviewState;recording:RecordingStatus}>('/preview/'+id+'/command',{kind:'configure',project:projectRef.current});
+            if(generation!==version.current)return;
+            sessionKey.current=key;setAppliedKey(key);latestState.current=result.state;setState(result.state);setRecording(result.recording);setError('');
+            reportRef.current('技能修改已应用；时间、生命、位置和存量实例保留');
+          }catch(error){if(generation===version.current){setError(String(error));reportRef.current(String(error));}}
+        });
+      },180);
+      return()=>clearTimeout(timer);
+    }
     ++version.current;
     const old = session.current; session.current = ''; sessionKey.current = '';
     setAppliedKey(''); setError(''); setPlaying(false); setContinuous(false); setState(null); latestState.current = null;
@@ -81,7 +99,7 @@ export function usePreview(project: Project | null, selected: string, report: (m
     if (old) void api('/preview/' + old, undefined, 'DELETE').catch(() => {});
     const timer = setTimeout(() => void reset(), 600);
     return () => clearTimeout(timer);
-  }, [reset, semanticKey,replaying,placing]);
+  }, [reset, semanticKey,sceneKey,replaying,placing]);
   useEffect(() => () => { ++version.current; const id = session.current; if (id) void api('/preview/' + id, undefined, 'DELETE').catch(() => {}); }, []);
   useEffect(()=>{
     const leaving=()=>{
@@ -138,6 +156,7 @@ export function usePreview(project: Project | null, selected: string, report: (m
       delete replayProject.preview.unlimitedAmmo; // A recorded test option must not become an authored publication setting.
       ++version.current;const key=sessionSemanticKey(replayProject,result.rootSkillId,result.recording.enabled,unlimited);
       adoptRef.current(replayProject,result.rootSkillId);skill.current=result.rootSkillId;session.current=result.id;sessionKey.current=key;setAppliedKey(key);
+      appliedScene.current=previewSceneKey(replayProject,result.rootSkillId,result.recording.enabled,unlimited);
       setState(result.state);latestState.current=result.state;setRecording(result.recording);setComparison(result.comparison);setError('');
       if(id)void api('/preview/'+id,undefined,'DELETE').catch(()=>{});
       reportRef.current('输入复现一致 · '+result.state.step+' 步 · '+result.comparison.values+' 个值');
@@ -169,6 +188,7 @@ export function usePreview(project: Project | null, selected: string, report: (m
       if(generation!==version.current||keyBefore!==semanticRef.current)return false;
       const next=moveSceneActor(projectRef.current!,sceneId,{x,z});
       const key=sessionSemanticKey(next,skill.current,options.current.recordInputs,options.current.unlimitedAmmo);sessionKey.current=key;setAppliedKey(key);update(next);
+      appliedScene.current=previewSceneKey(next,skill.current,options.current.recordInputs,options.current.unlimitedAmmo);
       setState(result.state);latestState.current=result.state;setRecording(result.recording);setComparison(null);
       reportRef.current('已更新 '+sceneId+' 的位置；预览时间与现有实例保留');return true;
     }catch(error){reportRef.current(String(error));return false;}finally{replacing.current=false;setPlacing(false);}

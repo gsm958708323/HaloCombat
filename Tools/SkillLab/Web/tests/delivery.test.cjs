@@ -1,6 +1,5 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const {switchDelivery,deliveryModes,deliveryMode,reconcileNodeOutputs}=require('../../.local/web-checks/authoring/deliveryEdits.js');
-const {extractProjectileBehavior}=require('../../.local/web-checks/authoring/projectileBehavior.js');
 const {graphOf,updateGraph}=require('../../.local/web-checks/authoring/contentEdits.js');
 const {EditorHistory}=require('../../.local/web-checks/authoring/EditorHistory.js');
 const {nodeFields,nodeOutputs}=require('../../.local/web-checks/model.js');
@@ -29,10 +28,10 @@ test('mode changes keep relevant dimensions and remove fields from a different d
 });
 
 test('exclusive unsupported branches are retained disabled and one undo restores all parameters and edges',()=>{
-  let p=examples();let n=0;p=updateGraph(p,key,g=>extractProjectileBehavior(g,'projectile',()=> 'branch-'+ ++n));
+  let p=examples();
   p=updateGraph(p,key,g=>({...g,nodes:[...g.nodes,{id:'wall-cue',kind:'cue',position:{x:0,y:0},parameters:{id:1}}],edges:[...g.edges,{id:'wall',source:'projectile',sourcePort:'wall',target:'wall-cue',targetPort:'execute',order:0}]}));
   const before=structuredClone(p),history=new EditorHistory(p),result=switchDelivery(p,key,'projectile','melee');history.edit(result.project);
-  const graph=graphOf(result.project,key);assert.equal(result.removedEdges,2);assert.equal(result.disabledNodes,2);assert.equal(graph.nodes.find(n=>n.id==='wall-cue').enabled,false);assert.equal(graph.nodes.find(n=>n.kind==='projectile-behavior').enabled,false);assert.notEqual(graph.nodes.find(n=>n.id==='damage').enabled,false);
+  const graph=graphOf(result.project,key);assert.equal(result.removedEdges,1);assert.equal(result.disabledNodes,1);assert.equal(graph.nodes.find(n=>n.id==='wall-cue').enabled,false);assert.notEqual(graph.nodes.find(n=>n.id==='damage').enabled,false);
   history.undo();assert.deepEqual(history.current,before);history.redo();assert.deepEqual(history.current,result.project);
 });
 

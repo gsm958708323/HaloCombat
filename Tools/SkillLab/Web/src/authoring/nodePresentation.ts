@@ -2,20 +2,18 @@ import {castRoutingFields,nodeFields,nodeOutputs} from '../model';
 import type {Field,GraphNode} from '../model';
 
 const extra:Record<string,Set<string>>={
-  cast:new Set(['execution','hitFeedback','duration',...castRoutingFields]),
+  cast:new Set(['execution','hitFeedback','duration','cancelStart','cancelEnd',...castRoutingFields]),
   projectile:new Set(['view','passInvulnerable','trackingKey','spawnForward','lifetime','removeOnObstacle','wallBounces','homingRetarget','homingRadius']),
   damage:new Set(['feedbackHitstop','canCrit','critFromAttribute','snapshotAttack','ignoreDefense','scaleByStacks','notifyHurt','hitstopFrames','sourceHitstopFrames','targetHitstopFrames','feedback','maxTargets']),
   delivery:new Set(['view','maxTargets','hostileMask','cueId','pulseOnSpawn','forwardOffset']),
 };
-const behavior=new Set(['maxHits','chain','chainCount','chainRadius','chainMode']);
-export function nodeFieldGroups(node:GraphNode,options:{definitionRoot?:boolean;authoredTimeline?:boolean;behaviorLinked?:boolean}={}) {
-  const fields=nodeFields(node,options),main:Field[]=[],advanced:Field[]=[],behaviors:Field[]=[];
+export function nodeFieldGroups(node:GraphNode,options:{definitionRoot?:boolean;authoredTimeline?:boolean}={}) {
+  const fields=nodeFields(node,options),main:Field[]=[],advanced:Field[]=[];
   for(const field of fields){
-    if(node.kind==='projectile'&&behavior.has(field.key)){behaviors.push(field);continue;}
     const isExtra=extra[node.kind]?.has(field.key)||node.kind==='projectile'&&field.key==='homingRate'&&!(Number(node.parameters.homingRate)>0);
     if(isExtra&&!(node.kind==='cast'&&node.parameters.execution==='operation'&&field.key==='execution'))advanced.push(field);else main.push(field);
   }
-  return {main,advanced,behaviors};
+  return {main,advanced};
 }
 export function nodePortGroups(node:GraphNode,counts:Record<string,number>={}) {
   const ports=nodeOutputs(node);
