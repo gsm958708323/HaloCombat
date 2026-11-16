@@ -4,8 +4,16 @@ import {parameterValue,effectKinds} from './model';
 import {NumericParameter} from './NumericParameter';
 import {nodeFieldGroups,targetTimingDescription} from './authoring/nodePresentation';
 import {deliveryMode,deliveryModes} from './authoring/deliveryEdits';
+import './shared-timelines.css';
 
-export type NodeData = GraphNode & { beginEdit:()=>void;endEdit:()=>void; movementDefault?:boolean;definitionRoot?:boolean;behaviorLinked?:boolean;extractBehavior:(id:string)=>void;changeDelivery:(id:string,mode:string)=>void;authoredTimeline?:boolean;counts?:Record<string,number>;blueprints?: SummonBlueprint[];buffs?:BuffDefinition[];skills?:Skill[];projectiles?:SharedProjectile[];areas?:SharedArea[];views?:RuntimeView[];openArea:(id:string)=>void;extractArea:(id:string)=>void;openProjectile:(id:string)=>void;extractProjectile:(id:string)=>void;changeKind:(id:string,kind:string)=>void; change: (id: string, key: string, value: ParameterValue) => void; toggle: (id: string, enabled: boolean) => void; remove: (id: string) => void };
+export type NodeData = GraphNode & {
+  beginEdit:()=>void;endEdit:()=>void;movementDefault?:boolean;definitionRoot?:boolean;behaviorLinked?:boolean;authoredTimeline?:boolean;counts?:Record<string,number>;
+  sharedTimeline?:{id:string;name:string;users:number;missing:boolean};openTimeline:(id:string)=>void;
+  blueprints?:SummonBlueprint[];buffs?:BuffDefinition[];skills?:Skill[];projectiles?:SharedProjectile[];areas?:SharedArea[];views?:RuntimeView[];
+  extractBehavior:(id:string)=>void;changeDelivery:(id:string,mode:string)=>void;
+  openArea:(id:string)=>void;extractArea:(id:string)=>void;openProjectile:(id:string)=>void;extractProjectile:(id:string)=>void;
+  changeKind:(id:string,kind:string)=>void;change:(id:string,key:string,value:ParameterValue)=>void;toggle:(id:string,enabled:boolean)=>void;remove:(id:string)=>void;
+};
 function TimesInput({field,value,change}:{field:Field;value:ParameterValue;change:(value:ParameterValue)=>void}) {
   const display=Array.isArray(value)?value.join(', '):String(value);const [text,setText]=useState(display);
   useEffect(()=>setText(display),[display]);
@@ -32,7 +40,10 @@ export function NodeParameters({data,onToggle}:{data:NodeData;onToggle?:()=>void
       {!data.definitionRoot&&data.kind !== 'target' && data.kind !== 'cast' && data.kind!=='buff-events'&&data.kind!=='skill-events'&&<label className="enable-row nodrag"><span>启用节点</span><input type="checkbox" checked={data.enabled !== false} onChange={e => data.toggle(data.id,e.target.checked)} /></label>}
       {['projectile','delivery'].includes(data.kind)&&!data.definitionRoot&&<label className="parameter nodrag nowheel"><span>效果传递</span><select aria-label="效果传递" value={deliveryMode(data)} onChange={e=>data.changeDelivery(data.id,e.target.value)}>{deliveryModes.map(([key,name])=><option key={key} value={key}>{name}</option>)}</select></label>}
       {data.kind === 'damage' && <div className="module-label">效果结算 <b>伤害结算</b></div>}
-      {data.kind==='cast'&&data.authoredTimeline&&<small>时序由“技能设置 / 定义设置”中的显式时间轴管理</small>}
+      {data.kind==='cast'&&(data.sharedTimeline?<div className={`node-timeline-source shared nodrag nowheel${data.sharedTimeline.missing?' missing':''}`} aria-label="技能时间轴来源">
+        <span>共享时间轴</span><strong>{data.sharedTimeline.name}</strong><small>{data.sharedTimeline.id}</small>
+        {data.sharedTimeline.missing?<small role="alert">引用的共享时间轴不存在</small>:<><small>{data.sharedTimeline.users} 个技能共用；修改会影响全部引用者。</small><button type="button" onClick={()=>data.openTimeline(data.sharedTimeline!.id)}>打开共享时间轴</button></>}
+      </div>:<small className="node-timeline-source" aria-label="技能时间轴来源">{data.parameters.execution==='operation'?'即时执行 · 不使用时间轴':data.authoredTimeline?'本技能独立时间轴 · 未共享（在技能设置中编辑）':'本技能自动时序 · 未共享'}</small>)}
       {fields.main.filter(f=>data.kind!=='delivery'||f.key!=='mode').map(control)}
       {data.kind==='delivery'&&data.parameters.mode==='summon'&&!data.parameters.blueprint&&<small>选择或新建召唤蓝图后可运行；攻击技能不能循环召唤自身。</small>}
       {data.kind==='target'&&targetTimingDescription(data)&&<small>{targetTimingDescription(data)}</small>}
