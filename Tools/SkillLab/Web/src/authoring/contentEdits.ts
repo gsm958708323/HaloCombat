@@ -60,6 +60,7 @@ export function renameContent(p:Project,kind:ContentKind,id:string,input:string)
   if(kind!=='blueprint'&&p.editor)result={...result,editor:{...p.editor,
     selectedSkill:kind==='skill'&&p.editor.selectedSkill===id?next:p.editor.selectedSkill,
     comboPositions:p.editor.comboPositions?.map(v=>kind==='skill'&&v.skillId===id?{...v,skillId:next}:v),
+    comboViews:p.editor.comboViews?.map(v=>kind==='skill'?{...v,rootSkill:v.rootSkill===id?next:v.rootSkill,positions:v.positions.map(n=>n.skillId===id?{...n,skillId:next}:n)}:v),
     selectedBuff:kind==='buff'&&p.editor.selectedBuff===id?next:p.editor.selectedBuff,
     selectedTimeline:kind==='timeline'&&p.editor.selectedTimeline===id?next:p.editor.selectedTimeline,
     selectedProjectile:kind==='projectile'&&p.editor.selectedProjectile===id?next:p.editor.selectedProjectile,
@@ -85,6 +86,7 @@ export function deleteContent(p:Project,kind:ContentKind,id:string,replacement='
     selectedTimeline:kind==='timeline'&&p.editor.selectedTimeline===id?undefined:p.editor.selectedTimeline,
     selectedProjectile:kind==='projectile'&&p.editor.selectedProjectile===id?undefined:p.editor.selectedProjectile,
     selectedArea:kind==='area'&&p.editor.selectedArea===id?undefined:p.editor.selectedArea,
+    comboViews:p.editor.comboViews?.filter(v=>kind!=='skill'||v.rootSkill!==id||!!replacement).map(v=>kind==='skill'?{...v,rootSkill:v.rootSkill===id?replacement!:v.rootSkill,positions:v.positions.filter(n=>n.skillId!==id)}:v),
     comboPositions:p.editor.comboPositions?.filter(v=>kind!=='skill'||v.skillId!==id),viewports:p.editor.viewports?.filter(v=>v.kind!==kind||v.id!==id)}};
   return result;
 }

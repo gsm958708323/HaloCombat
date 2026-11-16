@@ -93,6 +93,7 @@ namespace Combat.Core
         float _basePower=1;
         public override bool WantsTick => true;
         public string LastRejection { get; private set; }
+        public SkillNodeId LastAcceptedSkill {get;private set;}
         bool IsActive => _active != null && _director.IsPlaying && _director.CurrentSkill.Equals(_active.Id);
         public bool IsChanneling => IsActive && _active.Mode == SkillCastMode.Channel;
         public bool IsCharging => IsActive && _director.IsCharging;
@@ -114,7 +115,7 @@ namespace Combat.Core
             => _readyAt.TryGetValue(id.Value, out var until) ? Math.Max(0f, until - _time) : 0f;
         public bool TryCast(SkillNodeId id, in SkillAim aim)
         {
-            LastRejection = null;
+            LastRejection = null;LastAcceptedSkill=SkillNodeId.None;
             if(Self.World.IsActorStopped(Self))return Reject("Actor is in hitstop.");
             if(aim.HasYaw&&!Finite(aim.Yaw)||aim.HasPoint&&(!Finite(aim.Point.X)||!Finite(aim.Point.Y)||!Finite(aim.Point.Z)))return Reject("Aim must be finite.");
             if (IsChanneling || IsCharging) return Reject("A held cast is already active.");
@@ -149,7 +150,7 @@ namespace Combat.Core
                 Self.World.Deliver(definition.OperationEffects,Self,target,attack,resolved.HasPoint?(SimVec3?)resolved.Point:null,
                     resolved.HasYaw?(SimVec3?)LocomotionComp.ForwardFromYaw(resolved.Yaw):null,power:_basePower,
                     origin:new SkillOrigin(id,0,caster:Self.Id));
-                Self.World.Events.Publish(new EvSkillOperation(Self.Id,id));return true;
+                LastAcceptedSkill=id;Self.World.Events.Publish(new EvSkillOperation(Self.Id,id));return true;
             }
             if (!_director.Play(id, definition.Timeline, resolved, AdvanceBudget, PayPulse,
                 refreshOnTrigger ? ResolveAim : (Func<bool,SkillAim?>)null, definition.Charge,_basePower))
@@ -158,7 +159,7 @@ namespace Combat.Core
             if (definition.EnergyCost > 0f) _energy.TrySpend(definition.EnergyCost);
             if(definition.AmmoCost>0)_ammo.TrySpend(definition.AmmoCost);
             _readyAt[id.Value] = _time + definition.Cooldown;
-            Self.World.Events.Publish(new EvSkillStarted(Self.Id,id));
+            LastAcceptedSkill=id;Self.World.Events.Publish(new EvSkillStarted(Self.Id,id));
             return true;
         }
         public void UpdateAim(in SkillAim aim) => _inputAim = aim;
@@ -186,7 +187,7 @@ namespace Combat.Core
         static bool Finite(float value)=>!float.IsNaN(value)&&!float.IsInfinity(value);
         public override void Tick(float dt) => _time += dt;
         protected override void OnDetach()
-        { _readyAt.Clear(); _time = 0f; _basePower=1; _active = null; _director = null; _energy = null; _ammo=null; _tags = null; }
+        { _readyAt.Clear(); _time = 0f; _basePower=1; _active = null;LastAcceptedSkill=SkillNodeId.None; _director = null; _energy = null; _ammo=null; _tags = null; }
     }
 
     public readonly struct EvSkillOperation

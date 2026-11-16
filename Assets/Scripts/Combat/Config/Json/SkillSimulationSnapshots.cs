@@ -9,6 +9,7 @@ namespace Combat.Config
         public float Time { get; internal set; }
         public SkillActorSnapshot[] Actors { get; internal set; }
         public SkillEventSnapshot[] Events { get; internal set; }
+        public SkillEventSnapshot[] ComboDecisions {get;internal set;}
         public SkillTrailSnapshot[] Trails { get; internal set; }
         public SkillAreaSnapshot[] Areas { get; internal set; }
         public SkillSpatialSnapshot[] Volumes { get; internal set; }
@@ -28,6 +29,8 @@ namespace Combat.Config
     public sealed class SkillActorSnapshot
     {
         public string ComboFailure {get;internal set;}
+        public SkillComboDecisionSnapshot ComboDecision {get;internal set;}
+        public int ComboInputSequence {get;internal set;}
         public string Id { get; internal set; }
         public string SceneId {get;internal set;}
         public int Team {get;internal set;}
@@ -139,6 +142,7 @@ namespace Combat.Config
 
     public sealed class SkillEventSnapshot
     {
+        public SkillComboDecisionSnapshot ComboDecision {get;internal set;}
         public int Sequence { get; internal set; }
         public float Time { get; internal set; }
         public string Kind { get; internal set; }

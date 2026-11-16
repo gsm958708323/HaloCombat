@@ -58,7 +58,7 @@ namespace Combat.Config
                     Advance(input.AtStep-step);step=input.AtStep;Simulation.Execute(input.Command);
                 }
                 Advance(document.EndStep-step);
-                Comparison=SkillReplayComparer.Compare(document.ExpectedState,JObject.Parse(SkillJsonCodec.Write(Simulation.Snapshot())));
+                Comparison=SkillReplayComparer.Compare(document.ExpectedState,SkillReplayState.Capture(Simulation.Snapshot()));
             }
             catch{Simulation.Dispose();throw;}
         }

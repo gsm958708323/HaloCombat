@@ -59,7 +59,8 @@ namespace Combat.Core
     {
         public const int Capacity=3;
         readonly Queue<Entry> _queue=new Queue<Entry>(Capacity);
-        struct Entry {public InputToken Token;public double Time;}
+        struct Entry {public InputToken Token;public double Time;public int Sequence;}
+        int _pushSequence;
         ActorTime _time;
         float _bufferWindow = 0.2f;
 
@@ -68,6 +69,8 @@ namespace Combat.Core
         public float LastPushTime { get; private set; }
         public bool HasBuffered {get{Expire();return _queue.Count>0;}}
         public int Count {get{Expire();return _queue.Count;}}
+        public int HeadSequence {get{Expire();return _queue.Count>0?_queue.Peek().Sequence:0;}}
+        public int LastPushSequence=>_pushSequence;
 
         public void SetBufferWindow(float seconds)
             => _bufferWindow = seconds > 0f ? seconds : 0.01f;
@@ -79,7 +82,7 @@ namespace Combat.Core
 
         protected override void OnDetach()
         {
-            Clear();LastPushTime=0;
+            Clear();LastPushTime=0;_pushSequence=0;
             _time = null;
         }
 
@@ -87,7 +90,7 @@ namespace Combat.Core
         {
             if (!token.IsValid || _time == null) return;
             Expire();if(_queue.Count==Capacity)_queue.Dequeue();
-            _queue.Enqueue(new Entry{Token=token,Time=_time.Time});
+            _queue.Enqueue(new Entry{Token=token,Time=_time.Time,Sequence=++_pushSequence});
             LastPushTime = (float)_time.Time;
         }
 

@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { ReactFlow, ReactFlowProvider, Background, BackgroundVariant } from '@xyflow/react';
 import { Plus, Save, Download, Upload, Undo2, Redo2, Maximize, Workflow } from 'lucide-react';
 import { api, clone, kinds, deliveryLabel } from './model';
-import {ComboProperties} from './ComboProperties';
+
 import type { Project, Skill, BuffDefinition } from './model';
 import { SkillNode } from './SkillNode';
 import type { EditorNode } from './SkillNode';
@@ -162,7 +162,7 @@ function Workbench() {
       </div></header>
     <nav className="app-navigation"><button className={view==='skill'?'active':''} onClick={()=>setView('skill')}>技能</button><button className={view==='combo'?'active':''} onClick={()=>setView('combo')}>连招</button><div/><small>{project.name} · {project.skills.length} 个技能</small></nav>
     <div className="workspace"><PreviewSession key={project.id} project={project} update={editor.edit} inspectSource={inspectSource} root={root} report={setMessage} adoptReplay={adoptReplay} store={previewStore}/>
-      {view==='combo'?<ComboEditor project={project} update={editor.edit} store={previewStore} report={setMessage} beginEdit={editor.beginGroup} endEdit={editor.endGroup} openSkill={id=>{select(id);setView('skill');}}/>:<section className="editor-panel"><div className="editor-heading"><span>节点编辑</span><div className="popover-anchor"><button onClick={()=>setLibrary(!library)}>技能库 ▾</button>{library&&<SkillLibrary project={project} selected={skill?.id??''} select={id=>select(id)}/>}</div>
+      {view==='combo'?<ComboEditor key={project.id} selectContext={id=>select(id)} project={project} update={editor.edit} store={previewStore} report={setMessage} beginEdit={editor.beginGroup} endEdit={editor.endGroup} openSkill={id=>{select(id);setView('skill');}} openTimeline={(skillId,timelineId)=>{select(skillId,"",timelineId);setView('skill');}}/>:<section className="editor-panel"><div className="editor-heading"><span>节点编辑</span><div className="popover-anchor"><button onClick={()=>setLibrary(!library)}>技能库 ▾</button>{library&&<SkillLibrary project={project} selected={skill?.id??''} select={id=>select(id)}/>}</div>
         <button onClick={()=>void openCreate()}><Plus size={12}/>新建</button><button onClick={()=>{if(buff)select(skill?.id??'');else if(project.buffs?.length)select(skill?.id??'',project.buffs[0].id);else newBuff();}}>{buff?'返回技能':'Buff定义'}</button>
         <button onClick={()=>{if(timeline)select(skill?.id??'');else if(project.timelines?.length)select(skill?.id??'','',project.timelines[0].id);else newShared();}}>{timeline?'返回技能':'共享时间轴'}</button>
         {timeline&&<><select aria-label="当前共享时间轴" value={timeline.id} onChange={e=>select(skill?.id??'','',e.target.value)}>{project.timelines?.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select><button onClick={newShared}>新建共享轴</button></>}
@@ -198,7 +198,7 @@ function Workbench() {
         </>:<p>空工程可保存或导出。</p>}
 </>}
       {settings==='connections'&&graph&&<GraphConnections graph={graph} change={update=>{editor.endGroup();graphEditor.editGraph(update);}}/>}
-      {settings==='project'&&<><SummonBlueprints project={project} update={editor.edit} action={setContentAction} duplicate={id=>duplicate('blueprint',id)}/><RuntimeProperties project={project} update={editor.edit}/><ComboProperties project={project} update={editor.edit}/></>}
+      {settings==='project'&&<><SummonBlueprints project={project} update={editor.edit} action={setContentAction} duplicate={id=>duplicate('blueprint',id)}/><RuntimeProperties project={project} update={editor.edit}/><p>起手、接续与公共取消请在“连招”工作台统一编辑。</p></>}
     </div></Dialog>}
     {contentAction&&<ContentDialog key={contentAction.kind+contentAction.id+contentAction.mode} project={project} action={contentAction} close={()=>setContentAction(null)} edit={change=>{editor.endGroup();editor.edit(change);setMessage('内容与引用已更新，可撤销恢复');}} locate={locate}/>}
     {exporting&&<ExportDialog project={project} skillId={skill?.id??''} close={()=>setExporting(false)} report={setMessage}/>}

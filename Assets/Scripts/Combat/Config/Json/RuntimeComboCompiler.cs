@@ -14,6 +14,7 @@ namespace Combat.Config
             {
                 string path="$.runtime.combos["+row?.Id+"]";
                 if(row==null||string.IsNullOrWhiteSpace(row.Id)||!keys.Add(row.Id))throw new ContentValidationException(path,"Missing or duplicate identity.");
+                ComboAuthoringValidation.Rule(row,path);
                 if(string.IsNullOrWhiteSpace(row.Input)||row.Input.Length>128||row.RequiredTags==null||row.RequiredTags.Any(t=>t<=0)||row.PreSkills==null)
                     throw new ContentValidationException(path,"Invalid input, tags or predecessor array.");
                 var target=skill(row.ToSkill,path+".toSkill");

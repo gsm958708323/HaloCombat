@@ -12,6 +12,9 @@ internal static class ComboChecks
         var before=s.Snapshot();if(!before.Actors.Single(a=>a.Kind=="caster").ComboConfirmed||before.Statistics.Damage<=0)throw new Exception("Physical Combo contact did not confirm its active cast.");
         s.Input("ConfirmAttack",4,0);s.Advance(4);var after=s.Snapshot();
         if(after.Statistics.Casts!=2||after.Actors.Single(a=>a.Kind=="caster").CurrentSkill!="g2"||after.Actors.Single(a=>a.Kind=="caster").BufferedInput!=null)throw new Exception("Actual Combo input did not start and consume the confirmed transition.");
-        Console.WriteLine("PASS: shared preview input, captured Hitbox origin, active-cast confirmation, guarded G1/G2 transition and success-only input consumption.");
+        var decision=after.Actors.Single(a=>a.Kind=="caster").ComboDecision;
+        if(decision?.Phase!="cast"||decision.ActualSkill!="g2"||decision.Rule!="confirmed-g1-g2"||!decision.Confirmed||!decision.WindowOpen)
+            throw new Exception("Structured Combo decisions must capture actual pre-lookup confirmation and successful casting.");
+        Console.WriteLine("PASS: shared preview input, captured Hitbox origin, active-cast confirmation, guarded G1/G2 transition, structured decisions and success-only input consumption.");
     }
 }

@@ -77,10 +77,10 @@ namespace Combat.Core
         }
     }
 
-    public sealed class ComboComp : Comp
+    public sealed partial class ComboComp : Comp
     {
         ComboTableDefinition _table;
-        public void ReplaceTable(ComboTableDefinition table)=>_table=table??throw new ArgumentNullException(nameof(table));
+        public void ReplaceTable(ComboTableDefinition table){_table=table??throw new ArgumentNullException(nameof(table));ResetDiagnostics();LastFailure=null;}
         InputBufferComp _input;
         TagComp _tags;
         SkillDirectorComp _director;
@@ -100,6 +100,7 @@ namespace Combat.Core
 
         protected override void OnDetach()
         {
+            ResetDiagnostics();
             _input = null;
             _tags = null;
             _director = null;
@@ -115,10 +116,11 @@ namespace Combat.Core
         public bool TryResolveCurrent(in InputToken token,out ComboResolveResult result)
         {
             result=default;
-            if(_director==null||!_director.CanStartSkill){LastFailure="当前角色状态禁止接招";return false;}
-            if(_director.IsPlaying&&!_tags.Has(CommonTags.Cancel)){LastFailure="当前动作接续窗口尚未开启";return false;}
+            if(_director==null||!_director.CanStartSkill){LastFailure="当前角色状态禁止接招";CaptureDecision(token,result,"blocked",LastFailure);return false;}
+            if(_director.IsPlaying&&!_tags.Has(CommonTags.Cancel)){LastFailure="当前动作接续窗口尚未开启";CaptureDecision(token,result,"waiting",LastFailure);return false;}
             bool resolved=_table.TryResolve(_director.CurrentSkill,token,_tags,out result);bool confirmed=_director.HasComboConfirmation;
             LastFailure=resolved?null:"没有满足输入、前置技能和状态条件的接续";
+            CaptureDecision(token,result,resolved?"matched":"unmatched",LastFailure);
             _director.ConsumeComboConfirm("Lookup");
             Self.World.Events.Publish(new EvComboResolved(Self.Id,token.Action,resolved,result.Key,result.ToSkill,confirmed,_director.CurrentOrigin));return resolved;
         }

@@ -1,18 +1,5 @@
-import type {Project,RuntimeCombo} from '../model';
-import {comboStart,comboSkills} from './comboEdits';
-
-export const allComboInputs='$all-inputs';
-export function comboView(project:Project,input:string,extraIds:string[]=[]){
-  const all=project.runtime?.combos??[],tokens=[...new Set(all.map(row=>row.input))];
-  const selected=input===allComboInputs?input:tokens.includes(input)?input:tokens[0]??'Attack';
-  const rows=selected===allComboInputs?all:all.filter(row=>row.input===selected);
-  const linked=new Set(all.flatMap(row=>[...row.preSkills,row.toSkill]));
-  const visible=new Set(rows.flatMap(row=>[...row.preSkills,row.toSkill]));
-  // Loose author references remain editable without pulling other input chains
-  // into this view. Filtering never changes the shared skill or Combo table.
-  const ids=comboSkills(project).filter(id=>selected===allComboInputs||visible.has(id)||!linked.has(id)||extraIds.includes(id));
-  return {tokens,selected,rows,ids,total:all.length};
-}
+import type {RuntimeCombo} from '../model';
+import {comboStart} from './comboEdits';
 
 export function layoutCombo(ids:string[],rows:RuntimeCombo[]):Map<string,{x:number;y:number}>{
   const order=[comboStart,...ids],allowed=new Set(order),levels=new Map<string,number>([[comboStart,0]]);

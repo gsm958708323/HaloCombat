@@ -16,6 +16,8 @@ namespace Combat.Config
         readonly Dictionary<long, string> _kinds = new Dictionary<long, string>();
         readonly Dictionary<long,(HitFeedbackLevel Level,int Step)> _hurts=new Dictionary<long,(HitFeedbackLevel,int)>();
         readonly List<SkillEventSnapshot> _events = new List<SkillEventSnapshot>();
+        readonly List<SkillEventSnapshot> _comboDecisions=new List<SkillEventSnapshot>();
+        int _comboSequence;
         readonly List<SkillTrailSnapshot> _trails = new List<SkillTrailSnapshot>();
         readonly List<SkillAreaSnapshot> _areas = new List<SkillAreaSnapshot>();
         readonly List<SkillRaySnapshot> _rays=new List<SkillRaySnapshot>();
@@ -50,6 +52,12 @@ namespace Combat.Config
             _world.Events.Subscribe<EvHitstop>(e=>Record("hitstop",Name(e.Source),e.Scope==HitstopScope.World?"World "+e.Frames+" frames":"Source "+e.SourceFrames+" / target "+e.TargetFrames));
             _world.Events.Subscribe<EvComboConfirmation>(e=>Record("combo-confirmation",Name(e.Source),e.Result,e.Origin));
             _world.Events.Subscribe<EvComboResolved>(e=>Record(e.Resolved?"combo-resolved":"combo-unmatched",Name(e.Source),e.Input+" -> "+(e.Entry??"None")+(e.ConsumedConfirmation?" / confirmation consumed":""),e.Origin));
+            _world.Events.Subscribe<EvComboDecision>(e=>
+            {
+                _comboDecisions.Add(new SkillEventSnapshot{Sequence=++_comboSequence,Step=_steps,Time=_steps*Step,Kind="combo-decision",Source=Name(e.Source),
+                    SourceId=Packed(e.Source),Result=e.Decision.Phase,ComboDecision=SkillComboDecisionSnapshot.From(e.Decision,_content.Skills)});
+                if(_comboDecisions.Count>64)_comboDecisions.RemoveAt(0);
+            });
             _world.Events.Subscribe<EvSkillEvent>(e=>Record(e.Rejected?"skill-event-rejected":"skill-"+e.Kind.ToString().ToLowerInvariant(),Name(e.Source),Name(e.Target),e.Origin,e.Damage));
             _world.Events.Subscribe<EvHeal>(e=>Record("heal",Name(e.Target),e.Amount.ToString("F1",System.Globalization.CultureInfo.InvariantCulture)));
             _world.Events.Subscribe<EvShield>(e=>Record("shield",Name(e.Target),e.Amount.ToString("F1",System.Globalization.CultureInfo.InvariantCulture),e.Origin));
@@ -265,6 +273,8 @@ namespace Combat.Config
                 return new SkillActorSnapshot
                 {
                     ComboFailure=a.TryGetComp<InputBufferComp>(out var pending)&&pending.HasBuffered?a.TryGetComp<SkillCastComp>(out var skillCast)&&skillCast.LastRejection!=null?skillCast.LastRejection:a.TryGetComp<ComboComp>(out var actorCombo)?actorCombo.LastFailure:null:null,
+                    ComboDecision=a.TryGetComp<ComboComp>(out var diagnostics)?SkillComboDecisionSnapshot.From(diagnostics.LastDecision,_content.Skills):null,
+                    ComboInputSequence=a.TryGetComp<InputBufferComp>(out var comboInput)?comboInput.LastPushSequence:0,
                     Id = HitboxComp.Pack(a.Id).ToString(),SceneId=_sceneIds.TryGetValue(a.Id,out var sceneId)?sceneId:null,Team=a.TryGetComp<TeamComp>(out var team)?team.TeamId:0, Name = Name(a.Id), Kind = _kinds[HitboxComp.Pack(a.Id)], X = p.X,Y=p.Y, Z = p.Z,Author=ActorSource(a),
                     View=projectile?.Def?.View??area?.Def?.View??construct?.Def?.View,Yaw=a.GetComp<TransformComp>().YawDegrees,
                     ViewScale=area?.Def!=null&&area.Def.Radius>0?area.Radius/area.Def.Radius:1,
@@ -294,7 +304,7 @@ namespace Combat.Config
             var cast = caster?.GetComp<SkillCastComp>();
             return new SkillSimulationSnapshot
             {
-                Step = _steps, Time = _steps * Step, Actors = actors, Events = _events.Where(e=>e.Sequence>afterEvent).ToArray(), Trails = includeTrails?_trails.Where(t=>t.Step>afterTrailStep).ToArray():Array.Empty<SkillTrailSnapshot>(), Areas = _areas.ToArray(), Volumes=_volumes.Values.ToArray(),
+                Step = _steps, Time = _steps * Step, Actors = actors, Events = _events.Where(e=>e.Sequence>afterEvent).ToArray(),ComboDecisions=_comboDecisions.ToArray(), Trails = includeTrails?_trails.Where(t=>t.Step>afterTrailStep).ToArray():Array.Empty<SkillTrailSnapshot>(), Areas = _areas.ToArray(), Volumes=_volumes.Values.ToArray(),
                 Obstacles=_world.Collision.Obstacles.Select(o=>new SkillObstacleSnapshot{Id=o.Id,X=o.X,Z=o.Z,Width=o.Width,Depth=o.Depth}).ToArray(),Rays=_rays.ToArray(),
                 Energy = caster?.GetComp<EnergyComp>().Current ?? 0,
                 Ammo=caster?.GetComp<AmmoComp>().Current??0,AmmoCapacity=caster?.GetComp<AmmoComp>().Capacity??0,
@@ -390,7 +400,7 @@ namespace Combat.Config
             foreach (var actor in _world.RegistryActive())
             { if (actor.TryGetComp<SkillDirectorComp>(out var director)) director.Stop(DirectorStopReason.Detach); _world.RequestDespawn(actor.Id); }
             _world.Tick(0);
-            _events.Clear(); _trails.Clear(); _areas.Clear(); _rays.Clear(); _volumes.Clear(); _names.Clear(); _kinds.Clear(); _hurts.Clear(); _sceneActors.Clear();_sceneIds.Clear();
+            _events.Clear();_comboDecisions.Clear(); _trails.Clear(); _areas.Clear(); _rays.Clear(); _volumes.Clear(); _names.Clear(); _kinds.Clear(); _hurts.Clear(); _sceneActors.Clear();_sceneIds.Clear();
             _bodySources.Clear();_bodyOrigins.Clear();_actionSources.Clear();
             _disposed = true;
         }

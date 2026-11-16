@@ -56,6 +56,7 @@
       "summonBlueprints/summon.json"
     ],
     "preview": "preview.json",
+    "editor": "editor.json",
     "runtime": {
       "motor": "runtime/motor.json",
       "combos": "runtime/combos.json",

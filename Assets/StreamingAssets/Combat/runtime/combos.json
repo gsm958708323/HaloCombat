@@ -1,6 +1,7 @@
 [
   {
     "id": "attack-root",
+    "purpose": "entry",
     "preSkills": [],
     "input": "Attack",
     "requiredTags": [],
@@ -9,6 +10,7 @@
   },
   {
     "id": "g1-to-g2",
+    "purpose": "transition",
     "preSkills": [
       "g1"
     ],
@@ -21,6 +23,7 @@
   },
   {
     "id": "dodge-to-g1",
+    "purpose": "transition",
     "preSkills": [
       "dodge"
     ],
@@ -33,6 +36,7 @@
   },
   {
     "id": "ArenaArea",
+    "purpose": "entry",
     "preSkills": [],
     "input": "ArenaArea",
     "requiredTags": [],
@@ -41,6 +45,7 @@
   },
   {
     "id": "ArenaAura",
+    "purpose": "entry",
     "preSkills": [],
     "input": "ArenaAura",
     "requiredTags": [],
@@ -49,6 +54,7 @@
   },
   {
     "id": "ArenaSummon",
+    "purpose": "entry",
     "preSkills": [],
     "input": "ArenaSummon",
     "requiredTags": [],
@@ -57,6 +63,7 @@
   },
   {
     "id": "ArenaDodge",
+    "purpose": "entry",
     "preSkills": [],
     "input": "ArenaDodge",
     "requiredTags": [],
@@ -65,6 +72,7 @@
   },
   {
     "id": "ArenaHoming",
+    "purpose": "entry",
     "preSkills": [],
     "input": "ArenaHoming",
     "requiredTags": [],
@@ -73,6 +81,7 @@
   },
   {
     "id": "ArenaArea-cancel",
+    "purpose": "cancel",
     "preSkills": [
       "g1",
       "g2",
@@ -90,6 +99,7 @@
   },
   {
     "id": "ArenaAura-cancel",
+    "purpose": "cancel",
     "preSkills": [
       "g1",
       "g2",
@@ -107,6 +117,7 @@
   },
   {
     "id": "ArenaSummon-cancel",
+    "purpose": "cancel",
     "preSkills": [
       "g1",
       "g2",
@@ -124,6 +135,7 @@
   },
   {
     "id": "ArenaDodge-cancel",
+    "purpose": "cancel",
     "preSkills": [
       "g1",
       "g2",
@@ -141,6 +153,7 @@
   },
   {
     "id": "ArenaHoming-cancel",
+    "purpose": "cancel",
     "preSkills": [
       "g1",
       "g2",
@@ -158,6 +171,7 @@
   },
   {
     "id": "arena-tracked-root",
+    "purpose": "entry",
     "preSkills": [],
     "input": "ArenaTracked",
     "requiredTags": [],
@@ -166,6 +180,7 @@
   },
   {
     "id": "arena-primary-root",
+    "purpose": "entry",
     "preSkills": [],
     "input": "ArenaPrimary",
     "requiredTags": [],
@@ -174,6 +189,7 @@
   },
   {
     "id": "arena-construct-root",
+    "purpose": "entry",
     "preSkills": [],
     "input": "ArenaConstruct",
     "requiredTags": [],
@@ -182,6 +198,7 @@
   },
   {
     "id": "confirmed-root",
+    "purpose": "entry",
     "preSkills": [],
     "input": "ConfirmAttack",
     "requiredTags": [],
@@ -190,6 +207,7 @@
   },
   {
     "id": "confirmed-g1-g2",
+    "purpose": "transition",
     "preSkills": [
       "g1"
     ],
@@ -202,6 +220,7 @@
   },
   {
     "id": "confirmed-g2-g1",
+    "purpose": "transition",
     "preSkills": [
       "g2"
     ],
@@ -214,6 +233,7 @@
   },
   {
     "id": "arena-orb-root",
+    "purpose": "entry",
     "preSkills": [],
     "input": "ArenaOrb",
     "requiredTags": [],
@@ -222,6 +242,7 @@
   },
   {
     "id": "arena-first-second",
+    "purpose": "transition",
     "preSkills": [
       "arena-ammo-shot"
     ],
@@ -234,6 +255,7 @@
   },
   {
     "id": "arena-second-finisher",
+    "purpose": "transition",
     "preSkills": [
       "arena-combo-second"
     ],
@@ -246,6 +268,7 @@
   },
   {
     "id": "arena-confirmed-return",
+    "purpose": "transition",
     "preSkills": [
       "arena-ammo-shot"
     ],
@@ -258,6 +281,7 @@
   },
   {
     "id": "ArenaSecond-confirm-bomb",
+    "purpose": "transition",
     "preSkills": [
       "arena-combo-second"
     ],

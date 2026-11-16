@@ -48,7 +48,7 @@ namespace Combat.Config
             EnsureAlive();if(!_recordingEnabled)throw new ContentValidationException("$.inputs","输入记录未开启，请开启后重新试验。");
             if(Recording.Error!=null)throw new ContentValidationException("$.inputs",Recording.Error);
             var document=new SkillReplayDocument{Project=SkillProjectJson.Read(_replayProjectJson),RootSkillId=rootSkillId,EndStep=_steps,
-                Inputs=_recordedInputs.ToArray(),ExpectedState=JObject.Parse(SkillJsonCodec.Write(Snapshot()))};
+                Inputs=_recordedInputs.ToArray(),ExpectedState=SkillReplayState.Capture(Snapshot())};
             // The returned value owns its DTOs; editing an exported record cannot mutate the live journal.
             return SkillReplayJson.Read(SkillReplayJson.Write(document));
         }

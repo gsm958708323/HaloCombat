@@ -72,6 +72,7 @@ namespace Combat.Config
             }
             Editor(project.Editor,skills,buffs,timelines,projectiles,areas);
             RuntimeReferences(project.Runtime,skills);
+            ComboAuthoringValidation.Views(project);
         }
         static void TimelineReferences(TimelineDocument timeline,SkillNodeDocument[] nodes,string path)
         {
@@ -87,7 +88,7 @@ namespace Combat.Config
             if(runtime==null)return;
             Identities(runtime.Actors,a=>a.Id,"$.runtime.actors",256);Identities(runtime.Combos,c=>c.Id,"$.runtime.combos",1024);
             Action<string,string> check=(id,path)=>{if(!string.IsNullOrEmpty(id)&&!skills.Contains(id))Fail(path,"Unknown skill reference: "+id);};
-            foreach(var row in runtime.Combos){check(row.ToSkill,"$.runtime.combos["+row.Id+"].toSkill");if(row.PreSkills==null)Fail("$.runtime.combos","PreSkills array is required.");foreach(string id in row.PreSkills)check(id,"$.runtime.combos["+row.Id+"].preSkills");}
+            foreach(var row in runtime.Combos){ComboAuthoringValidation.Rule(row,"$.runtime.combos["+row.Id+"]");check(row.ToSkill,"$.runtime.combos["+row.Id+"].toSkill");if(row.PreSkills==null)Fail("$.runtime.combos","PreSkills array is required.");foreach(string id in row.PreSkills)check(id,"$.runtime.combos["+row.Id+"].preSkills");}
             foreach(var actor in runtime.Actors){string p="$.runtime.actors["+actor.Id+"]";check(actor.SkillId,p+".skillId");check(actor.DodgeSkill,p+".dodgeSkill");if(actor.Slots==null)Fail(p+".slots","Slot array is required.");foreach(string id in actor.Slots)check(id,p+".slots");}
             if(runtime.Arena!=null)
             {

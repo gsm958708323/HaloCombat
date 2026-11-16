@@ -23,6 +23,8 @@ namespace Combat.Config
     public sealed class RuntimeComboDocument
     {
         public string Id {get;set;}
+        // Author intent survives portable runtime JSON; it never filters combat matching.
+        [JsonProperty(NullValueHandling=NullValueHandling.Ignore)]public string Purpose {get;set;}
         public string[] PreSkills {get;set;}=Array.Empty<string>();
         public string Input {get;set;}="Attack";
         public int[] RequiredTags {get;set;}=Array.Empty<int>();

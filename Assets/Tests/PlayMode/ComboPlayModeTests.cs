@@ -28,11 +28,14 @@ namespace Combat.Tests
             _relative="Combat/.combo-test-"+Guid.NewGuid().ToString("N");_directory=Path.Combine(Application.streamingAssetsPath,_relative);Directory.CreateDirectory(_directory);File.WriteAllText(Path.Combine(_directory,"project.json"),SkillProjectJson.Write(p));
             yield return SceneManager.LoadSceneAsync("Assets/Scenes/Arena.unity",LoadSceneMode.Single);yield return null;
             _arena=Object.FindFirstObjectByType<ArenaBootstrap>();_arena.AutoAdvance=false;_arena.Configure(_relative+"/project.json",true);Assert.IsTrue(_arena.Reload(false),_arena.LastLoadError);_arena.StepForTests(1);
-            var s=_arena.Session;s.World.TryGetActor(s.PlayerId,out var actor);var target=s.World.RegistryActive().Single(a=>a.Id!=s.PlayerId);target.GetComp<TransformComp>().Position=new SimVec3(.55f,0,0);target.GetComp<AttributeSet>().SetBase(AttrId.Hp,1000);
+            var s=_arena.Session;s.World.TryGetActor(s.PlayerId,out var actor);actor.GetComp<ComboComp>().DiagnosticsEnabled=true;
+            var target=s.World.RegistryActive().Single(a=>a.Id!=s.PlayerId);target.GetComp<TransformComp>().Position=new SimVec3(.55f,0,0);target.GetComp<AttributeSet>().SetBase(AttrId.Hp,1000);
             var press=new ArenaInputFrame{Pressed=new[]{"Fire1"},AimValid=true,Aim=new SkillAim(target.Id,new SimVec3(4,0,0),0)};
             _arena.Submit(press);_arena.StepForTests(10);Assert.IsTrue(actor.GetComp<SkillDirectorComp>().HasComboConfirmation);Assert.AreEqual(SkillNodeId.G1,actor.GetComp<SkillDirectorComp>().CurrentSkill);
             _arena.Submit(press);_arena.StepForTests(4);Assert.AreEqual(SkillNodeId.G2,actor.GetComp<SkillDirectorComp>().CurrentSkill);Assert.IsFalse(actor.GetComp<InputBufferComp>().TryPeek(out _));
-            Assert.IsFalse(actor.GetComp<SkillDirectorComp>().HasComboConfirmation);yield return null;LogAssert.NoUnexpectedReceived();
+            Assert.IsFalse(actor.GetComp<SkillDirectorComp>().HasComboConfirmation);
+            var decision=actor.GetComp<ComboComp>().LastDecision;Assert.AreEqual("cast",decision.Phase);Assert.AreEqual("confirmed-g1-g2",decision.Rule);Assert.AreEqual(SkillNodeId.G2,decision.ActualSkill);
+            Assert.IsTrue(decision.Confirmed);Assert.IsTrue(decision.WindowOpen);yield return null;LogAssert.NoUnexpectedReceived();
         }
         [UnityTest]
         public IEnumerator RejectedComboTableCannotReplaceTheActiveArenaWorld()
@@ -54,6 +57,7 @@ namespace Combat.Tests
             File.WriteAllText(Path.Combine(_directory,"f6.json"),SkillPublicationJson.Write(SkillPublicationJson.Create(p,"g1")));
             yield return SkillLabTestScene.Load();_lab=Object.FindFirstObjectByType<SkillLabRunner>();_lab.AutoAdvance=false;_lab.ConfigureContentDirectory(_directory);Assert.IsTrue(_lab.ReloadPublished());
             _lab.SubmitInput("ConfirmAttack",4,0);_lab.StepLogicForTests(1);Assert.AreEqual(0,_lab.Snapshot.Statistics.Casts);Assert.AreEqual("ConfirmAttack",_lab.Snapshot.Actors.Single(a=>a.Kind=="caster").BufferedInput);
+            Assert.AreEqual("unmatched",_lab.Snapshot.Actors.Single(a=>a.Kind=="caster").ComboDecision.Phase);
             Assert.IsTrue(_lab.CastSlot("f6",4,0).Accepted);_lab.StepLogicForTests(1);Assert.AreEqual(1,_lab.Snapshot.Statistics.Casts);yield return null;LogAssert.NoUnexpectedReceived();
         }
     }

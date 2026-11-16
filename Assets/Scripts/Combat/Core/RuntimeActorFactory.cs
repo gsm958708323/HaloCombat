@@ -76,7 +76,8 @@ namespace Combat.Core
             var tags=Self.GetComp<TagComp>();var input=Self.GetComp<InputBufferComp>();
             var aiming=Self.GetComp<PlayerAimComp>();var cast=Self.GetComp<SkillCastComp>();
             if(aiming.Valid)cast.UpdateAim(aiming.Aim);
-            if(tags.Has(CommonTags.Dead)||tags.Has(CommonTags.Stunned)||tags.Has(CommonTags.Downed))return;
+            if(tags.Has(CommonTags.Dead)||tags.Has(CommonTags.Stunned)||tags.Has(CommonTags.Downed))
+            {if(input.TryPeek(out var blocked))Self.GetComp<ComboComp>().ReportBlockedInput(blocked);return;}
             bool buffered=input.TryPeek(out var token);
             // Holding repeats a complete primary action. Only a new press can take a Combo
             // cancel edge; otherwise a held button could cut off its own delayed payload.
@@ -92,7 +93,9 @@ namespace Combat.Core
             }
             var transform=Self.GetComp<TransformComp>();
             var aim=aiming.Valid?aiming.Aim:new SkillAim(EntityId.Invalid,transform.Position,transform.YawDegrees,false);
-            if(selected.IsValid&&cast.TryCast(selected,aim))
+            bool accepted=selected.IsValid&&cast.TryCast(selected,aim);
+            if(token!=Season2Tokens.Dodge)Self.GetComp<ComboComp>().ReportCastOutcome(accepted,cast.LastAcceptedSkill,cast.LastRejection);
+            if(accepted)
             {
                 if(buffered)input.Consume();
                 if(token==aiming.PrimaryToken&&aiming.PrimaryHeld)aiming.PrimaryCastId=Self.GetComp<SkillDirectorComp>().CurrentOrigin.CastId;

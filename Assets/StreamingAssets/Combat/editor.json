@@ -1,0 +1,30 @@
+{
+  "selectedSkill": "arena-ammo-shot",
+  "selectedBuff": null,
+  "viewports": [],
+  "comboViews": [
+    {
+      "id": "continuous-attack",
+      "name": "连续攻击与派生",
+      "rootSkill": "arena-ammo-shot",
+      "ruleIds": [
+        "arena-first-second",
+        "arena-second-finisher",
+        "arena-confirmed-return",
+        "ArenaSecond-confirm-bomb"
+      ],
+      "positions": []
+    },
+    {
+      "id": "alternating-attack",
+      "name": "交替攻击接续",
+      "rootSkill": "g1",
+      "ruleIds": [
+        "g1-to-g2",
+        "confirmed-g1-g2",
+        "confirmed-g2-g1"
+      ],
+      "positions": []
+    }
+  ]
+}

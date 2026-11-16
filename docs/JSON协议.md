@@ -26,7 +26,11 @@ target端口传目标数据；cast/execute/next和生命周期输出是执行连
 
 `pierce.parameters.maxHits`为非负整数，默认3，0无限；`chain.parameters`为count（默认3个额外目标）、radius（默认6米）、selection（nearest/random）。经hit及其next链执行，射线apply可传pierce。连锁必须有真实投射物命中上下文；每个接触的穿透优先，有限预算按连锁段重置。Core不再拥有弹体MaxHits/Chain分支；范围选取只由delivery负责，damage结算当前目标。Format-1旧行为输入、行内字段和范围伤害在协议层一次性转换；启用新旧策略混用拒绝，不双写。旧发布修订仍以转换前原始payload校验，用户槽位不自动重写。
 
-`editor.comboPositions`只保存skillId/x/y（起手为`$start`）；运行规则仍为`runtime.combos`。自动cast的cancelStart/cancelEnd默认为0，结束0禁用，否则须start<end且在动作总长内，编译为同一CancelTag clip；独立/共享timeline继续是窗口唯一来源。普通preview输入缓冲`inputBufferSeconds`默认0.2秒，Arena使用其player定义。
+连招运行规则为 runtime.combos 的 id/preSkills/input/requiredTags/priority/toSkill；可选 purpose 为 entry（空闲起手）、transition（动作接续）、cancel（公共取消），仅说明作者用途，不作为运行匹配过滤条件。缺失 purpose 的旧文件保持行为，非空前置在作者界面显示“未标用途”。多个前置是OR，多个正向所需Tag是AND；相同输入、重叠前置的平级规则拒绝。当前技能播放中还统一要求Cancel窗口。
+
+editor.comboPositions 保存自动展开视图的 skillId/x/y（起手为 $start）；可选 editor.comboViews 保存 id/name/rootSkill/ruleIds/positions，每个视图引用同一运行规则，不复制内容、不隔离运行。视图规则只能引用已有非起手、非公共取消条目，身份和坐标在协议边界独立校验。完整工程保留视图，完整运行导出省略 editor，保留 purpose；单技能包继续省略完整角色和连招调度。
+
+预览 Actor 的 comboDecision 与独立 comboDecisions 通道包含结构化诊断：输入序号、前置、规则、目标、实际执行技能、阶段、原因、窗口/命中资格、候选优先级和缺失Tag。成功路径只记录实际施放；相同输入结果去重且使用独立64条有界历史和序号，不挤占战斗事件；诊断从回放结果投影中排除，不要求开启输入录制。输入只在成功施放后消费；查表消费本次命中资格，同一次查找不回退其他候选，仍在缓冲期的输入可在后续逻辑步按新状态重求值。作者设计与使用见[连招编辑器设计与使用](连招编辑器设计与使用.md)。
 
 cast.allowMovement允许动作中的自主移动；远程自动时序默认true，近战/冲刺/延迟位移默认false，显式时间轴含命中盒时默认false；BlockMove及动作控制Tag优先。弹体扫掠半径为弹体半径+目标Locomotion碰撞半径，墙/射程/去重保持原规则；射线宽度独立，不因本次弹体修正暗改。
 
