@@ -17,7 +17,6 @@
         "range": 0,
         "lifetime": 2,
         "radius": 0.1,
-        "maxHits": 1,
         "spawnForward": 0.4,
         "snapshotAttack": true,
         "passInvulnerable": true,

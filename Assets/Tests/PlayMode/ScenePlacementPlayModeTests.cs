@@ -24,7 +24,7 @@ namespace Combat.Tests
             var p=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));
             string text=SkillPublicationJson.Write(SkillPublicationJson.Create(p,"basic-shot"));
             _directory=Path.Combine(Path.GetTempPath(),"HaloCombat-Placement-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(_directory);File.WriteAllText(Path.Combine(_directory,"f6.json"),text);
-            yield return SceneManager.LoadSceneAsync("Assets/Scenes/HaloCombat/SkillLab.unity",LoadSceneMode.Single);
+            yield return SkillLabTestScene.Load();
             _lab=Object.FindFirstObjectByType<SkillLabRunner>();_lab.AutoAdvance=false;_lab.ConfigureContentDirectory(_directory);Assert.IsTrue(_lab.ReloadPublished());
             Assert.IsTrue(_lab.CastSlot("f6",0,0).Accepted);_lab.StepLogicForTests(10);int generation=_lab.Generation;
             var before=_lab.Snapshot;var target=before.Actors.Single(a=>a.SceneId==p.Preview.Targets[0].Id);var body=before.Actors.Single(a=>a.Kind=="projectile");

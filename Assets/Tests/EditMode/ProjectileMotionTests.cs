@@ -33,7 +33,7 @@ namespace Combat.Tests
             var def=ProjectileMotionTestWorld.Definition();def.Speed=2;def.Range=4;def.Motion=new ProjectileMotionDefinition{Acceleration=4,MaxSpeed=20};
             var w=new ProjectileMotionTestWorld(def);def.OnRange=new IEffect[]{new ProjectileMotionTestWorld.Capture(w.Captures)};
             w.Fire();w.World.Tick(2);Assert.AreEqual(4,w.Captures.Single().Point.X,.00001);Assert.AreEqual(ProjectileEndReason.Range,w.Ended.Single().Reason);
-            def.Range=100;def.MaxHits=1;w=new ProjectileMotionTestWorld(def);w.Spawn("target",4);
+            def.Range=100;ProjectileMotionTestWorld.Pierce(def,1);w=new ProjectileMotionTestWorld(def);w.Spawn("target",4);
             def.OnHit=new IEffect[]{new ProjectileMotionTestWorld.Capture(w.Captures)};
             w.Fire();w.World.Tick(2);Assert.AreEqual(3.9,w.Captures.Single().Point.X,.00001);
         }
@@ -99,7 +99,7 @@ namespace Combat.Tests
         [Test]
         public void SplitStartsAtImpactHeightAndInheritsInstantVerticalVelocity()
         {
-            var def=ProjectileMotionTestWorld.Definition();def.Speed=4;def.MaxHits=1;
+            var def=ProjectileMotionTestWorld.Definition();def.Speed=4;ProjectileMotionTestWorld.Pierce(def,1);
             def.Motion=new ProjectileMotionDefinition{Bounce=new ProjectileBounceDefinition{LaunchHeight=0,VerticalSpeed=4,Gravity=8,Count=1}};
             def.OnHit=new IEffect[]{new SplitProjectileEffect(1,0,1,.5f,false,20)};
             var w=new ProjectileMotionTestWorld(def);w.Spawn("target",1.1f);w.Fire();w.World.Tick(.25f);

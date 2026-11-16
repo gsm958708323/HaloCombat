@@ -50,7 +50,6 @@
         "speed": 3,
         "range": 0,
         "radius": 0.18,
-        "maxHits": 1,
         "homingRate": 0,
         "trajectory": "phase-bounce",
         "groundPhases": [

@@ -48,6 +48,15 @@ namespace Combat.Config
             var effects = new List<IEffect>();
             switch (node.Kind)
             {
+                case "pierce":
+                    var pierce=new NodeParameters(node,path,"maxHits");
+                    effects.Add(new PierceEffect(pierce.Integer("maxHits",3,0,1000000)));
+                    effects.AddRange(Outputs(node,"next",allowSpatial));break;
+                case "chain":
+                    var chain=new NodeParameters(node,path,"count","radius","selection");
+                    effects.Add(new ChainProjectileEffect(chain.Integer("count",3,1,64),chain.Number("radius",6,.01f,1000),
+                        chain.Choice("selection","nearest","nearest","random")=="random"?ChainTargetMode.Random:ChainTargetMode.Nearest));
+                    effects.AddRange(Outputs(node,"next",allowSpatial));break;
                 case "construct":
                     effects.Add(ConstructNodeCompiler.Compile(node,path,_content,port=>Outputs(node,port)));break;
                 case "construct-chain":
@@ -74,7 +83,7 @@ namespace Combat.Config
                     effects.AddRange(Outputs(node,"next",allowSpatial));break;
                 case "delivery": effects.Add(Delivery(node, path)); break;
                 case "damage":
-                    var d = new NodeParameters(node, path, "flat", "coefficient", "critChance", "critMultiplier", "ignoreDefense", "hitstopFrames", "scope", "center", "radius", "maxTargets","scaleByStacks","notifyHurt","damageType","includeBonuses","critFromAttribute","snapshotAttack","canCrit","sourceHitstopFrames","targetHitstopFrames","feedback","feedbackHitstop");
+                    var d = new NodeParameters(node, path, "flat", "coefficient", "critChance", "critMultiplier", "ignoreDefense", "hitstopFrames","scaleByStacks","notifyHurt","damageType","includeBonuses","critFromAttribute","snapshotAttack","canCrit","sourceHitstopFrames","targetHitstopFrames","feedback","feedbackHitstop");
                     IEffect damage = new DamageEffect
                     {
                         Flat = d.Number("flat", 80, 0, 10000000), Coeff = d.Number("coefficient", 0, 0, 100000), CanCrit = d.Boolean("canCrit",true),
@@ -88,8 +97,6 @@ namespace Combat.Config
                         Kind=d.Choice("damageType","physical","physical","elemental")=="physical"?DamageKind.Physical:DamageKind.Elemental,IncludeBonuses=d.Boolean("includeBonuses",true)
                     };
                     if(d.Boolean("critFromAttribute",false))((DamageEffect)damage).CritChance=-1;
-                    if (d.Choice("scope", "target", "target", "area") == "area")
-                        damage = new CircleEffects(new[] { damage }, Center(d), d.Number("radius", 3, .01f, 100), d.Integer("maxTargets", 0, 0, 128));
                     effects.Add(damage); effects.AddRange(Outputs(node, "next",allowSpatial));
                     break;
                 case "cue":
@@ -162,20 +169,21 @@ namespace Combat.Config
 
         IEffect Projectile(SkillNodeDocument node,string path)
         {
-            var p=new NodeParameters(node,path,"speed","range","lifetime","radius","maxHits","homingRate",
-                "multi","count","spread","chain","chainCount","chainRadius","chainMode","homingRetarget","homingRadius",
+            var p=new NodeParameters(node,path,"speed","range","lifetime","radius","homingRate",
+                "multi","count","spread","homingRetarget","homingRadius",
                 "trajectory","acceleration","maxSpeed","returnAfter","returnSpeed","catchRadius","launchHeight","verticalSpeed","gravity","restitution","groundBounces","wallBounces","spawnForward","snapshotAttack","hostileMask","cueId","homingMaxTurn","trackingKey","rampTime","sameTargetDelay","passInvulnerable","returnCurve","groundPhases","bounceHeight","removeOnObstacle","view","contactMode","sameTargetMode","flightTrigger","flightInterval","flightDistance");
             CheckId(node,path,_projectiles,"projectile");
             int projectileCue=p.Integer("cueId",0,0,1000000);if(projectileCue>0)_content.RequiredCues.Add(projectileCue);
-            var behavior=ProjectileBehaviorCompiler.Compile(_graph,node,p,path);int maxHits=behavior.Hits;var chain=behavior.Chain;
             string contact=p.Choice("contactMode","behavior","behavior","end","continue","ignore");
             float sameDelay=p.Number("sameTargetDelay",0,0,3600);
             string same=p.Choice("sameTargetMode",sameDelay>0?"interval":"once","once","interval","per-leg");
             if(same=="interval"&&sameDelay<=0)throw new ContentValidationException(path+".parameters.sameTargetDelay","Interval hit policy needs a positive delay.");
-            if(contact!="behavior"&&chain!=null)throw new ContentValidationException(path+".parameters.contactMode","Chain requires the behavior contact policy.");
             string flight=p.Choice("flightTrigger","none","none","time","distance");
             float flightInterval=p.Number("flightInterval",.2f,.001f,3600),flightDistance=p.Number("flightDistance",1,.01f,1000);
             var flightEffects=Outputs(node,"flight");
+            var hitEffects=Outputs(node,"hit");
+            if(contact!="behavior"&&Array.Exists(hitEffects,e=>e is ChainProjectileEffect))
+                throw new ContentValidationException(path+".parameters.contactMode","Chain effects require contact decisions from effects.");
             if(flight=="none"&&flightEffects.Length>0)throw new ContentValidationException(path+".parameters.flightTrigger","Connected flight effects require a time or distance trigger.");
             float speed=p.Number("speed",12,.1f,1000);
             string trajectory=p.Choice("trajectory","linear","linear","accelerate","return","bounce","ramp","phase-bounce");
@@ -194,14 +202,14 @@ namespace Combat.Config
             {
                 SpecId=node.RuntimeId,Speed=speed,Range=p.Number("range",24,0,1000),Lifetime=p.Number("lifetime",120,.001f,3600),Motion=motion,TrackingKey=p.OptionalIdentity("trackingKey"),
                 SpawnForward=p.Number("spawnForward",.4f,0,100),SnapshotAtk=p.Boolean("snapshotAttack",true),HostileMask=p.Integer("hostileMask",0,0,int.MaxValue),CueId=projectileCue,HomingMaxTurn=p.Number("homingMaxTurn",0,0,10000),
-                HitRadius=p.Number("radius",.18f,.01f,100),MaxHits=maxHits,Chain=chain,
+                HitRadius=p.Number("radius",.18f,.01f,100),
                 ContactMode=(ProjectileContactMode)Array.IndexOf(new[]{"behavior","end","continue","ignore"},contact),HitOncePerLeg=same=="per-leg",
                 Flight=flight=="none"?null:new ProjectileFlightDefinition{Clock=flight=="time"?ProjectileFlightClock.Time:ProjectileFlightClock.Distance,Interval=flight=="time"?flightInterval:flightDistance},OnFlight=flightEffects,
                 SameTargetDelay=same=="interval"?sameDelay:0,PassInvulnerable=p.Boolean("passInvulnerable",false),
                 RemoveOnObstacle=p.Boolean("removeOnObstacle",true),
                 View=BodyView(p),
                 HomingRate=p.Number("homingRate",0,0,36000),HomingRetarget=p.Boolean("homingRetarget",false),HomingAcquireRadius=p.Number("homingRadius",12,.01f,1000),
-                OnHit=Outputs(node,"hit"),OnWall=Outputs(node,"wall"),OnRange=Outputs(node,"range"),OnExpire=Outputs(node,"lifetime"),OnEnd=Outputs(node,"expire"),
+                OnHit=hitEffects,OnWall=Outputs(node,"wall"),OnRange=Outputs(node,"range"),OnExpire=Outputs(node,"lifetime"),OnEnd=Outputs(node,"expire"),
                 OnBounce=Outputs(node,"bounce"),OnReturned=Outputs(node,"returned"),OnGround=Outputs(node,"ground")
             });
             int count=p.Integer("count",3,1,64);float spread=p.Number("spread",45,0,360);
@@ -212,7 +220,7 @@ namespace Combat.Config
         IEffect Delivery(SkillNodeDocument node, string path)
         {
             var p = new NodeParameters(node, path, "mode", "recipient", "center", "radius", "maxTargets", "persistent", "duration", "interval", "pulseOnSpawn",
-                "shape","length","width","angle","startup","activeDuration","movementMode","distance","speed","hitRadius","pierce","blueprint","count","spacing","maxAlive","permanent","cueId","hostileMask",
+                "shape","length","width","angle","startup","activeDuration","movementMode","distance","speed","hitRadius","blueprint","count","spacing","maxAlive","permanent","cueId","hostileMask",
                 "areaMotion","moveSpeed","removeOnObstacle","absorbProjectiles","absorbForce","radiusPerProjectile","forwardOffset","view");
             string mode = p.Choice("mode", "target", "target", "area","ray","summon");
             if(mode=="summon")
@@ -236,7 +244,7 @@ namespace Combat.Config
             {
                 _graph.RequireNoOutputs(node,"enter","exit","stay","expire","absorb");
                 return new RayStrikeEffect(Outputs(node,"apply"),Outputs(node,"wall"),Outputs(node,"complete"),
-                    p.Number("length",20,.01f,1000),p.Number("width",.3f,.01f,100),p.Boolean("pierce",false),p.Integer("maxTargets",0,0,128));
+                    p.Number("length",20,.01f,1000),p.Number("width",.3f,.01f,100),p.Integer("maxTargets",0,0,128));
             }
             _graph.RequireNoOutputs(node,"wall","complete");
             bool persistent = mode == "area" && p.Boolean("persistent", false);

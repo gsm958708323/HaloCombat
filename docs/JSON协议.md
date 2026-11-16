@@ -22,13 +22,19 @@
 
 每个图持有稳定id，节点持有图内唯一id、kind、parameters，可选runtimeId/enabled/position；边具有稳定id、source/sourcePort/target/targetPort和显式order。数组位置、显示名、坐标不充当身份；重复入口仍执行多次。节点字段契约由`SkillEffectCompiler/SkillCastCompiler`及相应独立编译器维护，网页`model.ts`提供同字段的作者控件。类型化目录分别保存技能、Buff、蓝图、共享轴、弹体和区域，跨图引用使用明确字符串键。
 
-目标、行为输入是数据；cast/execute/next和生命周期输出是执行连接，非法混接拒绝。即时图循环、跨类型依赖递归拒绝；连发、引导、弹体连锁/分裂使用有界领域机制。独立projectile-behavior与根行内策略不能同时拥有同一字段，提取与切换为一次可撤销作者事务。普通传递七模式可以切换，共享定义根类型固定。
+target端口传目标数据；cast/execute/next和生命周期输出是执行连接，非法混接拒绝。即时效果图和跨类型依赖禁止递归；连发、引导、弹体连锁/分裂使用有界领域机制。连招图引用既有技能，循环由输入与时间轴窗口驱动，允许循环接续。普通传递七模式可以切换，共享定义根类型固定。
+
+`pierce.parameters.maxHits`为非负整数，默认3，0无限；`chain.parameters`为count（默认3个额外目标）、radius（默认6米）、selection（nearest/random）。经hit及其next链执行，射线apply可传pierce。连锁必须有真实投射物命中上下文；每个接触的穿透优先，有限预算按连锁段重置。Core不再拥有弹体MaxHits/Chain分支；范围选取只由delivery负责，damage结算当前目标。Format-1旧行为输入、行内字段和范围伤害在协议层一次性转换；启用新旧策略混用拒绝，不双写。旧发布修订仍以转换前原始payload校验，用户槽位不自动重写。
+
+`editor.comboPositions`只保存skillId/x/y（起手为`$start`）；运行规则仍为`runtime.combos`。自动cast的cancelStart/cancelEnd默认为0，结束0禁用，否则须start<end且在动作总长内，编译为同一CancelTag clip；独立/共享timeline继续是窗口唯一来源。普通preview输入缓冲`inputBufferSeconds`默认0.2秒，Arena使用其player定义。
 
 cast.allowMovement允许动作中的自主移动；远程自动时序默认true，近战/冲刺/延迟位移默认false，显式时间轴含命中盒时默认false；BlockMove及动作控制Tag优先。弹体扫掠半径为弹体半径+目标Locomotion碰撞半径，墙/射程/去重保持原规则；射线宽度独立，不因本次弹体修正暗改。
 
 默认单位：时间秒、空间米、速度米/秒、角度度、概率0..1、倍率无量纲；界面百分比换算不改变JSON。DTO整数拒绝小数取整、数字字符串、溢出与非有限值，旧内容中的精确整数`.0`身份继续合法；节点参数另按其字段类型校验。所有输入数值必须有限；运行中持续引导使用的无限时长在只读快照中表示null，不将Infinity写入JSON。时间轴、Buff、弹体与角色钟按各自契约推进，网页显示不决定战斗时间。
 
 稳定对外字段的新增默认值、修订哈希与旧载荷按契约评估；内部过时路径直接删除。旧SO/Bake/cache不在正常加载或回退路径。完整DTO到领域映射失败时保留旧会话，不把新参数写入正在运行的旧弹体/轴/Buff。
+
+`configure`命令携带完整候选project，完整编译后原子替换现有会话的后续定义、连招表、输入缓冲和Motor，保留时间、实体、位置、生命、冷却和资源。存量动作/弹体/区域/Buff保持捕获定义；分裂子弹沿用父定义，全局技能事件/Cue使用当前目录。节点编辑不重建世界；初始布置、种子、预览选项变更或显式重置仍重建。开启录制时配置更新进入同一输入日志。详见ADR-0046。
 
 ## 输入复现
 

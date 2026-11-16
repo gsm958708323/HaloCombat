@@ -47,7 +47,6 @@
         "lifetime": 2.5,
         "range": 0,
         "radius": 0.35,
-        "maxHits": 1,
         "homingRate": 270,
         "spawnForward": 0.2
       }

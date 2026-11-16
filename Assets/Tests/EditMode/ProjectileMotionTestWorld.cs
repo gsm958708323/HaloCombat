@@ -45,7 +45,9 @@ namespace Combat.Tests
             public Capture(List<EffectContext> contexts)=>_contexts=contexts;
             public void Apply(ref EffectContext context)=>_contexts.Add(context);
         }
-        public static ProjectileDefinition Definition()=>new ProjectileDefinition {SpecId=1,SpawnForward=0,Speed=4,Range=100,Lifetime=10,HitRadius=.1f,MaxHits=0,
-            OnHit=new IEffect[]{new DamageEffect{Flat=10,Coeff=0,FireOnHurted=false}}};
+        public static void Pierce(ProjectileDefinition definition,int maximum)
+        {definition.OnHit=definition.OnHit.Where(e=>!(e is PierceEffect)).Concat(maximum==1?new IEffect[0]:new IEffect[]{new PierceEffect(maximum)}).ToArray();}
+        public static ProjectileDefinition Definition()=>new ProjectileDefinition {SpecId=1,SpawnForward=0,Speed=4,Range=100,Lifetime=10,HitRadius=.1f,
+            OnHit=new IEffect[]{new DamageEffect{Flat=10,Coeff=0,FireOnHurted=false},new PierceEffect(0)}};
     }
 }

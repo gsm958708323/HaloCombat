@@ -11,6 +11,8 @@ namespace Combat.Unity
         readonly Dictionary<string, GameObject> _objects = new Dictionary<string, GameObject>();
         readonly List<Material> _materials = new List<Material>();
         readonly Dictionary<string,UnityBodyVisual> _bodies=new Dictionary<string,UnityBodyVisual>();
+        readonly SkillLabDamageNumbers _damageNumbers=new SkillLabDamageNumbers();
+        public int ActiveDamageNumbers=>_damageNumbers.Count;
         SkillLabRunner _runner;
         Material _caster, _target, _projectile, _area,_obstacle,_summon,_construct;
         int _generation = -1;
@@ -43,6 +45,7 @@ namespace Combat.Unity
             if (_generation != _runner.Generation) { Clear(); _generation = _runner.Generation; }
             var snapshot = _runner.Snapshot;
             if (snapshot == null) return;
+            _damageNumbers.Update(snapshot);
             var alive = new HashSet<string>();
             foreach (var actor in snapshot.Actors)
             {
@@ -102,6 +105,7 @@ namespace Combat.Unity
                     _objects.Add(id,visual);
                 }
                 var points=SkillVolumeGeometry.Points(volume);var line=visual.GetComponent<LineRenderer>();line.positionCount=points.Length;line.SetPositions(points);
+                SkillLabSweepVisual.Update(visual,volume,_projectile);
                 visual.transform.position=new Vector3(volume.X,.08f,volume.Z);visual.transform.rotation=Quaternion.Euler(0,-volume.Yaw,0);
             }
             var removed = new List<string>();
@@ -129,6 +133,7 @@ namespace Combat.Unity
         {
             var camera = Camera.main;
             if (camera == null || _runner?.Snapshot == null) return;
+            _damageNumbers.Draw(camera);
             foreach (var actor in _runner.Snapshot.Actors)
             {
                 if (!actor.Hp.HasValue) continue;
@@ -143,7 +148,7 @@ namespace Combat.Unity
             }
         }
 
-        void Clear() { foreach (var visual in _objects.Values) if (visual != null) Destroy(visual); _objects.Clear();_bodies.Clear(); }
+        void Clear() { foreach (var visual in _objects.Values) if (visual != null) Destroy(visual); _objects.Clear();_bodies.Clear();_damageNumbers.Clear(); }
         void OnDestroy() { Clear(); foreach (var material in _materials) if (material != null) Destroy(material); }
     }
 }

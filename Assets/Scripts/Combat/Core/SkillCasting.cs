@@ -80,7 +80,8 @@ namespace Combat.Core
     // Shared by player, AI, debug slots and the preview. All mutable timers belong to the actor.
     public sealed class SkillCastComp : Comp
     {
-        readonly SkillCatalog _catalog;
+        SkillCatalog _catalog;
+        public void ReplaceCatalog(SkillCatalog catalog)=>_catalog=catalog??throw new ArgumentNullException(nameof(catalog));
         readonly Dictionary<int, float> _readyAt = new Dictionary<int, float>();
         SkillDirectorComp _director;
         EnergyComp _energy;

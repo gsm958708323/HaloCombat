@@ -107,7 +107,6 @@
         "lifetime": 2,
         "range": 0,
         "radius": 0.3,
-        "maxHits": 1,
         "spawnForward": 0.4
       }
     },

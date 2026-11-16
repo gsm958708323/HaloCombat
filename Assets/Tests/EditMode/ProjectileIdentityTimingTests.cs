@@ -32,7 +32,7 @@ namespace Combat.Tests
         public void OneLargeStepConsumesItsRemainingTimeAfterEachRedirect()
         {
             var def=new ProjectileDefinition{SpecId=1,SpawnForward=0,Speed=10,Lifetime=10,Range=100,HitRadius=.1f,
-                Chain=new ProjectileChainDefinition{ExtraChains=1,Radius=10},OnHit=new IEffect[]{new DamageEffect{Flat=10,Coeff=0,FireOnHurted=false}}};
+                OnHit=new IEffect[]{new ChainProjectileEffect(1,10),new DamageEffect{Flat=10,Coeff=0,FireOnHurted=false}}};
             foreach(int subdivisions in new[]{1,50})
             {
                 var world=World(def);var owner=Spawn(world,"owner",0);Spawn(world,"target",2);var next=Spawn(world,"target",8);
@@ -47,8 +47,8 @@ namespace Combat.Tests
         [Test]
         public void SameEntityIndexWithANewGenerationCanBeHitWhileAnOldIdentityCannot()
         {
-            var def=new ProjectileDefinition{SpecId=1,SpawnForward=0,Speed=1,Lifetime=20,Range=20,HitRadius=.1f,MaxHits=0,
-                OnHit=new IEffect[]{new DamageEffect{Flat=10,Coeff=0,FireOnHurted=false}}};
+            var def=new ProjectileDefinition{SpecId=1,SpawnForward=0,Speed=1,Lifetime=20,Range=20,HitRadius=.1f,
+                OnHit=new IEffect[]{new DamageEffect{Flat=10,Coeff=0,FireOnHurted=false},new PierceEffect(0)}};
             var world=World(def);var owner=Spawn(world,"owner",0);var old=Spawn(world,"target",1);
             var victims=new List<EntityId>();world.Events.Subscribe<EvDamage>(e=>victims.Add(e.Target));
             world.Intents.Post(new SpawnProjectileIntent(owner,1,default,0,0));world.Tick(1);
@@ -61,9 +61,9 @@ namespace Combat.Tests
         public void OnHitDamageCanRemoveTheNextCandidateBeforeChainSearch()
         {
             var def=new ProjectileDefinition{SpecId=1,SpawnForward=0,Speed=10,Lifetime=10,Range=100,HitRadius=.1f,
-                Chain=new ProjectileChainDefinition{ExtraChains=2,Radius=10}};
+                OnHit=new IEffect[]{new ChainProjectileEffect(2,10)}};
             var world=World(def);var owner=Spawn(world,"owner",0);Spawn(world,"target",2);var victim=Spawn(world,"target",4);
-            def.OnHit=new IEffect[]{new CallbackEffect(()=>world.RequestDespawn(victim)),new DamageEffect{Flat=10,Coeff=0,FireOnHurted=false}};
+            def.OnHit=new IEffect[]{new ChainProjectileEffect(2,10),new CallbackEffect(()=>world.RequestDespawn(victim)),new DamageEffect{Flat=10,Coeff=0,FireOnHurted=false}};
             var ends=new List<ProjectileEndReason>();world.Events.Subscribe<EvProjectileEnded>(e=>ends.Add(e.Reason));
             world.Intents.Post(new SpawnProjectileIntent(owner,1,default,0,0));world.Tick(1);
             CollectionAssert.AreEqual(new[]{ProjectileEndReason.ChainExhausted},ends);

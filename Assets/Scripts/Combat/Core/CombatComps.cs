@@ -145,7 +145,8 @@ namespace Combat.Core
 
     public sealed class SkillDirectorComp : Comp
     {
-        readonly TimelineLibrary _library;
+        TimelineLibrary _library;
+        public void ReplaceLibrary(TimelineLibrary library)=>_library=library??throw new ArgumentNullException(nameof(library));
         readonly TimelinePlayer _player = new TimelinePlayer();
         StateMachineComp _fsm;
         TagComp _tags;

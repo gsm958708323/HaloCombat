@@ -21,6 +21,7 @@ namespace Combat.Config
             {
                 case "step":Advance(command.Steps??1);break;
                 case "snapshot":break;
+                case "configure":ApplyConfiguration(command.Project);break;
                 case "cast":result=Cast(command.SkillId,command.X??0,command.Z??0);break;
                 case "auto-cast":SetContinuousCast(command.SkillId,command.X??0,command.Z??0);break;
                 case "input":Input(command.Input,command.X??0,command.Z??0);break;

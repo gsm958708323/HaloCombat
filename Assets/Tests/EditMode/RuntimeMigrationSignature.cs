@@ -38,6 +38,13 @@ namespace Combat.Tests
                 var result=new JArray();foreach(var item in values){var token=Shape(item,depth+1);if(item is IEffect&&token is JArray children)foreach(var child in children)result.Add(child);else result.Add(token);}return result;
             }
             var fields=new JObject();if(value is IEffect)fields["type"]=type.Name;
+            // Project executable contact effects into the frozen policy fields;
+            // their values are still compared, independently of implementation.
+            if(value is ProjectileDefinition projectile)
+            {
+                fields["MaxHits"]=projectile.OnHit.OfType<PierceEffect>().SingleOrDefault()?.MaxHits??1;
+                fields["Chain"]=Shape(projectile.OnHit.OfType<ChainProjectileEffect>().SingleOrDefault(),depth+1);
+            }
             foreach(var field in type.GetFields(flags))
             {
                 // Animation is presentation metadata added after this numeric gameplay fixture;
@@ -73,7 +80,8 @@ namespace Combat.Tests
                 }
                 // The old circle wrapper used implicit hostility; zero preserves that rule.
                 if(value is CircleEffects&&field.Name=="_mask"&&(int)field.GetValue(value)==0)continue;
-                fields[field.Name]=Shape(field.GetValue(value),depth+1);
+                if(value is ProjectileDefinition&&field.Name=="OnHit")fields[field.Name]=Shape(((IEffect[])field.GetValue(value)).Where(e=>!(e is PierceEffect)&&!(e is ChainProjectileEffect)).ToArray(),depth+1);
+                else fields[field.Name]=Shape(field.GetValue(value),depth+1);
             }
             return fields;
         }

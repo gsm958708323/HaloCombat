@@ -26,7 +26,7 @@ namespace Combat.Tests
             _directory=Path.Combine(Path.GetTempPath(),"HaloCombat-TimelineControl-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(_directory);
             var p=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));p.Preview.Caster.X=0;p.Preview.Caster.ActionSpeed=2;p.Preview.Targets=Array.Empty<PreviewActorDocument>();
             File.WriteAllText(Path.Combine(_directory,"f6.json"),SkillPublicationJson.Write(SkillPublicationJson.Create(p,"controlled-shot")));
-            yield return SceneManager.LoadSceneAsync("Assets/Scenes/HaloCombat/SkillLab.unity",LoadSceneMode.Single);_lab=Object.FindFirstObjectByType<SkillLabRunner>();_lab.AutoAdvance=false;_lab.ConfigureContentDirectory(_directory);Assert.IsTrue(_lab.ReloadPublished(),_lab.LastLoadError);
+            yield return SkillLabTestScene.Load();_lab=Object.FindFirstObjectByType<SkillLabRunner>();_lab.AutoAdvance=false;_lab.ConfigureContentDirectory(_directory);Assert.IsTrue(_lab.ReloadPublished(),_lab.LastLoadError);
             Assert.IsTrue(_lab.CastSlot("f6",4,0).Accepted);_lab.SetMovement(0,1);_lab.StepLogicForTests(5);var actor=_lab.Snapshot.Actors.Single(a=>a.Kind=="caster");
             CollectionAssert.AreEquivalent(new[]{1011,1012,1013},actor.ControlTags);Assert.AreEqual(2,actor.ActionRate);Assert.AreEqual(.2f,actor.ActionTime.Value,.0001);Assert.AreEqual(0,actor.Z);Assert.AreEqual(1,_lab.Snapshot.Statistics.Projectiles);
             _lab.Interrupt();Assert.AreEqual(0,_lab.Snapshot.Actors.Single(a=>a.Kind=="caster").ControlTags.Length);_lab.StepLogicForTests(20);_lab.SetMovement(0,1);_lab.StepLogicForTests(1);Assert.Greater(_lab.Snapshot.Actors.Single(a=>a.Kind=="caster").Z,0);

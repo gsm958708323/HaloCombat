@@ -28,7 +28,7 @@ namespace Combat.Tests
         [Test]
         public void RealReturnAndHomingDefinitionsKeepSourceParametersAndBindings()
         {
-            var p=Formal();var c=CombatContentCompiler.Compile(p);Assert.IsTrue(c.Projectiles.TryGet(4003,out var b));Assert.IsTrue(b.Motion.SineReturn);Assert.AreEqual(1,b.Motion.ReturnAfter);Assert.AreEqual(5,b.Speed);Assert.AreEqual(.5f,b.HitRadius);Assert.AreEqual(99999,b.MaxHits);Assert.AreEqual(.5f,b.SameTargetDelay);Assert.IsFalse(b.RemoveOnObstacle);
+            var p=Formal();var c=CombatContentCompiler.Compile(p);Assert.IsTrue(c.Projectiles.TryGet(4003,out var b));Assert.IsTrue(b.Motion.SineReturn);Assert.AreEqual(1,b.Motion.ReturnAfter);Assert.AreEqual(5,b.Speed);Assert.AreEqual(.5f,b.HitRadius);Assert.AreEqual(99999,(((PierceEffect)System.Array.Find(b.OnHit,e=>e is PierceEffect))?.MaxHits??1));Assert.AreEqual(.5f,b.SameTargetDelay);Assert.IsFalse(b.RemoveOnObstacle);
             Assert.IsTrue(c.Projectiles.TryGet(4006,out var homing));Assert.AreEqual(36000,homing.HomingRate);Assert.AreEqual(14,homing.HomingAcquireRadius);Assert.AreEqual(100,homing.Lifetime);
             Assert.AreEqual("arena-homing-shot",p.Runtime.Combos.Single(r=>r.Id=="ArenaHoming").ToSkill);Assert.AreEqual("arena-returning-shot",p.Runtime.Combos.Single(r=>r.Id=="ArenaArea").ToSkill);
             Assert.AreEqual("arena-enemy-shot",p.Runtime.Actors.Single(a=>a.Id=="arena-enemy").SkillId);

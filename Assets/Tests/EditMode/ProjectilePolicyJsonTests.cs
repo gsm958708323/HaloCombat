@@ -23,15 +23,15 @@ namespace Combat.Tests
         public void DataBehaviorCompilesToOneRuntimeDefinitionAndExecutesRealHits(string mode,int hits,int chains)
         {
             var p=Create();Behavior(p,mode);var content=CombatContentCompiler.Compile(p);content.Projectiles.TryGet(Node(p,"projectile").RuntimeId,out var def);
-            Assert.AreEqual(hits,def.MaxHits);Assert.AreEqual(chains,def.Chain?.ExtraChains??0);
+            Assert.AreEqual(hits,(def.OnHit.OfType<PierceEffect>().FirstOrDefault()?.MaxHits??1));Assert.AreEqual(chains,def.OnHit.OfType<ChainProjectileEffect>().FirstOrDefault()?.Count??0);
             using(var simulation=Run(p)){simulation.Cast(p.Skills[0].Id,10,0);simulation.Advance(100);Assert.AreEqual(3,simulation.Snapshot().Statistics.Hits);Assert.AreEqual(chains,simulation.Snapshot().Statistics.Chains);}
         }
 
         [Test]
         public void UnlimitedAndDisabledBehaviorDoNotLeaveASecondInlinePolicy()
         {
-            var p=Create();var b=Behavior(p);b.Parameters["unlimited"]=true;var content=CombatContentCompiler.Compile(p);content.Projectiles.TryGet(Node(p,"projectile").RuntimeId,out var def);Assert.AreEqual(0,def.MaxHits);
-            b.Enabled=false;content=CombatContentCompiler.Compile(p);content.Projectiles.TryGet(Node(p,"projectile").RuntimeId,out def);Assert.AreEqual(1,def.MaxHits);Assert.IsNull(def.Chain);
+            var p=Create();var b=Behavior(p);b.Parameters["unlimited"]=true;var content=CombatContentCompiler.Compile(p);content.Projectiles.TryGet(Node(p,"projectile").RuntimeId,out var def);Assert.AreEqual(0,(def.OnHit.OfType<PierceEffect>().FirstOrDefault()?.MaxHits??1));
+            b.Enabled=false;content=CombatContentCompiler.Compile(p);content.Projectiles.TryGet(Node(p,"projectile").RuntimeId,out def);Assert.AreEqual(1,(def.OnHit.OfType<PierceEffect>().FirstOrDefault()?.MaxHits??1));Assert.IsFalse(def.OnHit.OfType<ChainProjectileEffect>().Any());
             Cue(p,Node(p,"cast").Id,"cast",9913,1);Node(p,"projectile").Enabled=false;b.Enabled=true;Assert.DoesNotThrow(()=>CombatContentCompiler.Compile(p));
         }
 

@@ -26,7 +26,7 @@ namespace Combat.Tests
             Assert.AreEqual(2012,second.Id.Value);Assert.AreEqual(2013,finish.Id.Value);Assert.AreEqual(second.Timeline,finish.Timeline);Assert.AreEqual(3013,second.Timeline.Value);
             Assert.AreEqual(2,second.AmmoCost);Assert.AreEqual(3,finish.AmmoCost);Assert.AreEqual(HitFeedbackLevel.ComboConfirm,second.HitFeedback);Assert.AreEqual(HitFeedbackLevel.Finisher,finish.HitFeedback);
             Assert.IsTrue(c.Timelines.TryGet(second.Timeline,out var timeline));Assert.AreEqual(.65f,timeline.Duration);Assert.AreEqual(.22f,timeline.Payloads.Single().Time);Assert.AreEqual(.25f,timeline.Clips.Single().Start);Assert.AreEqual(.65f,timeline.Clips.Single().End);
-            Assert.IsTrue(c.Projectiles.TryGet(4012,out var projectile));Assert.AreEqual(10,projectile.Speed);Assert.AreEqual(.16f,projectile.HitRadius);Assert.AreEqual(4,projectile.MaxHits);Assert.AreEqual(.15f,projectile.SameTargetDelay);
+            Assert.IsTrue(c.Projectiles.TryGet(4012,out var projectile));Assert.AreEqual(10,projectile.Speed);Assert.AreEqual(.16f,projectile.HitRadius);Assert.AreEqual(4,(((PierceEffect)System.Array.Find(projectile.OnHit,e=>e is PierceEffect))?.MaxHits??1));Assert.AreEqual(.15f,projectile.SameTargetDelay);
             Shared(p).Timeline.Duration=9;Assert.AreEqual(.65f,timeline.Duration,"Authoring DTO cannot mutate a compiled session.");
         }
         [Test]

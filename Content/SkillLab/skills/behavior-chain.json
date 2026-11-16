@@ -73,7 +73,7 @@
     },
     {
       "id": "behavior",
-      "kind": "projectile-behavior",
+      "kind": "chain",
       "runtimeId": 0,
       "enabled": true,
       "position": {
@@ -81,10 +81,9 @@
         "y": 550.0
       },
       "parameters": {
-        "mode": "chain",
-        "chainCount": 2,
-        "chainRadius": 6,
-        "chainMode": "nearest"
+        "count": 2,
+        "radius": 6,
+        "selection": "nearest"
       }
     }
   ],
@@ -114,12 +113,12 @@
       "order": 0
     },
     {
-      "id": "behavior-input",
-      "source": "behavior",
-      "sourcePort": "behavior",
-      "target": "projectile",
-      "targetPort": "behavior",
-      "order": 0
+      "id": "projectile-hit-behavior",
+      "source": "projectile",
+      "sourcePort": "hit",
+      "target": "behavior",
+      "targetPort": "execute",
+      "order": 1
     }
   ]
 }

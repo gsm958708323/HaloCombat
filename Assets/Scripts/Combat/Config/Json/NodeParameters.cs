@@ -21,9 +21,13 @@ namespace Combat.Config
             if (!_values.TryGetValue(name, out var value)) return fallback;
             if (value.Type != JTokenType.Integer && value.Type != JTokenType.Float) Fail(name, "Number is required.");
             double number = value.Value<double>();
-            if (double.IsNaN(number) || double.IsInfinity(number) || number < min || number > max)
+            // The domain stores Single values. Compare in that precision so a
+            // portable JSON value such as 0.001 survives a serialize/read cycle
+            // against the Single boundary 0.0010000000474974513.
+            float normalized=(float)number;
+            if (double.IsNaN(number) || double.IsInfinity(number) || normalized < min || normalized > max)
                 Fail(name, "Expected finite number in [" + min + ", " + max + "].");
-            return (float)number;
+            return normalized;
         }
         public int Integer(string name, int fallback, int min, int max)
         {

@@ -50,7 +50,6 @@
         "mode": "ray",
         "length": 24,
         "width": 0.3,
-        "pierce": true,
         "maxTargets": 0
       }
     },
@@ -70,6 +69,19 @@
         "critMultiplier": 1.8,
         "ignoreDefense": false,
         "hitstopFrames": 0
+      }
+    },
+    {
+      "id": "ray-pierce",
+      "kind": "pierce",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 540.0,
+        "y": 340.0
+      },
+      "parameters": {
+        "maxHits": 0
       }
     }
   ],
@@ -97,6 +109,14 @@
       "target": "damage",
       "targetPort": "execute",
       "order": 0
+    },
+    {
+      "id": "ray-apply-ray-pierce",
+      "source": "ray",
+      "sourcePort": "apply",
+      "target": "ray-pierce",
+      "targetPort": "execute",
+      "order": 1
     }
   ]
 }

@@ -34,10 +34,10 @@ namespace Combat.Tests
                 Node(skill,"cast").Parameters["delay"]=0;
                 Node(skill,"projectile").Parameters["speed"]=10;Node(skill,"projectile").Parameters["radius"]=.1f;
             }
-            Node("chain-shot","projectile").Parameters["chainCount"]=2;
+            Node("chain-shot","chain").Parameters["count"]=2;
             var split=Node("split-shot","split").Parameters;split["count"]=2;split["spread"]=0;split["generations"]=2;
             Publish();
-            yield return SceneManager.LoadSceneAsync("Assets/Scenes/HaloCombat/SkillLab.unity",LoadSceneMode.Single);
+            yield return SkillLabTestScene.Load();
             _runner=UnityEngine.Object.FindFirstObjectByType<SkillLabRunner>();Assert.IsNotNull(_runner);_runner.AutoAdvance=false;
             _runner.ConfigureContentDirectory(_directory);Assert.IsTrue(_runner.ReloadPublished(),_runner.LastLoadError);
         }
@@ -51,7 +51,7 @@ namespace Combat.Tests
             Assert.IsTrue(_runner.CastSlot("f6",10,0).Accepted);_runner.StepLogicForTests(120);
             Assert.AreEqual(240,_runner.Snapshot.Statistics.Damage);Assert.AreEqual(2,_runner.Snapshot.Statistics.Chains);Assert.AreEqual(1,_runner.Snapshot.Statistics.Projectiles);
             Assert.IsFalse(_runner.Snapshot.Actors.Any(a=>a.Kind=="projectile"));
-            _runner.ReloadPublished();_runner.CastSlot("f7",10,0);_runner.StepLogicForTests(9);yield return null;
+            _runner.ReloadPublished();_runner.CastSlot("f7",10,0);for(int i=0;i<20&&_runner.Snapshot.Statistics.Splits==0;i++)_runner.StepLogicForTests(1);_runner.StepLogicForTests(1);yield return null;
             var children=_runner.Snapshot.Actors.Where(a=>a.Kind=="projectile").ToArray();Assert.AreEqual(2,children.Length);Assert.IsTrue(children.All(a=>a.Generation==1&&a.CastId>0));
             _runner.StepLogicForTests(120);Assert.AreEqual(240,_runner.Snapshot.Statistics.Damage);Assert.AreEqual(7,_runner.Snapshot.Statistics.Projectiles);
             Assert.AreEqual(3,_runner.Snapshot.Statistics.Splits);Assert.IsFalse(_runner.Snapshot.Actors.Any(a=>a.Kind=="projectile"));

@@ -65,7 +65,7 @@ namespace Combat.Tests
                 var wall=snapshot.Events.Single(e=>e.Kind=="cue"&&e.Result=="11");var complete=snapshot.Events.Single(e=>e.Kind=="cue"&&e.Result=="12");
                 Assert.Less(snapshot.Events.Last(e=>e.Kind=="damage").Sequence,wall.Sequence);Assert.Less(wall.Sequence,complete.Sequence);
             }
-            Node(p,"piercing-ray","delivery").Parameters["pierce"]=false;
+            Node(p,"piercing-ray","pierce").Enabled=false;
             using(var s=Simulation(p))
             {s.Cast("piercing-ray",0,0);s.Advance(10);Assert.AreEqual(80,s.Snapshot().Statistics.Damage);Assert.IsFalse(s.Snapshot().Events.Any(e=>e.Kind=="cue"&&e.Result=="11"));}
         }

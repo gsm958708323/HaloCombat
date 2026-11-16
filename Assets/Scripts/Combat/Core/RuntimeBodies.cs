@@ -10,7 +10,6 @@ namespace Combat.Core
         public float Lifetime = 2f;
         public float Range;
         public float HitRadius = 0.3f;
-        public int MaxHits = 1;
         public bool SnapshotAtk = true;
         public int HostileMask;
         public int CueId;
@@ -20,7 +19,6 @@ namespace Combat.Core
         public float HomingMaxTurn;
         public bool HomingRetarget;
         public float HomingAcquireRadius = 12f;
-        public ProjectileChainDefinition Chain;
         public ProjectileMotionDefinition Motion;
         public string TrackingKey;
         public float SameTargetDelay;
@@ -95,6 +93,7 @@ namespace Combat.Core
         readonly HashSet<EntityId> _hits = new HashSet<EntityId>();
         readonly Dictionary<EntityId,double> _nextHit=new Dictionary<EntityId,double>();
         readonly HashSet<EntityId> _returnHits=new HashSet<EntityId>(),_ancestors=new HashSet<EntityId>();
+        readonly Dictionary<ChainProjectileEffect,int> _chainUses=new Dictionary<ChainProjectileEffect,int>();
         internal long NextFlightIndex {get;set;}
         internal int FlightFrame {get;set;}=int.MinValue;
         internal int FlightDelivered {get;set;}
@@ -130,7 +129,8 @@ namespace Combat.Core
             Family=seed?.Family??new ProjectileFamily(default);
             Generation=seed?.Generation??0;
             RangeLimit=seed!=null&&seed.Range>0?seed.Range:def.Range>0?def.Range:double.PositiveInfinity;
-            ChainsLeft=def.Chain?.ExtraChains??0;LegHits=0;
+            _chainUses.Clear();ChainsLeft=0;LegHits=0;
+            foreach(var effect in def.OnHit)if(effect is ChainProjectileEffect chain)ChainsLeft=Math.Max(ChainsLeft,chain.Count);
             Returning=false;VerticalSpeed=seed?.VerticalSpeed??def.Motion?.Bounce?.VerticalSpeed??0;
             SampledSpeed=0;
             GroundBouncesLeft=def.Motion?.ScheduledBounce?.Phases.Length??def.Motion?.Bounce?.Count??0;WallBouncesLeft=def.Motion?.WallBounces??0;GroundY=groundY;Velocity=SimVec3.Zero;
@@ -154,6 +154,9 @@ namespace Combat.Core
             (Def?.HitOncePerLeg==true&&Returning?!_returnHits.Contains(id):
                 !_hits.Contains(id)||(Def?.SameTargetDelay??0)>0&&_nextHit.TryGetValue(id,out double next)&&atAge+.0000001>=next);
         public bool HasHit(EntityId id)=>_hits.Contains(id);
+        internal bool CanChain(ChainProjectileEffect effect)=>!_chainUses.TryGetValue(effect,out int count)||count<effect.Count;
+        internal void ConsumeChain(ChainProjectileEffect effect)
+        {_chainUses.TryGetValue(effect,out int count);_chainUses[effect]=count+1;ChainsLeft=Math.Max(0,effect.Count-count-1);}
         internal EntityId[] Visited()
         {
             var result=new EntityId[_hits.Count];_hits.CopyTo(result);return result;
@@ -164,6 +167,7 @@ namespace Combat.Core
             if(Self.World!=null&&Self.World.TryGetActor(OwnerId,out var owner)&&owner.TryGetComp<TrackedProjectilesComp>(out var tracker))tracker.ClearIf(Def?.TrackingKey,Self.Id);
             _hits.Clear();
             _nextHit.Clear();
+            _chainUses.Clear();
             _returnHits.Clear();_ancestors.Clear();NextFlightIndex=1;FlightFrame=int.MinValue;FlightDelivered=0;FlightLimited=false;
             Def = null;
             Exhausted = true;

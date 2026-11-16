@@ -150,6 +150,13 @@ namespace Combat.Config
         static void Editor(SkillEditorDocument editor,HashSet<string> skills,HashSet<string> buffs,HashSet<string> timelines,HashSet<string> projectiles,HashSet<string> areas)
         {
             if(editor==null)return;
+            if(editor.ComboPositions!=null)
+            {
+                var positions=new HashSet<string>();
+                foreach(var position in editor.ComboPositions)
+                    if(position==null||!positions.Add(position.SkillId??"")||position.SkillId!="$start"&&!skills.Contains(position.SkillId??"")||!Finite(position.X)||!Finite(position.Y))
+                        Fail("$.editor.comboPositions","Expected unique skill identities and finite node positions.");
+            }
             if(!string.IsNullOrEmpty(editor.SelectedSkill)&&!skills.Contains(editor.SelectedSkill))Fail("$.editor.selectedSkill","Unknown skill.");
             if(!string.IsNullOrEmpty(editor.SelectedBuff)&&!buffs.Contains(editor.SelectedBuff))Fail("$.editor.selectedBuff","Unknown Buff.");
             if(!string.IsNullOrEmpty(editor.SelectedTimeline)&&!timelines.Contains(editor.SelectedTimeline))Fail("$.editor.selectedTimeline","Unknown timeline.");

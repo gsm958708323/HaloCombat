@@ -30,7 +30,7 @@ namespace Combat.Tests
         public IEnumerator SkillLabShowsThePublishedBodyAndNewFilesRemainPendingUntilExplicitReload()
         {
             var p=Formal();p.Preview.Caster.X=0;p.Preview.Targets=Array.Empty<PreviewActorDocument>();Files(p);
-            yield return SceneManager.LoadSceneAsync("Assets/Scenes/HaloCombat/SkillLab.unity",LoadSceneMode.Single);_lab=Object.FindFirstObjectByType<SkillLabRunner>();_lab.AutoAdvance=false;_lab.ConfigureContentDirectory(_directory);Assert.IsTrue(_lab.ReloadPublished(),_lab.LastLoadError);
+            yield return SkillLabTestScene.Load();_lab=Object.FindFirstObjectByType<SkillLabRunner>();_lab.AutoAdvance=false;_lab.ConfigureContentDirectory(_directory);Assert.IsTrue(_lab.ReloadPublished(),_lab.LastLoadError);
             string previous=_lab.SlotRevisions["f6"];Assert.IsTrue(_lab.CastSlot("f6",5,0).Accepted);_lab.StepLogicForTests(15);yield return null;
             var shot=_lab.Snapshot.Actors.Single(a=>a.Kind=="projectile");Assert.AreEqual("buff_projectile_normal_view",shot.View);Assert.AreEqual(6,shot.Speed);
             Assert.IsTrue(_lab.GetComponentsInChildren<Transform>().Any(t=>t.name=="BulletNormal0(Clone)"));
@@ -42,7 +42,7 @@ namespace Combat.Tests
         [UnityTest]
         public IEnumerator MissingPublishedBodyResourcesKeepTheCurrentSkillLabWorldAndVersion()
         {
-            var p=Formal();Files(p);yield return SceneManager.LoadSceneAsync("Assets/Scenes/HaloCombat/SkillLab.unity",LoadSceneMode.Single);_lab=Object.FindFirstObjectByType<SkillLabRunner>();_lab.AutoAdvance=false;_lab.ConfigureContentDirectory(_directory);Assert.IsTrue(_lab.ReloadPublished());int generation=_lab.Generation;string revision=_lab.Revision;
+            var p=Formal();Files(p);yield return SkillLabTestScene.Load();_lab=Object.FindFirstObjectByType<SkillLabRunner>();_lab.AutoAdvance=false;_lab.ConfigureContentDirectory(_directory);Assert.IsTrue(_lab.ReloadPublished());int generation=_lab.Generation;string revision=_lab.Revision;
             p.Runtime.Views.Single(v=>v.Id=="buff_projectile_normal_view").Resource="Combat/MissingResource";File.WriteAllText(Path.Combine(_directory,"f6.json"),SkillPublicationJson.Write(SkillPublicationJson.Create(p,"arena-ammo-shot")));File.WriteAllText(Path.Combine(_directory,"f7.json"),SkillPublicationJson.Write(SkillPublicationJson.Create(p,"arena-bomb-shot")));
             Assert.IsFalse(_lab.ReloadPublished());Assert.AreEqual(generation,_lab.Generation);Assert.AreEqual(revision,_lab.Revision);StringAssert.Contains("Missing Unity prefab",_lab.LastLoadError);yield return null;LogAssert.NoUnexpectedReceived();
         }

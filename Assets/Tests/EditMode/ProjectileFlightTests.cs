@@ -82,7 +82,7 @@ namespace Combat.Tests
             var def=Definition(interval:.25f);ObstacleDefinition[] walls=null;
             if(reason=="range")def.Range=1;if(reason=="lifetime")def.Lifetime=.25f;
             if(reason=="wall")walls=new[]{new ObstacleDefinition("wall",1.6f,0,1,8)};
-            var w=new ProjectileMotionTestWorld(def,walls);if(reason=="hit"){def.MaxHits=1;w.Spawn("target",1.1f);}
+            var w=new ProjectileMotionTestWorld(def,walls);if(reason=="hit"){ProjectileMotionTestWorld.Pierce(def,1);w.Spawn("target",1.1f);}
             var flights=Listen(w);w.Fire();w.World.Tick(.5f);Assert.IsEmpty(flights);Assert.AreEqual(1,w.Ended.Count);
         }
 

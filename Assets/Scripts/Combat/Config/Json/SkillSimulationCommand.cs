@@ -18,6 +18,7 @@ namespace Combat.Config
         [JsonProperty(NullValueHandling=NullValueHandling.Ignore)]public int? Steps {get;set;}
         [JsonProperty(NullValueHandling=NullValueHandling.Ignore)]public int? Frames {get;set;}
         [JsonProperty(NullValueHandling=NullValueHandling.Ignore)]public int? InstanceId {get;set;}
+        [JsonProperty(NullValueHandling=NullValueHandling.Ignore)]public SkillProjectDocument Project {get;set;}
     }
 
     public static class SkillSimulationCommands
@@ -28,7 +29,7 @@ namespace Combat.Config
             {"input",new[]{"input","x","z"}},{"release",new[]{"x","z"}},{"cancel",Array.Empty<string>()},
             {"aim",new[]{"x","z"}},{"move",new[]{"x","z"}},{"place",new[]{"actorId","entityId","x","z"}},
             {"remove",new[]{"entityId"}},{"remove-buff",new[]{"actorId","instanceId"}},
-            {"interrupt",Array.Empty<string>()},{"death",Array.Empty<string>()},{"hitstop",new[]{"frames"}}
+            {"interrupt",Array.Empty<string>()},{"death",Array.Empty<string>()},{"hitstop",new[]{"frames"}},{"configure",new[]{"project"}}
         };
         public static SkillSimulationCommand Read(string text)
         {
@@ -56,6 +57,8 @@ namespace Combat.Config
             CheckField(fields,"actorId",command.ActorId!=null);CheckField(fields,"entityId",command.EntityId!=null);
             CheckField(fields,"x",command.X.HasValue);CheckField(fields,"z",command.Z.HasValue);
             CheckField(fields,"steps",command.Steps.HasValue);CheckField(fields,"frames",command.Frames.HasValue);CheckField(fields,"instanceId",command.InstanceId.HasValue);
+            CheckField(fields,"project",command.Project!=null);
+            if(command.Kind=="configure"&&command.Project==null)throw new ContentValidationException("$.project","Configuration requires a project.");
             if(command.X.HasValue&&!SkillSceneValidation.Finite(command.X.Value)||command.Z.HasValue&&!SkillSceneValidation.Finite(command.Z.Value))throw new ContentValidationException("$.aim","Coordinates must be finite.");
             if(command.X.HasValue!=command.Z.HasValue)throw new ContentValidationException("$.aim","Provide x and z together.");
             if((command.Kind=="aim"||command.Kind=="move"||command.Kind=="place")&&!command.X.HasValue)
@@ -71,6 +74,7 @@ namespace Combat.Config
         static void CheckField(string[] fields,string name,bool present)
         {if(present&&!fields.Contains(name))throw new ContentValidationException("$."+name,"Field is not supported by this command.");}
         internal static SkillSimulationCommand Copy(SkillSimulationCommand value)=>new SkillSimulationCommand
-        {Kind=value.Kind,SkillId=value.SkillId,Input=value.Input,ActorId=value.ActorId,EntityId=value.EntityId,X=value.X,Z=value.Z,Steps=value.Steps,Frames=value.Frames,InstanceId=value.InstanceId};
+        {Kind=value.Kind,SkillId=value.SkillId,Input=value.Input,ActorId=value.ActorId,EntityId=value.EntityId,X=value.X,Z=value.Z,Steps=value.Steps,Frames=value.Frames,InstanceId=value.InstanceId,
+            Project=value.Project==null?null:SkillProjectJson.Read(SkillProjectJson.Write(value.Project))};
     }
 }

@@ -9,7 +9,8 @@ namespace Combat.Config
     public sealed partial class SkillSimulation : IDisposable
     {
         public const float Step = 0.02f;
-        readonly CombatContentSnapshot _content;
+        CombatContentSnapshot _content;
+        readonly SkillSimulationFactory _factory;
         public IReadOnlyDictionary<string,RuntimeViewDefinition> Views=>_content.Runtime?.Views;
         readonly Dictionary<long, string> _names = new Dictionary<long, string>();
         readonly Dictionary<long, string> _kinds = new Dictionary<long, string>();
@@ -38,7 +39,8 @@ namespace Combat.Config
             SkillSceneValidation.Validate(preview);
             _recordingEnabled=recordInputs;if(recordInputs)InitializeRecording(project);
             _trace=new AuthorExecutionTrace(content.Sources);
-            _world = new CombatWorld(new SkillSimulationFactory(content, preview), random: new SeededRandom(preview.Seed), cues: content.Runtime?.Data.Cues??content.Cues,motor:content.Runtime?.Data.Motor,obstacles:SkillSceneValidation.Obstacles(preview),skillEvents:content.SkillEvents,effectObserver:_trace);
+            _factory=new SkillSimulationFactory(content,preview);
+            _world = new CombatWorld(_factory, random: new SeededRandom(preview.Seed), cues: content.Runtime?.Data.Cues??content.Cues,motor:content.Runtime?.Data.Motor,obstacles:SkillSceneValidation.Obstacles(preview),skillEvents:content.SkillEvents,effectObserver:_trace);
             _trace.Executing+=e=>Record("execute",Name(e.Source),e.Node.NodeKind,e.Origin,node:e.Node,sourceId:e.Source,targetId:e.Target);
             _world.ReplaceCatalogs(content.Projectiles, content.Aoes, content.Summons);
             _world.ReplaceConstructs(content.Constructs);
@@ -261,6 +263,7 @@ namespace Combat.Config
                 a.TryGetComp<SkillDirectorComp>(out var director);
                 return new SkillActorSnapshot
                 {
+                    ComboFailure=a.TryGetComp<InputBufferComp>(out var pending)&&pending.HasBuffered?a.TryGetComp<SkillCastComp>(out var skillCast)&&skillCast.LastRejection!=null?skillCast.LastRejection:a.TryGetComp<ComboComp>(out var actorCombo)?actorCombo.LastFailure:null:null,
                     Id = HitboxComp.Pack(a.Id).ToString(),SceneId=_sceneIds.TryGetValue(a.Id,out var sceneId)?sceneId:null,Team=a.TryGetComp<TeamComp>(out var team)?team.TeamId:0, Name = Name(a.Id), Kind = _kinds[HitboxComp.Pack(a.Id)], X = p.X,Y=p.Y, Z = p.Z,Author=ActorSource(a),
                     View=projectile?.Def?.View??area?.Def?.View??construct?.Def?.View,Yaw=a.GetComp<TransformComp>().YawDegrees,
                     ViewScale=area?.Def!=null&&area.Def.Radius>0?area.Radius/area.Def.Radius:1,
@@ -343,7 +346,7 @@ namespace Combat.Config
             if(e.Closed){_volumes.Remove(e.Sequence);Record("action-close",Name(e.Source),e.Shape.ToString(),e.SkillOrigin,node:_content.Sources.Site(e.DiagnosticSite),sourceId:e.Source);return;}
             if(!_volumes.ContainsKey(e.Sequence))Record("action-open",Name(e.Source),e.Shape.ToString(),e.SkillOrigin,node:_content.Sources.Site(e.DiagnosticSite),sourceId:e.Source);
             _volumes[e.Sequence]=new SkillSpatialSnapshot {Sequence=e.Sequence,Source=Name(e.Source),Shape=e.Shape.ToString().ToLowerInvariant(),
-                X=e.Origin.X,Z=e.Origin.Z,Yaw=e.Yaw,Length=e.Length,Width=e.Width,Angle=e.Angle};
+                X=e.Origin.X,Z=e.Origin.Z,Yaw=e.Yaw,Length=e.Length,Width=e.Width,Angle=e.Angle,Progress=e.Progress};
         }
         void OnRay(EvRayResolved e)
         {
@@ -369,10 +372,12 @@ namespace Combat.Config
         {
             var execution=_trace.Current;
             if(origin.CastId==0&&execution.Node!=null)origin=execution.Origin;
+            var targetIdentity=damage?.Target??targetId;
+            var targetPosition=targetIdentity.IsValid&&_world.TryGetActor(targetIdentity,out var targetActor)?(SimVec3?)targetActor.GetComp<TransformComp>().Position:null;
             _events.Add(new SkillEventSnapshot { Sequence = ++_eventSequence,Step=_steps, Time = _steps * Step, Kind = kind, Source = source, Result = result,CastId=origin.CastId,Skill=SkillName(origin),
                 Node=node??execution.Node,ExecutionId=execution.Id,ParentExecutionId=execution.Parent,SourceId=Packed(damage?.Source??(sourceId.IsValid?sourceId:execution.Source)),
                 TargetId=Packed(damage?.Target??(targetId.IsValid?targetId:execution.Target)),BodyId=Packed(bodyId),
-                Flight=flight,HitIndex=damage?.HitIndex??0,Damage=damage==null?null:new SkillDamageSnapshot {Kind=damage.Kind.ToString().ToLowerInvariant(),Target=Name(damage.Target),Base=damage.Base,Scaled=damage.Scaled,
+                TargetX=targetPosition?.X,TargetZ=targetPosition?.Z,Flight=flight,HitIndex=damage?.HitIndex??0,Damage=damage==null?null:new SkillDamageSnapshot {Kind=damage.Kind.ToString().ToLowerInvariant(),Target=Name(damage.Target),Base=damage.Base,Scaled=damage.Scaled,
                     AfterDefense=damage.AfterDefense,AfterCritical=damage.AfterCritical,Final=damage.Final,Absorbed=damage.Absorbed,HpLost=damage.HpLost,Overkill=damage.Overkill,Killed=damage.Killed,Feedback=damage.Feedback.ToString().ToLowerInvariant()} });
             if (_events.Count > 500) _events.RemoveAt(0);
         }

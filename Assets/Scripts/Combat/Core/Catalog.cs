@@ -34,7 +34,6 @@ namespace Combat.Core
                 Speed = 14f,
                 Lifetime = 2f,
                 HitRadius = 0.3f,
-                MaxHits = 1,
                 SnapshotAtk = true,
                 SpawnForward = 0.4f
             };
@@ -89,7 +88,6 @@ namespace Combat.Core
                 Speed = 8f,
                 Lifetime = 2.5f,
                 HitRadius = 0.35f,
-                MaxHits = 1,
                 SnapshotAtk = true,
                 SpawnForward = 0.2f,
                 HomingRate = 270f,

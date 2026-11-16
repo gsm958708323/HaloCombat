@@ -50,12 +50,7 @@
         "speed": 12,
         "range": 24,
         "radius": 0.18,
-        "maxHits": 1,
-        "homingRate": 0,
-        "chain": true,
-        "chainCount": 3,
-        "chainRadius": 6,
-        "chainMode": "nearest"
+        "homingRate": 0
       }
     },
     {
@@ -74,6 +69,21 @@
         "critMultiplier": 1.8,
         "ignoreDefense": false,
         "hitstopFrames": 0
+      }
+    },
+    {
+      "id": "projectile-chain",
+      "kind": "chain",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 540.0,
+        "y": 340.0
+      },
+      "parameters": {
+        "count": 3,
+        "radius": 6,
+        "selection": "nearest"
       }
     }
   ],
@@ -101,6 +111,14 @@
       "target": "damage",
       "targetPort": "execute",
       "order": 0
+    },
+    {
+      "id": "projectile-hit-projectile-chain",
+      "source": "projectile",
+      "sourcePort": "hit",
+      "target": "projectile-chain",
+      "targetPort": "execute",
+      "order": 1
     }
   ]
 }

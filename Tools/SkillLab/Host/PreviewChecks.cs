@@ -8,6 +8,7 @@ internal static class PreviewChecks
     public static void Run(string root)
     {
         HostPathChecks.Run(root);
+        EditorOptimizationChecks.Run(root);
         TemplateAcceptanceChecks.Run(root);
         var json=SkillProjectJson.Write(SkillProjectFiles.Read(Path.Combine(root,"Content/SkillLab/project.json")));
         var document=SkillProjectJson.Read(json);
@@ -109,7 +110,7 @@ internal static class PreviewChecks
             var skill=project.Skills.First(s=>s.Id==id);skill.Nodes.First(n=>n.Kind=="cast").Parameters["delay"]=0;
             skill.Nodes.First(n=>n.Kind=="projectile").Parameters["radius"]=.1f;
         }
-        project.Skills.First(s=>s.Id=="chain-shot").Nodes.First(n=>n.Kind=="projectile").Parameters["chainCount"]=2;
+        project.Skills.First(s=>s.Id=="chain-shot").Nodes.First(n=>n.Kind=="chain").Parameters["count"]=2;
         var split=project.Skills.First(s=>s.Id=="split-shot").Nodes.First(n=>n.Kind=="split").Parameters;
         split["count"]=2;split["spread"]=0;split["generations"]=2;
         foreach(string id in new[]{"chain-shot","split-shot"})
@@ -172,7 +173,7 @@ internal static class PreviewChecks
     static void CheckSpatial(SkillProjectDocument project)
     {
         var content=CombatContentCompiler.Compile(project);
-        foreach(var item in new[]{("melee-thrust",80f,1,-6f),("melee-fan",160f,2,-6f),("melee-whirl",160f,2,-6f),("dash-strike",160f,2,6f),("blink-strike",240f,3,0f)})
+        foreach(var item in new[]{("melee-thrust",80f,1,-6f),("melee-fan",160f,2,-6f),("melee-whirl",160f,2,-6f),("dash-strike",80f,1,-.8001f),("blink-strike",240f,3,0f)})
         {
             using var s=new SkillSimulation(project,content);Assert(s.Cast(item.Item1,0,0).Accepted,"Action cast must succeed: "+item.Item1);s.Advance(80);var state=s.Snapshot();
             Assert(Math.Abs(state.Statistics.Damage-item.Item2)<.01,"Action damage differs: "+item.Item1);

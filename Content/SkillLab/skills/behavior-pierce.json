@@ -73,7 +73,7 @@
     },
     {
       "id": "behavior",
-      "kind": "projectile-behavior",
+      "kind": "pierce",
       "runtimeId": 0,
       "enabled": true,
       "position": {
@@ -81,9 +81,7 @@
         "y": 550.0
       },
       "parameters": {
-        "mode": "pierce",
-        "maxHits": 3,
-        "unlimited": false
+        "maxHits": 3
       }
     }
   ],
@@ -113,12 +111,12 @@
       "order": 0
     },
     {
-      "id": "behavior-input",
-      "source": "behavior",
-      "sourcePort": "behavior",
-      "target": "projectile",
-      "targetPort": "behavior",
-      "order": 0
+      "id": "projectile-hit-behavior",
+      "source": "projectile",
+      "sourcePort": "hit",
+      "target": "behavior",
+      "targetPort": "execute",
+      "order": 1
     }
   ]
 }

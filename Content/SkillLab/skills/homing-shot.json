@@ -50,7 +50,6 @@
         "speed": 12,
         "range": 24,
         "radius": 0.18,
-        "maxHits": 1,
         "homingRadius": 12,
         "homingRetarget": true,
         "homingRate": 360

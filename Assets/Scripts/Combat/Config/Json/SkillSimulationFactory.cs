@@ -5,7 +5,8 @@ namespace Combat.Config
 {
     internal sealed class SkillSimulationFactory : IActorFactory
     {
-        readonly CombatContentSnapshot _content;
+        CombatContentSnapshot _content;
+        internal void ReplaceContent(CombatContentSnapshot content)=>_content=content;
         readonly PreviewDocument _preview;
         public SkillSimulationFactory(CombatContentSnapshot content, PreviewDocument preview)
         { _content = content; _preview = preview; }
@@ -33,10 +34,10 @@ namespace Combat.Config
                 actor.AddComp(new BehaviorTreeComp(SummonBehavior.Create(blueprint.Skill,blueprint.HoldDuration),board=>
                 {board.AcquireRadius=blueprint.AcquireRadius;board.AttackRange=blueprint.AttackRange;board.FollowRange=blueprint.FollowRange;}));
             }
-            if(spec.BlueprintId=="caster"&&_content.Runtime!=null)
+            if(spec.BlueprintId=="caster")
             {
-                var runtime=_content.Runtime;float window=runtime.Arena!=null?runtime.Actors[runtime.Arena.Player].InputBufferSeconds:.2f;
-                actor.AddComp(new InputBufferComp(window));actor.AddComp(new ComboComp(runtime.Data.Combo));actor.AddComp(new PlayerAimComp());actor.AddComp(new RuntimePlayerDriverComp(SkillNodeId.None));
+                var runtime=_content.Runtime;float window=runtime?.Arena!=null?runtime.Actors[runtime.Arena.Player].InputBufferSeconds:_preview.InputBufferSeconds;
+                actor.AddComp(new InputBufferComp(window));actor.AddComp(new ComboComp(runtime?.Data.Combo??new ComboTableDefinition()));actor.AddComp(new PlayerAimComp());actor.AddComp(new RuntimePlayerDriverComp(SkillNodeId.None));
             }
             actor.AddComp(new SkillDirectorComp(_content.Timelines));
             if (spec.BlueprintId == "caster"||summoned)

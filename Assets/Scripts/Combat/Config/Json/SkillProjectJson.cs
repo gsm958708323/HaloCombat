@@ -7,7 +7,7 @@ namespace Combat.Config
 {
     public static class SkillProjectJson
     {
-        public static SkillProjectDocument Read(string text) => SkillJsonCodec.Read<SkillProjectDocument>(text);
+        public static SkillProjectDocument Read(string text) => SkillEffectNodeUpgrade.Apply(SkillJsonCodec.Read<SkillProjectDocument>(text));
         public static string Write(SkillProjectDocument value) => SkillJsonCodec.Write(value);
         public static SkillProjectDocument SelectTemplate(SkillProjectDocument source,string skillId)
             =>SkillContentClosure.Select(source,CombatContentCompiler.Compile(source),skillId);

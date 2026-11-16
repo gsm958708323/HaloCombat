@@ -21,12 +21,12 @@ namespace Combat.Tests
             skill.Edges = skill.Edges.Concat(new[] { new SkillEdgeDocument { Id = key, Source = "area", SourcePort = port, Target = key, TargetPort = "execute" } }).ToArray();
         }
 
-        [TestCase(4, 0, 240)]
+        [TestCase(4, 0, 160)]
         [TestCase(1, 0, 80)]
         [TestCase(4, 2, 160)]
         public void ExplosionUsesTheRealHitPointRadiusAndTargetLimit(float radius, int maximum, int damage)
         {
-            var p = Example(); var d = Node(p, "explosive-shot", "damage").Parameters;
+            var p = Example(); var d = Node(p, "explosive-shot", "delivery").Parameters;
             d["radius"] = radius; d["maxTargets"] = maximum;
             using (var simulation = Simulation(p))
             {
@@ -171,7 +171,9 @@ namespace Combat.Tests
             {
                 simulation.Cast("explosive-shot", 0, 0); simulation.Advance(80);
                 Assert.AreEqual(2, simulation.Snapshot().Statistics.Projectiles);
-                Assert.AreEqual(480, simulation.Snapshot().Statistics.Damage);
+                // The circle starts at the real contact surface, including the
+                // victim radius; target-2 is outside this 4m circle.
+                Assert.AreEqual(320, simulation.Snapshot().Statistics.Damage);
             }
             skill.Nodes.First(n => n.Kind == "projectile").Enabled = false;
             // Keep one valid effect so disabling the projectile is not an empty-cast error.

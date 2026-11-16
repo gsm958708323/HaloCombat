@@ -28,7 +28,7 @@ namespace Combat.Core
             if (context.World == null || target == null || !context.World.TryGetActor(target.Id, out var current)) return;
             context.World.Deliver(_effects, context.Source, current, context.SnapshotAtk,
                 context.HasPoint ? context.Point : (SimVec3?)null, context.HasDir ? context.Dir : (SimVec3?)null,
-                context.BuffStacks, context.Power, context.Origin, context.ProjectileHit,context.Damage);
+                context.BuffStacks, context.Power, context.Origin, context.ProjectileHit,context.Damage,context.Contact);
         }
     }
 
@@ -50,7 +50,7 @@ namespace Combat.Core
             {
                 if (!AreaTargets.TryLive(context.World, id, out var target)) continue;
                 context.World.Deliver(_effects, context.Source, target, context.SnapshotAtk, point,
-                    context.HasDir ? context.Dir : (SimVec3?)null, context.BuffStacks, context.Power, context.Origin, context.ProjectileHit,context.Damage);
+                    context.HasDir ? context.Dir : (SimVec3?)null, context.BuffStacks, context.Power, context.Origin, context.ProjectileHit,context.Damage,context.Contact);
             }
         }
     }

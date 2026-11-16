@@ -201,7 +201,14 @@ namespace Combat.Core
         {
             if(delta.X==0&&delta.Y==0&&delta.Z==0)return default;
             var destination=_tf.Position+delta;
-            _tf.Position=Self.World.Collision.Constrain(_tf.Position,destination,CollisionRadius,out var obstacle);
+            var from=_tf.Position;
+            destination=Self.World.Collision.Constrain(from,destination,CollisionRadius,out var obstacle);
+            if(kind=="dash")
+            {
+                destination=ActorBodyCollision.ConstrainDash(Self,from,destination,CollisionRadius,out var actorContact);
+                if(actorContact.Blocked)obstacle=actorContact;
+            }
+            _tf.Position=destination;
             if(obstacle.Blocked)Self.World.Events.Publish(new EvObstacleHit(Self.Id,Self.Id,obstacle.Id,obstacle.Point,obstacle.Normal,kind));
             return obstacle;
         }

@@ -33,8 +33,17 @@ namespace Combat.Core
             float yaw=dash&&length>.000001f?LocomotionComp.YawFromStick(new SimVec3(position.X-origin.X,0,position.Z-origin.Z)):MeleeClipHandler.Yaw(runtime);
             var shape=dash?HitShape.Capsule:runtime.Clip.Shape;
             float angle=dash?360:runtime.Clip.Angle;
-            world.Events.Publish(new EvSpatialVolume(self.Id,runtime.Sequence,origin,yaw,shape,length,runtime.Clip.Width,angle,false,runtime.Clip.DiagnosticSite,runtime.Origin));
+            float progress=self.TryGetComp<SkillDirectorComp>(out var director)?Math.Max(0,Math.Min(1,(director.TimelineTime-runtime.Start)/Math.Max(.00001f,runtime.End-runtime.Start))):0;
+            world.Events.Publish(new EvSpatialVolume(self.Id,runtime.Sequence,origin,yaw,shape,length,runtime.Clip.Width,angle,false,runtime.Clip.DiagnosticSite,runtime.Origin,progress));
             Apply(runtime,SpatialGeometry.Query(world,self,origin,yaw,shape,length,runtime.Clip.Width,angle),yaw);
+            if(dash)
+            {
+                var contact=self.GetComp<LocomotionComp>().MovementContact;
+                if(contact.Id!=null&&contact.Id.StartsWith("actor:",StringComparison.Ordinal))
+                    foreach(var candidate in world.QueryActors())
+                        if(contact.Id=="actor:"+candidate.Id.Index+":"+candidate.Id.Generation)
+                        {if(SimpleTargetQuery.PassesFilter(self,candidate,0))Apply(runtime,new[]{candidate.Id},yaw);break;}
+            }
             if(dash&&self.GetComp<LocomotionComp>().MovementContact.Blocked){Blocked=true;CloseVolume(runtime);}
         }
         void Apply(in ClipRuntime runtime,EntityId[] targets,float yaw)

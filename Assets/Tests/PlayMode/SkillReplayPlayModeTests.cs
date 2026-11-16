@@ -21,7 +21,7 @@ namespace Combat.Tests
             _directory=Path.Combine(Path.GetTempPath(),"HaloCombat-Replay-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(_directory);
             var p=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));
             File.WriteAllText(Path.Combine(_directory,"f6.json"),SkillPublicationJson.Write(SkillPublicationJson.Create(p,"held-spray")));
-            yield return SceneManager.LoadSceneAsync("Assets/Scenes/HaloCombat/SkillLab.unity",LoadSceneMode.Single);
+            yield return SkillLabTestScene.Load();
             _runner=UnityEngine.Object.FindFirstObjectByType<SkillLabRunner>();_runner.AutoAdvance=false;_runner.ConfigureContentDirectory(_directory);
             Assert.IsTrue(_runner.ReloadPublished(),_runner.LastLoadError);
         }

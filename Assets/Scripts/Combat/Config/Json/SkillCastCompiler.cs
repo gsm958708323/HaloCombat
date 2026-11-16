@@ -11,7 +11,7 @@ namespace Combat.Config
         {
             var c = new NodeParameters(node, path, "mode", "cost", "cooldown", "delay", "duration", "burst", "count", "interval", "sustained", "channelDuration",
                 "energyPerSecond", "costPerPulse", "chargeMin", "chargeMax", "powerMin", "powerMax", "autoRelease",
-                "ammoCost","fallbackSkill","recastSkill","recastProjectile","requiredProjectile","hitFeedback","execution","allowMovement");
+                "ammoCost","fallbackSkill","recastSkill","recastProjectile","requiredProjectile","hitFeedback","execution","allowMovement","cancelStart","cancelEnd");
             string mode = c.Choice("mode", "instant", "instant", "channel", "charge");
             if(c.Choice("execution","timeline","timeline","operation")=="operation")
             {
@@ -59,6 +59,12 @@ namespace Combat.Config
                 ? (c.Boolean("sustained", true) ? float.PositiveInfinity : c.Number("channelDuration", 3, .02f, 120))
                 : Math.Max(c.Number("duration", .3f, .02f, 120), delay + (count - 1) * interval + tail + .02f);
             if(length>120&&mode!="channel")Fail(path,"Cast action schedule exceeds 120 seconds.");
+            float cancelEnd=c.Number("cancelEnd",0,0,120),cancelStart=c.Number("cancelStart",0,0,120);
+            if(cancelEnd>0)
+            {
+                if(cancelEnd<=cancelStart||cancelEnd>length)Fail(path+".parameters.cancelEnd","Cancel window must have positive duration within the action.");
+                clips.Add(new TimelineClip{Kind=ClipKind.CancelTag,Start=cancelStart,End=cancelEnd});
+            }
             if (mode == "channel" && delay >= length) Fail(path + ".parameters.delay", "Delay must be shorter than the channel duration.");
             ChargeDefinition charge = null;
             if (mode == "charge")

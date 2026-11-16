@@ -27,7 +27,7 @@ namespace Combat.Tests
             var p=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));
             var text=SkillPublicationJson.Write(SkillPublicationJson.Create(p,"burn-shot"));
             _directory=Path.Combine(Path.GetTempPath(),"HaloCombat-AuthorTrace-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(_directory);File.WriteAllText(Path.Combine(_directory,"f6.json"),text);
-            yield return SceneManager.LoadSceneAsync("Assets/Scenes/HaloCombat/SkillLab.unity",LoadSceneMode.Single);
+            yield return SkillLabTestScene.Load();
             _lab=Object.FindFirstObjectByType<SkillLabRunner>();_lab.AutoAdvance=false;_lab.ConfigureContentDirectory(_directory);Assert.IsTrue(_lab.ReloadPublished(),_lab.LastLoadError);
             using(var reference=new PublishedSkillSession())
             {

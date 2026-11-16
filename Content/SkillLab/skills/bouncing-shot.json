@@ -56,8 +56,7 @@
         "trajectory": "bounce",
         "gravity": 20,
         "restitution": 0.6,
-        "launchHeight": 0.5,
-        "maxHits": 0
+        "launchHeight": 0.5
       }
     },
     {
@@ -76,6 +75,19 @@
         "critMultiplier": 1.8,
         "ignoreDefense": false,
         "hitstopFrames": 0
+      }
+    },
+    {
+      "id": "projectile-pierce",
+      "kind": "pierce",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 540.0,
+        "y": 340.0
+      },
+      "parameters": {
+        "maxHits": 0
       }
     }
   ],
@@ -103,6 +115,14 @@
       "target": "damage",
       "targetPort": "execute",
       "order": 0
+    },
+    {
+      "id": "projectile-hit-projectile-pierce",
+      "source": "projectile",
+      "sourcePort": "hit",
+      "target": "projectile-pierce",
+      "targetPort": "execute",
+      "order": 1
     }
   ]
 }

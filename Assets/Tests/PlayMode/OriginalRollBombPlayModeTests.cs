@@ -35,7 +35,7 @@ namespace Combat.Tests
             using(var reference=new PublishedSkillSession())
             {
                 reference.Replace(new Dictionary<string,string>{{"f6",File.ReadAllText(Path.Combine(_directory,"f6.json"))},{"f7",File.ReadAllText(Path.Combine(_directory,"f7.json"))}});
-                yield return SceneManager.LoadSceneAsync("Assets/Scenes/HaloCombat/SkillLab.unity",LoadSceneMode.Single);_lab=Object.FindFirstObjectByType<SkillLabRunner>();_lab.AutoAdvance=false;_lab.ConfigureContentDirectory(_directory);Assert.IsTrue(_lab.ReloadPublished(),_lab.LastLoadError);
+                yield return SkillLabTestScene.Load();_lab=Object.FindFirstObjectByType<SkillLabRunner>();_lab.AutoAdvance=false;_lab.ConfigureContentDirectory(_directory);Assert.IsTrue(_lab.ReloadPublished(),_lab.LastLoadError);
                 Assert.IsTrue(_lab.CastSlot("f6",4,0).Accepted);Assert.IsTrue(reference.Simulation.Cast("arena-bomb-shot",4,0).Accepted);
                 foreach(int steps in new[]{29,81,150,160}){_lab.StepLogicForTests(steps);reference.Simulation.Advance(steps);Assert.IsTrue(JToken.DeepEquals(JToken.FromObject(reference.Simulation.Snapshot()),JToken.FromObject(_lab.Snapshot)));}
                 Assert.AreEqual(2,_lab.Snapshot.Events.Count(e=>e.Kind=="cue"&&e.Result=="4206"));Assert.IsFalse(_lab.Snapshot.Actors.Any(a=>a.Kind=="projectile"||a.Kind=="aoe"));

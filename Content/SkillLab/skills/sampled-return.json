@@ -51,7 +51,6 @@
         "range": 0,
         "radius": 0.5,
         "homingRate": 0,
-        "maxHits": 0,
         "returnAfter": 1,
         "catchRadius": 0.4,
         "returnSpeed": 5,
@@ -80,6 +79,19 @@
         "ignoreDefense": false,
         "hitstopFrames": 0
       }
+    },
+    {
+      "id": "projectile-pierce",
+      "kind": "pierce",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 540.0,
+        "y": 340.0
+      },
+      "parameters": {
+        "maxHits": 0
+      }
     }
   ],
   "edges": [
@@ -106,6 +118,14 @@
       "target": "damage",
       "targetPort": "execute",
       "order": 0
+    },
+    {
+      "id": "projectile-hit-projectile-pierce",
+      "source": "projectile",
+      "sourcePort": "hit",
+      "target": "projectile-pierce",
+      "targetPort": "execute",
+      "order": 1
     }
   ]
 }

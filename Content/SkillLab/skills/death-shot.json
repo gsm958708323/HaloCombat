@@ -51,7 +51,6 @@
         "speed": 12,
         "range": 24,
         "radius": 0.18,
-        "maxHits": 1,
         "homingRate": 0
       }
     },

@@ -46,6 +46,7 @@ namespace Combat.Core
         public bool IsActorStopped(Actor actor)=>InHitstop||actor!=null&&actor.Time.IsStopped;
         public CueLibrary Cues => _cues;
         public MotorConfig Motor => _motor;
+        public void ReplaceMotor(MotorConfig motor)=>_motor=motor;
         public CollisionWorld Collision { get; }
         public IEffectObserver EffectObserver {get;}
 
@@ -81,6 +82,7 @@ namespace Combat.Core
         public int NextCastId() => ++_castIds;
         public int NextDamageHitId()=>++_damageIds;
         public void DispatchSkillEvent(SkillEventKind kind,in EffectContext context)=>_skillEvents.Emit(kind,context);
+        public void ReplaceSkillEvents(SkillEventCatalog catalog)=>_skillEvents.ReplaceCatalog(catalog);
 
         public void ReplaceCatalogs(ProjectileCatalog projectiles, AoeCatalog aoes, SummonCatalog summons)
         {
@@ -161,7 +163,7 @@ namespace Combat.Core
             int buffStacks = 0,
             float power = 1,
             SkillOrigin origin = default,
-            ProjectileHitContext projectileHit = null,DamageResult damage=null)
+            ProjectileHitContext projectileHit = null,DamageResult damage=null,DeliveryContact contact=null)
         {
             if (effects == null || effects.Length == 0) return;
             var ctx = new EffectContext
@@ -173,7 +175,7 @@ namespace Combat.Core
                 BuffStacks = buffStacks,
                 Power = power,
                 Origin = origin,
-                ProjectileHit = projectileHit,Damage=damage
+                ProjectileHit = projectileHit,Damage=damage,Contact=contact??projectileHit?.Contact
             };
             if (point.HasValue) { ctx.Point = point.Value; ctx.HasPoint = true; }
             if (dir.HasValue) { ctx.Dir = dir.Value; ctx.HasDir = true; }

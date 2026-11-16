@@ -53,14 +53,14 @@ namespace Combat.Tests
 
         [TestCase(20)]
         [TestCase(1000)]
-        public void DashMovesItsExactDistanceAndSweepsTargetsEvenAcrossOneLargeStep(float speed)
+        public void DashStopsOutsideTheFirstBodyAndHitsItEvenAcrossOneLargeStep(float speed)
         {
             var p=Example();Node(p,"dash-strike","delivery").Parameters["speed"]=speed;
             using(var s=Simulation(p))
             {
                 s.Cast("dash-strike",0,0);s.Advance(80);
-                Assert.AreEqual(6,s.Snapshot().Actors.First(a=>a.Kind=="caster").X,.002f);
-                Assert.AreEqual(160,s.Snapshot().Statistics.Damage);Assert.AreEqual(2,s.Snapshot().Statistics.Hits);
+                Assert.AreEqual(-.8001f,s.Snapshot().Actors.First(a=>a.Kind=="caster").X,.002f);
+                Assert.AreEqual(80,s.Snapshot().Statistics.Damage);Assert.AreEqual(1,s.Snapshot().Statistics.Hits);
                 Assert.AreEqual(0,s.Snapshot().Volumes.Length);
                 Assert.IsTrue(s.Snapshot().Trails.Any(t=>t.Entity==s.Snapshot().Actors.First(a=>a.Kind=="caster").Id));
             }

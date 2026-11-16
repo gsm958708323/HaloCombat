@@ -30,7 +30,7 @@ namespace Combat.Tests
             _project.Preview.Targets=new[]{new PreviewActorDocument{Id="target",X=2,Z=0,Hp=1000,Def=0}};
             foreach(string id in new[]{"behavior-pierce","behavior-chain","flight-time","flight-distance"})
                 _project.Skills.Single(s=>s.Id==id).Nodes.Single(n=>n.Kind=="cast").Parameters["delay"]=0;
-            Publish("flight-time","flight-distance");yield return SceneManager.LoadSceneAsync("Assets/Scenes/HaloCombat/SkillLab.unity",LoadSceneMode.Single);
+            Publish("flight-time","flight-distance");yield return SkillLabTestScene.Load();
             _runner=UnityEngine.Object.FindFirstObjectByType<SkillLabRunner>();Assert.IsNotNull(_runner);_runner.AutoAdvance=false;_runner.ConfigureContentDirectory(_directory);Assert.IsTrue(_runner.ReloadPublished(),_runner.LastLoadError);
         }
         [UnityTearDown]

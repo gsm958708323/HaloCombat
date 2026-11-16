@@ -50,7 +50,6 @@
         "mode": "ray",
         "length": 24,
         "width": 0.3,
-        "pierce": false,
         "maxTargets": 0
       }
     },

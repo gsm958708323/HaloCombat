@@ -17,7 +17,6 @@
         "range": 0,
         "lifetime": 10,
         "radius": 0.5,
-        "maxHits": 99999,
         "spawnForward": 0.4,
         "sameTargetDelay": 0.5,
         "passInvulnerable": true,
@@ -111,6 +110,19 @@
         "center": "source",
         "anchor": "Body"
       }
+    },
+    {
+      "id": "projectile-pierce",
+      "kind": "pierce",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 600.0,
+        "y": 340.0
+      },
+      "parameters": {
+        "maxHits": 99999
+      }
     }
   ],
   "edges": [
@@ -153,6 +165,14 @@
       "target": "return-cue",
       "targetPort": "execute",
       "order": 0
+    },
+    {
+      "id": "projectile-hit-projectile-pierce",
+      "source": "projectile",
+      "sourcePort": "hit",
+      "target": "projectile-pierce",
+      "targetPort": "execute",
+      "order": 1
     }
   ]
 }

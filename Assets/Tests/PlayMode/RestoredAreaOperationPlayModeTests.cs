@@ -24,7 +24,7 @@ namespace Combat.Tests
         }
         IEnumerator Load()
         {
-            yield return SceneManager.LoadSceneAsync("Assets/Scenes/HaloCombat/SkillLab.unity",LoadSceneMode.Single);
+            yield return SkillLabTestScene.Load();
             _lab=Object.FindFirstObjectByType<SkillLabRunner>();_lab.AutoAdvance=false;_lab.ConfigureContentDirectory(_directory);Assert.IsTrue(_lab.ReloadPublished(),_lab.LastLoadError);
         }
         [UnityTearDown]

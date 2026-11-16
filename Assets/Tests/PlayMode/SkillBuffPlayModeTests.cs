@@ -26,7 +26,7 @@ namespace Combat.Tests
         {
             _directory=Path.Combine(Path.GetTempPath(),"HaloCombat-Buff-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(_directory);
             _project=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));Publish();
-            yield return SceneManager.LoadSceneAsync("Assets/Scenes/HaloCombat/SkillLab.unity",LoadSceneMode.Single);
+            yield return SkillLabTestScene.Load();
             _runner=UnityEngine.Object.FindFirstObjectByType<SkillLabRunner>();Assert.IsNotNull(_runner);_runner.AutoAdvance=false;
             _runner.ConfigureContentDirectory(_directory);Assert.IsTrue(_runner.ReloadPublished(),_runner.LastLoadError);
         }

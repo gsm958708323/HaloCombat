@@ -85,6 +85,7 @@ namespace Combat.Config
     }
     public sealed class PreviewDocument
     {
+        [DefaultValue(.2f),JsonProperty(DefaultValueHandling=DefaultValueHandling.Ignore)]public float InputBufferSeconds {get;set;}=.2f;
         [DefaultValue(false),JsonProperty(DefaultValueHandling=DefaultValueHandling.Ignore)]public bool UnlimitedAmmo {get;set;}
         public int Seed { get; set; } = 1;
         public float Energy { get; set; } = 100;

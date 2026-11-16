@@ -31,11 +31,18 @@ namespace Combat.Tests
             foreach(string id in new[]{"accelerating-shot","bouncing-shot","returning-shot","ricochet-shot"})
             {
                 Node(id,"cast").Parameters["delay"]=0;var parameters=Node(id,"projectile").Parameters;
-                parameters["range"]=100;parameters["radius"]=.1f;parameters["maxHits"]=0;
+                parameters["range"]=100;parameters["radius"]=.1f;
+                var graph=_project.Skills.First(s=>s.Id==id);var pierce=graph.Nodes.FirstOrDefault(n=>n.Kind=="pierce");
+                if(pierce!=null)pierce.Parameters["maxHits"]=0;
+                else
+                {
+                    graph.Nodes=graph.Nodes.Concat(new[]{new SkillNodeDocument{Id="pierce",Kind="pierce",Parameters=Newtonsoft.Json.Linq.JObject.FromObject(new{maxHits=0})}}).ToArray();
+                    graph.Edges=graph.Edges.Concat(new[]{new SkillEdgeDocument{Id="hit-pierce",Source=Node(id,"projectile").Id,SourcePort="hit",Target="pierce",TargetPort="execute",Order=2}}).ToArray();
+                }
             }
             var accel=Node("accelerating-shot","projectile").Parameters;accel["speed"]=2;accel["acceleration"]=4;accel["maxSpeed"]=6;
             var bounce=Node("bouncing-shot","projectile").Parameters;bounce["speed"]=4;bounce["launchHeight"]=0;bounce["verticalSpeed"]=4;bounce["gravity"]=8;bounce["restitution"]=.5f;bounce["groundBounces"]=1;
-            Publish();yield return SceneManager.LoadSceneAsync("Assets/Scenes/HaloCombat/SkillLab.unity",LoadSceneMode.Single);
+            Publish();yield return SkillLabTestScene.Load();
             _runner=UnityEngine.Object.FindFirstObjectByType<SkillLabRunner>();Assert.IsNotNull(_runner);_runner.AutoAdvance=false;
             _runner.ConfigureContentDirectory(_directory);Assert.IsTrue(_runner.ReloadPublished(),_runner.LastLoadError);
         }

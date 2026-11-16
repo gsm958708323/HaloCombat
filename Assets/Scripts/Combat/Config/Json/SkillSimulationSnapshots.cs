@@ -27,6 +27,7 @@ namespace Combat.Config
 
     public sealed class SkillActorSnapshot
     {
+        public string ComboFailure {get;internal set;}
         public string Id { get; internal set; }
         public string SceneId {get;internal set;}
         public int Team {get;internal set;}
@@ -113,6 +114,7 @@ namespace Combat.Config
         public float Length { get; internal set; }
         public float Width { get; internal set; }
         public float Angle { get; internal set; }
+        public float Progress {get;internal set;}
     }
 
     public sealed class SkillObstacleSnapshot
@@ -153,6 +155,8 @@ namespace Combat.Config
         public string Skill {get;internal set;}
         public int HitIndex {get;internal set;}
         public SkillDamageSnapshot Damage {get;internal set;}
+        public float? TargetX {get;internal set;}
+        public float? TargetZ {get;internal set;}
         public SkillFlightSnapshot Flight {get;internal set;}
     }
     public sealed class SkillFlightSnapshot

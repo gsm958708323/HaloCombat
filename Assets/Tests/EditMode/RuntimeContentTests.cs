@@ -82,7 +82,7 @@ namespace Combat.Tests
         [Test]
         public void MissingRuntimeFileAndInvalidReferencesNeverUseCodeFallback()
         {
-            Assert.Throws<FileNotFoundException>(()=>new RuntimeProjectLoader(Path+".missing"));
+            StringAssert.Contains("project.json.missing",Assert.Throws<ContentValidationException>(()=>new RuntimeProjectLoader(Path+".missing")).Path);
             var p=Project();p.Runtime.Combos[0].ToSkill="missing";StringAssert.Contains("toSkill",Assert.Throws<ContentValidationException>(()=>CombatContentCompiler.Compile(p)).Message);
         }
         [Test]

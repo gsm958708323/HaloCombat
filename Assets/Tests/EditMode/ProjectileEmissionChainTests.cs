@@ -59,10 +59,12 @@ namespace Combat.Tests
         public void FinitePiercingBudgetResetsPerChainSegmentAndUnlimitedHitsNeverRepeat()
         {
             var p=Create("chain-shot");Targets(p,(2,0),(3,0),(4,0),(5,0),(6,0),(7,0));
-            var parameters=Node(p,"projectile").Parameters;parameters["maxHits"]=2;parameters["chainCount"]=2;
+            var chain=Node(p,"chain");chain.Parameters["count"]=2;
+            p.Skills[0].Nodes=p.Skills[0].Nodes.Concat(new[]{new SkillNodeDocument{Id="pierce",Kind="pierce",Parameters=Newtonsoft.Json.Linq.JObject.FromObject(new{maxHits=2})}}).ToArray();
+            p.Skills[0].Edges=p.Skills[0].Edges.Concat(new[]{new SkillEdgeDocument{Id="hit-pierce",Source=Node(p,"projectile").Id,SourcePort="hit",Target="pierce",TargetPort="execute",Order=2}}).ToArray();
             using(var s=Run(p))
             {s.Cast("chain-shot",10,0);s.Advance(100);Assert.AreEqual(480,s.Snapshot().Statistics.Damage);Assert.AreEqual(2,s.Snapshot().Statistics.Chains);}
-            parameters["chain"]=false;parameters["maxHits"]=0;
+            chain.Enabled=false;Node(p,"pierce").Parameters["maxHits"]=0;
             using(var s=Run(p))
             {s.Cast("chain-shot",10,0);s.Advance(150);Assert.AreEqual(480,s.Snapshot().Statistics.Damage);Assert.AreEqual(6,s.Snapshot().Statistics.Hits);}
         }
@@ -98,7 +100,7 @@ namespace Combat.Tests
         public void RandomChainUsesTheWorldSeedAndVariesItsActualNextTarget()
         {
             var p=Create("chain-shot");Targets(p,(2,0),(4,2),(4,-2),(6,1));
-            Node(p,"projectile").Parameters["chainMode"]="random";Node(p,"projectile").Parameters["chainCount"]=1;
+            Node(p,"chain").Parameters["selection"]="random";Node(p,"chain").Parameters["count"]=1;
             string sample;
             using(var s=Run(p)){s.Cast("chain-shot",10,0);s.Advance(100);sample=s.Snapshot().Events.Single(e=>e.Kind=="projectile-chain").Result;}
             using(var s=Run(p)){s.Cast("chain-shot",10,0);s.Advance(100);Assert.AreEqual(sample,s.Snapshot().Events.Single(e=>e.Kind=="projectile-chain").Result);}

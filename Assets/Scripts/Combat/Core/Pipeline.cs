@@ -21,6 +21,7 @@ namespace Combat.Core
         public bool HasDir;
         public SkillOrigin Origin;
         public ProjectileHitContext ProjectileHit;
+        public DeliveryContact Contact;
         public DamageResult Damage;
     }
 

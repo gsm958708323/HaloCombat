@@ -8,6 +8,7 @@ namespace Combat.Config
         public static void Validate(PreviewDocument preview)
         {
             if (preview == null) Fail("$.preview", "Scene is required.");
+            if(!Finite(preview.InputBufferSeconds)||preview.InputBufferSeconds<.01f||preview.InputBufferSeconds>10)Fail("$.preview.inputBufferSeconds","Expected input buffer in0.01..10 seconds.");
             if (!Finite(preview.Energy) || preview.Energy < 0) Fail("$.preview.energy", "Expected finite nonnegative capacity.");
             if (preview.InitialEnergy.HasValue && (!Finite(preview.InitialEnergy.Value) || preview.InitialEnergy < 0 || preview.InitialEnergy > preview.Energy))
                 Fail("$.preview.initialEnergy", "Expected initial energy in [0, capacity].");

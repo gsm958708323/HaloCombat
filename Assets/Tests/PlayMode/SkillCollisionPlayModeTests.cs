@@ -28,7 +28,7 @@ namespace Combat.Tests
             _project=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));
             _project.Preview.Obstacles=new[]{new PreviewObstacleDocument{Id="wall",X=-2,Z=0,Width=.5f,Depth=4}};
             Publish("piercing-ray");
-            yield return SceneManager.LoadSceneAsync("Assets/Scenes/HaloCombat/SkillLab.unity",LoadSceneMode.Single);
+            yield return SkillLabTestScene.Load();
             _runner=UnityEngine.Object.FindFirstObjectByType<SkillLabRunner>();Assert.IsNotNull(_runner);
             _runner.AutoAdvance=false;_runner.ConfigureContentDirectory(_directory);Assert.IsTrue(_runner.ReloadPublished(),_runner.LastLoadError);
         }

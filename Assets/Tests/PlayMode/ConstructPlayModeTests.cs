@@ -27,7 +27,7 @@ namespace Combat.Tests
             _project.Preview.Targets=new[]{new PreviewActorDocument{Id="target",X=0,Hp=1000}};var graph=_project.Skills.Single(s=>s.Id=="barrel-chain");
             graph.Nodes.Single(n=>n.Kind=="cast").Parameters["delay"]=0;graph.Nodes.Single(n=>n.Kind=="damage").Parameters["canCrit"]=false;
             graph.Nodes.Single(n=>n.Kind=="construct").Parameters["decayPeriod"]=0;Publish();
-            yield return SceneManager.LoadSceneAsync("Assets/Scenes/HaloCombat/SkillLab.unity",LoadSceneMode.Single);
+            yield return SkillLabTestScene.Load();
             _runner=Object.FindFirstObjectByType<SkillLabRunner>();_runner.AutoAdvance=false;_runner.ConfigureContentDirectory(_directory);Assert.IsTrue(_runner.ReloadPublished(),_runner.LastLoadError);
         }
         void Publish()

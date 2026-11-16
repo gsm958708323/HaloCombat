@@ -35,7 +35,7 @@ namespace Combat.Tests
             using(var reference=new PublishedSkillSession())
             {
                 reference.Replace(new Dictionary<string,string>{{"f6",File.ReadAllText(Path.Combine(_directory,"f6.json"))},{"f7",File.ReadAllText(Path.Combine(_directory,"f7.json"))}});
-                yield return SceneManager.LoadSceneAsync("Assets/Scenes/HaloCombat/SkillLab.unity",LoadSceneMode.Single);_lab=Object.FindFirstObjectByType<SkillLabRunner>();_lab.AutoAdvance=false;_lab.ConfigureContentDirectory(_directory);Assert.IsTrue(_lab.ReloadPublished(),_lab.LastLoadError);
+                yield return SkillLabTestScene.Load();_lab=Object.FindFirstObjectByType<SkillLabRunner>();_lab.AutoAdvance=false;_lab.ConfigureContentDirectory(_directory);Assert.IsTrue(_lab.ReloadPublished(),_lab.LastLoadError);
                 Assert.IsTrue(_lab.CastSlot("f6",5,0).Accepted);reference.Simulation.Cast("arena-ammo-shot",5,0);_lab.StepLogicForTests(45);reference.Simulation.Advance(45);
                 Assert.IsTrue(_lab.CastSlot("f7",5,0).Accepted);reference.Simulation.Cast("arena-double-shot",5,0);_lab.StepLogicForTests(30);reference.Simulation.Advance(30);
                 var shots=_lab.Snapshot.Actors.Where(a=>a.Kind=="projectile").ToArray();Assert.AreEqual(3,shots.Length);Assert.AreEqual(2,shots.Select(a=>a.CastId).Distinct().Count());Assert.AreEqual(59,_lab.Snapshot.Ammo);
@@ -46,7 +46,7 @@ namespace Combat.Tests
         public IEnumerator ScheduledAndSineMotionUseThePublishedParametersAndRealVerticalPose()
         {
             var p=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));p.Preview.Caster.X=0;p.Preview.Targets=Array.Empty<PreviewActorDocument>();Files(p,"phase-bounce","sampled-return");
-            yield return SceneManager.LoadSceneAsync("Assets/Scenes/HaloCombat/SkillLab.unity",LoadSceneMode.Single);_lab=Object.FindFirstObjectByType<SkillLabRunner>();_lab.AutoAdvance=false;_lab.ConfigureContentDirectory(_directory);Assert.IsTrue(_lab.ReloadPublished(),_lab.LastLoadError);
+            yield return SkillLabTestScene.Load();_lab=Object.FindFirstObjectByType<SkillLabRunner>();_lab.AutoAdvance=false;_lab.ConfigureContentDirectory(_directory);Assert.IsTrue(_lab.ReloadPublished(),_lab.LastLoadError);
             Assert.IsTrue(_lab.CastSlot("f6",5,0).Accepted);_lab.StepLogicForTests(29);var shot=_lab.Snapshot.Actors.Single(a=>a.Kind=="projectile");Assert.AreEqual(1,shot.Y,.0001);yield return null;
             var visual=_lab.GetComponentsInChildren<Transform>().Single(t=>t.name=="projectile_"+shot.Name);Assert.Greater(visual.position.y,1);
             _lab.StepLogicForTests(25);Assert.AreEqual(1,_lab.Snapshot.Events.Count(e=>e.Kind=="projectile-ground-bounce"));Assert.AreEqual(0,_lab.Snapshot.Actors.Single(a=>a.Kind=="projectile").Y,.0001);

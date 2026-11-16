@@ -50,7 +50,7 @@ namespace Combat.Tests
             using(var reference=new PublishedSkillSession())
             {
                 reference.Replace(new Dictionary<string,string>{{"f6",File.ReadAllText(Path.Combine(_directory,"f6.json"))},{"f7",File.ReadAllText(Path.Combine(_directory,"f7.json"))}});
-                yield return SceneManager.LoadSceneAsync("Assets/Scenes/HaloCombat/SkillLab.unity",LoadSceneMode.Single);_lab=Object.FindFirstObjectByType<SkillLabRunner>();_lab.AutoAdvance=false;_lab.ConfigureContentDirectory(_directory);Assert.IsTrue(_lab.ReloadPublished(),_lab.LastLoadError);
+                yield return SkillLabTestScene.Load();_lab=Object.FindFirstObjectByType<SkillLabRunner>();_lab.AutoAdvance=false;_lab.ConfigureContentDirectory(_directory);Assert.IsTrue(_lab.ReloadPublished(),_lab.LastLoadError);
                 Assert.IsTrue(_lab.CastSlot("f6",4,0).Accepted);reference.Simulation.Cast("arena-combo-second",4,0);_lab.StepLogicForTests(40);reference.Simulation.Advance(40);
                 Assert.IsTrue(_lab.CastSlot("f7",4,0).Accepted);reference.Simulation.Cast("arena-combo-finisher",4,0);_lab.StepLogicForTests(40);reference.Simulation.Advance(40);
                 Assert.AreEqual(55,_lab.Snapshot.Ammo);Assert.AreEqual(2,_lab.Snapshot.Statistics.Hits);Assert.IsTrue(JToken.DeepEquals(JToken.FromObject(reference.Simulation.Snapshot()),JToken.FromObject(_lab.Snapshot)));

@@ -3,6 +3,7 @@ using SkillLab;
 using System.Collections.Concurrent;
 
 var paths=new HostPaths(args,Directory.GetCurrentDirectory(),AppContext.BaseDirectory);var root=paths.Root;
+if(args.Contains("--upgrade-effects")){EffectNodeMigration.Run(root);return;}
 if(args.Contains("--split-content"))
 {
     foreach(var relative in new[]{"Content/SkillLab/project.json","Assets/StreamingAssets/Combat/project.json","Tools/SkillLab/.local/project.json"})
@@ -30,7 +31,8 @@ var dataDirectory=paths.Data;
 Directory.CreateDirectory(dataDirectory);
 var projectFile=Path.Combine(dataDirectory,"project.json");
 var exampleFile=Path.Combine(root,"Content/SkillLab/project.json");
-if(!File.Exists(projectFile))SkillProjectFiles.Write(projectFile,SkillProjectFiles.Read(exampleFile));
+if(!File.Exists(projectFile))
+{var initial=SkillProjectFiles.Read(exampleFile);initial.Preview=SkillPreviewDefaults.Create();SkillProjectFiles.Write(projectFile,initial);}
 var jsonLock=new SemaphoreSlim(1);
 var projectStore=new ProjectFileStore(projectFile);
 app.Use(async(context,next)=>
@@ -134,7 +136,7 @@ app.MapPost("/api/replays",async(HttpContext context)=>
     using var run=new SkillReplayRun(document);
     if(!run.Comparison.Matches)return Results.BadRequest(new{error="复现结果不同："+run.Comparison.Differences[0].Path,comparison=run.Comparison});
     string id=Guid.NewGuid().ToString("N");var simulation=run.TakeSimulation();sessions[id]=simulation;
-    return Results.Ok(new{id,state=simulation.Snapshot(),recording=simulation.Recording,comparison=run.Comparison,projectJson=SkillProjectJson.Write(document.Project),rootSkillId=document.RootSkillId});
+    return Results.Ok(new{id,state=simulation.Snapshot(),recording=simulation.Recording,comparison=run.Comparison,projectJson=SkillProjectJson.Write(ReplayAuthoringProject(document)),rootSkillId=document.RootSkillId});
 });
 app.MapDelete("/api/preview/{id}",(string id)=>
 {if(sessions.TryRemove(id,out var session))lock(session)session.Dispose();return Results.NoContent();});
@@ -177,3 +179,19 @@ await app.RunAsync();
 
 static async Task<SkillProjectDocument> ReadProject(HttpContext context)
     =>SkillProjectJson.Read(await new StreamReader(context.Request.Body).ReadToEndAsync());
+
+static SkillProjectDocument ReplayAuthoringProject(SkillReplayDocument replay)
+{
+    // Replay executes the original document plus its journal. The authoring UI
+    // resumes at the final edited configuration, rather than showing old values.
+    var project=SkillProjectJson.Read(SkillProjectJson.Write(replay.Project));
+    foreach(var input in replay.Inputs)
+    {
+        var command=input.Command;
+        if(command.Kind=="configure")project=SkillProjectJson.Read(SkillProjectJson.Write(command.Project));
+        if(command.Kind!="place")continue;
+        var actor=project.Preview.Caster.Id==command.ActorId?project.Preview.Caster:project.Preview.Targets.FirstOrDefault(a=>a.Id==command.ActorId);
+        if(actor!=null){actor.X=command.X.Value;actor.Z=command.Z.Value;}
+    }
+    project.Preview.UnlimitedAmmo=replay.Project.Preview.UnlimitedAmmo;return project;
+}

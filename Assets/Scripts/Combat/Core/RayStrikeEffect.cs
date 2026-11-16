@@ -4,10 +4,9 @@ namespace Combat.Core
     {
         readonly IEffect[] _hit,_wall,_complete;
         readonly float _length,_width;
-        readonly bool _pierce;
         readonly int _maximum;
-        public RayStrikeEffect(IEffect[] hit,IEffect[] wall,IEffect[] complete,float length,float width,bool pierce,int maximum)
-        {_hit=hit;_wall=wall;_complete=complete;_length=length;_width=width;_pierce=pierce;_maximum=maximum;}
+        public RayStrikeEffect(IEffect[] hit,IEffect[] wall,IEffect[] complete,float length,float width,int maximum)
+        {_hit=hit;_wall=wall;_complete=complete;_length=length;_width=width;_maximum=maximum;}
         public void Apply(ref EffectContext context)
         {
             if(context.World==null||context.Source==null||!context.Source.IsActive)return;
@@ -23,8 +22,9 @@ namespace Combat.Core
             {
                 if(obstacle.Blocked?hit.Fraction>=limit-.000001f:hit.Fraction>limit+.000001f)break;
                 if(!AreaTargets.TryLive(context.World,hit.Target,out var target))continue;
-                context.World.Deliver(_hit,context.Source,target,context.SnapshotAtk,hit.Point,direction,context.BuffStacks,context.Power,context.Origin);hits++;
-                if(!_pierce||(_maximum>0&&hits>=_maximum)){to=hit.Point;stopped=true;break;}
+                var contact=new DeliveryContact(++hits);
+                context.World.Deliver(_hit,context.Source,target,context.SnapshotAtk,hit.Point,direction,context.BuffStacks,context.Power,context.Origin,contact:contact);
+                if(!contact.Continue||(_maximum>0&&hits>=_maximum)){to=hit.Point;stopped=true;break;}
             }
             if(obstacle.Blocked&&!stopped)
             {

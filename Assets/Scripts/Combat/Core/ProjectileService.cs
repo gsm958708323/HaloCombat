@@ -28,7 +28,8 @@ namespace Combat.Core
             foreach(var actor in _world.RegistryActive())if(actor.TryGetComp<ProjectileComp>(out _))alive++;
             _world.Intents.Drain<SpawnProjectileIntent>(intent=>
             {
-                if(!_world.Projectiles.TryGet(intent.SpecId,out var def))return;
+                var def=intent.Seed?.Definition;
+                if(def==null&&!_world.Projectiles.TryGet(intent.SpecId,out def))return;
                 if(!AreaTargets.TryLive(_world,intent.Owner,out var owner))return;
                 var seed=intent.Seed;
                 if(seed==null)
@@ -126,17 +127,11 @@ namespace Combat.Core
                     if(!projectile.IsActive||body.Exhausted)return;
                     if(def.ContactMode==ProjectileContactMode.Continue)continue;
                     if(def.ContactMode==ProjectileContactMode.End){Terminate(projectile,body,ProjectileEndReason.HitLimit);return;}
-                    if(def.MaxHits<=0||body.LegHits<def.MaxHits)continue;
+                    if(context.Contact.Continue)continue;
                     if(body.Distance+.000001>=body.RangeLimit){Terminate(projectile,body,ProjectileEndReason.HitLimit);return;}
-                    if(body.ChainsLeft<=0||body.Returning){Terminate(projectile,body,ProjectileEndReason.HitLimit);return;}
-                    var next=ChainTarget(body,owner,transform.Position);
-                    if(!next.IsValid){Terminate(projectile,body,ProjectileEndReason.ChainExhausted);return;}
-                    if(!AreaTargets.TryLive(_world,next,out var target))continue;
-                    body.ChainsLeft--;body.LegHits=0;body.HomingTarget=next;
-                    var point=target.GetComp<TransformComp>().Position;
-                    transform.YawDegrees=LocomotionComp.YawFromStick(new SimVec3(point.X-transform.Position.X,0,point.Z-transform.Position.Z));
-                    _world.Events.Publish(new EvProjectileBehavior(body.OwnerId,projectile.Id,"chain",transform.Position,next,1,body.Generation,body.Family.Origin));
-                    redirected=true;break;
+                    var endReason=ProjectileEndReason.HitLimit;
+                    if(context.Redirect!=null&&context.Redirect.Redirect(_world,projectile,body,out endReason)){redirected=true;break;}
+                    Terminate(projectile,body,endReason);return;
                 }
                 if(redirected)continue;
                 double tailDistance=Math.Max(0,distance*limit-spentDistance);
@@ -152,29 +147,6 @@ namespace Combat.Core
 
         float Attack(ProjectileComp body,Actor owner)=>body.Def.SnapshotAtk?body.SnapshotAtk:
             owner!=null&&owner.TryGetComp<AttributeSet>(out var attr)?attr.GetFinal(AttrId.Atk):body.SnapshotAtk;
-
-        EntityId ChainTarget(ProjectileComp body,Actor owner,SimVec3 from)
-        {
-            var definition=body.Def.Chain;
-            if(definition==null)return EntityId.Invalid;
-            var candidates=new List<EntityId>();
-            foreach(var id in AreaTargets.Query(_world,from,definition.Radius,owner,body.Def.HostileMask,0))
-                if(!body.HasHit(id)&&AreaTargets.TryLive(_world,id,out var actor)&&
-                    !_world.Collision.Trace(from,actor.GetComp<TransformComp>().Position,body.Def.HitRadius).Blocked)candidates.Add(id);
-            candidates.Sort((a,b)=>
-            {
-                if(definition.Mode==ChainTargetMode.Nearest)
-                {
-                    _world.TryGetActor(a,out var aa);_world.TryGetActor(b,out var bb);
-                    int distance=SpatialGeometry.DistanceSquared(from,aa.GetComp<TransformComp>().Position).CompareTo(SpatialGeometry.DistanceSquared(from,bb.GetComp<TransformComp>().Position));
-                    if(distance!=0)return distance;
-                }
-                int index=a.Index.CompareTo(b.Index);return index!=0?index:a.Generation.CompareTo(b.Generation);
-            });
-            if(candidates.Count==0)return EntityId.Invalid;
-            int selected=definition.Mode==ChainTargetMode.Random?Math.Min(candidates.Count-1,(int)(_world.Random.Next01()*candidates.Count)):0;
-            return candidates[selected];
-        }
 
         void Steer(ProjectileComp body,TransformComp transform,float dt,Actor owner)
         {

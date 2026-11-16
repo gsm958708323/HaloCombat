@@ -9,18 +9,23 @@ namespace Combat.Tests
 {
     public sealed class ProjectileSplitTests
     {
+        static void FirstImpact(SkillSimulation simulation)
+        {
+            for(int step=0;step<20&&simulation.Snapshot().Statistics.Splits==0;step++)simulation.Advance(1);
+            Assert.AreEqual(1,simulation.Snapshot().Statistics.Splits);
+        }
         [Test]
         public void ChildrenBeginNextTickAtTheImpactAndInheritCastIdentity()
         {
             var p=Create("split-shot");Targets(p,(2,0),(4,0));var split=Node(p,"split").Parameters;split["count"]=2;split["spread"]=0;
             using(var s=Run(p))
             {
-                s.Cast("split-shot",10,0);s.Advance(8);Assert.AreEqual(1,s.Snapshot().Statistics.Projectiles);
+                s.Cast("split-shot",10,0);FirstImpact(s);Assert.AreEqual(1,s.Snapshot().Statistics.Projectiles);
                 Assert.AreEqual(80,s.Snapshot().Statistics.Damage);Assert.AreEqual(1,s.Snapshot().Statistics.Splits);
                 s.Advance(1);var children=s.Snapshot().Actors.Where(a=>a.Kind=="projectile").ToArray();Assert.AreEqual(2,children.Length);
                 foreach(var child in children)
                 {
-                    Assert.AreEqual(1,child.Generation);Assert.AreEqual(2.1f,child.X,.001f);Assert.AreEqual(.2f,child.Distance.Value,.001f);
+                    Assert.AreEqual(1,child.Generation);Assert.AreEqual(1.7f,child.X,.001f);Assert.AreEqual(.2f,child.Distance.Value,.001f);
                     Assert.AreEqual(8,child.Range);Assert.AreEqual("caster",child.Owner);Assert.AreEqual("split-shot",child.Skill);Assert.Greater(child.CastId,0);
                 }
                 s.Advance(60);Assert.AreEqual(160,s.Snapshot().Statistics.Damage);Assert.AreEqual(920,s.Snapshot().Actors.First(a=>a.Name=="target-1").Hp);
@@ -93,7 +98,7 @@ namespace Combat.Tests
             var p=Create("split-shot");Targets(p,(2,0),(4,0));
             using(var s=Run(p))
             {
-                s.Cast("split-shot",10,0);s.Advance(8);Assert.AreEqual(80,s.Snapshot().Statistics.Damage);
+                s.Cast("split-shot",10,0);FirstImpact(s);Assert.AreEqual(80,s.Snapshot().Statistics.Damage);
                 s.Remove(s.Snapshot().Actors.First(a=>a.Kind=="caster").Id);s.Advance(80);
                 Assert.AreEqual(1,s.Snapshot().Statistics.Projectiles);Assert.AreEqual(80,s.Snapshot().Statistics.Damage);
                 Assert.IsFalse(s.Snapshot().Actors.Any(a=>a.Kind=="projectile"));

@@ -42,7 +42,7 @@ namespace Combat.Tests
         {
             var p=Project(1);_directory=Path.Combine(Path.GetTempPath(),"HaloCombat-MotorPhase-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(_directory);
             File.WriteAllText(Path.Combine(_directory,"f6.json"),SkillPublicationJson.Write(SkillPublicationJson.Create(p,"arena-controlled-shot")));
-            yield return SceneManager.LoadSceneAsync("Assets/Scenes/HaloCombat/SkillLab.unity",LoadSceneMode.Single);
+            yield return SkillLabTestScene.Load();
             _lab=Object.FindFirstObjectByType<SkillLabRunner>();_lab.AutoAdvance=false;_lab.ConfigureContentDirectory(_directory);Assert.IsTrue(_lab.ReloadPublished(),_lab.LastLoadError);
             Assert.IsTrue(_lab.CastSlot("f6",4,0).Accepted);_lab.SetMovement(0,1);_lab.StepLogicForTests(1);
             var caster=_lab.Snapshot.Actors.Single(a=>a.Kind=="caster");

@@ -11,6 +11,13 @@ namespace Combat.Config
         [Newtonsoft.Json.JsonProperty(NullValueHandling=Newtonsoft.Json.NullValueHandling.Ignore)]public string SelectedProjectile {get;set;}
         [Newtonsoft.Json.JsonProperty(NullValueHandling=Newtonsoft.Json.NullValueHandling.Ignore)]public string SelectedArea {get;set;}
         public GraphViewportDocument[] Viewports {get;set;}=Array.Empty<GraphViewportDocument>();
+        [Newtonsoft.Json.JsonProperty(NullValueHandling=Newtonsoft.Json.NullValueHandling.Ignore)]public ComboPositionDocument[] ComboPositions {get;set;}
+    }
+    public sealed class ComboPositionDocument
+    {
+        public string SkillId {get;set;}
+        public float X {get;set;}
+        public float Y {get;set;}
     }
 
     public sealed class GraphViewportDocument

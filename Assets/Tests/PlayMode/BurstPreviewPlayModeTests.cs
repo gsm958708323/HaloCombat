@@ -25,7 +25,7 @@ namespace Combat.Tests
             cast.Parameters=JObject.FromObject(new{mode="instant",burst=true,count=20,interval=.04,delay=0,cost=0,cooldown=0,duration=.9});
             _directory=Path.Combine(Path.GetTempPath(),"HaloCombat-Burst-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(_directory);
             string publication=SkillPublicationJson.Write(SkillPublicationJson.Create(p,s.Id));File.WriteAllText(Path.Combine(_directory,"f6.json"),publication);
-            yield return SceneManager.LoadSceneAsync("Assets/Scenes/HaloCombat/SkillLab.unity",LoadSceneMode.Single);
+            yield return SkillLabTestScene.Load();
             _lab=Object.FindFirstObjectByType<Combat.Unity.SkillLabRunner>();_lab.AutoAdvance=false;_lab.ConfigureContentDirectory(_directory);Assert.IsTrue(_lab.ReloadPublished(),_lab.LastLoadError);
             using(var reference=new PublishedSkillSession())
             {

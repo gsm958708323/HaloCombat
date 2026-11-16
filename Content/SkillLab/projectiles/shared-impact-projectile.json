@@ -17,7 +17,6 @@
         "range": 0,
         "lifetime": 3,
         "radius": 0.16,
-        "maxHits": 4,
         "spawnForward": 0.45,
         "sameTargetDelay": 0.15,
         "passInvulnerable": true
@@ -57,6 +56,19 @@
         "level": "damage",
         "requireHpDamage": true
       }
+    },
+    {
+      "id": "projectile-pierce",
+      "kind": "pierce",
+      "runtimeId": 0,
+      "enabled": true,
+      "position": {
+        "x": 0.0,
+        "y": 340.0
+      },
+      "parameters": {
+        "maxHits": 4
+      }
     }
   ],
   "edges": [
@@ -75,6 +87,14 @@
       "target": "hurt",
       "targetPort": "execute",
       "order": 0
+    },
+    {
+      "id": "projectile-hit-projectile-pierce",
+      "source": "projectile",
+      "sourcePort": "hit",
+      "target": "projectile-pierce",
+      "targetPort": "execute",
+      "order": 1
     }
   ]
 }

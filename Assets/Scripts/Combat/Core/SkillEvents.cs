@@ -31,7 +31,8 @@ namespace Combat.Core
     internal sealed class SkillEventRouter
     {
         readonly CombatWorld _world;
-        readonly SkillEventCatalog _catalog;
+        SkillEventCatalog _catalog;
+        public void ReplaceCatalog(SkillEventCatalog catalog)=>_catalog=catalog;
         int _frame=-1,_count,_depth;
         bool _rejected;
         public SkillEventRouter(CombatWorld world,SkillEventCatalog catalog){_world=world;_catalog=catalog;}

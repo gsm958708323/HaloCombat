@@ -24,7 +24,7 @@ namespace Combat.Tests
             var project = SkillProjectFiles.Read(Path.Combine(Application.dataPath, "../Content/SkillLab/project.json"));
             foreach (var pair in new[] { new[] { "f6", "basic-shot" }, new[] { "f7", "burst-shot" } })
                 File.WriteAllText(Path.Combine(_directory, pair[0] + ".json"), SkillPublicationJson.Write(SkillPublicationJson.Create(project, pair[1])));
-            yield return SceneManager.LoadSceneAsync("Assets/Scenes/HaloCombat/SkillLab.unity", LoadSceneMode.Single);
+            yield return SkillLabTestScene.Load();
             _runner = UnityEngine.Object.FindFirstObjectByType<SkillLabRunner>();
             Assert.IsNotNull(_runner);
             _runner.AutoAdvance = false;
@@ -159,14 +159,15 @@ namespace Combat.Tests
             File.WriteAllText(Path.Combine(_directory, "f7.json"), SkillPublicationJson.Write(SkillPublicationJson.Create(project, "explosive-shot")));
             Assert.IsTrue(_runner.ReloadPublished(), _runner.LastLoadError);
             _runner.CastSlot("f7", 0, 0); _runner.StepLogicForTests(30);
-            Assert.AreEqual(240, _runner.Snapshot.Statistics.Damage);
-            Assert.AreEqual(3, _runner.Snapshot.Statistics.Hits);
-            Assert.AreEqual(920, _runner.Snapshot.Actors.First(a => a.Name == "target-2").Hp);
+            Assert.AreEqual(160, _runner.Snapshot.Statistics.Damage);
+            Assert.AreEqual(2, _runner.Snapshot.Statistics.Hits);
+            Assert.AreEqual(1000, _runner.Snapshot.Actors.First(a => a.Name == "target-2").Hp);
+            Assert.AreEqual(920, _runner.Snapshot.Actors.First(a => a.Name == "target-3").Hp);
             Assert.AreEqual(1000, _runner.Snapshot.Actors.First(a => a.Name == "target-4").Hp);
             Assert.Greater(_runner.Snapshot.Areas.Length, 0);
             yield return null;
             Assert.IsTrue(_runner.GetComponentsInChildren<LineRenderer>().Any(), "Unity must show the observed blast radius.");
-            project.Skills.First(s => s.Id == "explosive-shot").Nodes.First(n => n.Kind == "damage").Parameters["radius"] = 1;
+            project.Skills.First(s => s.Id == "explosive-shot").Nodes.First(n => n.Kind == "delivery").Parameters["radius"] = 1;
             File.WriteAllText(Path.Combine(_directory, "f7.json"), SkillPublicationJson.Write(SkillPublicationJson.Create(project, "explosive-shot")));
             _runner.ReloadPublished(); _runner.CastSlot("f7", 0, 0); _runner.StepLogicForTests(80);
             Assert.AreEqual(80, _runner.Snapshot.Statistics.Damage);
@@ -212,13 +213,13 @@ namespace Combat.Tests
         }
 
         [UnityTest]
-        public IEnumerator PublishedDashUsesExactDistanceSweptHitsAndStopsOnHit()
+        public IEnumerator PublishedDashStopsOutsideTheContactedEnemyAndCanBeInterrupted()
         {
             var project=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));
             File.WriteAllText(Path.Combine(_directory,"f7.json"),SkillPublicationJson.Write(SkillPublicationJson.Create(project,"dash-strike")));
             _runner.ReloadPublished();_runner.CastSlot("f7",0,0);_runner.StepLogicForTests(80);
-            Assert.AreEqual(6,_runner.Snapshot.Actors.First(a=>a.Kind=="caster").X,.002f);
-            Assert.AreEqual(160,_runner.Snapshot.Statistics.Damage);Assert.AreEqual(2,_runner.Snapshot.Statistics.Hits);
+            Assert.AreEqual(-.8001f,_runner.Snapshot.Actors.First(a=>a.Kind=="caster").X,.002f);
+            Assert.AreEqual(80,_runner.Snapshot.Statistics.Damage);Assert.AreEqual(1,_runner.Snapshot.Statistics.Hits);
             _runner.ReloadPublished();_runner.CastSlot("f7",0,0);_runner.StepLogicForTests(20);
             float position=_runner.Snapshot.Actors.First(a=>a.Kind=="caster").X;
             Assert.IsTrue(_runner.Snapshot.Volumes.Any(v=>v.Shape=="capsule"));

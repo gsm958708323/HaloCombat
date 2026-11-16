@@ -34,7 +34,7 @@ namespace Combat.Tests
             using(var reference=new PublishedSkillSession())
             {
                 reference.Replace(new System.Collections.Generic.Dictionary<string,string>{{"f6",File.ReadAllText(Path.Combine(_directory,"f6.json"))},{"f7",File.ReadAllText(Path.Combine(_directory,"f7.json"))}});
-                yield return SceneManager.LoadSceneAsync("Assets/Scenes/HaloCombat/SkillLab.unity",LoadSceneMode.Single);_lab=Object.FindFirstObjectByType<SkillLabRunner>();_lab.AutoAdvance=false;_lab.ConfigureContentDirectory(_directory);Assert.IsTrue(_lab.ReloadPublished(),_lab.LastLoadError);
+                yield return SkillLabTestScene.Load();_lab=Object.FindFirstObjectByType<SkillLabRunner>();_lab.AutoAdvance=false;_lab.ConfigureContentDirectory(_directory);Assert.IsTrue(_lab.ReloadPublished(),_lab.LastLoadError);
                 Assert.IsTrue(_lab.CastSlot("f6",5,0).Accepted);reference.Simulation.Cast("arena-absorbing-orb",5,0);_lab.StepLogicForTests(30);reference.Simulation.Advance(30);
                 Assert.IsTrue(_lab.CastSlot("f7",5,0).Accepted);reference.Simulation.Cast("arena-ammo-shot",5,0);_lab.StepLogicForTests(40);reference.Simulation.Advance(40);
                 Assert.IsTrue(_lab.CastSlot("f7",5,0).Accepted);reference.Simulation.Cast("arena-ammo-shot",5,0);_lab.StepLogicForTests(40);reference.Simulation.Advance(40);
@@ -59,7 +59,7 @@ namespace Combat.Tests
         public IEnumerator RealPublicationReturnsThroughTheSameTargetTwiceAndEndsCleanly()
         {
             var p=SkillProjectFiles.Read(Path.Combine(Application.dataPath,"../Content/SkillLab/project.json"));p.Preview.Caster.X=0;p.Preview.Targets=new[]{new PreviewActorDocument{Id="target",X=2,Hp=1000}};Files(p,"repeat-contact","absorbing-orb");
-            yield return SceneManager.LoadSceneAsync("Assets/Scenes/HaloCombat/SkillLab.unity",LoadSceneMode.Single);_lab=Object.FindFirstObjectByType<SkillLabRunner>();_lab.AutoAdvance=false;_lab.ConfigureContentDirectory(_directory);Assert.IsTrue(_lab.ReloadPublished(),_lab.LastLoadError);
+            yield return SkillLabTestScene.Load();_lab=Object.FindFirstObjectByType<SkillLabRunner>();_lab.AutoAdvance=false;_lab.ConfigureContentDirectory(_directory);Assert.IsTrue(_lab.ReloadPublished(),_lab.LastLoadError);
             Assert.IsTrue(_lab.CastSlot("f6",5,0).Accepted);_lab.StepLogicForTests(80);Assert.AreEqual(2,_lab.Snapshot.Statistics.Hits);Assert.AreEqual(160,_lab.Snapshot.Statistics.Damage,.001);Assert.IsFalse(_lab.Snapshot.Actors.Any(a=>a.Kind=="projectile"));
             yield return null;LogAssert.NoUnexpectedReceived();
         }

@@ -61,6 +61,8 @@ namespace Combat.Config
         }
         public AuthorNodeSource Definition(string family,int id)=>_definitions.TryGetValue(family+":"+id,out var source)?source:null;
         internal AuthorNodeSource Effect(IEffect effect)=>_effects.TryGetValue(effect,out var source)?source:null;
+        internal void CopyEffectsTo(ConditionalWeakTable<IEffect,AuthorNodeSource> target)
+        {foreach(var pair in _effects)if(!target.TryGetValue(pair.Key,out _))target.Add(pair.Key,pair.Value);}
     }
 
     public readonly struct AuthorExecution
@@ -75,15 +77,16 @@ namespace Combat.Config
 
     public sealed class AuthorExecutionTrace:IEffectObserver
     {
-        readonly AuthorSourceMap _map;
+        readonly ConditionalWeakTable<IEffect,AuthorNodeSource> _effects=new ConditionalWeakTable<IEffect,AuthorNodeSource>();
         readonly List<AuthorExecution> _stack=new List<AuthorExecution>();
         int _sequence;
         public AuthorExecution Current=>_stack.Count==0?default:_stack[_stack.Count-1];
         public event Action<AuthorExecution> Executing;
-        public AuthorExecutionTrace(AuthorSourceMap map)=>_map=map;
+        public AuthorExecutionTrace(AuthorSourceMap map)=>Register(map);
+        public void Register(AuthorSourceMap map)=>map?.CopyEffectsTo(_effects);
         public int Enter(IEffect effect,in EffectContext context)
         {
-            var node=_map?.Effect(effect);if(node==null)return -1;
+            if(!_effects.TryGetValue(effect,out var node))return -1;
             int token=_stack.Count;var value=new AuthorExecution(node,context,++_sequence,Current.Id);_stack.Add(value);
             try{Executing?.Invoke(value);}catch{Exit(token);throw;}return token;
         }

@@ -46,9 +46,9 @@ namespace Combat.Tests
             var c=CombatContentCompiler.Compile(Project());foreach(var row in Reference()["projectiles"])
             {
                 int id=row.Value<int>("id");Assert.IsTrue(c.Projectiles.TryGet(id,out var p));Assert.IsTrue(p.PassInvulnerable,"PD"+id+" must preserve immune-contact pass-through.");
-                var actual=JObject.FromObject(new{id=p.SpecId,speed=p.Speed,lifetime=p.Lifetime,radius=p.HitRadius,maxHits=p.MaxHits,spawnForward=p.SpawnForward,sameTargetDelay=p.SameTargetDelay,
+                var actual=JObject.FromObject(new{id=p.SpecId,speed=p.Speed,lifetime=p.Lifetime,radius=p.HitRadius,maxHits=(((PierceEffect)System.Array.Find(p.OnHit,e=>e is PierceEffect))?.MaxHits??1),spawnForward=p.SpawnForward,sameTargetDelay=p.SameTargetDelay,
                     removeOnObstacle=p.RemoveOnObstacle,view=p.View,homingRate=p.HomingRate,homingRadius=p.HomingAcquireRadius});
-                actual["hit"]=Effects(p.OnHit);actual["lifetimeEffects"]=Effects(p.OnExpire);actual["wall"]=Effects(p.OnWall);actual["returned"]=Effects(p.OnReturned);
+                actual["hit"]=Effects(p.OnHit.Where(e=>!(e is PierceEffect)).ToArray());actual["lifetimeEffects"]=Effects(p.OnExpire);actual["wall"]=Effects(p.OnWall);actual["returned"]=Effects(p.OnReturned);
                 Equal(row,actual,"PD"+id);
             }
         }

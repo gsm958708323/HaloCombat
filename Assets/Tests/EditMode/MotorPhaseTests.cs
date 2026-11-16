@@ -204,7 +204,7 @@ namespace Combat.Tests
                 f.Target.GetComp<TransformComp>().Position=new SimVec3(2,0,0);var destination=f.Spawn("target-end");destination.GetComp<TransformComp>().Position=new SimVec3(6,0,0);
                 Assert.IsTrue(f.Motion.RequestTeleport(new SimVec3(4,0,0)));
                 f.Play(new TimelineClip{Kind=ClipKind.Dash,Start=0,End=.02f,Length=4,Width=.4f,OnHit=Damage()});f.Tick();
-                Assert.AreEqual(8,f.Transform.Position.X,.00001);Assert.AreEqual(1000,f.Hp);Assert.AreEqual(990,destination.GetComp<AttributeSet>().GetBase(AttrId.Hp));
+                Assert.AreEqual(5.1999f,f.Transform.Position.X,.00001);Assert.AreEqual(1000,f.Hp);Assert.AreEqual(990,destination.GetComp<AttributeSet>().GetBase(AttrId.Hp));
             }
         }
     }

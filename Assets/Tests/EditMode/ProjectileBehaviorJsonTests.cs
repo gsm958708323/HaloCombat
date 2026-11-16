@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Combat.Config;
+using Combat.Core;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using static Combat.Tests.ProjectileBehaviorTestProject;
@@ -66,7 +67,7 @@ namespace Combat.Tests
                 var second=SkillPublicationJson.Read(SkillPublicationJson.Write(first.Document));
                 Assert.IsTrue(JToken.DeepEquals(JObject.FromObject(first.Document),JObject.FromObject(second.Document)));
                 int runtime=Node(p,"projectile").RuntimeId;first.Content.Projectiles.TryGet(runtime,out var a);second.Content.Projectiles.TryGet(runtime,out var b);
-                Assert.AreNotSame(a,b);Assert.AreNotSame(a.OnHit[0],b.OnHit[0]);Assert.AreEqual(a.Chain?.ExtraChains,b.Chain?.ExtraChains);
+                Assert.AreNotSame(a,b);Assert.AreNotSame(a.OnHit[0],b.OnHit[0]);Assert.AreEqual(a.OnHit.OfType<ChainProjectileEffect>().FirstOrDefault()?.Count,b.OnHit.OfType<ChainProjectileEffect>().FirstOrDefault()?.Count);
             }
         }
     }

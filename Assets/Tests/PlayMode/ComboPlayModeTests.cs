@@ -52,7 +52,7 @@ namespace Combat.Tests
             // A publication deliberately excludes gameplay Combo bindings. The real formal
             // table is installed here through the same shared SkillSimulation as the host.
             File.WriteAllText(Path.Combine(_directory,"f6.json"),SkillPublicationJson.Write(SkillPublicationJson.Create(p,"g1")));
-            yield return SceneManager.LoadSceneAsync("Assets/Scenes/HaloCombat/SkillLab.unity",LoadSceneMode.Single);_lab=Object.FindFirstObjectByType<SkillLabRunner>();_lab.AutoAdvance=false;_lab.ConfigureContentDirectory(_directory);Assert.IsTrue(_lab.ReloadPublished());
+            yield return SkillLabTestScene.Load();_lab=Object.FindFirstObjectByType<SkillLabRunner>();_lab.AutoAdvance=false;_lab.ConfigureContentDirectory(_directory);Assert.IsTrue(_lab.ReloadPublished());
             _lab.SubmitInput("ConfirmAttack",4,0);_lab.StepLogicForTests(1);Assert.AreEqual(0,_lab.Snapshot.Statistics.Casts);Assert.AreEqual("ConfirmAttack",_lab.Snapshot.Actors.Single(a=>a.Kind=="caster").BufferedInput);
             Assert.IsTrue(_lab.CastSlot("f6",4,0).Accepted);_lab.StepLogicForTests(1);Assert.AreEqual(1,_lab.Snapshot.Statistics.Casts);yield return null;LogAssert.NoUnexpectedReceived();
         }

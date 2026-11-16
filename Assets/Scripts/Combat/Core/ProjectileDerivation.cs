@@ -14,12 +14,6 @@ namespace Combat.Core
     }
 
     public enum ChainTargetMode {Nearest,Random}
-    public sealed class ProjectileChainDefinition
-    {
-        public int ExtraChains;
-        public float Radius=6;
-        public ChainTargetMode Mode;
-    }
 
     // A family owns only a bounded emission quota. Hit history remains per branch.
     public sealed class ProjectileFamily
@@ -39,8 +33,11 @@ namespace Combat.Core
         internal readonly float Range;
         internal readonly bool AtImpact;
         internal readonly double? VerticalSpeed;
+        internal readonly ProjectileDefinition Definition;
         internal ProjectileSeed(ProjectileFamily family,int generation,float range,bool atImpact,EntityId[] ancestors,double? verticalSpeed=null)
         {Family=family;Generation=generation;Range=range;AtImpact=atImpact;Ancestors=ancestors??Array.Empty<EntityId>();VerticalSpeed=verticalSpeed;}
+        internal ProjectileSeed(ProjectileSeed seed,ProjectileDefinition definition)
+            :this(seed.Family,seed.Generation,seed.Range,seed.AtImpact,seed.Ancestors,seed.VerticalSpeed){Definition=definition;}
     }
 
     // Only the projectile hit boundary creates this context; effects cannot invent a parent.
@@ -60,14 +57,17 @@ namespace Combat.Core
         public float Attack {get;}
         public float Power {get;}
         public SkillOrigin Origin=>Family.Origin;
+        public DeliveryContact Contact {get;}
+        internal ChainProjectileEffect Redirect;
         internal ProjectileHitContext(Actor actor,ProjectileComp body,SimVec3 point,float yaw,float attack)
         {
             Projectile=actor.Id;Owner=body.OwnerId;Definition=body.Def;Family=body.Family;
             Generation=body.Generation;HitIndex=body.HitCount;RemainingRange=(float)Math.Max(0,body.RangeLimit-body.Distance);
             Point=point;Yaw=yaw;Attack=attack;Power=body.Power;_visited=body.Visited();
             _verticalSpeed=body.VerticalSpeed;
+            Contact=new DeliveryContact(body.LegHits);
         }
-        internal ProjectileSeed Child(float range)=>new ProjectileSeed(Family,Generation+1,range,true,(EntityId[])_visited.Clone(),_verticalSpeed);
+        internal ProjectileSeed Child(float range)=>new ProjectileSeed(new ProjectileSeed(Family,Generation+1,range,true,(EntityId[])_visited.Clone(),_verticalSpeed),Definition);
     }
 
     public static class ProjectileEmission

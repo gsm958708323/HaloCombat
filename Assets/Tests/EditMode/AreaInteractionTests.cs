@@ -38,7 +38,7 @@ namespace Combat.Tests
         }
         sealed class Count : IEffect {public int Value;public void Apply(ref EffectContext context)=>Value++;}
         static AoeDefinition Orb()=>new AoeDefinition{SpecId=1,Radius=.25f,Duration=100,MoveForward=true,MoveSpeed=.1f,AbsorbProjectiles=true,ProjectileAbsorbForce=.05f,ProjectileRadiusScale=.05f,PulseOnSpawn=false};
-        static ProjectileDefinition Bullet(float speed=0)=>new ProjectileDefinition{SpecId=1,Speed=speed,Lifetime=100,HitRadius=.1f,MaxHits=0};
+        static ProjectileDefinition Bullet(float speed=0)=>new ProjectileDefinition{SpecId=1,Speed=speed,Lifetime=100,HitRadius=.1f,OnHit=new IEffect[]{new PierceEffect(0)}};
         static DamageEffect Damage(float amount)=>new DamageEffect{Flat=amount,Coeff=0,CanCrit=false,FireOnHurted=false};
 
         [Test]
@@ -137,7 +137,7 @@ namespace Combat.Tests
         {
             using(var f=new F())
             {
-                var target=f.Spawn("target");var def=Bullet();def.SameTargetDelay=delay;def.OnHit=new IEffect[]{Damage(1)};var shot=f.Shot(def);
+                var target=f.Spawn("target");var def=Bullet();def.SameTargetDelay=delay;def.OnHit=new IEffect[]{Damage(1),new PierceEffect(0)};var shot=f.Shot(def);
                 f.Tick(10);Assert.AreEqual(expected,shot.GetComp<ProjectileComp>().HitCount);Assert.AreEqual(100-expected,target.GetComp<AttributeSet>().GetBase(AttrId.Hp));
                 if(delay>0){f.Tick();Assert.AreEqual(3,shot.GetComp<ProjectileComp>().HitCount);Assert.IsTrue(shot.GetComp<ProjectileComp>().HasHit(target.Id));}
             }
@@ -147,7 +147,7 @@ namespace Combat.Tests
         {
             using(var f=new F())
             {
-                var target=f.Spawn("target");var def=Bullet(100);def.SameTargetDelay=.1f;def.OnHit=new IEffect[]{Damage(1)};var shot=f.Shot(def,-1.6f);var body=shot.GetComp<ProjectileComp>();body.TryRecord(target.Id);body.Age=previousAge;
+                var target=f.Spawn("target");var def=Bullet(100);def.SameTargetDelay=.1f;def.OnHit=new IEffect[]{Damage(1),new PierceEffect(0)};var shot=f.Shot(def,-1.6f);var body=shot.GetComp<ProjectileComp>();body.TryRecord(target.Id);body.Age=previousAge;
                 f.Tick();Assert.AreEqual(hit?99:100,target.GetComp<AttributeSet>().GetBase(AttrId.Hp));
             }
         }
@@ -156,7 +156,7 @@ namespace Combat.Tests
         {
             using(var f=new F())
             {
-                var target=f.Spawn("target");var def=Bullet();def.SameTargetDelay=.1f;def.MaxHits=3;def.OnHit=new IEffect[]{Damage(1)};var shot=f.Shot(def);f.Tick();
+                var target=f.Spawn("target");var def=Bullet();def.SameTargetDelay=.1f;def.OnHit=new IEffect[]{Damage(1),new PierceEffect(3)};var shot=f.Shot(def);f.Tick();
                 f.World.RequestActorHitstop(shot.Id,5);f.Tick(5);Assert.AreEqual(99,target.GetComp<AttributeSet>().GetBase(AttrId.Hp));Assert.AreEqual(.02,shot.GetComp<ProjectileComp>().Age,.00001);
                 f.Tick(10);Assert.AreEqual(97,target.GetComp<AttributeSet>().GetBase(AttrId.Hp));Assert.IsFalse(shot.IsActive);
             }
@@ -174,7 +174,7 @@ namespace Combat.Tests
         {
             using(var f=new F())
             {
-                var target=f.Spawn("target");var lease=target.GetComp<TagComp>().Acquire(CommonTags.Invincible);var def=Bullet();def.PassInvulnerable=pass;def.OnHit=new IEffect[]{Damage(1)};var shot=f.Shot(def);f.Tick();
+                var target=f.Spawn("target");var lease=target.GetComp<TagComp>().Acquire(CommonTags.Invincible);var def=Bullet();def.PassInvulnerable=pass;def.OnHit=new IEffect[]{Damage(1),new PierceEffect(0)};var shot=f.Shot(def);f.Tick();
                 Assert.AreEqual(hitCount,shot.GetComp<ProjectileComp>().HitCount);Assert.AreEqual(100,target.GetComp<AttributeSet>().GetBase(AttrId.Hp));lease.Dispose();f.Tick();Assert.AreEqual(pass?99:100,target.GetComp<AttributeSet>().GetBase(AttrId.Hp));
             }
         }

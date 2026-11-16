@@ -49,7 +49,7 @@ namespace Combat.Tests
         [Test]
         public void ScheduledLandingsFireOnceAtTheirTimesAndLifetimeStillEndsTheProjectile()
         {
-            var effect=new Count();var def=new ProjectileDefinition{Speed=3,Lifetime=2,MaxHits=0,HitRadius=.1f,Motion=new ProjectileMotionDefinition{ScheduledBounce=Curve()},OnBounce=new IEffect[]{effect}};
+            var effect=new Count();var def=new ProjectileDefinition{Speed=3,Lifetime=2,OnHit=new IEffect[]{new PierceEffect(0)},HitRadius=.1f,Motion=new ProjectileMotionDefinition{ScheduledBounce=Curve()},OnBounce=new IEffect[]{effect}};
             using(var f=new F(def))
             {
                 int ended=0;f.World.Events.Subscribe<EvProjectileEnded>(e=>{ended++;Assert.AreEqual(ProjectileEndReason.Lifetime,e.Reason);});
