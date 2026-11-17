@@ -6,6 +6,8 @@
 .combo-task-nav label{display:grid;gap:6px;font-size:11px;margin:13px 0}.combo-task-nav select{width:100%;min-width:0;font-size:11px}
 .combo-task-nav p{color:#a2b3aa;font-size:10px;padding:10px 4px;border-top:1px solid #354548;line-height:1.6}
 .combo-author-main{display:flex;flex-direction:column;min-width:0;min-height:0;overflow:auto;background:#151d1f}
+/* The column owns scrolling. Keep inspectors and timelines at their content height. */
+.combo-author-main>*{flex-shrink:0}
 .combo-author-shell>.skill-overview{min-width:0;max-width:none;border-left:1px solid #354548}
 .combo-task-heading{display:flex;gap:7px;align-items:center;flex-wrap:wrap;padding:12px;border-bottom:1px solid #354548}
 .combo-task-heading>div{flex:1;min-width:130px}.combo-task-heading h3{font-size:14px;margin:0 0 4px}.combo-task-heading small{font-size:10px;color:#a2b3aa}
