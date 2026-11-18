@@ -114,7 +114,7 @@ namespace Combat.Core
             if(_latest&&(ctx.Source==null||!ctx.Source.TryGetComp<SkillDirectorComp>(out var director)||
                 director.CurrentOrigin.CastId!=result.Origin.CastId||!director.CurrentOrigin.Skill.Equals(result.Origin.Skill)||result.Origin.CastId<=0))return;
             ctx.World.Deliver(_effects,ctx.Source,ctx.Target,ctx.SnapshotAtk,ctx.HasPoint?(SimVec3?)ctx.Point:null,ctx.HasDir?(SimVec3?)ctx.Dir:null,
-                ctx.BuffStacks,ctx.Power,ctx.Origin,ctx.ProjectileHit,result);
+                ctx.BuffStacks,ctx.Power,ctx.Origin,ctx.ProjectileHit,result,contact:ctx.Contact);
         }
     }
 }
