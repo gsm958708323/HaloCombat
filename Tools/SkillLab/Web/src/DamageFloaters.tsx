@@ -2,14 +2,18 @@ import {useEffect,useRef,useState} from 'react';
 import type {ActorView,RunEvent} from './model';
 import './preview-effects.css';
 
+const amountFormat=new Intl.NumberFormat('zh-CN',{maximumFractionDigits:1});
+
 type Floater={id:number;x:number;z:number;amount:number;critical:boolean;until:number};
 export function DamageFloaters({events,actors,sessionId}:{events:RunEvent[];actors:ActorView[];sessionId:string}){
   const [items,setItems]=useState<Floater[]>([]),last=useRef(0),session=useRef(sessionId);
   useEffect(()=>{
     if(session.current!==sessionId){session.current=sessionId;last.current=0;setItems([]);}
     const now=performance.now(),added:Floater[]=[];
-    for(const event of events){
-      if(event.sequence<=last.current)continue;last.current=event.sequence;
+    let first=events.length;
+    while(first>0 && events[first-1].sequence>last.current) first--;
+    for(let i=first;i<events.length;i++){
+      const event=events[i];last.current=event.sequence;
       if(!event.damage||!['damage','critical'].includes(event.kind))continue;
       const amount=event.damage.absorbed+event.damage.hpLost;if(amount<=0)continue;
       const target=actors.find(a=>a.id===event.targetId||a.name===event.damage!.target);
@@ -23,6 +27,6 @@ export function DamageFloaters({events,actors,sessionId}:{events:RunEvent[];acto
     return()=>clearTimeout(timer);
   },[items]);
   return <g className="damage-floaters" pointerEvents="none" aria-label="命中伤害飘字">{items.map(item=><g key={item.id} transform={`translate(${item.x},${-item.z})`}>
-    <text className={item.critical?'damage-floater critical':'damage-floater'} textAnchor="middle" data-amount={item.amount}>{item.amount.toLocaleString('zh-CN',{maximumFractionDigits:1})}{item.critical?'!':''}</text>
+    <text className={item.critical?'damage-floater critical':'damage-floater'} textAnchor="middle" data-amount={item.amount}>{amountFormat.format(item.amount)}{item.critical?'!':''}</text>
   </g>)}</g>;
 }

@@ -35,3 +35,16 @@ test('incremental preview keeps diagnostics by full entity identity, bounds even
   assert.equal(merged.actors[0].attributes,actor.attributes);assert.deepEqual(merged.actors[1].attributes,{});assert.deepEqual(merged.trails,[]);
   assert.equal(previous.actors[0].x,0);assert.equal(previous.events.at(-1).sequence,500);
 });
+
+test('pose-only frames keep the same event history until a newer combat event arrives',()=>{
+  const events=[{sequence:17},{sequence:18}];
+  const previous={step:10,actors:[],events};
+  for(const delta of [[],[{sequence:18}]]) {
+    const next=mergePreviewFrame(previous,{step:11,actors:[],events:delta});
+    assert.equal(next.events,events);
+    assert.equal(next.step,11);
+  }
+  const next=mergePreviewFrame(previous,{step:12,actors:[],events:[{sequence:19}]});
+  assert.deepEqual(next.events.map(e=>e.sequence),[17,18,19]);
+  assert.notEqual(next.events,events);
+});

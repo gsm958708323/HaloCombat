@@ -13,6 +13,8 @@ import {ComboInput} from './ComboInput';
 import './trace.css';
 import {ReplayControls} from './ReplayControls';
 
+const number=new Intl.NumberFormat('zh-CN',{maximumFractionDigits:1}).format;
+
 export function Preview({ preview, project, update,inspectSource,root }: { inspectSource:(source:AuthorNodeSource)=>void;root:string; preview: ReturnType<typeof usePreview>; project: Project; update: (p: Project) => void }) {
   const [entity,setEntity]=useState(''),[sceneActor,setSceneActor]=useState(project.preview.caster.id);
   useEffect(()=>setEntity(''),[preview.sessionId]);
@@ -34,7 +36,6 @@ export function Preview({ preview, project, update,inspectSource,root }: { inspe
   }
   function stopMovement(){if(!moveKeys.current.size)return;moveKeys.current.clear();void preview.move(0,0);}
   const state=preview.state;
-  const number=(value:number)=>value.toLocaleString('zh-CN',{ maximumFractionDigits: 1 });
   return <aside className="left-column" onKeyDown={e=>{if(e.target instanceof HTMLInputElement||e.target instanceof HTMLTextAreaElement||e.target instanceof HTMLSelectElement)return;moveKey(e.key.toLowerCase(),true);}} onKeyUp={e=>moveKey(e.key.toLowerCase(),false)}>
     <RuntimePanel state={state} sessionId={preview.sessionId} ready={preview.ready} inspectSource={inspectSource} inspectEntity={setEntity} remove={preview.remove} removeBuff={preview.removeBuff}/>
     <div className="preview-root">预览技能：{project.skills.find(s=>s.id===root)?.name??root}</div>

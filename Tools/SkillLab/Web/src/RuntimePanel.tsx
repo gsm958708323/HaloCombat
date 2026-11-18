@@ -1,4 +1,4 @@
-import {memo,useEffect,useRef,useState} from 'react';
+import {memo,useEffect,useMemo,useRef,useState} from 'react';
 import type {AuthorNodeSource,PreviewState} from './model';
 import {runtimeEventFilters,runtimeEventView} from './authoring/runtimeEvents';
 import {RuntimeEventTable} from './RuntimeEventTable';
@@ -15,7 +15,8 @@ export function RuntimePanel(props:PanelProps){
 const RuntimePanelView=memo(function RuntimePanelView({state,sessionId,ready,inspectSource,inspectEntity,remove,removeBuff}:PanelProps) {
   const [filter,setFilter]=useState('key'),[instances,setInstances]=useState(false),[since,setSince]=useState(0),[expanded,setExpanded]=useState(false);
   useEffect(()=>setSince(0),[sessionId]);
-  const view=runtimeEventView(state?.events??[],filter,since,expanded?500:80);
+  const events=state?.events;
+  const view=useMemo(()=>runtimeEventView(events??[],filter,since,expanded?500:80),[events,filter,since,expanded]);
   function clear(){setSince(Math.max(0,...(state?.events??[]).map(e=>e.sequence)));}
   return <section className="events-panel"><div className="panel-title"><div className="text-tabs"><button className={!instances?'active':''} onClick={()=>setInstances(false)}>事件记录</button><button className={instances?'active':''} onClick={()=>setInstances(true)}>运行实例</button></div>
     {!instances&&<select aria-label="筛选事件" value={filter} onChange={e=>setFilter(e.target.value)}>{runtimeEventFilters.map(([key,label])=><option value={key} key={key}>{label}</option>)}</select>}
@@ -24,6 +25,6 @@ const RuntimePanelView=memo(function RuntimePanelView({state,sessionId,ready,ins
   </div><div className="event-scroll">{instances?<RuntimeInstances actors={state?.actors??[]} ready={ready} inspectSource={inspectSource} inspectEntity={inspectEntity} remove={remove} removeBuff={removeBuff}/>:<>
     <DamageInspector events={view.retained}/>{view.hidden>0&&<p className="runtime-empty">显示最近{view.rows.length}条，另有{view.hidden}条。<button onClick={()=>setExpanded(true)}>查看全部</button></p>}
     {expanded&&<button onClick={()=>setExpanded(false)}>仅看最近80条</button>}
-    <RuntimeEventTable events={view.rows} inspectSource={inspectSource} inspectEntity={inspectEntity} ready={ready}/>{!view.rows.length&&<p className="runtime-empty">当前筛选没有事件。</p>}
+    <RuntimeEventTable key={JSON.stringify([sessionId,filter,since,expanded])} events={view.rows} inspectSource={inspectSource} inspectEntity={inspectEntity} ready={ready}/>{!view.rows.length&&<p className="runtime-empty">当前筛选没有事件。</p>}
   </>}</div></section>;
 });

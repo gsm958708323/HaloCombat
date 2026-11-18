@@ -1,11 +1,38 @@
+import {memo,useEffect,useRef,useState} from 'react';
 import type {AuthorNodeSource,RunEvent} from './model';
 import './trace.css';
 const labels={'projectile-flight':'飞行触发','projectile-flight-limit':'飞行触发受限',placement:'布置',operation:'即时操作',cast:'施放',input:'输入','combo-confirmation':'命中确认','combo-resolved':'连招匹配','combo-unmatched':'连招未匹配',hitstop:'顿帧',hurt:'受伤反馈',ammunition:'弹药','projectile-teleport':'弹体传送','projectile-teleport-blocked':'传送受阻',spawn:'生成',damage:'伤害',critical:'暴击',heal:'治疗',shield:'护盾','skill-hit':'技能命中','skill-critical':'技能暴击','skill-kill':'技能击杀','skill-completed':'技能完成','skill-wall':'技能撞墙','skill-range':'技能射程','skill-projectileend':'技能弹体结束','skill-event-rejected':'事件受限',cleanup:'回收',rejected:'拒绝',cue:'表现',completed:'完成',cancelled:'取消',released:'释放','action-open':'判定开启','action-close':'判定关闭',collision:'碰撞',ray:'射线','projectile-end':'弹体终结','projectile-chain':'连锁','projectile-split':'分裂','projectile-rejected':'派生受限','projectile-returning':'开始返回','projectile-ground-bounce':'地面反弹','projectile-wall-bounce':'撞墙反射','construct-spawned':'物体生成','construct-decay':'物体自伤','construct-died':'物体死亡','construct-removed':'物体移除','construct-ownerremoved':'物体归属清理','construct-rejected':'物体受限','summon-spawned':'召唤生成','summon-expired':'召唤到期','summon-ownerremoved':'归属清理','summon-killed':'召唤死亡','summon-removed':'召唤移除','summon-rejected':'召唤受限','buff-applied':'Buff施加','buff-stacked':'Buff增层','buff-refreshed':'Buff刷新','buff-period':'Buff周期','buff-expired':'Buff到期','buff-hurt':'Buff受击','buff-cast':'Buff施法','buff-removed':'Buff移除','buff-rejected':'Buff拒绝',area:'范围结算','area-pulse':'区域脉冲','area-enter':'进入区域','area-exit':'离开区域','area-stay':'区域停留','area-expired':'区域到期','area-removed':'区域移除','area-absorbed':'吸收弹体'};
-export function RuntimeEventTable({events,inspectSource,inspectEntity,ready}:{events:RunEvent[];inspectSource:(source:AuthorNodeSource)=>void;inspectEntity:(id:string)=>void;ready:boolean}) {
-  return <table className="event-table"><thead><tr><th>时间</th><th>事件</th><th>来源</th><th>结果 / 定位</th></tr></thead><tbody>{events.map(e=><tr key={e.sequence}>
-    <td>{e.time.toFixed(2)}s<small className="event-trace"> #{e.step}</small></td><td className={e.damage?'gold':''}>{e.kind==='execute'?'节点执行':(labels as Record<string,string>)[e.kind]??e.kind}</td><td>{e.source}</td>
-    <td>{e.damage&&(e.kind==='damage'||e.kind==='critical')?(e.damage.absorbed+e.damage.hpLost).toLocaleString('zh-CN',{maximumFractionDigits:3})+' → '+e.damage.target:e.result}<div className="event-location">{e.node&&<button disabled={!ready} title={e.node.graphKind+':'+e.node.graphId+' / '+e.node.nodeId} aria-label={'定位事件'+e.sequence+'的节点'} onClick={()=>inspectSource(e.node!)}>{e.node.graphName||e.node.graphId} / {e.node.nodeId}</button>}
+type RowActions={inspectSource:(source:AuthorNodeSource)=>void;inspectEntity:(id:string)=>void;ready:boolean};
+const damageNumber=new Intl.NumberFormat('zh-CN',{maximumFractionDigits:3});
+const EventRow=memo(function EventRow({event:e,inspectSource,inspectEntity,ready}:RowActions & {event:RunEvent}) {
+  return <tr><td>{e.time.toFixed(2)}s<small className="event-trace"> #{e.step}</small></td><td className={e.damage?'gold':''}>{e.kind==='execute'?'节点执行':(labels as Record<string,string>)[e.kind]??e.kind}</td><td>{e.source}</td>
+    <td>{e.damage&&(e.kind==='damage'||e.kind==='critical')?damageNumber.format(e.damage.absorbed+e.damage.hpLost)+' → '+e.damage.target:e.result}<div className="event-location">{e.node&&<button disabled={!ready} title={e.node.graphKind+':'+e.node.graphId+' / '+e.node.nodeId} aria-label={'定位事件'+e.sequence+'的节点'} onClick={()=>inspectSource(e.node!)}>{e.node.graphName||e.node.graphId} / {e.node.nodeId}</button>}
     {([['sourceId','来源'],['targetId','目标'],['bodyId','实体']] as const).map(([key,label])=>e[key]&&<button key={key} disabled={!ready} onClick={()=>inspectEntity(e[key]!)} aria-label={'定位事件'+e.sequence+'的'+label}>{label}</button>)}</div>
     {e.flight&&<small className="event-trace">弹体时间 {e.flight.age.toFixed(3)}s · 路径 {e.flight.distance.toFixed(3)}m</small>}{e.castId>0&&<small className="event-trace">{e.skill} · Cast {e.castId}{e.executionId>0?' · 执行 '+e.executionId:''}</small>}</td>
-  </tr>)}</tbody></table>;
-}
+  </tr>;
+});
+
+const pageSize=12;
+export const RuntimeEventTable=memo(function RuntimeEventTable({events,...actions}:RowActions & {events:RunEvent[]}) {
+  const [limit,setLimit]=useState(pageSize);
+  const tail=useRef<HTMLTableRowElement>(null), table=useRef<HTMLTableElement>(null), more=events.length>limit;
+  useEffect(()=>{
+    const scroller=table.current?.closest('.event-scroll');
+    if(!scroller || limit===pageSize) return;
+    const trim=()=>{if(scroller.scrollTop===0) setLimit(pageSize);};
+    scroller.addEventListener('scroll',trim);
+    return ()=>scroller.removeEventListener('scroll',trim);
+  },[limit]);
+  useEffect(()=>{
+    const marker=tail.current;
+    if(!more || !marker) return;
+    const observer=new IntersectionObserver(entries=>{
+      if(entries.some(entry=>entry.isIntersecting)) setLimit(limit+pageSize);
+    },{root:marker.closest('.event-scroll'),rootMargin:'0px 0px 80px'});
+    observer.observe(marker);
+    return ()=>observer.disconnect();
+  },[more,limit]);
+  return <table ref={table} className="event-table"><thead><tr><th>时间</th><th>事件</th><th>来源</th><th>结果 / 定位</th></tr></thead>
+    <tbody>{events.slice(0,limit).map(event=><EventRow key={event.sequence} event={event} {...actions}/>)}
+    {more&&<tr ref={tail}><td colSpan={4}><button onClick={()=>setLimit(limit+pageSize)}>加载更多事件</button></td></tr>}</tbody></table>;
+});
