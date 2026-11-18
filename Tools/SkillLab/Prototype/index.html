@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark"><title>HaloCombat · 技能工作台</title>
+  <link rel="stylesheet" href="shell.css"><link rel="stylesheet" href="authoring.css"><link rel="stylesheet" href="stage.css">
+</head>
+<body>
+<header class="mast">
+  <div class="wordmark"><span class="brand-mark" aria-hidden="true"></span><strong>HaloCombat</strong><span class="brand-divider"></span><span>技能工作台</span></div>
+  <div class="mast-actions"><span class="local-status" id="local-status">本地草稿</span><button type="button" id="undo" title="撤销最近一次编辑 (Ctrl+Z)">撤销</button><button type="button" id="redo" title="重做 (Ctrl+Shift+Z)">重做</button><button type="button" id="help">体验指南</button></div>
+</header>
+<main>
+  <section class="library" aria-label="技能库"><div class="library-head"><h1>技能库</h1><span>选择技能进入试验台</span></div><nav id="skills" aria-label="切换技能"></nav></section>
+  <section class="project-head"><div><div class="overline">技能编排 <span>/</span> 当前草稿</div><h2 id="skill-title">爆裂火球</h2><p id="skill-description"></p></div><div class="head-tools"><span class="trial-badge" id="run-status"></span><button type="button" id="jump-results">查看结果 ↓</button><button type="button" class="action-primary" id="cast">施放试验 <kbd>Space</kbd></button></div></section>
+  <div class="desk"><section id="stage" aria-label="试验场"></section><section id="graph" aria-label="技能画布"></section><aside id="inspector" aria-label="节点属性"></aside></div>
+  <section class="record-panel" id="trial-results" aria-label="试验记录">
+    <div class="record-heading"><div><span class="overline">战斗验证</span><h2>试验记录</h2></div><div class="record-tools"><label>记录 <select id="record"></select></label><button id="baseline" type="button">设为预期结果</button></div></div>
+    <div id="comparison" aria-live="polite"></div>
+    <div class="record-grid"><div><h3>目标末态</h3><div id="outcomes"></div></div><div><div class="trace-head"><h3>执行明细</h3><label>目标 <select id="filter-target"><option value="*">全部</option><option>A</option><option>B</option></select></label><label>类型 <select id="filter-event"><option value="*">全部</option></select></label></div><div id="trace-log"></div></div></div>
+  </section>
+  <footer><span>HaloCombat · 交互设计稿</span><span>浏览器本地演示计算，草稿保存在当前浏览器。</span></footer>
+</main>
+<dialog id="guide" aria-labelledby="guide-title"><div class="dialog-inner"><div class="dialog-head"><span class="overline">交互指南</span><button id="close-guide" type="button" aria-label="关闭指南">×</button></div><h2 id="guide-title">用四次试验体验技能编排</h2><div id="guide-options"></div><p>点击事件行可回到当时画面，并查看对应节点。可将一次试验设为预期，修改设计后再试放，对照目标末态与触发次数。</p><button class="action-primary" type="button" id="guide-done">回到工作台</button></div></dialog>
+<div id="notification" role="status" aria-live="polite"></div>
+<script src="model.js"></script><script src="simulation.js"></script><script src="graph-layout.js"></script><script src="authoring.js"></script><script src="stage.js"></script><script src="records.js"></script><script src="app.js"></script>
+</body></html>
