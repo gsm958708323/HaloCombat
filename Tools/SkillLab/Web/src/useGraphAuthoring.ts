@@ -73,7 +73,7 @@ export function useGraphAuthoring(document:ReturnType<typeof useProjectDocument>
     }catch(e){report(String(e));}},
     toggle:(id,enabled)=>editGraph(g=>({...g,nodes:g.nodes.map(v=>v.id===id?{...v,enabled}:v)}))}}))??[],[graph,sharedTimeline,project?.summonBlueprints,project?.buffs,project?.skills,project?.projectiles,project?.areas,project?.runtime?.views,selectedNodes,parameter,changeKind,remove,editGraph,measurements,keyString,movementDefault]);
   const edges=useMemo<Edge[]>(()=>graph?.edges.map(e=>({id:e.id,source:e.source,sourceHandle:e.sourcePort,target:e.target,targetHandle:e.targetPort,
-      selected:selectedEdges.includes(e.id),type:'default',reconnectable:true,style:{stroke:selectedEdges.includes(e.id)?'#f4d890':e.sourcePort==='target'?'#85abbc':'#d1b66e',strokeWidth:selectedEdges.includes(e.id)?3:2},animated:false}))??[],[graph,selectedEdges]);
+      selected:selectedEdges.includes(e.id),type:'default',reconnectable:true,style:{stroke:selectedEdges.includes(e.id)?'var(--desk-selection)':e.sourcePort==='target'?'var(--desk-blue)':'var(--desk-accent)',strokeWidth:selectedEdges.includes(e.id)?3:2},animated:false}))??[],[graph,selectedEdges]);
   function nodeChanges(changes:NodeChange<EditorNode>[]){
     const dimensions=changes.filter(c=>c.type==='dimensions');
     if(dimensions.length)setMeasurements(previous=>{
