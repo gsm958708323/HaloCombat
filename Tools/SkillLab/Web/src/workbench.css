@@ -183,29 +183,6 @@ small { color: var(--desk-muted); }
 .properties section, .skill-description { border-color: var(--desk-line); }
 .skill-description { background: var(--desk-field); }
 
-.skill-node {
-  border-color: color-mix(in srgb, var(--desk-line) 64%, var(--node-color));
-  background: color-mix(in srgb, var(--desk-surface) 90%, var(--node-color));
-  border-radius: 9px;
-  box-shadow: 0 4px 12px #06100c55;
-}
-.skill-node.selected {
-  border-color: var(--desk-selection);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--desk-selection) 45%, transparent), 0 4px 12px #06100c55;
-}
-.node-heading {
-  border-color: color-mix(in srgb, var(--desk-line) 65%, var(--node-color));
-  background: color-mix(in srgb, var(--desk-surface) 63%, var(--node-color));
-  border-radius: 8px 8px 0 0;
-}
-.node-heading strong { font-size: 14px; font-weight: 650; color: var(--desk-ink); }
-.node-ports { border-color: var(--desk-line); padding: 5px 0; }
-.port-row { color: var(--desk-blue); }
-.port-row.output { color: var(--desk-accent); }
-.port-row small { background: var(--desk-field); }
-.node-fields { gap: 8px; padding: 10px 11px; }
-.graph-panel .react-flow__handle { background: var(--desk-accent); border-color: var(--desk-field); }
-.graph-panel .react-flow__handle-left { background: var(--desk-field); border-color: var(--desk-blue); }
 .graph-panel .react-flow__edge.selected .react-flow__edge-path { stroke: var(--desk-selection); }
 
 .preview-panel {

@@ -6,4 +6,5 @@ import './authoring.css';
 import './runtime.css';
 import './combo.css';
 import './workbench.css';
+import './skill-node.css';
 createRoot(document.getElementById('root')!).render(<App/>);
