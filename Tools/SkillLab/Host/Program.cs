@@ -88,8 +88,13 @@ app.MapPost("/api/document/import",async(HttpContext context)=>
 {
     var request=await context.Request.ReadFromJsonAsync<Dictionary<string,string>>();
     if(request==null||!request.TryGetValue("text",out var text))throw new ContentValidationException("$.text","Import file text is required.");
-    var imported=SkillJsonTransfer.Import(text);
-    return Results.Ok(new{json=SkillProjectJson.Write(imported.Project),needsLayout=imported.NeedsLayout});
+    bool previewDetachment=context.Request.Query["detachMissingReferences"]=="preview";
+    var imported=previewDetachment?SkillJsonTransfer.PreviewAuthoringImport(text):SkillJsonTransfer.Import(text);
+    string json=SkillProjectJson.Write(imported.Project);
+    bool needsLayout=imported.NeedsLayout;
+    return previewDetachment
+        ?Results.Ok(new{json,needsLayout,detachedReferences=imported.DetachedReferences})
+        :Results.Ok(new{json,needsLayout});
 });
 app.MapPost("/api/export/{kind}",async(string kind,HttpContext context)=>
 {var project=await ReadProject(context);return Results.Ok(SkillJsonTransfer.Export(project,kind,context.Request.Query["skillId"]));});

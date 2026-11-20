@@ -10,7 +10,12 @@ namespace Combat.Config
     {
         public static void Validate(SkillProjectDocument project)=>Validate(project,true);
         internal static void ValidateRuntimeStructure(SkillProjectDocument project)=>Validate(project,false);
-        static void Validate(SkillProjectDocument project,bool checkRetainedReferences)
+        internal delegate void MissingRetainedReference(SkillNodeDocument node,string field,string path,string id);
+
+        internal static void ValidatePublicationImport(SkillProjectDocument project,MissingRetainedReference onMissingReference)
+            =>Validate(project,true,onMissingReference);
+
+        static void Validate(SkillProjectDocument project,bool checkRetainedReferences,MissingRetainedReference onMissingReference=null)
         {
             if(project==null||project.FormatVersion!=1)Fail("$.formatVersion","Only version 1 is supported.");
             Identity(project.Id,"$.id");
@@ -26,7 +31,7 @@ namespace Combat.Config
             {
                 var skill=project.Skills[i];string path="$.skills["+i+"]";
                 Number(skill.RuntimeId,skillNumbers,path+".runtimeId");
-                Graph(skill.Nodes,skill.Edges,path,false,buffs,blueprints,projectiles,areas,checkRetainedReferences);
+                Graph(skill.Nodes,skill.Edges,path,false,buffs,blueprints,projectiles,areas,checkRetainedReferences,onMissingReference);
                 foreach(var node in skill.Nodes)if(node.Kind=="cast")foreach(string field in new[]{"fallbackSkill","recastSkill"})Reference(node,field,skills,path+".nodes["+node.Id+"]");
                 TimelineReferences(skill.Timeline,skill.Nodes,path+".timeline");
                 if(skill.TimelineRef!=null)
@@ -39,7 +44,7 @@ namespace Combat.Config
             {
                 var buff=project.Buffs[i];string path="$.buffs["+i+"]";
                 Number(buff.RuntimeId,buffNumbers,path+".runtimeId");
-                Graph(buff.Nodes,buff.Edges,path,true,buffs,blueprints,projectiles,areas,checkRetainedReferences);
+                Graph(buff.Nodes,buff.Edges,path,true,buffs,blueprints,projectiles,areas,checkRetainedReferences,onMissingReference);
             }
             for(int i=0;i<project.SummonBlueprints.Length;i++)
                 if(!skills.Contains(project.SummonBlueprints[i].SkillId??""))Fail("$.summonBlueprints["+i+"].skillId","Unknown skill reference.");
@@ -47,14 +52,14 @@ namespace Combat.Config
             {
                 string path="$.timelines["+timeline.Id+"]";
                 if(timeline.Timeline==null)Fail(path+".timeline","Timeline is required.");
-                Graph(timeline.Nodes,timeline.Edges,path,true,buffs,blueprints,projectiles,areas,checkRetainedReferences);
+                Graph(timeline.Nodes,timeline.Edges,path,true,buffs,blueprints,projectiles,areas,checkRetainedReferences,onMissingReference);
                 if(timeline.Nodes.Any(n=>n.Kind=="buff-events"))Fail(path+".nodes","Shared timeline graph has no lifecycle root.");
                 TimelineReferences(timeline.Timeline,timeline.Nodes,path+".timeline");
             }
             foreach(var projectile in project.Projectiles)
             {
                 string path="$.projectiles["+projectile.Id+"]";
-                Graph(projectile.Nodes,projectile.Edges,path,true,buffs,blueprints,projectiles,areas,checkRetainedReferences);
+                Graph(projectile.Nodes,projectile.Edges,path,true,buffs,blueprints,projectiles,areas,checkRetainedReferences,onMissingReference);
                 var root=projectile.Nodes.SingleOrDefault(n=>n.Id==projectile.Root);
                 if(root==null||root.Kind!="projectile"||!root.Enabled)Fail(path+".root","Expected an enabled projectile definition node.");
                 if(projectile.Nodes.Any(n=>n.Kind=="buff-events"))Fail(path+".nodes","Projectile definition has no lifecycle root.");
@@ -63,7 +68,7 @@ namespace Combat.Config
             foreach(var area in project.Areas)
             {
                 string path="$.areas["+area.Id+"]";
-                Graph(area.Nodes,area.Edges,path,true,buffs,blueprints,projectiles,areas,checkRetainedReferences);
+                Graph(area.Nodes,area.Edges,path,true,buffs,blueprints,projectiles,areas,checkRetainedReferences,onMissingReference);
                 var root=area.Nodes.SingleOrDefault(n=>n.Id==area.Root);
                 if(root==null||root.Kind!="delivery"||!root.Enabled||root.Parameters.Value<string>("mode")!="area"||root.Parameters.Value<bool?>("persistent")!=true)
                     Fail(path+".root","Expected an enabled persistent area definition node.");
@@ -110,7 +115,7 @@ namespace Combat.Config
             return keys;
         }
 
-        static void Graph(SkillNodeDocument[] nodes,SkillEdgeDocument[] edges,string path,bool buff,HashSet<string> buffs,HashSet<string> blueprints,HashSet<string> projectiles,HashSet<string> areas,bool checkRetainedReferences)
+        static void Graph(SkillNodeDocument[] nodes,SkillEdgeDocument[] edges,string path,bool buff,HashSet<string> buffs,HashSet<string> blueprints,HashSet<string> projectiles,HashSet<string> areas,bool checkRetainedReferences,MissingRetainedReference onMissingReference)
         {
             var nodeIds=Identities(nodes,n=>n.Id,path+".nodes",256);
             Identities(edges,e=>e.Id,path+".edges",1024);
@@ -122,13 +127,13 @@ namespace Combat.Config
                 if(node.Position==null||!Finite(node.Position.X)||!Finite(node.Position.Y))Fail(p+".position","Expected finite coordinates.");
                 if(node.Parameters==null)Fail(p+".parameters","Expected a parameter object.");
                 // Runtime compilation checks only active fields in SkillEffectCompiler. Its
-                // publication closure intentionally excludes definitions used by disabled nodes.
+                // publication closure can omit definitions used only by unreachable nodes or inactive modes.
                 if(checkRetainedReferences)
                 {
-                    if(node.Kind=="buff"||node.Kind=="dispel")Reference(node,"buff",buffs,p);
-                    if(node.Kind=="delivery")Reference(node,"blueprint",blueprints,p);
-                    if(node.Kind=="projectile-ref")Reference(node,"projectile",projectiles,p);
-                    if(node.Kind=="area-ref")Reference(node,"area",areas,p);
+                    if(node.Kind=="buff"||node.Kind=="dispel")Reference(node,"buff",buffs,p,onMissingReference);
+                    if(node.Kind=="delivery")Reference(node,"blueprint",blueprints,p,onMissingReference);
+                    if(node.Kind=="projectile-ref")Reference(node,"projectile",projectiles,p,onMissingReference);
+                    if(node.Kind=="area-ref")Reference(node,"area",areas,p,onMissingReference);
                 }
             }
             foreach(var edge in edges)
@@ -140,12 +145,20 @@ namespace Combat.Config
             }
         }
 
-        static void Reference(SkillNodeDocument node,string field,HashSet<string> values,string path)
+        static void Reference(SkillNodeDocument node,string field,HashSet<string> values,string path,MissingRetainedReference onMissingReference=null)
         {
-            var token=node.Parameters[field];if(token==null)return;
-            if(token.Type!=Newtonsoft.Json.Linq.JTokenType.String)Fail(path+".parameters."+field,"Expected an identity string.");
+            var token=node.Parameters[field];
+            if(token==null)return;
+            string fieldPath=path+".parameters."+field;
+            if(token.Type!=JTokenType.String)Fail(fieldPath,"Expected an identity string.");
             string id=(string)token;
-            if(!string.IsNullOrEmpty(id)&&!values.Contains(id))Fail(path+".parameters."+field,"Unknown shared reference: "+id);
+            if(string.IsNullOrEmpty(id)||values.Contains(id))return;
+            if(onMissingReference==null)Fail(fieldPath,"Unknown shared reference: "+id);
+            else
+            {
+                Identity(id,fieldPath);
+                onMissingReference(node,field,fieldPath,id);
+            }
         }
 
         static void Editor(SkillEditorDocument editor,HashSet<string> skills,HashSet<string> buffs,HashSet<string> timelines,HashSet<string> projectiles,HashSet<string> areas)

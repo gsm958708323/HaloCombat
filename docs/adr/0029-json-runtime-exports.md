@@ -15,3 +15,11 @@
 ## 验收
 
 三种实际下载/文件回读、布局与运行语义分离、精确依赖/稳定身份/重复字段/修订损坏已验证。实际下载的9a2df1db单技能包在Unity SkillLab运行120步，1命中/120伤害；与宿主15/60/120步1285个值对照，最大数值差5e-8。4e14a75a完整包经ArenaBootstrap/RuntimeProjectLoader实际加载，120步3次施法/3次命中/189伤害，与原内容状态和事件一致。用户工程和两槽保持字节一致。详见JSON导出验收记录。
+
+## 2026-11-20 · 运行包转作者草稿
+
+关联 C09、L09、L11、L12，运行闭包与作者引用规则见 ADR-0014。运行闭包按生效路径收集定义，并保留节点及参数。正式 `arena-roll` 的 `guard`、`g1` 的 `fireball-hit-burn-3` 分支，以及示例 `cleanse-burn` 的 dispel 节点用于复验这条边界。
+
+- `POST /api/document/import` 默认沿用严格草稿校验和原响应格式。有缺失绑定时返回带字段路径的 400。网页显式请求 `?detachMissingReferences=preview`，响应在 `json`、`needsLayout` 之外追加 `detachedReferences`，每项包含 `path`、`nodeId`、`field`、`originalId`。预览只返回候选，作者提交替换或合并前草稿保持原状。
+- 转换仅适用于先经 `SkillPublicationJson.Read` 通过结构校验、完整编译和修订验证的原始单技能运行包。它复用草稿 Graph 的同一引用规则，将包内找不到定义的合法字符串 ID 解除绑定，字段限于 `buff/dispel.buff`、`delivery.blueprint`、`projectile-ref.projectile`、`area-ref.area`。遍历各图的所有节点，涵盖不可达后代和当前模式隐藏的字段。包内已解析的绑定保留，类型、其他结构和运行生效引用沿用原校验。
+- 网页确认逐项列出原路径与 ID，作者选择「解除绑定并合并」或「解除绑定并替换」才应用。候选删去对应参数，合并时这些字段保持未绑定，即使目标中有同名项。已有正常文件沿用原按钮，完整工程文件保留作者绑定和严格导入。运行包协议、修订计算、闭包导出及 Unity 加载继续使用原路径。作者后来启用分支或切换模式时，需为变为生效的字段重新绑定并通过运行校验。

@@ -32,6 +32,7 @@ import type {AuthorNodeSource} from './model';
 import {SkillSummary} from './SkillSummary';
 import {Dialog} from './Dialog';
 import {ImportDialog} from './ImportDialog';
+import type {ImportCandidate} from './ImportDialog';
 import {ComboEditor} from './ComboEditor';
 import {createPreviewRuntime} from './previewRuntime';
 import {restoreDefaultFormation} from './authoring/defaultScene';
@@ -46,7 +47,9 @@ function Workbench() {
   const [examples,setExamples]=useState<Skill[]>([]);const [creating,setCreating]=useState(false);
   const [contentAction,setContentAction]=useState<ContentAction|null>(null);
   const [newProjectName,setNewProjectName]=useState<string|null>(null);const [projectTemplate,setProjectTemplate]=useState('empty');
-  const [pendingImport,setPendingImport]=useState<Project|null>(null);
+  const [pendingImport,setPendingImport]=useState<ImportCandidate|null>(null);
+  const detachedReferences=pendingImport?.detachedReferences??[];
+  const detachesReferences=detachedReferences.length>0;
   const [importing,setImporting]=useState(false);
   const [exporting,setExporting]=useState(false);
   const [settings,setSettings]=useState<'graph'|'project'|'connections'|null>(null);
@@ -136,9 +139,16 @@ function Workbench() {
   }
   async function applyImport(merge:boolean){
     if(!pendingImport)return;setCreating(true);
-    try{const p=editor.current.current!;const next=merge?mergeProjects(p,pendingImport):pendingImport;
-      await api('/document/validate',next);if(editor.current.current!==p)throw new Error('导入校验期间工程已更改，请重新确认导入');
-      editor.endGroup();editor.edit(next);setPendingImport(null);setMessage(merge?'内容已合并；冲突身份已重分配并同步引用':'工程已替换，可撤销返回原工程');}
+    try{
+      const current=editor.current.current!;
+      const candidate=pendingImport.project;
+      const next=merge?mergeProjects(current,candidate):candidate;
+      await api('/document/validate',next);
+      if(editor.current.current!==current)throw new Error('导入校验期间工程已更改，请重新确认导入');
+      editor.endGroup();editor.edit(next);setPendingImport(null);
+      const action=merge?'内容已合并，冲突身份已重分配并同步引用':'工程已替换，可撤销返回原工程';
+      setMessage(detachesReferences?'已解除 '+detachedReferences.length+' 处绑定。'+action:action);
+    }
     catch(error){setMessage(String(error));}finally{setCreating(false);}
   }
   function shortcuts(event:React.KeyboardEvent){
@@ -206,7 +216,26 @@ function Workbench() {
       <label>模板<select aria-label="技能模板" value={template} onChange={event=>setTemplate(event.target.value)}>{skill&&<option value="copy">复制当前技能</option>}{examples.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
       <div><button type="button" disabled={creating} onClick={()=>setNewName(null)}>取消</button><button className="primary" disabled={!newName.trim()||creating}>{creating?'创建中…':'确定'}</button></div></form></Dialog>}
     {newProjectName!==null&&<Dialog label="新建工程" close={()=>setNewProjectName(null)} busy={creating}><form className="modal" onSubmit={event=>{event.preventDefault();void createProject();}}><h2>新建工程</h2><label>名称<input aria-label="新工程名称" autoFocus value={newProjectName} onChange={event=>setNewProjectName(event.target.value)}/></label><label>初始内容<select aria-label="工程初始内容" value={projectTemplate} onChange={event=>setProjectTemplate(event.target.value)}><option value="empty">空工程</option><option value="examples">恢复全部预置示例</option></select></label><p>当前编辑保留在撤销历史中。保存后更新磁盘工程。</p><div><button type="button" disabled={creating} onClick={()=>setNewProjectName(null)}>取消</button><button className="primary" disabled={creating||!newProjectName.trim()}>创建工程</button></div></form></Dialog>}
-    {pendingImport&&<Dialog label="导入工程" close={()=>setPendingImport(null)} busy={creating}><div className="modal"><h2>导入工程 · {pendingImport.name}</h2><p>{pendingImport.skills.length} 技能、{pendingImport.buffs?.length??0} Buff、{pendingImport.summonBlueprints?.length??0} 蓝图。</p><p>替换还原文件内容与场景，运行包省略的节点布局会自动生成；合并保留当前场景，并为冲突身份分配新 ID、同步导入内容的引用。两种操作均可撤销。</p><div><button disabled={creating} onClick={()=>setPendingImport(null)}>取消</button><button disabled={creating} onClick={()=>void applyImport(true)}>合并内容</button><button className="primary" disabled={creating} onClick={()=>void applyImport(false)}>替换工程</button></div></div></Dialog>}
+    {pendingImport&&<Dialog label="导入工程" close={()=>setPendingImport(null)} busy={creating}>
+      <div className="modal">
+        <h2>导入工程 · {pendingImport.project.name}</h2>
+        <p>{pendingImport.project.skills.length} 技能、{pendingImport.project.buffs?.length??0} Buff、{pendingImport.project.summonBlueprints?.length??0} 蓝图。</p>
+        {detachesReferences&&<section aria-label="待解除绑定的引用">
+          <p className="error">运行包缺少以下 {detachedReferences.length} 处绑定所需的定义。继续导入会保留节点并解除这些绑定，合并时也会让这些字段保持未绑定。</p>
+          <ul tabIndex={0} style={{maxHeight:'25vh',overflow:'auto',overflowWrap:'anywhere'}}>
+            {detachedReferences.map(reference=><li key={reference.path}>
+              <code>{reference.path}</code><br/>原 ID <code>{reference.originalId}</code>
+            </li>)}
+          </ul>
+        </section>}
+        <p>替换会载入文件中的工程和场景，运行包缺省的节点布局由网页生成。合并会保留当前场景，为冲突身份分配新 ID 并同步引用。两种操作均可撤销。</p>
+        <div>
+          <button disabled={creating} onClick={()=>setPendingImport(null)}>取消</button>
+          <button disabled={creating} onClick={()=>void applyImport(true)}>{detachesReferences?'解除绑定并合并':'合并内容'}</button>
+          <button className="primary" disabled={creating} onClick={()=>void applyImport(false)}>{detachesReferences?'解除绑定并替换':'替换工程'}</button>
+        </div>
+      </div>
+    </Dialog>}
   </div>;
 }
 export default function App(){return <ReactFlowProvider><Workbench/></ReactFlowProvider>;}

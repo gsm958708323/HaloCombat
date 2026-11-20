@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
@@ -10,6 +11,22 @@ namespace Combat.Config
     {
         public SkillProjectDocument Project {get;internal set;}
         public bool NeedsLayout {get;internal set;}
+        public IReadOnlyList<SkillJsonDetachedReference> DetachedReferences {get;internal set;}=Array.Empty<SkillJsonDetachedReference>();
+    }
+    public sealed class SkillJsonDetachedReference
+    {
+        public string Path {get;}
+        public string NodeId {get;}
+        public string Field {get;}
+        public string OriginalId {get;}
+
+        internal SkillJsonDetachedReference(string path,string nodeId,string field,string originalId)
+        {
+            Path=path;
+            NodeId=nodeId;
+            Field=field;
+            OriginalId=originalId;
+        }
     }
     public sealed class SkillJsonExport
     {
@@ -47,7 +64,11 @@ namespace Combat.Config
             return new SkillJsonExport{Filename=Filename(project.Id)+"."+suffix+".json",Json=json,Revision=revision,
                 Skills=project.Skills.Length,Buffs=project.Buffs.Length,Projectiles=project.Projectiles.Length,Areas=project.Areas.Length,Actors=project.Runtime?.Actors.Length??0};
         }
-        public static SkillJsonImport Import(string text)
+        public static SkillJsonImport Import(string text)=>Import(text,false);
+
+        public static SkillJsonImport PreviewAuthoringImport(string text)=>Import(text,true);
+
+        static SkillJsonImport Import(string text,bool previewDetachment)
         {
             // Parse raw file text on the host. A browser JSON.parse would silently discard
             // duplicate properties before our protocol validation could see them.
@@ -60,14 +81,32 @@ namespace Combat.Config
             bool isPublication=token.Property("project")!=null||token.Property("revision")!=null||token.Property("skillId")!=null;
             if(isPublication)
             {
-                var publication=SkillPublicationJson.Read(text).Document;project=publication.Project;
+                var publication=SkillPublicationJson.Read(text).Document;
+                project=publication.Project;
                 project.Editor=new SkillEditorDocument{SelectedSkill=publication.SkillId};
+                if(previewDetachment)return PublicationAuthoringCandidate(project);
             }
             else project=SkillProjectJson.Read(text);
             SkillProjectStructure.Validate(project);
             return new SkillJsonImport{Project=project,NeedsLayout=isPublication||Nodes(token).Any(n=>n["position"]==null)};
         }
-        static System.Collections.Generic.IEnumerable<JToken> Nodes(JObject token)
+        static SkillJsonImport PublicationAuthoringCandidate(SkillProjectDocument project)
+        {
+            // The original package has already passed compilation and revision validation.
+            // Collect removals while validating the whole draft, then apply them to its candidate only.
+            var missing=new List<(SkillNodeDocument Node,SkillJsonDetachedReference Reference)>();
+            SkillProjectStructure.ValidatePublicationImport(project,(node,field,path,id)=>
+                missing.Add((node,new SkillJsonDetachedReference(path,node.Id,field,id))));
+            foreach(var item in missing)item.Node.Parameters.Remove(item.Reference.Field);
+            return new SkillJsonImport
+            {
+                Project=project,
+                NeedsLayout=true,
+                DetachedReferences=missing.Select(item=>item.Reference).ToArray()
+            };
+        }
+
+        static IEnumerable<JToken> Nodes(JObject token)
             =>new[]{"skills","buffs","timelines","projectiles","areas"}.SelectMany(k=>(token[k] as JArray??new JArray()).Children())
                 .SelectMany(g=>(g["nodes"] as JArray??new JArray()).Children());
         internal static void NormalizeLayout(SkillProjectDocument project)
