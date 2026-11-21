@@ -26,10 +26,6 @@
       "kind": "buff-events",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 0.0,
-        "y": 80.0
-      },
       "parameters": {}
     },
     {
@@ -37,10 +33,6 @@
       "kind": "cue",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 270.0,
-        "y": 80.0
-      },
       "parameters": {
         "id": 61
       }
@@ -50,10 +42,6 @@
       "kind": "cue",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 270.0,
-        "y": 220.0
-      },
       "parameters": {
         "id": 62
       }

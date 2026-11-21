@@ -40,8 +40,8 @@ test('ordinary author projects acquire a minimal combo runtime without inventing
   const cue=p.buffs.flatMap(b=>b.nodes).find(n=>n.kind==='cue');assert(next.runtime.cues.some(c=>c.id===cue.parameters.id));
 });
 test('combo graph supports roots branches and cycles by referencing existing skills',()=>{
-  let p=examples();p=connectCombo(p,comboStart,'basic-shot','root');p=connectCombo(p,'basic-shot','burn-shot','branch');p=connectCombo(p,'burn-shot','basic-shot','loop');
-  assert.deepEqual(p.runtime.combos[0].preSkills,[]);assert.equal(p.runtime.combos.length,3);assert.equal(p.skills.length,53);
+  let p=examples();const skillCount=p.skills.length;p=connectCombo(p,comboStart,'basic-shot','root');p=connectCombo(p,'basic-shot','burn-shot','branch');p=connectCombo(p,'burn-shot','basic-shot','loop');
+  assert.deepEqual(p.runtime.combos[0].preSkills,[]);assert.equal(p.runtime.combos.length,3);assert.equal(p.skills.length,skillCount);
   assert.throws(()=>connectCombo(p,'basic-shot','missing'),/现有技能/);assert.throws(()=>connectCombo(p,'basic-shot',comboStart),/起手/);
   p=patchCombo(p,'branch',{input:'Heavy',requiredTags:[1017],priority:20});assert.equal(p.runtime.combos[1].input,'Heavy');assert.equal(removeCombo(p,'loop').runtime.combos.length,2);
 });

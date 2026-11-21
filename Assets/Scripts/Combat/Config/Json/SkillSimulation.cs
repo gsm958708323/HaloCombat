@@ -133,6 +133,29 @@ namespace Combat.Config
             return new SkillCastResult(accepted, cast.LastRejection);
         }
 
+        // Uses the same targeting rules without consuming RNG or beginning a cast.
+        public SkillAimPreview InspectAim(string key, float x, float z)
+        {
+            if (key == null || !_world.TryGetActor(_caster, out var caster)) return null;
+            var skill = _content.Skills.All.FirstOrDefault(value => value.Key == key);
+            if (skill == null) return null;
+            var origin = caster.GetComp<TransformComp>().Position;
+            var point = new SimVec3(x, 0, z);
+            var yaw = LocomotionComp.YawFromStick(new SimVec3(point.X - origin.X, 0, point.Z - origin.Z));
+            bool found = SkillTargeting.TryResolve(caster, skill, new SkillAim(EntityId.Invalid, point, yaw),
+                out var resolved, sampleRandom:false);
+            bool search = skill.TargetMode == SkillTargetMode.Entity || skill.TargetMode == SkillTargetMode.Nearest ||
+                skill.TargetMode == SkillTargetMode.Random;
+            // Random target and direction have no deterministic destination before the cast.
+            bool useResolved = found && skill.TargetMode != SkillTargetMode.Random && skill.TargetMode != SkillTargetMode.Direction;
+            return new SkillAimPreview
+            {
+                Name = skill.Name, SearchRadius = search ? skill.TargetRange : 0,
+                X = useResolved ? resolved.Point.X : x, Z = useResolved ? resolved.Point.Z : z,
+                HasTarget = found, TargetMode = skill.TargetMode.ToString().ToLowerInvariant()
+            };
+        }
+
         public void Release()
         {
             EnsureAlive();
@@ -386,7 +409,10 @@ namespace Combat.Config
             if(origin.CastId==0&&execution.Node!=null)origin=execution.Origin;
             var targetIdentity=damage?.Target??targetId;
             var targetPosition=targetIdentity.IsValid&&_world.TryGetActor(targetIdentity,out var targetActor)?(SimVec3?)targetActor.GetComp<TransformComp>().Position:null;
-            _events.Add(new SkillEventSnapshot { Sequence = ++_eventSequence,Step=_steps, Time = _steps * Step, Kind = kind, Source = source, Result = result,CastId=origin.CastId,Skill=SkillName(origin),
+            string periodicBuff = null;
+            if (damage != null && origin.PeriodicBuffId > 0 && _content.Buffs.TryGet(origin.PeriodicBuffId, out var buff))
+                periodicBuff = buff.Name;
+            _events.Add(new SkillEventSnapshot { PeriodicBuff = periodicBuff, Sequence = ++_eventSequence,Step=_steps, Time = _steps * Step, Kind = kind, Source = source, Result = result,CastId=origin.CastId,Skill=SkillName(origin),
                 Node=node??execution.Node,ExecutionId=execution.Id,ParentExecutionId=execution.Parent,SourceId=Packed(damage?.Source??(sourceId.IsValid?sourceId:execution.Source)),
                 TargetId=Packed(damage?.Target??(targetId.IsValid?targetId:execution.Target)),BodyId=Packed(bodyId),
                 TargetX=targetPosition?.X,TargetZ=targetPosition?.Z,Flight=flight,HitIndex=damage?.HitIndex??0,Damage=damage==null?null:new SkillDamageSnapshot {Kind=damage.Kind.ToString().ToLowerInvariant(),Target=Name(damage.Target),Base=damage.Base,Scaled=damage.Scaled,

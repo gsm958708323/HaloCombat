@@ -1,19 +1,8 @@
 import {useRef,useState} from 'react';
 import {api} from './model';
-import type {Project} from './model';
 import {Dialog} from './Dialog';
-import {prepareImportedLayout} from './authoring/importLayout';
-
-interface DetachedReference {
-  path:string;
-  nodeId:string;
-  field:string;
-  originalId:string;
-}
-export interface ImportCandidate {
-  project:Project;
-  detachedReferences:DetachedReference[];
-}
+import {prepareImport} from './authoring/importCandidate';
+import type {ImportCandidate,ImportPayload} from './authoring/importCandidate';
 
 export function ImportDialog({close,ready}:{close:()=>void;ready:(candidate:ImportCandidate)=>void}) {
   const [text,setText]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false);
@@ -25,13 +14,8 @@ export function ImportDialog({close,ready}:{close:()=>void;ready:(candidate:Impo
   async function parse(){
     setBusy(true);setError('');
     try{
-      const result=await api<{json:string;needsLayout:boolean;detachedReferences?:DetachedReference[]}>(
-        '/document/import?detachMissingReferences=preview',{text});
-      const project=JSON.parse(result.json) as Project;
-      ready({
-        project:result.needsLayout?prepareImportedLayout(project):project,
-        detachedReferences:result.detachedReferences??[]
-      });
+      const result=await api<ImportPayload>('/document/import?detachMissingReferences=preview',{text});
+      ready(prepareImport(result));
     }catch(error){setError(String(error));}finally{setBusy(false);}
   }
   return <Dialog label="导入 JSON" close={close} busy={busy}><form className="modal import-dialog" onSubmit={event=>{event.preventDefault();void parse();}}>

@@ -8,10 +8,6 @@
       "kind": "projectile",
       "runtimeId": 4005,
       "enabled": true,
-      "position": {
-        "x": 0.0,
-        "y": 80.0
-      },
       "parameters": {
         "speed": 3,
         "range": 0,
@@ -36,10 +32,6 @@
       "kind": "area-ref",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 300.0,
-        "y": 80.0
-      },
       "parameters": {
         "area": "arena-bomb-explosion",
         "center": "auto",
@@ -51,10 +43,6 @@
       "kind": "area-ref",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 300.0,
-        "y": 480.0
-      },
       "parameters": {
         "area": "arena-delayed-bomb",
         "center": "auto",
@@ -66,10 +54,6 @@
       "kind": "area-ref",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 600.0,
-        "y": 80.0
-      },
       "parameters": {
         "area": "arena-bomb-explosion",
         "center": "target",

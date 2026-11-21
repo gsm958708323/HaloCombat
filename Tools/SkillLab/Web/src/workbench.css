@@ -290,3 +290,12 @@ small { color: var(--desk-muted); }
   .event-table th:nth-child(1), .event-table th:nth-child(2), .event-table th:nth-child(3) { width: 54px; }
   .event-table :is(th, td) { padding-inline: 5px; }
 }
+
+.skill-library-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.skill-copy-dialog { width: min(580px, calc(100vw - 32px)); max-height: 90vh; overflow: auto; }
+.skill-copy-dialog p { margin: 0; line-height: 1.6; }
+.skill-copy-preview { overflow: auto; max-height: 48vh; padding: 10px; border: 1px solid var(--desk-line); overflow-wrap: anywhere; }
+.skill-copy-preview h3 { margin: 4px 0; font-size: 12px; }
+.skill-copy-preview ul { padding-left: 20px; }
+.skill-copy-preview li { padding-bottom: 6px; }
+.publish-feedback { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 5px var(--desk-inset); font-size: 11px; background: var(--desk-surface); }

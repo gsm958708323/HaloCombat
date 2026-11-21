@@ -41,6 +41,47 @@ namespace Combat.Tests
         }
 
         [UnityTest]
+        public IEnumerator PublishedBleedUsesF6FormationAndDisplaysActualPeriodicDamage()
+        {
+            var project = SkillProjectFiles.Read(Path.Combine(Application.dataPath, "../Content/SkillLab/project.json"));
+            project.Preview.Caster.X = -5;
+            project.Preview.Caster.Z = -1;
+            project.Preview.Targets = new[] { new PreviewActorDocument { Id = "dummy", X = 1, Z = -1, Hp = 1000 } };
+            project.Preview.Obstacles = new[] { new PreviewObstacleDocument { Id = "cover", X = -1, Z = 3, Width = 2, Depth = 3 } };
+            File.WriteAllText(Path.Combine(_directory, "f6.json"), SkillPublicationJson.Write(SkillPublicationJson.Create(project, "bleed-validation")));
+            Assert.IsTrue(_runner.ReloadPublished(), _runner.LastLoadError);
+            Assert.IsTrue(_runner.HasDifferentSlotLayouts);
+            Assert.AreEqual("f6", _runner.CurrentSlot);
+            Assert.AreEqual(1, _runner.Snapshot.Obstacles.Length);
+            Assert.IsTrue(_runner.SelectSlot("f7"));
+            Assert.AreEqual(0, _runner.Snapshot.Statistics.Casts);
+            Assert.IsTrue(_runner.SelectSlot("f6"));
+            yield return null;
+
+            var camera = Camera.main;
+            Assert.IsTrue(camera.orthographic);
+            Assert.That(camera.transform.eulerAngles.x, Is.InRange(55f, 61f));
+            var cube = _runner.transform.Find("Obstacle_cover");
+            Assert.AreEqual(-1, cube.position.x);
+            Assert.AreEqual(3, cube.position.z);
+            Assert.AreEqual(2, cube.localScale.x);
+            Assert.AreEqual(3, cube.localScale.z);
+            var caster = _runner.Snapshot.Actors.Single(actor => actor.Kind == "caster");
+            Assert.AreEqual(-5, caster.X);
+            Assert.AreEqual(-1, caster.Z);
+
+            Assert.IsTrue(_runner.CastSlot("f6", 1, -1).Accepted);
+            _runner.StepLogicForTests(140);
+            var hits = _runner.Snapshot.Events.Where(e => e.Damage?.HpLost > 0).ToArray();
+            CollectionAssert.AreEqual(new[] { 30f, 12f, 12f, 12f, 12f }, hits.Select(e => e.Damage.HpLost));
+            Assert.IsNull(hits[0].PeriodicBuff);
+            Assert.That(hits.Skip(1).Select(e => e.PeriodicBuff), Is.All.EqualTo("流血"));
+            Assert.AreEqual(922, _runner.Snapshot.Actors.Single(actor => actor.Name == "dummy").Hp);
+            yield return null;
+            Assert.AreEqual(5, _runner.GetComponent<SkillLabVisuals>().ActiveDamageNumbers);
+        }
+
+        [UnityTest]
         public IEnumerator PublishedFilesRunThroughRealCoreAndSnapshotVisuals()
         {
             Assert.IsTrue(_runner.CastSlot("f6", 0, 0).Accepted);

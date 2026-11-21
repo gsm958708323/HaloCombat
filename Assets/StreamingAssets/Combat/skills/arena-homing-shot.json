@@ -9,10 +9,6 @@
       "kind": "target",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 0.0,
-        "y": 80.0
-      },
       "parameters": {
         "mode": "facing",
         "range": 20
@@ -23,10 +19,6 @@
       "kind": "cast",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 300.0,
-        "y": 80.0
-      },
       "parameters": {
         "mode": "instant",
         "cost": 0,
@@ -40,10 +32,6 @@
       "kind": "projectile-ref",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 600.0,
-        "y": 80.0
-      },
       "parameters": {
         "projectile": "arena-homing-projectile",
         "count": 1,
@@ -55,10 +43,6 @@
       "kind": "cue",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 600.0,
-        "y": 760.0
-      },
       "parameters": {
         "id": 4201,
         "name": "MuzzleFlash",

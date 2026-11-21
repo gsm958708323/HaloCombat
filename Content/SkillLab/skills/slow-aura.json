@@ -9,10 +9,6 @@
       "kind": "target",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 0.0,
-        "y": 80.0
-      },
       "parameters": {
         "mode": "point",
         "range": 20
@@ -23,10 +19,6 @@
       "kind": "cast",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 270.0,
-        "y": 80.0
-      },
       "parameters": {
         "mode": "instant",
         "cost": 10,
@@ -42,10 +34,6 @@
       "kind": "delivery",
       "runtimeId": 5023,
       "enabled": true,
-      "position": {
-        "x": 540.0,
-        "y": 80.0
-      },
       "parameters": {
         "mode": "area",
         "center": "point",
@@ -62,10 +50,6 @@
       "kind": "buff",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 810.0,
-        "y": 80.0
-      },
       "parameters": {
         "buff": "aura-slow",
         "stacks": 1,
@@ -77,10 +61,6 @@
       "kind": "dispel",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 810.0,
-        "y": 450.0
-      },
       "parameters": {
         "mode": "source",
         "maxCount": 0,

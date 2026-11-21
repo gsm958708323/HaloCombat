@@ -8,10 +8,6 @@
       "kind": "projectile",
       "runtimeId": 4002,
       "enabled": true,
-      "position": {
-        "x": 600.0,
-        "y": 80.0
-      },
       "parameters": {
         "speed": 6,
         "range": 0,
@@ -30,10 +26,6 @@
       "kind": "damage",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 900.0,
-        "y": 80.0
-      },
       "parameters": {
         "flat": 0,
         "coefficient": 1,
@@ -51,10 +43,6 @@
       "kind": "hurt-feedback",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 1200.0,
-        "y": 320.0
-      },
       "parameters": {
         "level": "damage",
         "requireHpDamage": false
@@ -65,10 +53,6 @@
       "kind": "cue",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 1400.0,
-        "y": 520.0
-      },
       "parameters": {
         "id": 4204,
         "name": "OriginalCue4204",
@@ -81,10 +65,6 @@
       "kind": "cue",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 900.0,
-        "y": 1000.0
-      },
       "parameters": {
         "id": 4204,
         "name": "OriginalCue4204",

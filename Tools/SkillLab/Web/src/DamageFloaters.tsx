@@ -4,7 +4,7 @@ import './preview-effects.css';
 
 const amountFormat=new Intl.NumberFormat('zh-CN',{maximumFractionDigits:1});
 
-type Floater={id:number;x:number;z:number;amount:number;critical:boolean;until:number};
+type Floater={id:number;x:number;z:number;amount:number;critical:boolean;periodicBuff?:string;until:number};
 export function DamageFloaters({events,actors,sessionId}:{events:RunEvent[];actors:ActorView[];sessionId:string}){
   const [items,setItems]=useState<Floater[]>([]),last=useRef(0),session=useRef(sessionId);
   useEffect(()=>{
@@ -18,7 +18,7 @@ export function DamageFloaters({events,actors,sessionId}:{events:RunEvent[];acto
       const amount=event.damage.absorbed+event.damage.hpLost;if(amount<=0)continue;
       const target=actors.find(a=>a.id===event.targetId||a.name===event.damage!.target);
       const x=event.targetX??target?.x,z=event.targetZ??target?.z;if(x===undefined||z===undefined)continue;
-      added.push({id:event.sequence,x:x+(event.sequence%3-1)*.16,z:z+Math.max(.7,target?.radius??.4)+.6,amount,critical:event.kind==='critical',until:now+1100});
+      added.push({id:event.sequence,x:x+(event.sequence%3-1)*.16,z:z+Math.max(.7,target?.radius??.4)+.6,amount,critical:event.kind==='critical',periodicBuff:event.periodicBuff||undefined,until:now+1100});
     }
     if(added.length)setItems(previous=>[...previous.filter(i=>i.until>now),...added].slice(-96));
   },[events,actors,sessionId]);
@@ -27,6 +27,6 @@ export function DamageFloaters({events,actors,sessionId}:{events:RunEvent[];acto
     return()=>clearTimeout(timer);
   },[items]);
   return <g className="damage-floaters" pointerEvents="none" aria-label="命中伤害飘字">{items.map(item=><g key={item.id} transform={`translate(${item.x},${-item.z})`}>
-    <text className={item.critical?'damage-floater critical':'damage-floater'} textAnchor="middle" data-amount={item.amount}>{amountFormat.format(item.amount)}{item.critical?'!':''}</text>
+    <text className={'damage-floater'+(item.critical?' critical':'')+(item.periodicBuff?' periodic':'')} data-periodic-buff={item.periodicBuff} textAnchor="middle" data-amount={item.amount}>{amountFormat.format(item.amount)}{item.critical?'!':''}</text>
   </g>)}</g>;
 }

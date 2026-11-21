@@ -9,10 +9,6 @@
       "kind": "target",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 0.0,
-        "y": 80.0
-      },
       "parameters": {
         "mode": "facing",
         "range": 20
@@ -23,10 +19,6 @@
       "kind": "cast",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 300.0,
-        "y": 80.0
-      },
       "parameters": {
         "mode": "instant",
         "cost": 0,
@@ -38,10 +30,6 @@
       "kind": "cue",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 600.0,
-        "y": 80.0
-      },
       "parameters": {
         "id": 102,
         "name": "G2"
@@ -52,10 +40,6 @@
       "kind": "delivery",
       "runtimeId": 801,
       "enabled": true,
-      "position": {
-        "x": 900.0,
-        "y": 80.0
-      },
       "parameters": {
         "mode": "area",
         "persistent": true,
@@ -72,10 +56,6 @@
       "kind": "buff",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 1200.0,
-        "y": 80.0
-      },
       "parameters": {
         "buff": "burn"
       }

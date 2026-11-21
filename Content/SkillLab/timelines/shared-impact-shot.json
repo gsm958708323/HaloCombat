@@ -7,10 +7,6 @@
       "kind": "projectile-ref",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 0.0,
-        "y": 80.0
-      },
       "parameters": {
         "projectile": "shared-impact-projectile",
         "count": 1,

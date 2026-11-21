@@ -9,10 +9,6 @@
       "kind": "target",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 0.0,
-        "y": 80.0
-      },
       "parameters": {
         "mode": "point",
         "range": 20
@@ -23,10 +19,6 @@
       "kind": "cast",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 270.0,
-        "y": 80.0
-      },
       "parameters": {
         "mode": "instant",
         "cost": 10,
@@ -42,10 +34,6 @@
       "kind": "projectile",
       "runtimeId": 6012,
       "enabled": true,
-      "position": {
-        "x": 540.0,
-        "y": 80.0
-      },
       "parameters": {
         "speed": 12,
         "range": 24,
@@ -58,10 +46,6 @@
       "kind": "damage",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 810.0,
-        "y": 80.0
-      },
       "parameters": {
         "flat": 80,
         "coefficient": 0,
@@ -76,10 +60,6 @@
       "kind": "skill-events",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 0.0,
-        "y": 650.0
-      },
       "parameters": {}
     },
     {
@@ -87,10 +67,6 @@
       "kind": "cue",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 270.0,
-        "y": 650.0
-      },
       "parameters": {
         "id": 110
       }
@@ -100,10 +76,6 @@
       "kind": "cue",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 510.0,
-        "y": 650.0
-      },
       "parameters": {
         "id": 111
       }
@@ -113,10 +85,6 @@
       "kind": "cue",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 750.0,
-        "y": 650.0
-      },
       "parameters": {
         "id": 112
       }
@@ -126,10 +94,6 @@
       "kind": "cue",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 990.0,
-        "y": 650.0
-      },
       "parameters": {
         "id": 113
       }
@@ -139,10 +103,6 @@
       "kind": "cue",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 1230.0,
-        "y": 650.0
-      },
       "parameters": {
         "id": 114
       }
@@ -152,10 +112,6 @@
       "kind": "cue",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 1470.0,
-        "y": 650.0
-      },
       "parameters": {
         "id": 115
       }
@@ -165,10 +121,6 @@
       "kind": "cue",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 1710.0,
-        "y": 650.0
-      },
       "parameters": {
         "id": 116
       }
@@ -178,10 +130,6 @@
       "kind": "damage",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 540.0,
-        "y": 850.0
-      },
       "parameters": {
         "coefficient": 0,
         "ignoreDefense": true,
@@ -195,10 +143,6 @@
       "kind": "after-damage",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 1080.0,
-        "y": 80.0
-      },
       "parameters": {
         "latestCastOnly": true
       }
@@ -208,10 +152,6 @@
       "kind": "impact",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 1350.0,
-        "y": 80.0
-      },
       "parameters": {
         "mode": "knockback",
         "recipient": "target",

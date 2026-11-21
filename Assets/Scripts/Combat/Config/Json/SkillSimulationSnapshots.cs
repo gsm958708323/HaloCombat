@@ -159,6 +159,7 @@ namespace Combat.Config
         public string Skill {get;internal set;}
         public int HitIndex {get;internal set;}
         public SkillDamageSnapshot Damage {get;internal set;}
+        public string PeriodicBuff { get; internal set; }
         public float? TargetX {get;internal set;}
         public float? TargetZ {get;internal set;}
         public SkillFlightSnapshot Flight {get;internal set;}
@@ -205,6 +206,16 @@ namespace Combat.Config
         public int Areas { get; internal set; }
         public int Summons {get;internal set;}
         public int Constructs {get;internal set;}
+    }
+
+    public sealed class SkillAimPreview
+    {
+        public string Name { get; internal set; }
+        public float X { get; internal set; }
+        public float Z { get; internal set; }
+        public float SearchRadius { get; internal set; }
+        public string TargetMode { get; internal set; }
+        public bool HasTarget { get; internal set; }
     }
 
     public sealed class SkillCastResult

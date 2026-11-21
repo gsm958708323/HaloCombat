@@ -8,10 +8,6 @@
       "kind": "delivery",
       "runtimeId": 4105,
       "enabled": true,
-      "position": {
-        "x": 0.0,
-        "y": 80.0
-      },
       "parameters": {
         "mode": "area",
         "persistent": true,
@@ -28,10 +24,6 @@
       "kind": "area-ref",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 300.0,
-        "y": 80.0
-      },
       "parameters": {
         "area": "arena-bomb-explosion",
         "center": "auto",
@@ -43,10 +35,6 @@
       "kind": "area-ref",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 300.0,
-        "y": 480.0
-      },
       "parameters": {
         "area": "arena-bomb-fire",
         "center": "auto",

@@ -46,6 +46,7 @@ internal static class PreviewChecks
         CheckProjectileMotion(document);
         CheckDamageEvents(document);
         ProjectFileChecks.Run(root).GetAwaiter().GetResult();
+        WorkspaceStoreChecks.Run(root).GetAwaiter().GetResult();
         RuntimeContentChecks.Run(root);
         AmmoRecastChecks.Run(root);
         PublicationSyncChecks.Run(root);

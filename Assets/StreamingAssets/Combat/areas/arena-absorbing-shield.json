@@ -8,10 +8,6 @@
       "kind": "delivery",
       "runtimeId": 4101,
       "enabled": true,
-      "position": {
-        "x": 0.0,
-        "y": 80.0
-      },
       "parameters": {
         "mode": "area",
         "persistent": true,

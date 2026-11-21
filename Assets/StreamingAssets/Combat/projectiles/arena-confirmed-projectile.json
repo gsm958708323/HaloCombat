@@ -8,10 +8,6 @@
       "kind": "projectile",
       "runtimeId": 4012,
       "enabled": true,
-      "position": {
-        "x": 0.0,
-        "y": 80.0
-      },
       "parameters": {
         "speed": 10,
         "range": 0,
@@ -28,10 +24,6 @@
       "kind": "damage",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 300.0,
-        "y": 80.0
-      },
       "parameters": {
         "flat": 0,
         "coefficient": 1.35,
@@ -49,10 +41,6 @@
       "kind": "buff",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 900.0,
-        "y": 80.0
-      },
       "parameters": {
         "buff": "arena-vulnerability",
         "recipient": "target",
@@ -64,10 +52,6 @@
       "kind": "cue",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 600.0,
-        "y": 80.0
-      },
       "parameters": {
         "id": 4206,
         "name": "OriginalCue4206",
@@ -80,10 +64,6 @@
       "kind": "pierce",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 0.0,
-        "y": 340.0
-      },
       "parameters": {
         "maxHits": 4
       }

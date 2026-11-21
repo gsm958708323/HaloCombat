@@ -29,6 +29,38 @@ namespace Combat.Tests
         }
 
         [Test]
+        public void PeriodicProvenanceSurvivesAnAreaPulseAfterTheBuffExpires()
+        {
+            var project = Example();
+            var buff = project.Buffs.Single(b => b.Id == "bleed-demo");
+            buff.Duration = .45f;
+            var area = Node(project, "ground-field", "delivery");
+            area.Id = "period-area";
+            area.RuntimeId = 5099;
+            area.Parameters["radius"] = .75f;
+            area.Parameters["pulseOnSpawn"] = false;
+            buff.Nodes = buff.Nodes.Append(area).ToArray();
+            buff.Edges[0].Target = area.Id;
+            buff.Edges = buff.Edges.Append(new SkillEdgeDocument
+            {
+                Id = "period-hit", Source = area.Id, SourcePort = "apply",
+                Target = "period-damage", TargetPort = "execute"
+            }).ToArray();
+            // The fixture borrows the shape node from another graph, so remove that graph before compilation.
+            project.Skills = project.Skills.Where(skill => skill.Id != "ground-field").ToArray();
+            using (var simulation = Simulation(project))
+            {
+                Assert.IsTrue(simulation.Cast("bleed-validation", 0, 0).Accepted);
+                simulation.Advance(140);
+                var events = simulation.Snapshot().Events;
+                float expiration = events.Single(e => e.Kind == "buff-expired").Time;
+                var hits = events.Where(e => e.Damage?.HpLost > 0 && e.Time > expiration).ToArray();
+                Assert.That(hits, Is.Not.Empty);
+                Assert.That(hits.Select(e => e.PeriodicBuff), Is.All.EqualTo("流血"));
+            }
+        }
+
+        [Test]
         public void DispelSkillRemovesFutureDamageWithoutFiringNaturalExpiry()
         {
             using(var s=Simulation(Example()))

@@ -9,10 +9,6 @@
       "kind": "target",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 0.0,
-        "y": 80.0
-      },
       "parameters": {
         "mode": "nearest",
         "range": 20
@@ -23,10 +19,6 @@
       "kind": "cast",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 270.0,
-        "y": 80.0
-      },
       "parameters": {
         "mode": "instant",
         "cost": 10,
@@ -42,10 +34,6 @@
       "kind": "delivery",
       "runtimeId": 6015,
       "enabled": true,
-      "position": {
-        "x": 540.0,
-        "y": 80.0
-      },
       "parameters": {
         "mode": "target",
         "recipient": "target"
@@ -56,10 +44,6 @@
       "kind": "damage",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 810.0,
-        "y": 80.0
-      },
       "parameters": {
         "flat": 80,
         "coefficient": 0,
@@ -74,10 +58,6 @@
       "kind": "impact",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 1080.0,
-        "y": 500.0
-      },
       "parameters": {
         "mode": "hitstun",
         "distance": 2,
@@ -91,10 +71,6 @@
       "kind": "impact",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 1080.0,
-        "y": 600.0
-      },
       "parameters": {
         "mode": "knockback",
         "distance": 2,
@@ -108,10 +84,6 @@
       "kind": "impact",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 1080.0,
-        "y": 700.0
-      },
       "parameters": {
         "mode": "launch",
         "distance": 2,

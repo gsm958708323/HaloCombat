@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { ReactFlow, ReactFlowProvider, Background, BackgroundVariant } from '@xyflow/react';
 import { Plus, Save, Download, Upload, Undo2, Redo2, Maximize, Workflow } from 'lucide-react';
 import { api, clone, kinds, deliveryLabel } from './model';
@@ -32,16 +32,27 @@ import type {AuthorNodeSource} from './model';
 import {SkillSummary} from './SkillSummary';
 import {Dialog} from './Dialog';
 import {ImportDialog} from './ImportDialog';
-import type {ImportCandidate} from './ImportDialog';
+import type {ImportCandidate} from './authoring/importCandidate';
+import {WorkspacePicker} from './WorkspacePicker';
+import {SkillCopyDialog} from './SkillCopyDialog';
+import type {SkillCopyPlan} from './authoring/skillCopy';
+import type {Workspace} from './authoring/projectIO';
 import {ComboEditor} from './ComboEditor';
 import {createPreviewRuntime} from './previewRuntime';
 import {restoreDefaultFormation} from './authoring/defaultScene';
 
 const nodeTypes={skill:SkillNode};
-function Workbench() {
-  const [message,setMessage]=useState('正在连接本地 C# 宿主…');
+function Workbench({editor,workspace,project,message,setMessage}:{editor:ReturnType<typeof useProjectDocument>;workspace:Workspace;project:Project;message:string;setMessage:(message:string)=>void}) {
   const [view,setView]=useState<'skill'|'combo'>('skill');const [previewStore]=useState(createPreviewRuntime);
-  const editor=useProjectDocument(setMessage);const project=editor.project;
+  const [copying,setCopying]=useState(false);
+  const graphPanel=useRef<HTMLDivElement>(null);
+  const focusAfterCopy=useRef(false);
+  useLayoutEffect(()=>{
+    if(!copying&&focusAfterCopy.current){
+      focusAfterCopy.current=false;
+      graphPanel.current?.focus({preventScroll:true});
+    }
+  },[copying]);
   const [library,setLibrary]=useState(false);const [adding,setAdding]=useState(false);
   const [newName,setNewName]=useState<string|null>(null);const [template,setTemplate]=useState('copy');
   const [examples,setExamples]=useState<Skill[]>([]);const [creating,setCreating]=useState(false);
@@ -151,28 +162,38 @@ function Workbench() {
     }
     catch(error){setMessage(String(error));}finally{setCreating(false);}
   }
+  function applySkillCopy(before:Project,plan:SkillCopyPlan){
+    if(editor.loading||editor.current.current!==before)throw new Error('目标工程已更改，请重新预览');
+    editor.endGroup();editor.edit(plan.project);
+    focusAfterCopy.current=true;
+    setPreviewRoot(null);setTraceFocus(null);setCopying(false);setLibrary(false);
+    setMessage('已复制技能及依赖，可撤销。保存后写入当前工作区。');
+  }
   function shortcuts(event:React.KeyboardEvent){
     if(!(event.ctrlKey||event.metaKey))return;const key=event.key.toLowerCase();
-    if(key==='s'){event.preventDefault();if(!editor.saving)void editor.save();return;}
+    if((event.target as HTMLElement).closest('[role=dialog]'))return;
+    if(key==='s'){event.preventDefault();if(!editor.saving&&!editor.publishing&&!editor.loading)void editor.save();return;}
     if((event.target as HTMLElement).closest('input,textarea,select,[contenteditable=true]'))return;
     if(key==='z'){event.preventDefault();if(event.shiftKey)editor.redo();else editor.undo();}
     if(key==='y'){event.preventDefault();editor.redo();}
   }
-  if(!project)return <div className="loading"><Workflow size={32}/><h1>技能实验室</h1><p role="status">{message}</p><button onClick={()=>void editor.load().catch(e=>setMessage(String(e)))}>重新连接</button></div>;
   return <div className="application" onKeyDown={shortcuts} onFocusCapture={event=>{if((event.target as HTMLElement).matches('input,textarea,select'))editor.beginGroup();}} onBlurCapture={editor.endGroup}>
     <header className="app-header"><div className="brand"><span aria-hidden="true">H</span><strong>HaloCombat</strong><small>技能实验室</small></div>
-      <div className="header-actions"><details className="project-menu"><summary>工程 ▾</summary><div><label>工程名称<input aria-label="工程名称" value={project.name??''} onChange={event=>editor.edit(p=>({...p,name:event.target.value}))}/></label><small>{project.skills.length} 技能 · {project.buffs?.length??0} Buff · {project.summonBlueprints?.length??0} 蓝图</small>
-        <button onClick={()=>{setNewProjectName('新工程');setProjectTemplate('empty');}}>新建工程</button><button disabled={editor.saving} onClick={()=>void editor.load().catch(e=>setMessage(String(e)))}>重新载入磁盘</button><p>手动保存。刷新恢复最近磁盘版本。</p></div></details>
-        <button onClick={()=>void api<Project>('/runtime',undefined,'GET').then(value=>{editor.endGroup();editor.edit({...value,preview:restoreDefaultFormation(value.preview)});setMessage('已打开正式JSON内容，预览使用默认布阵；可撤销返回原工程');}).catch(error=>setMessage(String(error)))}>打开正式内容</button>
-        <small className={editor.dirty?'unsaved':''} role="status">{editor.saveStatus}</small><button className="save-project" disabled={editor.saving} onClick={()=>void editor.save()}><Save size={13}/>保存</button>
+      <div className="header-actions"><WorkspacePicker editor={editor} report={setMessage} disabled={creating||copying}/><details className="project-menu"><summary>工程 ▾</summary><div><label>工程名称<input aria-label="工程名称" value={project.name??''} onChange={event=>editor.edit(p=>({...p,name:event.target.value}))}/></label><small>{project.skills.length} 技能 · {project.buffs?.length??0} Buff · {project.summonBlueprints?.length??0} 蓝图</small>
+        <button onClick={()=>{setNewProjectName('新工程');setProjectTemplate('empty');}}>新建工程</button><button disabled={editor.saving||editor.publishing||editor.loading} onClick={()=>void editor.load().catch(e=>setMessage(String(e)))}>重新载入磁盘</button><p>手动保存。刷新恢复最近磁盘版本。</p></div></details>
+        <small className={editor.dirty?'unsaved':''} role="status">{editor.saveStatus}</small><button className="save-project" disabled={editor.saving||editor.publishing||editor.loading} onClick={()=>void editor.save()}><Save size={13}/>保存</button>
         <button disabled={!skill} onClick={()=>void publish('f6')}>发布到 F6</button><button disabled={!skill} onClick={()=>void publish('f7')}>发布到 F7</button>
         <button onClick={()=>void api<{message:string}>('/publish/sync',editor.current.current).then(result=>setMessage(result.message)).catch(error=>setMessage(String(error)))}>同步两槽</button>
-        {!!project.runtime?.actors.length&&<button onClick={()=>void api<{message:string}>('/runtime/publish',project).then(result=>setMessage(result.message)).catch(error=>setMessage(String(error)))}>发布正式内容</button>}
+        {workspace==='arena'&&<button disabled={editor.loading||editor.saving||editor.publishing||!project.runtime?.arena||!project.runtime?.actors.length} onClick={()=>void editor.publishArena()}>{editor.publishing?'发布中…':'发布正式内容'}</button>}
         <button onClick={()=>setSettings('project')}>工程设置</button><button onClick={()=>setExporting(true)}><Download size={13}/>导出</button><button onClick={()=>setImporting(true)}><Upload size={13}/>导入</button>
       </div></header>
     <nav className="app-navigation"><button className={view==='skill'?'active':''} onClick={()=>setView('skill')}>技能</button><button className={view==='combo'?'active':''} onClick={()=>setView('combo')}>连招</button><div/><small>{project.name} · {project.skills.length} 个技能</small></nav>
-    <div className="workspace"><PreviewSession key={'preview:'+project.id} project={project} update={editor.edit} inspectSource={inspectSource} root={root} report={setMessage} adoptReplay={adoptReplay} store={previewStore}/>
-      {view==='combo'?<ComboEditor key={'combo:'+project.id} selectContext={id=>select(id)} project={project} update={editor.edit} store={previewStore} report={setMessage} beginEdit={editor.beginGroup} endEdit={editor.endGroup} openSkill={id=>{select(id);setView('skill');}} openTimeline={(skillId,timelineId)=>{select(skillId,"",timelineId);setView('skill');}}/>:<section className="editor-panel"><div className="editor-heading">{graph?<label className="graph-title">{contentLabel[key.kind]}名称<input aria-label={contentLabel[key.kind]+'名称'} value={graph.name??''} onChange={event=>graphEditor.editGraph(g=>({...g,name:event.target.value}))}/></label>:<span>技能编排</span>}<div className="popover-anchor"><button onClick={()=>setLibrary(!library)}>技能库 ▾</button>{library&&<SkillLibrary project={project} selected={skill?.id??''} select={id=>select(id)}/>}</div>
+    {editor.publishFeedback&&<div className="publish-feedback">
+      <span className={editor.publishFeedback.error?'error':''} role={editor.publishFeedback.error?'alert':'status'}>{editor.publishFeedback.text}</span>
+      <button type="button" aria-label="关闭发布消息" onClick={editor.dismissPublishFeedback}>关闭</button>
+    </div>}
+    <div className="workspace" inert={editor.loading}><PreviewSession key={'preview:'+project.id} project={project} update={editor.edit} inspectSource={inspectSource} root={root} report={setMessage} adoptReplay={adoptReplay} store={previewStore}/>
+      {view==='combo'?<ComboEditor key={'combo:'+project.id} selectContext={id=>select(id)} project={project} update={editor.edit} store={previewStore} report={setMessage} beginEdit={editor.beginGroup} endEdit={editor.endGroup} openSkill={id=>{select(id);setView('skill');}} openTimeline={(skillId,timelineId)=>{select(skillId,"",timelineId);setView('skill');}}/>:<section className="editor-panel"><div className="editor-heading">{graph?<label className="graph-title">{contentLabel[key.kind]}名称<input aria-label={contentLabel[key.kind]+'名称'} value={graph.name??''} onChange={event=>graphEditor.editGraph(g=>({...g,name:event.target.value}))}/></label>:<span>技能编排</span>}<div className="popover-anchor"><button onClick={()=>setLibrary(!library)}>技能库 ▾</button>{library&&<SkillLibrary project={project} selected={skill?.id??''} select={id=>select(id)} copy={()=>setCopying(true)}/>}</div>
         <button onClick={()=>void openCreate()}><Plus size={12}/>新建</button><button onClick={()=>{if(buff)select(skill?.id??'');else if(project.buffs?.length)select(skill?.id??'',project.buffs[0].id);else newBuff();}}>{buff?'返回技能':'Buff定义'}</button>
         <button onClick={()=>{if(timeline)select(skill?.id??'');else if(project.timelines?.length)select(skill?.id??'','',project.timelines[0].id);else newShared();}}>{timeline?'返回技能':'共享时间轴'}</button>
         {timeline&&<><select aria-label="当前共享时间轴" value={timeline.id} onChange={e=>select(skill?.id??'','',e.target.value)}>{project.timelines?.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select><button onClick={newShared}>新建共享轴</button></>}
@@ -183,15 +204,15 @@ function Workbench() {
         {buff&&<><select className="buff-select" aria-label="当前Buff定义" value={buff.id} onChange={event=>select(skill?.id??'',event.target.value)}>{project.buffs?.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}</select><button onClick={newBuff}>新建Buff</button></>}
         {graph&&<><button className="content-id" title={graph.id} onClick={()=>setContentAction({...key,mode:'rename'})}>ID {graph.id}</button><button onClick={()=>duplicate(key.kind,key.id)}>复制{contentLabel[key.kind]}</button><button onClick={()=>setContentAction({...key,mode:'delete'})}>删除{contentLabel[key.kind]}</button></>}
         <span className="grow"/>{skill&&<><span className="badge">{castMode}</span><span className="badge">{transfers}</span></>}
-      </div><div className="editor-body"><div className="graph-panel" tabIndex={0} aria-label="节点画布" onKeyDown={graphEditor.keyDown}>
+      </div><div className="editor-body"><div className="graph-panel" ref={graphPanel} tabIndex={0} aria-label="节点画布" onKeyDown={graphEditor.keyDown}>
         <div className="canvas-toolbar"><span className="canvas-title"><Workflow size={14} aria-hidden="true"/>技能画布</span><div className="popover-anchor"><button disabled={!graph} onClick={()=>setAdding(!adding)}><Plus size={12}/>添加</button>{adding&&<div className="node-menu">{Object.entries(kinds).filter(([kind])=>kind!=='buff-events'&&(!(buff||timeline||projectile)||!['target','cast','skill-events'].includes(kind))).map(([kind,schema])=><button key={kind} onClick={()=>{graphEditor.add(kind);setAdding(false);}}>{schema.title}</button>)}</div>}</div>
-          <button disabled={!graph} onClick={()=>void graphEditor.flow.fitView({padding:.15})}><Maximize size={12}/>适应</button><button disabled={!graph} onClick={graphEditor.layout}>自动排列</button><button disabled={!graph} onClick={()=>setSettings('graph')}>{key.kind==='skill'?'技能设置':'定义设置'}</button><button disabled={!graph} onClick={()=>setSettings('connections')}>连线顺序</button>
+          <button disabled={!graph} onClick={()=>void graphEditor.fitGraph()}><Maximize size={12}/>适应</button><button disabled={!graph} onClick={graphEditor.layout}>自动排列</button><button disabled={!graph} onClick={()=>setSettings('graph')}>{key.kind==='skill'?'技能设置':'定义设置'}</button><button disabled={!graph} onClick={()=>setSettings('connections')}>连线顺序</button>
           <button disabled={!graphEditor.selectedNodes.length} onClick={graphEditor.copy}>复制节点</button><button disabled={!graph||!graphEditor.canPaste} onClick={graphEditor.paste}>粘贴</button>
           <button aria-label="撤销" disabled={!editor.canUndo} onClick={editor.undo}><Undo2 size={13}/></button><button aria-label="重做" disabled={!editor.canRedo} onClick={editor.redo}><Redo2 size={13}/></button><span className="grow"/><small>{Math.round(graphEditor.zoom*100)}%</small>
         </div>
         {graph?<ReactFlow<EditorNode> nodes={graphEditor.nodes} edges={graphEditor.edges} nodeTypes={nodeTypes} onNodesChange={graphEditor.nodeChanges} onEdgesChange={graphEditor.edgeChanges}
           onConnect={connection=>graphEditor.connect(connection)} onReconnect={(edge,connection)=>graphEditor.connect(connection,edge.id)} onReconnectStart={(_event,edge)=>graphEditor.reconnectStart(edge.id)} onReconnectEnd={graphEditor.reconnectEnd} isValidConnection={graphEditor.validConnection}
-          onMove={(_event,viewport)=>graphEditor.moving(viewport)} onMoveEnd={(_event,viewport)=>graphEditor.moved(viewport)}
+          onMove={(_event,viewport)=>graphEditor.moving(viewport)} onMoveEnd={(event,viewport)=>graphEditor.moved(viewport,!!event)}
           defaultViewport={{x:20,y:65,zoom:.9}} minZoom={.1} maxZoom={4} deleteKeyCode={null} colorMode="dark" proOptions={{hideAttribution:true}}>
           <Background variant={BackgroundVariant.Dots} gap={18} size={1} color="var(--desk-grid)"/></ReactFlow>:
           <div className="empty-project"><Workflow size={34}/><h2>工程中暂无技能</h2><p>创建技能后编辑节点并运行预览。</p><button className="primary" onClick={()=>void openCreate()}>新建技能</button></div>}
@@ -210,6 +231,7 @@ function Workbench() {
       {settings==='project'&&<><SummonBlueprints project={project} update={editor.edit} action={setContentAction} duplicate={id=>duplicate('blueprint',id)}/><RuntimeProperties project={project} update={editor.edit}/><p>起手、接续与公共取消请在“连招”工作台统一编辑。</p></>}
     </div></Dialog>}
     {contentAction&&<ContentDialog key={contentAction.kind+contentAction.id+contentAction.mode} project={project} action={contentAction} close={()=>setContentAction(null)} edit={change=>{editor.endGroup();editor.edit(change);setMessage('内容与引用已更新，可撤销恢复');}} locate={locate}/>}
+    {copying&&<SkillCopyDialog workspace={workspace} current={()=>editor.current.current!} apply={applySkillCopy} close={()=>setCopying(false)}/>}
     {exporting&&<ExportDialog project={project} skillId={skill?.id??''} close={()=>setExporting(false)} report={setMessage}/>}
     {importing&&<ImportDialog close={()=>setImporting(false)} ready={value=>{setPendingImport(value);setImporting(false);}}/>}
     {newName!==null&&<Dialog label="新建技能" close={()=>setNewName(null)} busy={creating}><form className="modal" onSubmit={event=>{event.preventDefault();void create();}}><h2>新建技能</h2><label>名称<input aria-label="新技能名称" autoFocus value={newName} onChange={event=>setNewName(event.target.value)}/></label>
@@ -238,4 +260,9 @@ function Workbench() {
     </Dialog>}
   </div>;
 }
-export default function App(){return <ReactFlowProvider><Workbench/></ReactFlowProvider>;}
+export default function App(){
+  const [message,setMessage]=useState('正在连接本地 C# 宿主…');
+  const editor=useProjectDocument(setMessage);
+  if(!editor.project||!editor.workspace)return <div className="loading"><Workflow size={32}/><h1>技能实验室</h1><p role="status">{message}</p><button disabled={editor.loading} onClick={()=>void editor.load().catch(error=>setMessage(String(error)))}>重新连接</button></div>;
+  return <ReactFlowProvider key={editor.workspace}><Workbench editor={editor} workspace={editor.workspace} project={editor.project} message={message} setMessage={setMessage}/></ReactFlowProvider>;
+}

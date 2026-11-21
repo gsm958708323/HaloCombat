@@ -9,10 +9,6 @@
       "kind": "target",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 0.0,
-        "y": 80.0
-      },
       "parameters": {
         "mode": "facing",
         "range": 20
@@ -23,10 +19,6 @@
       "kind": "delivery",
       "runtimeId": 4102,
       "enabled": true,
-      "position": {
-        "x": 600.0,
-        "y": 80.0
-      },
       "parameters": {
         "mode": "area",
         "persistent": true,
@@ -50,10 +42,6 @@
       "kind": "damage",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 900.0,
-        "y": 80.0
-      },
       "parameters": {
         "flat": 0,
         "coefficient": 0.2,
@@ -72,10 +60,6 @@
       "kind": "hurt-feedback",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 1200.0,
-        "y": 80.0
-      },
       "parameters": {
         "level": "damage",
         "requireHpDamage": false
@@ -86,10 +70,6 @@
       "kind": "cast",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 300.0,
-        "y": 80.0
-      },
       "parameters": {
         "mode": "instant",
         "cost": 0,
@@ -103,10 +83,6 @@
       "kind": "cue",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 600.0,
-        "y": 760.0
-      },
       "parameters": {
         "id": 4201,
         "name": "MuzzleFlash",
@@ -119,10 +95,6 @@
       "kind": "cue",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 1400.0,
-        "y": 520.0
-      },
       "parameters": {
         "id": 4204,
         "name": "OriginalCue4204",

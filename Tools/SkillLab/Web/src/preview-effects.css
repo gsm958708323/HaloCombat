@@ -4,3 +4,5 @@
 .sweep-edge{stroke:#f8dfa0;stroke-width:.09;stroke-linecap:round;fill:none}
 .sweep-trail{fill:#e0bf78;fill-opacity:.22;stroke:#e6c885;stroke-width:.025}
 @media(prefers-reduced-motion:reduce){.damage-floater{animation:none}}
+.damage-floater.periodic{fill:#9ce1bd}
+.damage-floater.periodic.critical{fill:#c4f7ae}

@@ -9,10 +9,6 @@
       "kind": "target",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 0.0,
-        "y": 80.0
-      },
       "parameters": {
         "mode": "facing",
         "range": 20
@@ -23,10 +19,6 @@
       "kind": "cast",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 300.0,
-        "y": 80.0
-      },
       "parameters": {
         "mode": "instant",
         "cost": 0,
@@ -41,10 +33,6 @@
       "kind": "delivery",
       "runtimeId": 6501,
       "enabled": true,
-      "position": {
-        "x": 600.0,
-        "y": 80.0
-      },
       "parameters": {
         "mode": "area",
         "persistent": true,
@@ -67,10 +55,6 @@
       "kind": "damage",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 900.0,
-        "y": 80.0
-      },
       "parameters": {
         "flat": 0,
         "coefficient": 0.2,
@@ -88,10 +72,6 @@
       "kind": "hurt-feedback",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 1200.0,
-        "y": 80.0
-      },
       "parameters": {
         "level": "light",
         "requireHpDamage": true

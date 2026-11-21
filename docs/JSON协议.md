@@ -4,7 +4,7 @@
 
 ## 按功能保存的磁盘工程
 
-磁盘project.json是`formatVersion/id/name/files`索引。files.skills/projectiles/areas/buffs/timelines/summonBlueprints为按稳定ID命名的相对文件数组，files.preview/editor为独立文件；files.runtime保存motor/actors/combos/cues/views/arena等文件路径。SkillProjectFiles组合为原SkillProjectDocument后继续校验/编译，不把文件引用传入Core。
+磁盘project.json是`formatVersion/id/name/files`索引。files.skills/projectiles/areas/buffs/timelines/summonBlueprints为按稳定ID命名的相对文件数组，files.preview/editor为独立文件；files.runtime保存motor/actors/combos/cues/views/arena等文件路径。SkillProjectFiles 组合为 SkillProjectDocument 后校验与编译。磁盘版节点坐标位于 `editor.json` 的 `nodePositions`，按集合、图和节点身份定位。运行时只读取玩法分片与试验布置。可携带作者工程在 `nodes[].position` 表示布局。
 
 路径必须留在索引目录内，重复文件、未知字段、重复JSON键及坏模块拒绝并报文件。保存使用跨进程互斥、逐文件原子替换和失败回滚；ETag基于展开文档，单独改模块也使原ETag失效。示例、正式和用户工作工程均采用该结构，部署时携带索引引用闭包。以下单文件协议继续用于HTTP、下载、独立F6/F7和输入记录；磁盘索引不能脱离目录单独导入浏览器。
 

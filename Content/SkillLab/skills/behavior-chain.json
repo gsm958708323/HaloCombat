@@ -9,10 +9,6 @@
       "kind": "target",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 0.0,
-        "y": 80.0
-      },
       "parameters": {
         "mode": "point",
         "range": 20
@@ -23,10 +19,6 @@
       "kind": "cast",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 270.0,
-        "y": 80.0
-      },
       "parameters": {
         "mode": "instant",
         "cost": 10,
@@ -42,10 +34,6 @@
       "kind": "projectile",
       "runtimeId": 6511,
       "enabled": true,
-      "position": {
-        "x": 540.0,
-        "y": 80.0
-      },
       "parameters": {
         "speed": 10,
         "range": 24,
@@ -58,10 +46,6 @@
       "kind": "damage",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 810.0,
-        "y": 80.0
-      },
       "parameters": {
         "flat": 80,
         "coefficient": 0,
@@ -76,10 +60,6 @@
       "kind": "chain",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 300.0,
-        "y": 550.0
-      },
       "parameters": {
         "count": 2,
         "radius": 6,

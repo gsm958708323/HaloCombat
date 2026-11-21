@@ -43,6 +43,21 @@ namespace Combat.Tests
         }
 
         [Test]
+        public void PeriodicDamageLabelStaysOutsideFormatOneReplayState()
+        {
+            using (var simulation = Run(Example()))
+            {
+                Command(simulation, "{\"kind\":\"cast\",\"skillId\":\"bleed-validation\",\"x\":0,\"z\":0}");
+                simulation.Advance(140);
+                Assert.That(simulation.Snapshot().Events.Any(e => e.PeriodicBuff == "流血"));
+                var recording = simulation.CaptureReplay("bleed-validation");
+                var portable = SkillReplayJson.Write(recording);
+                Assert.That(portable, Does.Not.Contain("periodicBuff"));
+                Matched(SkillReplayJson.Read(portable));
+            }
+        }
+
+        [Test]
         public void ChannelMovementAimHitstopReleaseAndInterruptionUseTheRecordedClock()
         {
             using(var s=Run(Example()))

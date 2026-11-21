@@ -12,7 +12,11 @@ namespace Combat.Config
             result.Property("comboDecisions")?.Remove();
             foreach(var actor in (JArray)result["actors"])
             {((JObject)actor).Property("comboDecision")?.Remove();((JObject)actor).Property("comboInputSequence")?.Remove();}
-            foreach(var entry in (JArray)result["events"])((JObject)entry).Property("comboDecision")?.Remove();
+            foreach (JObject entry in (JArray)result["events"])
+            {
+                entry.Remove("comboDecision");
+                entry.Remove("periodicBuff");
+            }
             return result;
         }
     }

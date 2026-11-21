@@ -10,6 +10,7 @@ namespace Combat.Config
         public SkillSimulation Simulation { get; private set; }
         public Action<IReadOnlyDictionary<string,RuntimeViewDefinition>> ValidateViews {get;set;}
         public string Revision { get; private set; }
+        public bool HasDifferentSlotLayouts { get; private set; }
         public IReadOnlyDictionary<string, string> Slots { get; private set; } = new ReadOnlyDictionary<string, string>(new Dictionary<string, string>());
         public IReadOnlyDictionary<string,string> SlotRevisions {get;private set;}=new ReadOnlyDictionary<string,string>(new Dictionary<string,string>());
 
@@ -29,6 +30,7 @@ namespace Combat.Config
             var areas=new Dictionary<string,SharedAreaDocument>();
             var revisions = new List<string>();
             SkillProjectDocument project = null;
+            bool differentLayouts = false;
             foreach (var slot in slots.OrderBy(entry => entry.Key, StringComparer.Ordinal))
             {
                 if (slot.Key != "f6" && slot.Key != "f7") throw new ContentValidationException("$.slots", "Unknown slot: " + slot.Key);
@@ -38,6 +40,8 @@ namespace Combat.Config
                 var document=publication.Document;var closure=SkillContentClosure.Select(document.Project,publication.Content,document.SkillId);
                 if (project == null)
                     project = new SkillProjectDocument { Id = document.Project.Id, Name = document.Project.Name, Preview = document.Project.Preview,Runtime=document.Project.Runtime };
+                    else if (SkillJsonCodec.Write(project.Preview) != SkillJsonCodec.Write(document.Project.Preview))
+                    differentLayouts = true;
                 if (project.Id != document.Project.Id)
                     throw new ContentValidationException("$.slots." + slot.Key, "Slots must be published from the same project.");
                 if(SkillJsonCodec.Write(project.Runtime)!=SkillJsonCodec.Write(document.Project.Runtime))
@@ -92,6 +96,7 @@ namespace Combat.Config
             var candidate = new SkillSimulation(project,compiled);
             var previous = Simulation;
             Simulation = candidate;
+            HasDifferentSlotLayouts = differentLayouts;
             Revision = SkillJsonCodec.Fingerprint(string.Join("\n", revisions));
             Slots = new ReadOnlyDictionary<string, string>(mappings);
             SlotRevisions=new ReadOnlyDictionary<string,string>(slotRevisions);

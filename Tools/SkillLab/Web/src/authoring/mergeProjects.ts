@@ -4,6 +4,10 @@ import { actionNumbers,allGraphs, copyGraph, definitionAllocator, numberAllocato
 
 // Source references always stay within the imported set, including when a shared ID conflicts.
 export function mergeProjects(destination:Project,source:Project,newId:()=>string=()=>crypto.randomUUID()):Project {
+  return mergeWithIdentities(destination,source,newId).project;
+}
+
+export function mergeWithIdentities(destination:Project,source:Project,newId:()=>string=()=>crypto.randomUUID()) {
   function identityMap(imported:{id:string}[],existing:{id:string}[]) {
     const used=new Set(existing.map(item=>item.id));const result=new Map<string,string>();
     for(const item of imported){let id=item.id;while(used.has(id))id=newId();used.add(id);result.set(item.id,id);}return result;
@@ -17,7 +21,8 @@ export function mergeProjects(destination:Project,source:Project,newId:()=>strin
   const skillNumber=numberAllocator(actionNumbers(destination)),buffNumber=numberAllocator((destination.buffs??[]).map(b=>b.runtimeId),8000);
   const definitionNumber=definitionAllocator(destination);
   const references=(nodes:GraphNode[])=>nodes.map(original=>{
-    const node=typeof original.parameters.view==='string'&&viewIds.has(original.parameters.view)?{...original,parameters:{...original.parameters,view:viewIds.get(original.parameters.view)!}}:original;
+    const builtIn=original.kind==='construct'&&['barrel','crate'].includes(String(original.parameters.view));
+    const node=!builtIn&&typeof original.parameters.view==='string'&&viewIds.has(original.parameters.view)?{...original,parameters:{...original.parameters,view:viewIds.get(original.parameters.view)!}}:original;
     if(node.kind==='area-ref'&&typeof node.parameters.area==='string')return {...node,parameters:{...node.parameters,area:areaIds.get(node.parameters.area)??node.parameters.area}};
     if(node.kind==='projectile-ref'&&typeof node.parameters.projectile==='string')return {...node,parameters:{...node.parameters,projectile:projectileIds.get(node.parameters.projectile)??node.parameters.projectile}};
     if(node.kind==='cast')return {...node,parameters:{...node.parameters,...Object.fromEntries(['fallbackSkill','recastSkill'].filter(field=>typeof node.parameters[field]==='string'&&skillIds.has(String(node.parameters[field]))).map(field=>[field,skillIds.get(String(node.parameters[field]))!]))}};
@@ -38,7 +43,7 @@ export function mergeProjects(destination:Project,source:Project,newId:()=>strin
   const comboViews=(source.editor?.comboViews??[]).map(v=>({...clone(v),id:comboViewIds.get(v.id)!,rootSkill:skillIds.get(v.rootSkill)!,ruleIds:v.ruleIds.map(id=>comboIds.get(id)!),positions:v.positions.map(p=>({...p,skillId:p.skillId==='$start'?p.skillId:skillIds.get(p.skillId)!}))}));
   const result={...destination,runtime,skills:[...destination.skills,...skills],timelines:[...(destination.timelines??[]),...timelines],projectiles:[...(destination.projectiles??[]),...projectiles],areas:[...(destination.areas??[]),...areas],buffs:[...(destination.buffs??[]),...buffs],summonBlueprints:[...(destination.summonBlueprints??[]),...blueprints],editor:{...destination.editor,viewports:[...(destination.editor?.viewports??[]),...viewports],comboPositions:[...(destination.editor?.comboPositions??[]),...comboPositions],comboViews:[...(destination.editor?.comboViews??[]),...comboViews]}};
   if(allGraphs(result).some(({graph})=>graph.nodes.length>256))throw new Error('图节点数超过上限');
-  return result;
+  return {project:result,identities:{skills:skillIds,buffs:buffIds,summonBlueprints:blueprintIds,timelines:timelineIds,projectiles:projectileIds,areas:areaIds,views:viewIds}};
 }
 function mergeRuntime(destination:Project,source:Project,skills:Map<string,string>,newId:()=>string,viewIds:Map<string,string>,comboIds:Map<string,string>) {
   const incoming=source.runtime!;const current=destination.runtime;

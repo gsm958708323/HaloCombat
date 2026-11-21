@@ -1,4 +1,5 @@
 using Combat.Config;
+using Newtonsoft.Json.Linq;
 
 namespace SkillLab;
 
@@ -6,13 +7,33 @@ internal static class ProjectFileChecks
 {
     public static async Task Run(string root)
     {
-        var directory=Path.Combine(root,"Tools/SkillLab/.local/verification/project-store-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(directory);
+        var directory=Path.Combine(Path.GetTempPath(),"halo-project-store-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(directory);
         var path=Path.Combine(directory,"project.json");var source=SkillProjectFiles.Read(Path.Combine(root,"Content/SkillLab/project.json"));
         try
         {
             SkillProjectFiles.Write(path,source);var store=new ProjectFileStore(path);var original=await store.Read();
             var module=SkillProjectFiles.ReferencedPaths(path).First(p=>p.EndsWith("basic-shot.json"));
-            string beforeModule=File.ReadAllText(module);File.WriteAllText(module,beforeModule.Replace("普通射击","磁盘外部修改"));
+            string beforeModule=File.ReadAllText(module);
+            Require(JObject.Parse(beforeModule)["nodes"].All(node=>node["position"]==null),"Graph shards must omit authoring positions.");
+            string editorPath=Path.Combine(directory,"editor.json");
+            string beforeEditor=File.ReadAllText(editorPath);
+            var editor=JObject.Parse(beforeEditor);
+            var layout=(JArray)editor["nodePositions"];
+            var placed=layout.First(row=>(string)row["kind"]=="skills"&&(string)row["graphId"]=="basic-shot");
+            placed["x"]=0;placed["y"]=0;
+            File.WriteAllText(editorPath,editor.ToString());
+            var origin=await store.Read();
+            Require(!origin.NeedsLayout,"An explicit origin is a real layout position.");
+            placed.Remove();File.WriteAllText(editorPath,editor.ToString());
+            var missing=await store.Read();
+            Require(missing.NeedsLayout&&missing.Json==origin.Json&&missing.ETag!=origin.ETag,"Removing an origin position must change the layout flag and ETag.");
+            await Reject(()=>store.Save(source,origin.ETag),409);
+            File.WriteAllText(editorPath,"not json");
+            Require(SkillProjectFiles.ReadRuntime(path).Editor==null,"Runtime reader must skip an unreadable editor shard.");
+            File.Delete(editorPath);
+            Require(SkillProjectFiles.ReadRuntime(path).Skills.Length==source.Skills.Length,"Runtime reader must skip an absent editor shard.");
+            File.WriteAllText(editorPath,beforeEditor);
+            File.WriteAllText(module,beforeModule.Replace("普通射击","磁盘外部修改"));
             Require((await store.Read()).ETag!=original.ETag,"A module change must invalidate the project ETag.");
             await Reject(()=>store.Save(source,original.ETag),409);File.WriteAllText(module,beforeModule);
             await Reject(()=>store.Save(source,""),428);Require((await store.Read()).Json==original.Json,"Missing ETag must not overwrite disk.");

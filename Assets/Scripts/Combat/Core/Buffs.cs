@@ -153,7 +153,9 @@ namespace Combat.Core
                 else Self.World.TryGetActor(item.Source,out source);
                 var provenance=kind==BuffEventKind.Hurt||kind==BuffEventKind.Cast?eventOrigin:item.Origin;
                 if(item.Origin.SuppressedEvents)provenance=provenance.WithoutEvents();
-                Self.World.Deliver(effects,source,Self,attack,Self.GetComp<TransformComp>().Position,buffStacks:item.Stacks,power:item.Power,origin:provenance);
+                if (kind == BuffEventKind.Period) provenance = provenance.FromBuffPeriod(item.Spec.BuffId);
+                Self.World.Deliver(effects, source, Self, attack, Self.GetComp<TransformComp>().Position,
+                    buffStacks:item.Stacks, power:item.Power, origin:provenance);
             }
             finally{_dispatchDepth--;_dispatching.Remove((item.Id,kind));}
         }

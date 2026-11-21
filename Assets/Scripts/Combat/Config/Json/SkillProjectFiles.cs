@@ -12,13 +12,19 @@ namespace Combat.Config
     {
         static readonly string[] Collections={"skills","timelines","projectiles","areas","buffs","summonBlueprints"};
         static readonly JsonLoadSettings Parsing=new JsonLoadSettings{DuplicatePropertyNameHandling=DuplicatePropertyNameHandling.Error};
-        public static SkillProjectDocument Read(string path)=>ProjectFileTransaction.Locked(path,()=>ReadUnlocked(Path.GetFullPath(path)));
-        static SkillProjectDocument ReadUnlocked(string path)
+        public static SkillProjectDocument Read(string path)=>ReadAuthoring(path).Project;
+        public static SkillProjectDocument ReadRuntime(string path)
+            =>ProjectFileTransaction.Locked(path,()=>ReadUnlocked(Path.GetFullPath(path),true).Project);
+        internal static SkillProjectDiskSnapshot ReadAuthoring(string path)
+            =>ProjectFileTransaction.Locked(path,()=>ReadUnlocked(Path.GetFullPath(path),false));
+
+        static SkillProjectDiskSnapshot ReadUnlocked(string path,bool runtimeOnly)
         {
             try
             {
                 var index=JObject.Parse(File.ReadAllText(path),Parsing);
-                if(index["files"]==null)return SkillProjectJson.Read(index.ToString()); // Portable runtime exports are also loadable files.
+                // Portable runtime exports and legacy unsharded drafts are also loadable files.
+                if(index["files"]==null)return Assemble(index,runtimeOnly,false);
                 foreach(var property in index.Properties())if(!new[]{"formatVersion","id","name","files"}.Contains(property.Name))Fail(path,"Unknown index field: "+property.Name);
                 var files=index["files"] as JObject;if(files==null)Fail(path,"files must be an object.");
                 var document=new JObject{["formatVersion"]=index["formatVersion"],["id"]=index["id"],["name"]=index["name"]};
@@ -35,15 +41,23 @@ namespace Combat.Config
                         if(!(part.Value is JObject runtime))throw new ContentValidationException(path+".files.runtime","Expected runtime section paths.");
                         var value=new JObject();foreach(var section in runtime.Properties())value[section.Name]=ReadPart(path,section.Value,seen);document[part.Name]=value;
                     }
+                    else if(part.Name=="editor" && runtimeOnly)continue;
                     else if(part.Name=="preview"||part.Name=="editor")document[part.Name]=ReadPart(path,part.Value,seen);
                     else Fail(path,"Unknown content section: "+part.Name);
                 }
                 if(files["skills"]==null||files["preview"]==null)Fail(path,"Index must reference skills and preview.");
-                return SkillProjectJson.Read(document.ToString());
+                return Assemble(document,runtimeOnly,true);
             }
             catch(JsonException error){throw new ContentValidationException(path,error.Message);}
             catch(IOException error){throw new ContentValidationException(path,error.Message);}
         }
+        static SkillProjectDiskSnapshot Assemble(JObject document,bool runtimeOnly,bool sharded)
+        {
+            if(runtimeOnly)SkillProjectDiskLayout.Strip(document);
+            var missing=runtimeOnly?null:SkillProjectDiskLayout.Restore(document,sharded);
+            return new SkillProjectDiskSnapshot(SkillProjectJson.Read(document.ToString()),missing);
+        }
+
         static JToken ReadPart(string index,JToken value,HashSet<string> seen)
         {
             if(value?.Type!=JTokenType.String)throw new ContentValidationException(index+".files","Expected a relative JSON path.");
@@ -51,12 +65,14 @@ namespace Combat.Config
             try{return JToken.Parse(File.ReadAllText(path),Parsing);}
             catch(Exception error) when(error is JsonException||error is IOException){throw new ContentValidationException(path,error.Message);}
         }
-        public static void Write(string path,SkillProjectDocument project)
+        public static void Write(string path,SkillProjectDocument project)=>Write(path,project,null);
+        internal static void Write(string path,SkillProjectDocument project,HashSet<(string,string,string)> missingPositions)
         {
             SkillProjectStructure.Validate(project);path=Path.GetFullPath(path);
             ProjectFileTransaction.Locked(path,()=>
             {
                 var source=JObject.Parse(SkillProjectJson.Write(project));var references=new JObject();
+                SkillProjectDiskLayout.Extract(source,missingPositions);
                 var output=new Dictionary<string,string>(StringComparer.OrdinalIgnoreCase);
                 void Add(string relative,JToken value){string file=Resolve(path,relative);if(output.ContainsKey(file))Fail(path,"Conflicting content file: "+relative);output.Add(file,value.ToString(Formatting.Indented));}
                 foreach(string kind in Collections)
@@ -93,9 +109,19 @@ namespace Combat.Config
         {
             if(string.IsNullOrWhiteSpace(relative)||Path.IsPathRooted(relative)||!relative.EndsWith(".json",StringComparison.OrdinalIgnoreCase))throw new ContentValidationException(index,"Expected a relative JSON path.");
             string root=Path.GetDirectoryName(Path.GetFullPath(index))+Path.DirectorySeparatorChar,path=Path.GetFullPath(Path.Combine(root,relative));
-            if(!path.StartsWith(root,StringComparison.OrdinalIgnoreCase)||path==Path.GetFullPath(index))Fail(index,"Content path leaves the project or references its index.");
+            var comparison=Path.DirectorySeparatorChar=='\\'?StringComparison.OrdinalIgnoreCase:StringComparison.Ordinal;
+            if(!path.StartsWith(root,comparison)||string.Equals(path,Path.GetFullPath(index),comparison))Fail(index,"Content path leaves the project or references its index.");
             return path;
         }
         static void Fail(string path,string reason)=>throw new ContentValidationException(path,reason);
+    }
+
+    internal sealed class SkillProjectDiskSnapshot
+    {
+        public SkillProjectDocument Project {get;}
+        public HashSet<(string,string,string)> MissingPositions {get;}
+        public bool NeedsLayout=>MissingPositions?.Count>0;
+        public SkillProjectDiskSnapshot(SkillProjectDocument project,HashSet<(string,string,string)> missingPositions)
+        {Project=project;MissingPositions=missingPositions;}
     }
 }

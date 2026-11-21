@@ -19,6 +19,7 @@ namespace Combat.Config
         public SkillEventCatalog SkillEvents {get;}=new SkillEventCatalog();
         public RuntimeContentSnapshot Runtime {get;internal set;}
         public AuthorSourceMap Sources {get;internal set;}
+        internal Action<string,string> MissingDependency {get;set;}
         internal HashSet<int> RequiredCues {get;}=new HashSet<int>();
         internal HashSet<string> RequiredBodyViews {get;}=new HashSet<string>();
         internal Dictionary<string,int> SharedProjectiles {get;}=new Dictionary<string,int>();
@@ -28,6 +29,12 @@ namespace Combat.Config
     public static class CombatContentCompiler
     {
         public static CombatContentSnapshot Compile(SkillProjectDocument project)
+            =>Compile(project,true,null);
+
+        internal static CombatContentSnapshot CompileGraphs(SkillProjectDocument project,Action<string,string> missingDependency)
+            =>Compile(project,false,missingDependency);
+
+        static CombatContentSnapshot Compile(SkillProjectDocument project,bool includeRuntime,Action<string,string> missingDependency)
         {
             project=SkillEffectNodeUpgrade.ForCompilation(project);
             SkillProjectStructure.ValidateRuntimeStructure(project);
@@ -35,7 +42,7 @@ namespace Combat.Config
             if (string.IsNullOrWhiteSpace(project.Id)) Fail("$.id", "Project id is required.");
             SkillSceneValidation.Validate(project.Preview);
             if (project.Skills == null || project.Skills.Length == 0 || project.Skills.Length > 512) Fail("$.skills", "Expected 1 to 512 skills.");
-            var content = new CombatContentSnapshot{Sources=new AuthorSourceMap(project)};
+            var content = new CombatContentSnapshot{Sources=new AuthorSourceMap(project),MissingDependency=missingDependency};
             foreach(var area in project.Areas)
             {
                 var root=System.Array.Find(area.Nodes,n=>n.Id==area.Root);
@@ -122,7 +129,10 @@ namespace Combat.Config
                 graph.CheckComplete();
             }
             for(int i=0;i<project.Buffs.Length;i++)BuffCompiler.Link(project.Buffs[i],"$.buffs["+i+"]",content,projectileIds,aoeIds,summonIds);
-            content.Dependencies.Validate();content.Runtime=RuntimeContentCompiler.Compile(project,content);return content;
+            content.Dependencies.Validate();
+            content.MissingDependency=null;
+            if(includeRuntime)content.Runtime=RuntimeContentCompiler.Compile(project,content);
+            return content;
         }
 
         static void Fail(string path, string message) => throw new ContentValidationException(path, message);

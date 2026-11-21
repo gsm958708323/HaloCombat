@@ -9,10 +9,6 @@
       "kind": "target",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 0.0,
-        "y": 80.0
-      },
       "parameters": {
         "mode": "facing",
         "range": 20
@@ -23,10 +19,6 @@
       "kind": "cast",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 300.0,
-        "y": 80.0
-      },
       "parameters": {
         "mode": "instant",
         "cost": 0,
@@ -38,10 +30,6 @@
       "kind": "damage",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 900.0,
-        "y": 80.0
-      },
       "parameters": {
         "flat": 0,
         "coefficient": 1,
@@ -56,10 +44,6 @@
       "kind": "impact",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 1500.0,
-        "y": 80.0
-      },
       "parameters": {
         "mode": "hitstun",
         "duration": 0.35
@@ -70,10 +54,6 @@
       "kind": "impact",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 1800.0,
-        "y": 80.0
-      },
       "parameters": {
         "mode": "knockback",
         "distance": 0.4
@@ -84,10 +64,6 @@
       "kind": "cue",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 2700.0,
-        "y": 80.0
-      },
       "parameters": {
         "id": 101,
         "name": "G1_Slash"
@@ -98,10 +74,6 @@
       "kind": "projectile",
       "runtimeId": 901,
       "enabled": true,
-      "position": {
-        "x": 600.0,
-        "y": 80.0
-      },
       "parameters": {
         "speed": 14,
         "lifetime": 2,
@@ -115,10 +87,6 @@
       "kind": "damage",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 1200.0,
-        "y": 80.0
-      },
       "parameters": {
         "flat": 0,
         "coefficient": 1,
@@ -132,10 +100,6 @@
       "kind": "buff",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 2100.0,
-        "y": 80.0
-      },
       "parameters": {
         "buff": "burn"
       }
@@ -145,10 +109,6 @@
       "kind": "cue",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 2400.0,
-        "y": 80.0
-      },
       "parameters": {
         "id": 201,
         "name": "FireballHit"

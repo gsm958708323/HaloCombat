@@ -67,12 +67,12 @@ namespace Combat.Config
                     effects.Add(Projectile(node,path));break;
                 case "projectile-ref":
                     var reference=new NodeParameters(node,path,"projectile","count","spread");string projectileKey=reference.Text("projectile");
-                    if(!_content.SharedProjectiles.TryGetValue(projectileKey,out int spec))throw new ContentValidationException(path+".parameters.projectile","Unknown shared projectile.");
+                    if(!_content.SharedProjectiles.TryGetValue(projectileKey,out int spec))throw Missing("projectiles",projectileKey,path+".parameters.projectile","Unknown shared projectile.");
                     _content.Dependencies.Add(_graph.ContentKey,ContentDependencies.Projectile(projectileKey));
                     effects.Add(new SpawnProjectileEffect(spec,reference.Integer("count",1,1,64),reference.Number("spread",0,0,360)));break;
                 case "area-ref":
                     var areaRef=new NodeParameters(node,path,"area","center","forwardOffset");string areaKey=areaRef.Text("area");
-                    if(!_content.SharedAreas.TryGetValue(areaKey,out int areaSpec))throw new ContentValidationException(path+".parameters.area","Unknown shared area.");
+                    if(!_content.SharedAreas.TryGetValue(areaKey,out int areaSpec))throw Missing("areas",areaKey,path+".parameters.area","Unknown shared area.");
                     _content.Dependencies.Add(_graph.ContentKey,ContentDependencies.Area(areaKey));
                     effects.Add(new SpawnAoeEffect(areaSpec,Center(areaRef),areaRef.Number("forwardOffset",0,0,100)));break;
                 case "split":
@@ -227,7 +227,7 @@ namespace Combat.Config
             {
                 _graph.RequireNoOutputs(node,"enter","exit","stay","wall","complete","absorb");
                 string key=p.Text("blueprint");
-                if(!_content.Blueprints.TryGet(key,out var blueprint))throw new ContentValidationException(path+".parameters.blueprint","Unknown summon blueprint: "+key);
+                if(!_content.Blueprints.TryGet(key,out var blueprint))throw Missing("summonBlueprints",key,path+".parameters.blueprint","Unknown summon blueprint: "+key);
                 CheckId(node,path,_summons,"summon");
                 _content.Dependencies.Add(_graph.ContentKey,ContentDependencies.Skill(blueprint.SkillKey));
                 _content.Summons.Register(new SummonDefinition
@@ -318,8 +318,13 @@ namespace Combat.Config
         {string value=p.Choice("feedback","skill","skill","none","light","confirm","heavy","finisher");return value=="skill"?HitFeedbackLevel.None:(HitFeedbackLevel)Array.IndexOf(new[]{"none","light","confirm","heavy","finisher"},value);}
         DurationSpec Buff(string id,string path)
         {
-            if(!_content.Buffs.TryGet(id,out var buff))throw new ContentValidationException(path,"Unknown Buff identity: "+id);
+            if(!_content.Buffs.TryGet(id,out var buff))throw Missing("buffs",id,path,"Unknown Buff identity: "+id);
             _content.Dependencies.Add(_graph.ContentKey,ContentDependencies.Buff(id));return buff;
+        }
+        ContentValidationException Missing(string kind,string id,string path,string message)
+        {
+            _content.MissingDependency?.Invoke(kind,id);
+            return new ContentValidationException(path,message);
         }
         static void CheckId(SkillNodeDocument node, string path, HashSet<int> ids, string type)
         {

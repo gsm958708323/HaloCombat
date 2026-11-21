@@ -21,9 +21,16 @@ internal static class PublicationFiles
         using(var session=new PublishedSkillSession())session.Replace(result.ToDictionary(p=>p.Key,p=>SkillPublicationJson.Write(p.Value)));
         return result;
     }
-    public static string LoadWarning(string directory)
+    public static string LoadWarning(string directory,string publishedSlot,string projectId)
     {
-        try{using var session=new PublishedSkillSession();session.Replace(Read(directory));return null;}
+        var slots=Read(directory);
+        string otherSlot=publishedSlot=="f6"?"f7":"f6";
+        try
+        {
+            if(slots.TryGetValue(otherSlot,out var other)&&SkillPublicationJson.Read(other).Document.Project.Id!=projectId)
+                return "两槽来自不同工程。请在当前工作区选择技能，重新发布到 "+otherSlot.ToUpperInvariant()+"；完成后再在 Unity SkillLab 载入两槽。";
+            using var session=new PublishedSkillSession();session.Replace(slots);return null;
+        }
         catch(ContentValidationException error){return "当前磁盘两槽暂不能共同载入："+error.Message+"。同工程共享内容修改后，请点击“同步两槽”。";}
     }
 }

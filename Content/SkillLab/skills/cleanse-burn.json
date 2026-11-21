@@ -9,10 +9,6 @@
       "kind": "target",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 0.0,
-        "y": 80.0
-      },
       "parameters": {
         "mode": "nearest",
         "range": 20
@@ -23,10 +19,6 @@
       "kind": "cast",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 270.0,
-        "y": 80.0
-      },
       "parameters": {
         "mode": "instant",
         "cost": 10,
@@ -42,10 +34,6 @@
       "kind": "delivery",
       "runtimeId": 5020,
       "enabled": true,
-      "position": {
-        "x": 540.0,
-        "y": 80.0
-      },
       "parameters": {
         "mode": "target",
         "recipient": "target"
@@ -56,10 +44,6 @@
       "kind": "dispel",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 810.0,
-        "y": 80.0
-      },
       "parameters": {
         "mode": "buff",
         "buff": "burn",

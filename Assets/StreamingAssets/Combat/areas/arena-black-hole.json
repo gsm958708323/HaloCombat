@@ -8,10 +8,6 @@
       "kind": "delivery",
       "runtimeId": 4103,
       "enabled": true,
-      "position": {
-        "x": 0.0,
-        "y": 80.0
-      },
       "parameters": {
         "mode": "area",
         "persistent": true,
@@ -28,10 +24,6 @@
       "kind": "impact",
       "runtimeId": 0,
       "enabled": true,
-      "position": {
-        "x": 300.0,
-        "y": 80.0
-      },
       "parameters": {
         "mode": "pull",
         "center": "point",

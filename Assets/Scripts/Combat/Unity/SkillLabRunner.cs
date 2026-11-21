@@ -11,6 +11,7 @@ namespace Combat.Unity
     public sealed class SkillLabRunner : MonoBehaviour
     {
         readonly PublishedSkillSession _publication = new PublishedSkillSession();
+        readonly SkillLabHud _hud = new SkillLabHud();
         readonly SimulationClock _clock = new SimulationClock(SkillSimulation.Step, 12);
         string _directory;
         KeyCode _heldKey;
@@ -30,6 +31,12 @@ namespace Combat.Unity
         public IReadOnlyDictionary<string,RuntimeViewDefinition> Views=>_publication.Simulation?.Views;
         public IReadOnlyDictionary<string,string> SlotSkills=>_publication.Slots;
         public IReadOnlyDictionary<string,string> SlotRevisions=>_publication.SlotRevisions;
+        public SkillAimPreview AimPreview { get; private set; }
+        public bool PointerInWorld { get; private set; }
+        public bool ShowRanges => _hud.Ranges;
+        public bool ShowTrajectories => _hud.Trajectories;
+        public bool ShowDamageNumbers => _hud.DamageNumbers;
+        public bool HasDifferentSlotLayouts => !ReplayMode && _publication.HasDifferentSlotLayouts;
         public bool PendingPublication {get;private set;}
         public bool ReplayMode {get;private set;}
         public SkillReplayComparison ReplayComparison {get;private set;}
@@ -55,8 +62,13 @@ namespace Combat.Unity
                     if (File.Exists(path)) slots.Add(slot, File.ReadAllText(path));
                 }
                 _publication.ValidateViews=UnityActorResources.Validate;_publication.Replace(slots);
-                _heldKey = KeyCode.None; _heldMouse = false;
-                _clock.Reset(); Generation++; CurrentSlot = null; LastLoadError = null;
+                _heldKey = KeyCode.None;
+                _heldMouse = false;
+                _clock.Reset();
+                Generation++;
+                CurrentSlot = _publication.Slots.ContainsKey("f6") ? "f6" : "f7";
+                AimPreview = null;
+                LastLoadError = null;
                 Snapshot = _publication.Simulation.Snapshot();
                 _loadedFiles=FilesStamp();PendingPublication=false;
                 if(ReplayMode)AutoAdvance=_resumeAutoAdvance;
@@ -70,6 +82,20 @@ namespace Combat.Unity
                 _status = LastLoadError;
                 return false;
             }
+        }
+
+        public bool SelectSlot(string slot)
+        {
+            if (ReplayMode || !_publication.Slots.ContainsKey(slot)) return false;
+            CurrentSlot = slot;
+            RefreshAimPreview();
+            return true;
+        }
+
+        public void TogglePause()
+        {
+            Paused = !Paused;
+            _clock.Reset();
         }
 
         public SkillCastResult CastSlot(string slot, float x, float z)
@@ -125,17 +151,17 @@ namespace Combat.Unity
             if(Time.unscaledTime>=_nextFileCheck){_nextFileCheck=Time.unscaledTime+.5f;CheckPublications();}
             UpdateAim();
             foreach (var key in new[] { KeyCode.F6, KeyCode.F7 })
-                if (Input.GetKeyDown(key))
+                if (PointerInWorld && Input.GetKeyDown(key))
                 { var result = CastSlot(key == KeyCode.F6 ? "f6" : "f7", _aim.x, _aim.y); if (result != null && result.Accepted) _heldKey = key; }
             if (_heldKey != KeyCode.None && Input.GetKeyUp(_heldKey)) ReleaseCast();
             if (Input.GetKeyDown(KeyCode.F5)) ReloadPublished();
-            if (Input.GetKeyDown(KeyCode.Space)) { Paused = !Paused; _clock.Reset(); }
-            if (Input.GetMouseButtonDown(0))
+            if (Input.GetKeyDown(KeyCode.Space)) TogglePause();
+            if (PointerInWorld && Input.GetMouseButtonDown(0))
             { var result = CastSlot(CurrentSlot, _aim.x, _aim.y); _heldMouse = result != null && result.Accepted; }
             if (_heldMouse && Input.GetMouseButtonUp(0)) ReleaseCast();
             if (AutoAdvance&&!Paused) SetMovement(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
             if (!AutoAdvance || Paused || _publication.Simulation == null) return;
-            int steps = _clock.BeginFrame(Time.unscaledDeltaTime);
+            int steps = _clock.BeginFrame(Time.unscaledDeltaTime * _hud.Rate);
             if (steps > 0) StepLogicForTests(steps);
         }
         public void CheckPublications()
@@ -151,6 +177,7 @@ namespace Combat.Unity
                 if(!ReplayMode)_resumeAutoAdvance=AutoAdvance;
                 ReplayComparison=comparison;
                 _clock.Reset();_heldKey=KeyCode.None;_heldMouse=false;Generation++;CurrentSlot="f6";ReplayMode=true;PendingPublication=false;LastLoadError=null;
+                AimPreview = null;
                 Snapshot=_publication.Simulation.Snapshot();AutoAdvance=false;_status="Replay matched "+Snapshot.Step+" steps / "+ReplayComparison.Values+" values";return true;
             }
             catch(Exception error) when(error is IOException||error is UnauthorizedAccessException||error is ContentValidationException)
@@ -165,38 +192,28 @@ namespace Combat.Unity
         void UpdateAim()
         {
             var camera = Camera.main;
-            if (camera != null)
+            PointerInWorld = false;
+            Vector2 pointer = Input.mousePosition;
+            if (camera != null && camera.pixelRect.Contains(pointer) && !SkillLabHud.PointerOver)
             {
-                var ray = camera.ScreenPointToRay(Input.mousePosition);
+                var ray = camera.ScreenPointToRay(pointer);
                 if (new Plane(Vector3.up, Vector3.zero).Raycast(ray, out float distance))
-                { var point = ray.GetPoint(distance); _aim = new Vector2(point.x, point.z); }
+                {
+                    var point = ray.GetPoint(distance);
+                    _aim = new Vector2(point.x, point.z);
+                    PointerInWorld = true;
+                }
             }
-            if(AutoAdvance&&!Paused)_publication.Simulation?.Execute(new SkillSimulationCommand{Kind="aim",X=_aim.x,Z=_aim.y});
+            RefreshAimPreview();
+            if (PointerInWorld && AutoAdvance && !Paused)
+                _publication.Simulation?.Execute(new SkillSimulationCommand { Kind = "aim", X = _aim.x, Z = _aim.y });
         }
+
+        void RefreshAimPreview() => AimPreview = _publication.Simulation?.InspectAim(SkillId, _aim.x, _aim.y);
 
         void OnApplicationFocus(bool focused) { if (!focused&&!ReplayMode) CancelInput(); }
 
-        void OnGUI()
-        {
-            GUILayout.BeginArea(new Rect(12, 12, 520, 270), GUI.skin.box);
-            GUILayout.Label("HaloCombat / JSON Skill Lab");
-            GUILayout.Label("F6 / F7: cast slot | Mouse: cast selected slot");
-            GUILayout.Label("F5: reload publications + reset | Space: pause");
-            GUILayout.Label(_status);
-            foreach(var slot in SlotSkills)GUILayout.Label(slot.Key.ToUpperInvariant()+" loaded: "+slot.Value+" / "+SlotRevisions[slot.Key].Substring(0,8));
-            if(PendingPublication)GUILayout.Label("New publication on disk. Press F5 or Reload to apply.");
-            if(GUILayout.Button("Reload published F6 / F7"))ReloadPublished();
-            if (Snapshot != null)
-            {
-                GUILayout.Label("Version " + Revision.Substring(0, 12) + " / " + SkillId);
-                GUILayout.Label("Time " + Snapshot.Time.ToString("F2") + "s / Energy " + Snapshot.Energy.ToString("F1"));
-                GUILayout.Label("Ammo "+Snapshot.Ammo+" / "+Snapshot.AmmoCapacity);
-                if (Snapshot.Charging) GUILayout.Label("Charging " + (Snapshot.ChargeProgress * 100).ToString("F0") + "% / " + Snapshot.CastPower.ToString("F2") + "x");
-                GUILayout.Label("Casts " + Snapshot.Statistics.Casts + " / Projectiles " + Snapshot.Statistics.Projectiles
-                    + " / Hits " + Snapshot.Statistics.Hits + " / Damage " + Snapshot.Statistics.Damage.ToString("F1"));
-            }
-            GUILayout.EndArea();
-        }
+        void OnGUI() => _hud.Draw(this, _status);
 
         void OnDestroy() { _publication.Dispose(); Snapshot = null; }
     }

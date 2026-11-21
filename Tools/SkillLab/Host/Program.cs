@@ -4,13 +4,20 @@ using System.Collections.Concurrent;
 
 var paths=new HostPaths(args,Directory.GetCurrentDirectory(),AppContext.BaseDirectory);var root=paths.Root;
 if(args.Contains("--upgrade-effects")){EffectNodeMigration.Run(root);return;}
-if(args.Contains("--split-content"))
+if(args.Contains("--split-content")||args.Contains("--migrate-tracked-layout"))
 {
-    foreach(var relative in new[]{"Content/SkillLab/project.json","Assets/StreamingAssets/Combat/project.json","Tools/SkillLab/.local/project.json"})
+    foreach(var relative in new[]{"Content/SkillLab/project.json","Assets/StreamingAssets/Combat/project.json"})
     {
         string path=Path.Combine(root,relative);if(!File.Exists(path))continue;
-        var project=SkillProjectFiles.Read(path);string before=SkillProjectJson.Write(project);SkillProjectFiles.Write(path,project);
-        if(before!=SkillProjectJson.Write(SkillProjectFiles.Read(path)))throw new InvalidOperationException("Content changed while splitting: "+relative);
+        ProjectFileTransaction.Locked(path,()=>
+        {
+            var source=SkillProjectFiles.ReadAuthoring(path);
+            SkillProjectFiles.Write(path,source.Project,source.MissingPositions);
+            var migrated=SkillProjectFiles.ReadAuthoring(path);
+            if(SkillProjectJson.Write(source.Project)!=SkillProjectJson.Write(migrated.Project)||!source.MissingPositions.SetEquals(migrated.MissingPositions))
+                throw new InvalidOperationException("Content changed while splitting: "+relative);
+            return true;
+        });
         Console.WriteLine("Split "+relative+" -> "+SkillProjectFiles.ReferencedPaths(path).Length+" modules");
     }
     return;
@@ -34,14 +41,10 @@ app.Use(async(context,next)=>
     await next();
 });
 var sessions=new ConcurrentDictionary<string,SkillSimulation>();
-var dataDirectory=paths.Data;
-Directory.CreateDirectory(dataDirectory);
-var projectFile=Path.Combine(dataDirectory,"project.json");
 var exampleFile=Path.Combine(root,"Content/SkillLab/project.json");
-if(!File.Exists(projectFile))
-{var initial=SkillProjectFiles.Read(exampleFile);initial.Preview=SkillPreviewDefaults.Create();SkillProjectFiles.Write(projectFile,initial);}
+var runtimeFile=Path.Combine(root,"Assets/StreamingAssets/Combat/project.json");
+var workspaces=new WorkspaceStores(paths.Data,exampleFile,runtimeFile);
 var jsonLock=new SemaphoreSlim(1);
-var projectStore=new ProjectFileStore(projectFile);
 app.Use(async(context,next)=>
 {
     // Local tool: reject cross-site writes, including requests from a public site's loopback fetch.
@@ -57,19 +60,28 @@ app.Use(async(context,next)=>
 });
 app.MapGet("/api/project",async(HttpContext context)=>
 {
-    var snapshot=await projectStore.Read();context.Response.Headers.ETag=snapshot.ETag;context.Response.Headers.CacheControl="no-store";
+    string workspace=workspaces.Resolve(context.Request.Query["workspace"]);
+    var snapshot=await workspaces.Get(workspace).Read();
+    context.Response.Headers.ETag=snapshot.ETag;
+    context.Response.Headers["X-Workspace"]=workspace;
+    if(snapshot.NeedsLayout)context.Response.Headers["X-Needs-Layout"]="true";
+    context.Response.Headers.CacheControl="no-store";
     return Results.Text(snapshot.Json,"application/json");
 });
+app.MapGet("/api/project/copy-source",(HttpContext context)=>
+{
+    string workspace=workspaces.Resolve(context.Request.Query["workspace"]);
+    context.Response.Headers.CacheControl="no-store";
+    return ImportCandidate(workspaces.Get(workspace).PrepareCopy(context.Request.Query["skillId"]));
+});
 app.MapGet("/api/examples",()=>Results.Text(SkillProjectJson.Write(SkillProjectFiles.Read(exampleFile)),"application/json"));
-var runtimeFile=Path.Combine(root,"Assets/StreamingAssets/Combat/project.json");
 app.MapGet("/api/runtime",()=>Results.Text(SkillProjectJson.Write(SkillProjectFiles.Read(runtimeFile)),"application/json"));
 app.MapPost("/api/runtime/publish",async(HttpContext context)=>
 {
-    var project=await ReadProject(context);var compiled=CombatContentCompiler.Compile(project);
-    if(compiled.Runtime==null||project.Runtime.Actors.Length==0)throw new ContentValidationException("$.runtime.actors","正式内容需要角色定义。");
-    project.Editor=null;
+    if(context.Request.Query["workspace"]!=WorkspaceStores.Arena)
+        throw new ProjectVersionException("只有 Arena 工作区可以发布正式内容。",403);
     await jsonLock.WaitAsync();
-    try{SkillProjectFiles.Write(runtimeFile,project);}
+    try{workspaces.Get(WorkspaceStores.Arena).PublishArena(context.Request.Headers.IfMatch,runtimeFile);}
     finally{jsonLock.Release();}
     return Results.Ok(new{message="正式JSON已发布；Arena按F5载入，演示场景按F1重建，训练场点击重置。"});
 });
@@ -77,9 +89,11 @@ app.MapGet("/api/templates/{id}",(string id)=>
 {var project=SkillProjectFiles.Read(exampleFile);return Results.Text(SkillProjectJson.Write(SkillProjectJson.SelectTemplate(project,id)),"application/json");});
 app.MapPost("/api/project",async(HttpContext context)=>
 {
+    string workspace=workspaces.Resolve(context.Request.Query["workspace"]);
     var document=await ReadProject(context);
-    var snapshot=await projectStore.Save(document,context.Request.Headers.IfMatch);
+    var snapshot=await workspaces.Get(workspace).Save(document,context.Request.Headers.IfMatch);
     context.Response.Headers.ETag=snapshot.ETag;
+    context.Response.Headers["X-Workspace"]=workspace;
     return Results.Ok(new{saved=true});
 });
 app.MapPost("/api/document/validate",async(HttpContext context)=>
@@ -90,11 +104,9 @@ app.MapPost("/api/document/import",async(HttpContext context)=>
     if(request==null||!request.TryGetValue("text",out var text))throw new ContentValidationException("$.text","Import file text is required.");
     bool previewDetachment=context.Request.Query["detachMissingReferences"]=="preview";
     var imported=previewDetachment?SkillJsonTransfer.PreviewAuthoringImport(text):SkillJsonTransfer.Import(text);
-    string json=SkillProjectJson.Write(imported.Project);
-    bool needsLayout=imported.NeedsLayout;
     return previewDetachment
-        ?Results.Ok(new{json,needsLayout,detachedReferences=imported.DetachedReferences})
-        :Results.Ok(new{json,needsLayout});
+        ?ImportCandidate(imported)
+        :Results.Ok(new{json=SkillProjectJson.Write(imported.Project),needsLayout=imported.NeedsLayout});
 });
 app.MapPost("/api/export/{kind}",async(string kind,HttpContext context)=>
 {var project=await ReadProject(context);return Results.Ok(SkillJsonTransfer.Export(project,kind,context.Request.Query["skillId"]));});
@@ -172,9 +184,15 @@ app.MapPost("/api/publish/{slot}",async(string slot,HttpContext context)=>
     var directory=paths.Publications;Directory.CreateDirectory(directory);
     var path=Path.Combine(directory,slot+".json");
     await jsonLock.WaitAsync();
-    try {var temporary=path+".tmp";await File.WriteAllTextAsync(temporary,SkillPublicationJson.Write(publication));File.Move(temporary,path,true);}
+    string warning;
+    try
+    {
+        var temporary=path+".tmp";
+        await File.WriteAllTextAsync(temporary,SkillPublicationJson.Write(publication));
+        File.Move(temporary,path,true);
+        warning=PublicationFiles.LoadWarning(directory,slot,publication.Project.Id);
+    }
     finally{jsonLock.Release();}
-    string warning=PublicationFiles.LoadWarning(directory);
     return Results.Ok(new{written=true,path,revision=publication.Revision,skillId=publication.SkillId,
         message=warning??"已发布到 "+slot.ToUpperInvariant()+"；Unity SkillLab 场景按 F5 重载，再按 F6/F7 施放。"});
 });
@@ -188,6 +206,9 @@ if(Directory.Exists(dist))
 }
 app.Lifetime.ApplicationStopping.Register(()=>{foreach(var pair in sessions)lock(pair.Value)pair.Value.Dispose();});
 await app.RunAsync();
+
+static IResult ImportCandidate(SkillJsonImport imported)
+    =>Results.Ok(new{json=SkillProjectJson.Write(imported.Project),needsLayout=imported.NeedsLayout,detachedReferences=imported.DetachedReferences});
 
 static async Task<SkillProjectDocument> ReadProject(HttpContext context)
     =>SkillProjectJson.Read(await new StreamReader(context.Request.Body).ReadToEndAsync());

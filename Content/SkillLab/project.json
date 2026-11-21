@@ -56,7 +56,8 @@
       "skills/behavior-pierce.json",
       "skills/behavior-chain.json",
       "skills/flight-time.json",
-      "skills/flight-distance.json"
+      "skills/flight-distance.json",
+      "skills/bleed-validation.json"
     ],
     "timelines": [
       "timelines/shared-impact-shot.json"
@@ -67,12 +68,14 @@
     "buffs": [
       "buffs/burn.json",
       "buffs/battle-rage.json",
-      "buffs/aura-slow.json"
+      "buffs/aura-slow.json",
+      "buffs/bleed-demo.json"
     ],
     "summonBlueprints": [
       "summonBlueprints/echo-gunner.json",
       "summonBlueprints/echo-blade.json"
     ],
-    "preview": "preview.json"
+    "preview": "preview.json",
+    "editor": "editor.json"
   }
 }

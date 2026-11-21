@@ -136,11 +136,16 @@ export function useGraphAuthoring(document:ReturnType<typeof useProjectDocument>
     else if(command&&key==='d'){event.preventDefault();copy();paste();}
     else if(key==='delete'||key==='backspace'){event.preventDefault();remove(selectedNodes,selectedEdges);}
   }
-  function moved(viewport:Viewport){
+  function moved(viewport:Viewport,userInitiated:boolean){
     setZoom(viewport.zoom);
-    if(!restoring.current&&restored.current===keyString&&key.id)document.edit(p=>saveViewport(p,key,viewport),false);
+    // React Flow may finish the initial fit after the restore promise resolves.
+    // Only gestures and the explicit Fit action persist viewport metadata.
+    if(userInitiated&&!restoring.current&&restored.current===keyString&&key.id)document.edit(p=>saveViewport(p,key,viewport),false);
   }
-  return {nodes,edges,graph,selectedNodes,selectedEdges,zoom,flow,editGraph,nodeChanges,edgeChanges,connect,add,copy,paste,remove,layout,keyDown,moved,
+  async function fitGraph(){
+    if(await flow.fitView({padding:.15}))moved(flow.getViewport(),true);
+  }
+  return {nodes,edges,graph,selectedNodes,selectedEdges,zoom,flow,editGraph,nodeChanges,edgeChanges,connect,add,copy,paste,remove,layout,keyDown,moved,fitGraph,
     moving:(viewport:Viewport)=>setZoom(viewport.zoom),canPaste:!!clipboard.current,
     reconnectStart:(id:string)=>{reconnecting.current=id;},reconnectEnd:()=>{reconnecting.current=undefined;},
     validConnection:(link:Connection|Edge)=>{try{if(!graph)return false;connectGraph(graph,link,reconnecting.current??'validation',!!reconnecting.current);return true;}catch{return false;}}};

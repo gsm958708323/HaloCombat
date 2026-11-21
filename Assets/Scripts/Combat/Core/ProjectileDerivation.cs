@@ -9,8 +9,18 @@ namespace Combat.Core
         public readonly int CastId;
         public readonly bool SuppressedEvents;
         public readonly EntityId Caster;
-        public SkillOrigin(SkillNodeId skill,int castId,bool suppressedEvents=false,EntityId caster=default){Skill=skill;CastId=castId;SuppressedEvents=suppressedEvents;Caster=caster;}
-        public SkillOrigin WithoutEvents()=>new SkillOrigin(Skill,CastId,true,Caster);
+        // Carried by spawned bodies so delayed impacts keep their periodic trigger provenance.
+        public readonly int PeriodicBuffId;
+        public SkillOrigin(SkillNodeId skill, int castId, bool suppressedEvents = false, EntityId caster = default, int periodicBuffId = 0)
+        {
+            Skill = skill;
+            CastId = castId;
+            SuppressedEvents = suppressedEvents;
+            Caster = caster;
+            PeriodicBuffId = periodicBuffId;
+        }
+        public SkillOrigin WithoutEvents() => new SkillOrigin(Skill, CastId, true, Caster, PeriodicBuffId);
+        public SkillOrigin FromBuffPeriod(int buffId) => new SkillOrigin(Skill, CastId, SuppressedEvents, Caster, buffId);
     }
 
     public enum ChainTargetMode {Nearest,Random}

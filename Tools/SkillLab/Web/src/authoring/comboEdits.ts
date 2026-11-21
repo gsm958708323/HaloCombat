@@ -8,7 +8,7 @@ export function withComboRuntime(project:Project):Project{
   const cues=new Map<number,{id:number;key:string;kind:string;lifetime:number}>();
   const graphs=[...project.skills,...(project.buffs??[]),...(project.timelines??[]),...(project.projectiles??[]),...(project.areas??[])];
   for(const graph of graphs)for(const node of graph.nodes){
-    const id=Number(node.kind==='cue'?node.parameters.id:node.parameters.cueId);
+    const id=Number(node.kind==='cue'?(node.parameters.id??1):node.parameters.cueId);
     if(Number.isInteger(id)&&id>0)cues.set(id,{id,key:'cue-'+id,kind:'cube',lifetime:.45});
   }
   return {...project,runtime:{motor:{gravity:-20,jumpSpeed:6,airSteer:.35,groundY:0,stickDeadzone:.25},actors:[],combos:[],cues:[...cues.values()]}};

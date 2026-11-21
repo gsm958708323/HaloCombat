@@ -10,23 +10,25 @@ namespace Combat.Unity
         {
             public float X,Z,Amount,Started;
             public bool Critical;
+            public string PeriodicBuff;
         }
         readonly List<Number> _numbers=new List<Number>();
         int _lastSequence;
-        GUIStyle _normal,_critical;
+        GUIStyle _normal, _critical, _periodic;
         public int Count=>_numbers.Count;
         public void Clear(){_numbers.Clear();_lastSequence=0;}
-        public void Update(SkillSimulationSnapshot snapshot)
+        public void Update(SkillSimulationSnapshot snapshot, bool visible)
         {
             float now=Time.unscaledTime;
-            _numbers.RemoveAll(n=>now-n.Started>=1.1f);
+            if (visible) _numbers.RemoveAll(n => now - n.Started >= 1.1f);
+            else _numbers.Clear();
             foreach(var e in snapshot.Events)
             {
                 if(e.Sequence<=_lastSequence)continue;_lastSequence=e.Sequence;
-                if(e.Damage==null||(e.Kind!="damage"&&e.Kind!="critical")||!e.TargetX.HasValue||!e.TargetZ.HasValue)continue;
+                if(!visible||e.Damage==null||(e.Kind!="damage"&&e.Kind!="critical")||!e.TargetX.HasValue||!e.TargetZ.HasValue)continue;
                 float amount=e.Damage.Absorbed+e.Damage.HpLost;if(amount<=0)continue;
                 if(_numbers.Count==96)_numbers.RemoveAt(0);
-                _numbers.Add(new Number{X=e.TargetX.Value,Z=e.TargetZ.Value,Amount=amount,Critical=e.Kind=="critical",Started=now});
+                _numbers.Add(new Number{X=e.TargetX.Value,Z=e.TargetZ.Value,Amount=amount,Critical=e.Kind=="critical",PeriodicBuff=e.PeriodicBuff,Started=now});
             }
         }
         public void Draw(Camera camera)
@@ -35,11 +37,15 @@ namespace Combat.Unity
             {
                 _normal=new GUIStyle(GUI.skin.label){alignment=TextAnchor.MiddleCenter,fontStyle=FontStyle.Bold,fontSize=18};_normal.normal.textColor=Color.white;
                 _critical=new GUIStyle(_normal){fontSize=23};_critical.normal.textColor=new Color(1,.76f,.25f);
+                _periodic=new GUIStyle(_normal){fontSize=17};_periodic.normal.textColor=new Color(1,.44f,.40f);
             }
             foreach(var n in _numbers)
             {
                 float age=Time.unscaledTime-n.Started;var point=camera.WorldToScreenPoint(new Vector3(n.X,1.4f,n.Z));
-                GUI.Label(new Rect(point.x-60,Screen.height-point.y-35-age*35,120,35),n.Amount.ToString("0.#")+(n.Critical?"!":""),n.Critical?_critical:_normal);
+                var label = n.Amount.ToString("0.#") + (n.Critical ? "!" : "");
+                if (n.PeriodicBuff != null) label += " · " + n.PeriodicBuff;
+                GUI.Label(new Rect(point.x - 110, Screen.height - point.y - 35 - age * 35, 220, 35), label,
+                    n.PeriodicBuff != null ? _periodic : n.Critical ? _critical : _normal);
             }
         }
     }

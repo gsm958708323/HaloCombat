@@ -280,13 +280,13 @@ test('content delete and rename undo restore all references and graph selection'
   history.edit(edits.deleteContent(history.current,'buff','fire','battle-rage'));history.undo();assert(history.current.buffs.some(b=>b.id==='fire'));history.undo();assert.equal(history.current.editor.selectedBuff,'burn');assert(edits.referencesTo(history.current,'buff','burn').length>0);
 });
 test('save acknowledges its immutable request snapshot and leaves subsequent edits dirty',async()=>{
-  const p=example(),saving=new ProjectSave(p,'old');let complete;let sent;
+  const p=example(),saving=new ProjectSave(p,'old','lab');let complete;let sent;
   const request=saving.save({...p,name:'sent'},(snapshot,etag)=>{assert.equal(etag,'old');sent=snapshot;return new Promise(resolve=>complete=resolve);});
   assert(saving.saving);const latest={...p,name:'newer'};complete('new');await request;
   assert.equal(sent.name,'sent');assert(saving.dirty(latest));assert(!saving.dirty({...p,name:'sent'}));assert(!saving.saving);
 });
 test('concurrent saves are refused and failed writes retain the previous baseline and ETag',async()=>{
-  const p=example(),saving=new ProjectSave(p,'disk');let reject;
+  const p=example(),saving=new ProjectSave(p,'disk','lab');let reject;
   const request=saving.save({...p,name:'unsaved'},()=>new Promise((_,failure)=>reject=failure));await assert.rejects(()=>saving.save(p),/正在保存/);
   reject(new Error('conflict'));await assert.rejects(()=>request,/conflict/);assert(saving.failure.includes('conflict'));assert(saving.dirty({...p,name:'unsaved'}));
   await saving.save({...p,name:'retry'},async(_,etag)=>{assert.equal(etag,'disk');return 'next';});assert.equal(saving.failure,'');assert(!saving.dirty({...p,name:'retry'}));

@@ -26,5 +26,1134 @@
       ],
       "positions": []
     }
+  ],
+  "nodePositions": [
+    {
+      "kind": "skills",
+      "graphId": "g1",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "g1",
+      "nodeId": "cast",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "g1",
+      "nodeId": "melee",
+      "x": 900.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "g1",
+      "nodeId": "stun",
+      "x": 1500.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "g1",
+      "nodeId": "knockback",
+      "x": 1800.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "g1",
+      "nodeId": "slash-cue",
+      "x": 2700.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "g1",
+      "nodeId": "fireball",
+      "x": 600.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "g1",
+      "nodeId": "fire-damage",
+      "x": 1200.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "g1",
+      "nodeId": "burn",
+      "x": 2100.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "g1",
+      "nodeId": "hit-cue",
+      "x": 2400.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "g2",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "g2",
+      "nodeId": "cast",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "g2",
+      "nodeId": "g2-cue",
+      "x": 600.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "g2",
+      "nodeId": "ground",
+      "x": 900.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "g2",
+      "nodeId": "burn",
+      "x": 1200.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "dodge",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "dodge",
+      "nodeId": "cast",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "homing",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "homing",
+      "nodeId": "cast",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "homing",
+      "nodeId": "homing",
+      "x": 600.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "homing",
+      "nodeId": "damage",
+      "x": 900.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "homing",
+      "nodeId": "stun",
+      "x": 1200.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "homing",
+      "nodeId": "knock",
+      "x": 1500.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "aura",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "aura",
+      "nodeId": "cast",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "aura",
+      "nodeId": "aura",
+      "x": 600.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "aura",
+      "nodeId": "slow",
+      "x": 900.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "aura",
+      "nodeId": "dispel",
+      "x": 1200.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "summon-melee",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "summon-melee",
+      "nodeId": "cast",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "summon-melee",
+      "nodeId": "summon",
+      "x": 600.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-ammo-shot",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-ammo-shot",
+      "nodeId": "cast",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-ammo-shot",
+      "nodeId": "projectile",
+      "x": 600.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-ammo-shot",
+      "nodeId": "muzzle-cue",
+      "x": 600.0,
+      "y": 760.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-reload-ammo",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-reload-ammo",
+      "nodeId": "cast",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-reload-ammo",
+      "nodeId": "refill",
+      "x": 600.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-tracked-shot",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-tracked-shot",
+      "nodeId": "cast",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-tracked-shot",
+      "nodeId": "projectile",
+      "x": 600.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-tracked-shot",
+      "nodeId": "damage",
+      "x": 900.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-tracked-shot",
+      "nodeId": "damage-hurt",
+      "x": 1200.0,
+      "y": 320.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-tracked-shot",
+      "nodeId": "muzzle-cue",
+      "x": 600.0,
+      "y": 760.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-tracked-shot",
+      "nodeId": "hit-cue",
+      "x": 1400.0,
+      "y": 520.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-tracked-shot",
+      "nodeId": "expiry-cue",
+      "x": 900.0,
+      "y": 1000.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-projectile-warp",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-projectile-warp",
+      "nodeId": "cast",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-projectile-warp",
+      "nodeId": "warp",
+      "x": 600.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-barrel",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-barrel",
+      "nodeId": "cast",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-barrel",
+      "nodeId": "barrel",
+      "x": 600.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-barrel",
+      "nodeId": "blast",
+      "x": 900.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-barrel",
+      "nodeId": "damage",
+      "x": 1200.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-barrel",
+      "nodeId": "chain",
+      "x": 900.0,
+      "y": 460.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-barrel",
+      "nodeId": "explosion",
+      "x": 900.0,
+      "y": 740.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-barrel",
+      "nodeId": "hit-cue",
+      "x": 1500.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-barrel",
+      "nodeId": "damage-hurt",
+      "x": 1500.0,
+      "y": 320.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-controlled-shot",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-controlled-shot",
+      "nodeId": "cast",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-controlled-shot",
+      "nodeId": "shot",
+      "x": 600.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-controlled-shot",
+      "nodeId": "damage",
+      "x": 900.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-absorbing-orb",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-absorbing-orb",
+      "nodeId": "orb",
+      "x": 600.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-absorbing-orb",
+      "nodeId": "damage",
+      "x": 900.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-absorbing-orb",
+      "nodeId": "hurt",
+      "x": 1200.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-absorbing-orb",
+      "nodeId": "cast",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-absorbing-orb",
+      "nodeId": "muzzle-cue",
+      "x": 600.0,
+      "y": 760.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-absorbing-orb",
+      "nodeId": "hit-cue",
+      "x": 1400.0,
+      "y": 520.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-combo-second",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-combo-second",
+      "nodeId": "cast",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-combo-finisher",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-combo-finisher",
+      "nodeId": "cast",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-double-shot",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-double-shot",
+      "nodeId": "cast",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-double-shot",
+      "nodeId": "projectile",
+      "x": 600.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-double-shot",
+      "nodeId": "muzzle-cue",
+      "x": 600.0,
+      "y": 760.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-homing-shot",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-homing-shot",
+      "nodeId": "cast",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-homing-shot",
+      "nodeId": "projectile",
+      "x": 600.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-homing-shot",
+      "nodeId": "muzzle-cue",
+      "x": 600.0,
+      "y": 760.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-enemy-shot",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-enemy-shot",
+      "nodeId": "cast",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-enemy-shot",
+      "nodeId": "projectile",
+      "x": 600.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-returning-shot",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-returning-shot",
+      "nodeId": "cast",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-returning-shot",
+      "nodeId": "projectile",
+      "x": 600.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-returning-shot",
+      "nodeId": "muzzle-cue",
+      "x": 600.0,
+      "y": 760.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-bomb-shot",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-bomb-shot",
+      "nodeId": "cast",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-bomb-shot",
+      "nodeId": "projectile",
+      "x": 600.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-roll",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-roll",
+      "nodeId": "cast",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-roll",
+      "nodeId": "roll-start",
+      "x": 600.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-roll",
+      "nodeId": "guard",
+      "x": 600.0,
+      "y": 400.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-roll",
+      "nodeId": "roll-stop",
+      "x": 600.0,
+      "y": 650.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "arena-roll",
+      "nodeId": "roll-end",
+      "x": 900.0,
+      "y": 650.0
+    },
+    {
+      "kind": "timelines",
+      "graphId": "arena-confirmed-shot",
+      "nodeId": "projectile",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "timelines",
+      "graphId": "arena-confirmed-shot",
+      "nodeId": "muzzle-cue",
+      "x": 600.0,
+      "y": 760.0
+    },
+    {
+      "kind": "projectiles",
+      "graphId": "arena-normal-projectile",
+      "nodeId": "projectile",
+      "x": 600.0,
+      "y": 80.0
+    },
+    {
+      "kind": "projectiles",
+      "graphId": "arena-normal-projectile",
+      "nodeId": "damage",
+      "x": 900.0,
+      "y": 80.0
+    },
+    {
+      "kind": "projectiles",
+      "graphId": "arena-normal-projectile",
+      "nodeId": "damage-hurt",
+      "x": 1200.0,
+      "y": 320.0
+    },
+    {
+      "kind": "projectiles",
+      "graphId": "arena-normal-projectile",
+      "nodeId": "vulnerable",
+      "x": 1500.0,
+      "y": 80.0
+    },
+    {
+      "kind": "projectiles",
+      "graphId": "arena-normal-projectile",
+      "nodeId": "hit-cue",
+      "x": 1400.0,
+      "y": 520.0
+    },
+    {
+      "kind": "projectiles",
+      "graphId": "arena-normal-projectile",
+      "nodeId": "expiry-cue",
+      "x": 900.0,
+      "y": 1000.0
+    },
+    {
+      "kind": "projectiles",
+      "graphId": "arena-confirmed-projectile",
+      "nodeId": "projectile",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "projectiles",
+      "graphId": "arena-confirmed-projectile",
+      "nodeId": "damage",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "projectiles",
+      "graphId": "arena-confirmed-projectile",
+      "nodeId": "vulnerable",
+      "x": 900.0,
+      "y": 80.0
+    },
+    {
+      "kind": "projectiles",
+      "graphId": "arena-confirmed-projectile",
+      "nodeId": "hit-cue",
+      "x": 600.0,
+      "y": 80.0
+    },
+    {
+      "kind": "projectiles",
+      "graphId": "arena-confirmed-projectile",
+      "nodeId": "projectile-pierce",
+      "x": 0.0,
+      "y": 340.0
+    },
+    {
+      "kind": "projectiles",
+      "graphId": "arena-enemy-projectile",
+      "nodeId": "projectile",
+      "x": 600.0,
+      "y": 80.0
+    },
+    {
+      "kind": "projectiles",
+      "graphId": "arena-enemy-projectile",
+      "nodeId": "damage",
+      "x": 900.0,
+      "y": 80.0
+    },
+    {
+      "kind": "projectiles",
+      "graphId": "arena-enemy-projectile",
+      "nodeId": "damage-hurt",
+      "x": 1200.0,
+      "y": 320.0
+    },
+    {
+      "kind": "projectiles",
+      "graphId": "arena-enemy-projectile",
+      "nodeId": "hit-cue",
+      "x": 1400.0,
+      "y": 520.0
+    },
+    {
+      "kind": "projectiles",
+      "graphId": "arena-enemy-projectile",
+      "nodeId": "expiry-cue",
+      "x": 900.0,
+      "y": 1000.0
+    },
+    {
+      "kind": "projectiles",
+      "graphId": "arena-homing-projectile",
+      "nodeId": "projectile",
+      "x": 600.0,
+      "y": 80.0
+    },
+    {
+      "kind": "projectiles",
+      "graphId": "arena-homing-projectile",
+      "nodeId": "damage",
+      "x": 900.0,
+      "y": 80.0
+    },
+    {
+      "kind": "projectiles",
+      "graphId": "arena-homing-projectile",
+      "nodeId": "damage-hurt",
+      "x": 1200.0,
+      "y": 320.0
+    },
+    {
+      "kind": "projectiles",
+      "graphId": "arena-homing-projectile",
+      "nodeId": "hit-cue",
+      "x": 1400.0,
+      "y": 520.0
+    },
+    {
+      "kind": "projectiles",
+      "graphId": "arena-homing-projectile",
+      "nodeId": "expiry-cue",
+      "x": 900.0,
+      "y": 1000.0
+    },
+    {
+      "kind": "projectiles",
+      "graphId": "arena-returning-projectile",
+      "nodeId": "projectile",
+      "x": 600.0,
+      "y": 80.0
+    },
+    {
+      "kind": "projectiles",
+      "graphId": "arena-returning-projectile",
+      "nodeId": "damage",
+      "x": 900.0,
+      "y": 80.0
+    },
+    {
+      "kind": "projectiles",
+      "graphId": "arena-returning-projectile",
+      "nodeId": "damage-hurt",
+      "x": 1200.0,
+      "y": 320.0
+    },
+    {
+      "kind": "projectiles",
+      "graphId": "arena-returning-projectile",
+      "nodeId": "return-burn",
+      "x": 1500.0,
+      "y": 80.0
+    },
+    {
+      "kind": "projectiles",
+      "graphId": "arena-returning-projectile",
+      "nodeId": "hit-cue",
+      "x": 1400.0,
+      "y": 520.0
+    },
+    {
+      "kind": "projectiles",
+      "graphId": "arena-returning-projectile",
+      "nodeId": "return-cue",
+      "x": 900.0,
+      "y": 1000.0
+    },
+    {
+      "kind": "projectiles",
+      "graphId": "arena-returning-projectile",
+      "nodeId": "projectile-pierce",
+      "x": 600.0,
+      "y": 340.0
+    },
+    {
+      "kind": "projectiles",
+      "graphId": "arena-bomb-projectile",
+      "nodeId": "projectile",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "projectiles",
+      "graphId": "arena-bomb-projectile",
+      "nodeId": "explosion",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "projectiles",
+      "graphId": "arena-bomb-projectile",
+      "nodeId": "delayed",
+      "x": 300.0,
+      "y": 480.0
+    },
+    {
+      "kind": "projectiles",
+      "graphId": "arena-bomb-projectile",
+      "nodeId": "impact-explosion",
+      "x": 600.0,
+      "y": 80.0
+    },
+    {
+      "kind": "areas",
+      "graphId": "arena-bomb-explosion",
+      "nodeId": "area",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "areas",
+      "graphId": "arena-bomb-explosion",
+      "nodeId": "damage",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "areas",
+      "graphId": "arena-bomb-explosion",
+      "nodeId": "hurt",
+      "x": 600.0,
+      "y": 80.0
+    },
+    {
+      "kind": "areas",
+      "graphId": "arena-bomb-explosion",
+      "nodeId": "hit-cue",
+      "x": 900.0,
+      "y": 80.0
+    },
+    {
+      "kind": "areas",
+      "graphId": "arena-bomb-explosion",
+      "nodeId": "explosion-cue",
+      "x": 300.0,
+      "y": 760.0
+    },
+    {
+      "kind": "areas",
+      "graphId": "arena-delayed-bomb",
+      "nodeId": "area",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "areas",
+      "graphId": "arena-delayed-bomb",
+      "nodeId": "explosion",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "areas",
+      "graphId": "arena-delayed-bomb",
+      "nodeId": "burn",
+      "x": 300.0,
+      "y": 480.0
+    },
+    {
+      "kind": "areas",
+      "graphId": "arena-bomb-fire",
+      "nodeId": "area",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "areas",
+      "graphId": "arena-bomb-fire",
+      "nodeId": "burn",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "areas",
+      "graphId": "arena-absorbing-shield",
+      "nodeId": "area",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "areas",
+      "graphId": "arena-black-hole",
+      "nodeId": "area",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "areas",
+      "graphId": "arena-black-hole",
+      "nodeId": "pull",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "buffs",
+      "graphId": "burn",
+      "nodeId": "events",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "buffs",
+      "graphId": "burn",
+      "nodeId": "period",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "buffs",
+      "graphId": "aura-slow",
+      "nodeId": "events",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "buffs",
+      "graphId": "arena-vulnerability",
+      "nodeId": "events",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "buffs",
+      "graphId": "arena-vulnerability",
+      "nodeId": "status-visual",
+      "x": 600.0,
+      "y": 850.0
+    },
+    {
+      "kind": "buffs",
+      "graphId": "arena-vulnerability",
+      "nodeId": "status-visual-stop",
+      "x": 900.0,
+      "y": 850.0
+    },
+    {
+      "kind": "buffs",
+      "graphId": "arena-return-burn",
+      "nodeId": "events",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "buffs",
+      "graphId": "arena-return-burn",
+      "nodeId": "period",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "buffs",
+      "graphId": "arena-return-burn",
+      "nodeId": "status-visual",
+      "x": 600.0,
+      "y": 850.0
+    },
+    {
+      "kind": "buffs",
+      "graphId": "arena-return-burn",
+      "nodeId": "status-visual-stop",
+      "x": 900.0,
+      "y": 850.0
+    },
+    {
+      "kind": "buffs",
+      "graphId": "arena-roll-guard",
+      "nodeId": "events",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "buffs",
+      "graphId": "arena-roll-guard",
+      "nodeId": "start",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "buffs",
+      "graphId": "arena-roll-guard",
+      "nodeId": "stop",
+      "x": 600.0,
+      "y": 80.0
+    },
+    {
+      "kind": "buffs",
+      "graphId": "arena-ground-burn",
+      "nodeId": "events",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "buffs",
+      "graphId": "arena-ground-burn",
+      "nodeId": "period",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "buffs",
+      "graphId": "arena-ground-burn",
+      "nodeId": "status-visual",
+      "x": 600.0,
+      "y": 850.0
+    },
+    {
+      "kind": "buffs",
+      "graphId": "arena-ground-burn",
+      "nodeId": "status-visual-stop",
+      "x": 900.0,
+      "y": 850.0
+    }
   ]
 }
