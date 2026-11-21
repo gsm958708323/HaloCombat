@@ -29,3 +29,34 @@ export function decisionTitle(decision:ComboDecision|null){
   return ({blocked:'角色状态阻止接招',waiting:'输入等待接续窗口',matched:'已选择规则',unmatched:'没有匹配规则',cast:'技能已成功施放',rejected:'规则已选中，施放失败'} as const)[decision.phase];
 }
 export function successfulComboEvents(events:RunEvent[]){return events.filter(e=>e.comboDecision?.phase==='cast');}
+
+
+export function comboFrameMarks(state:PreviewState|null) {
+  const caster=state?.actors.find(actor=>actor.kind==='caster');
+  if(!state||!caster)return [];
+  const marks:{id:string;step:number;kind:'input'|'hit'|'check'|'cast';label:string}[]=[];
+  for(const event of state.events){
+    if(event.sourceId ? event.sourceId!==caster.id : event.source!==caster.name)continue;
+    const input=event.kind==='input';
+    if(input||event.kind==='combo-confirmation'&&event.result==='Granted')
+      marks.push({id:'e'+event.sequence,step:event.step,kind:input?'input':'hit',label:input?event.result:'命中确认'});
+  }
+  for(const event of state.comboDecisions??[]){
+    const decision=event.comboDecision;
+    if(!decision||event.sourceId!==caster.id||decision.phase==='matched')continue;
+    const label=decision.phase==='waiting'?'检查时窗口未开启':decision.phase==='cast'?
+      (decision.fromSkill?'接续成功':'起手成功'):decision.windowOpen&&decision.phase==='unmatched'?'窗口已开，条件未满足':decisionTitle(decision);
+    marks.push({id:'d'+event.sequence,step:event.step,kind:decision.phase==='cast'?'cast':'check',label});
+  }
+  const priority={input:0,hit:1,check:2,cast:3};
+  return marks.sort((left,right)=>left.step-right.step||priority[left.kind]-priority[right.kind]).slice(-12);
+}
+
+export function comboFeedbackReason(decision:ComboDecision, buffered:boolean) {
+  if(decision.phase==='waiting')return buffered?'接续窗口未开启。输入仍在缓冲，可继续推进。':'接续窗口未开启。当前缓冲已空，可在窗口开启后重试。';
+  if(decision.phase==='unmatched'&&decision.windowOpen&&decision.candidates.length>0&&
+    decision.candidates.every(candidate=>candidate.missingTags.includes(1017)))
+    return '接续窗口已开启，候选均缺少本次命中确认。';
+  return comboReason(decision.reason)||(!decision.candidates.length?'当前输入与前置动作没有对应规则。':
+    decision.phase==='cast'?'已通过资源、冷却和目标校验。':'已检查候选条件。');
+}

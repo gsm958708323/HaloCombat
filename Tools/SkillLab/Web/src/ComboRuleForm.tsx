@@ -37,7 +37,7 @@ export function ComboRuleForm({project,initial,apply,close}:{project:Project;ini
     {row.purpose!=='entry'&&!(row.preSkills.length===0&&!row.purpose)&&<label>适用前置技能 · 满足其中一个<select aria-label="规则前置技能" multiple size={Math.min(6,project.skills.length)} value={row.preSkills} onChange={e=>edit({preSkills:[...e.target.selectedOptions].map(o=>o.value)})}>{project.skills.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label>}
     {rulePurpose(row)==='entry'&&<p className="combo-note">前置状态：空闲。动作播放中不会使用空闲入口替代接续规则。</p>}
     <div className="combo-form-grid"><label>触发输入<input aria-label="规则触发输入" list="combo-input-identities" value={row.input} maxLength={128} onChange={e=>edit({input:e.target.value})}/><datalist id="combo-input-identities">{[...new Set(project.runtime?.combos.map(r=>r.input)??[])].map(input=><option key={input} value={input}>{inputLabel(project,input)}</option>)}</datalist></label>
-      <label>目标技能<select aria-label="规则目标技能" value={row.toSkill} onChange={e=>edit({toSkill:e.target.value})}>{project.skills.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label></div>
+      <label>目标技能<select aria-label="规则目标技能" required value={row.toSkill} onChange={e=>edit({toSkill:e.target.value})}><option value="" disabled>选择下一招</option>{project.skills.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label></div>
     <label className="combo-check"><input type="checkbox" aria-label="规则需要本次命中" checked={row.requiredTags.includes(1017)} onChange={e=>edit({requiredTags:[...row.requiredTags.filter(t=>t!==1017),...(e.target.checked?[1017]:[])]})}/>需要本次施法命中确认</label>
     <p className="combo-note">动作播放中统一要求前置技能的接续窗口开启；其他所需状态必须全部满足。</p>
     <details><summary>其他状态与优先级</summary><label>所需状态 Tag<input aria-label="规则其他状态" value={tags} onChange={e=>{setTags(e.target.value);const parsed=e.target.value.trim()?e.target.value.trim().split(/[\s,，]+/).map(Number):[];edit({requiredTags:[...parsed,...(row.requiredTags.includes(1017)?[1017]:[])]});}}/></label>
@@ -49,6 +49,6 @@ export function ComboRuleForm({project,initial,apply,close}:{project:Project;ini
     </section>}
     {usedBy.length>0&&<p className="combo-note">修改同一规则会同步影响：{usedBy.map(v=>v.name).join('、')}。</p>}
     {stale&&<p role="alert" className="error">规则表已改变，请重新打开草稿。</p>}{message&&<p role="alert" className="error">{message}</p>}
-    <div className="dialog-actions"><button type="button" disabled={busy} onClick={close}>取消</button><button className="primary" disabled={busy||stale||needsDecision&&(!order||!acknowledged)}>{busy?'校验中…':'应用规则'}</button></div>
+    <div className="dialog-actions"><button type="button" disabled={busy} onClick={close}>取消</button><button className="primary" disabled={busy||stale||!row.toSkill||needsDecision&&(!order||!acknowledged)}>{busy?'校验中…':'应用规则'}</button></div>
   </form></Dialog>;
 }

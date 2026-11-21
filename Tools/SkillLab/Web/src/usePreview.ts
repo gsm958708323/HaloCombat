@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from './model';
+import type {PreviewAim} from './previewRuntime';
 import type { Project, PreviewState } from './model';
 import {previewSemanticKey,previewSceneKey,previewFrameBudget} from './authoring/previewTiming';
 import type {RecordingStatus,ReplayComparison,ReplayResponse} from './replayModel';
@@ -10,7 +11,12 @@ const sessionSemanticKey=(project:Project|null,selected:string,record:boolean,un
 
 export function usePreview(project: Project | null, selected: string, report: (message: string) => void,adoptReplay:(project:Project,root:string)=>void) {
   const [state, setState] = useState<PreviewState | null>(null);
-  const [playing, setPlaying] = useState(false);
+  const [playing, setPlayingState] = useState(false);
+  const playingRequested = useRef(false);
+  const setPlaying = useCallback((value:boolean) => {
+    playingRequested.current = value;
+    setPlayingState(value);
+  }, []);
   const [speed, setSpeed] = useState(1);
   const [continuous, setContinuous] = useState(false);
   const [recordInputs,setRecordInputs]=useState(false),[unlimitedAmmo,setUnlimitedAmmo]=useState(true);
@@ -38,15 +44,15 @@ export function usePreview(project: Project | null, selected: string, report: (m
   const sceneKey=useMemo(()=>previewSceneKey(project,selected,recordInputs,unlimitedAmmo),[project,selected,recordInputs,unlimitedAmmo]);
   const appliedScene=useRef('');
   const ready = appliedKey === semanticKey && !!session.current&&!replaying&&!placing;
-  const run = useCallback((command: unknown) => {
+  const run = useCallback((command: unknown, automatic = false) => {
     const id = session.current; const generation = version.current;
     // Releasing a key or cancelling input belongs to the existing world even
     // while a candidate draft is being validated (or is invalid).
     const control=!!command&&!Array.isArray(command)&&['move','release','cancel'].includes((command as {kind?:string}).kind??'');
     if (!id || !control&&sessionKey.current !== semanticRef.current||replacing.current) return Promise.resolve();
     queue.current = queue.current.catch(() => {}).then(async () => {
-      if (session.current!==id||!control&&(generation !== version.current || sessionKey.current !== semanticRef.current)) return;
-      const previous=latestState.current,now=performance.now(),details=!Array.isArray(command)||now-lastDetails.current>=200;
+      if (automatic&&!playingRequested.current||session.current!==id||!control&&(generation !== version.current || sessionKey.current !== semanticRef.current)) return;
+      const previous=latestState.current,now=performance.now(),details=!automatic||now-lastDetails.current>=200;
       const query='?afterEvent='+(previous?.events.at(-1)?.sequence??0)+'&details='+details;
       const result = await api<{ state: PreviewState;recording:RecordingStatus }>('/preview/' + id + (Array.isArray(command)?'/commands':'/command')+query, command);
       if (session.current===id&&(control||generation === version.current)) {
@@ -131,7 +137,7 @@ export function usePreview(project: Project | null, selected: string, report: (m
     lastTime.current = performance.now(); accumulator.current = 0;
     if (!playing || !ready) return;
     const timer = setInterval(async () => {
-      if (busy.current) return;
+      if (!playingRequested.current || busy.current) return;
       const now = performance.now(); const delta = (now-lastTime.current)/1000; lastTime.current = now;
       const budget=previewFrameBudget(accumulator.current,delta,speed);const steps=budget.steps;
       accumulator.current=budget.remainder;
@@ -140,7 +146,7 @@ export function usePreview(project: Project | null, selected: string, report: (m
       try {
         const commands:unknown[]=[];
         if (continuous || latestState.current?.channeling || latestState.current?.charging) commands.push({ kind: 'aim', ...aim.current });
-        commands.push({kind:'step',steps});await run(commands);
+        commands.push({kind:'step',steps});await run(commands,true);
       } finally { busy.current = false; }
     }, 33);
     return () => clearInterval(timer);
@@ -201,7 +207,11 @@ export function usePreview(project: Project | null, selected: string, report: (m
   return { state, sessionId:session.current,ready, error, playing, setPlaying, speed, setSpeed, continuous, setContinuous, reset, aim, skill, release, cancel,
     recording,recordInputs,setRecordInputs,unlimitedAmmo,setUnlimitedAmmo,comparison,replaying,replayFile,exportReplay,placing,place,
     cast: () => { held.current = true; return run({ kind: 'cast', skillId: skill.current, ...aim.current }); },
-    input:(input:string)=>run({kind:'input',input,...aim.current}),
+    input:(input:string,point:PreviewAim=aim.current)=>run({kind:'input',input,...point}),
+    inputAndStep:(input:string,point:PreviewAim=aim.current)=>{
+      setPlaying(false);
+      return run([{kind:'input',input,...point},{kind:'step',steps:1}]);
+    },
     move: (x:number,z:number) => run({ kind:'move',x,z }), interrupt: () => run({ kind:'interrupt' }),
     remove,removeBuff,
     step: async () => { if (latestState.current?.channeling || latestState.current?.charging) await run({ kind:'aim',...aim.current }); await run({ kind: 'step', steps: 1 }); } };

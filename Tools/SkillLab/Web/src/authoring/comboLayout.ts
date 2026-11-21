@@ -1,7 +1,7 @@
 import type {RuntimeCombo} from '../model';
 import {comboStart} from './comboEdits';
 
-export function layoutCombo(ids:string[],rows:RuntimeCombo[]):Map<string,{x:number;y:number}>{
+export function layoutCombo(ids:string[],rows:RuntimeCombo[],root=ids[0]):Map<string,{x:number;y:number}>{
   const order=[comboStart,...ids],allowed=new Set(order),levels=new Map<string,number>([[comboStart,0]]);
   const children=new Map(order.map(id=>[id,[] as string[]]));
   for(const row of rows)for(const source of row.preSkills.length?row.preSkills:[comboStart])
@@ -19,8 +19,27 @@ export function layoutCombo(ids:string[],rows:RuntimeCombo[]):Map<string,{x:numb
   for(const id of [...ids.filter(id=>!incoming.has(id)),...ids])if(!levels.has(id)){levels.set(id,0);visit(id);}
   const columns=new Map<number,string[]>();
   for(const id of order){const level=levels.get(id)!;columns.set(level,[...(columns.get(level)??[]),id]);}
-  const height=Math.max(1,...[...columns.values()].map(column=>column.length))*145;
+  // Reserve a visual row for the root and its same-input continuation. Alternate
+  // inputs occupy branch rows. This is layout only and does not rank runtime rules.
+  const principal=new Set<string>([comboStart]);
+  const input=rows.find(row=>row.toSkill===root&&!row.preSkills.length)?.input
+    ??rows.find(row=>row.preSkills.includes(root))?.input;
+  let current=root;
+  while(current&&allowed.has(current)&&!principal.has(current)){
+    principal.add(current);
+    const previousLevel=levels.get(current)!;
+    current=rows.find(row=>row.input===input&&row.preSkills.includes(current)&&
+      levels.get(row.toSkill)===previousLevel+1)?.toSkill??'';
+  }
   const result=new Map<string,{x:number;y:number}>();
-  for(const [column,items] of columns)items.forEach((id,index)=>result.set(id,{x:60+column*290,y:90+(height-items.length*145)/2+index*145}));
+  for(const [column,items] of columns){
+    let branch=1;
+    let mainPlaced=false;
+    for(const id of items){
+      const onMain=principal.has(id)&&!mainPlaced;
+      if(onMain)mainPlaced=true;
+      result.set(id,{x:60+column*290,y:90+(onMain?0:branch++)*145});
+    }
+  }
   return result;
 }

@@ -49,3 +49,12 @@ export function removeComboSkill(project:Project,skillId:string,input?:string):P
   return maintainComboViews({...project,editor:{...project.editor,comboPositions:project.editor?.comboPositions?.filter(v=>v.skillId!==skillId)},
     ...(retained?{editor:project.editor}:{}),runtime:project.runtime?{...project.runtime,combos:combos!}:undefined});
 }
+
+
+export function nextComboInput(project:Project,source:string,recent?:string) {
+  const rows=project.runtime?.combos??[];
+  return recent||rows.filter(row=>row.toSkill===source&&row.preSkills.length>0&&row.purpose!=='cancel').at(-1)?.input
+    ||rows.find(row=>row.toSkill===source&&!row.preSkills.length)?.input
+    ||rows.find(row=>row.preSkills.includes(source)&&row.purpose!=='cancel')?.input
+    ||project.runtime?.arena?.bindings[0]?.input||'Attack';
+}

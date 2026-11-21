@@ -1,14 +1,13 @@
-.combo-author-shell{display:grid;grid-template-columns:145px minmax(0,1fr)225px;flex:1;min-height:0}
-.combo-task-nav{display:flex;flex-direction:column;gap:6px;overflow:auto;background:#202b2d;border-right:1px solid #354548;padding:13px 9px}
-.combo-task-nav>small{color:#a2b3aa;font-size:11px;margin:4px 5px}.combo-task-nav>small:not(:first-child){margin-top:16px}
+.combo-author-shell{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);flex:1;min-height:0}
+.combo-task-nav{display:flex;flex-wrap:wrap;align-items:center;gap:5px;background:#202b2d;border-bottom:1px solid #354548;padding:7px 9px}
+.combo-task-nav>small,.combo-task-nav p{display:none}
 .combo-task-nav>button{text-align:left;padding:8px;border-color:transparent;white-space:normal}
 .combo-task-nav>button[aria-pressed=true]{background:#39372c;border-color:#716545;color:#e3c68b}
-.combo-task-nav label{display:grid;gap:6px;font-size:11px;margin:13px 0}.combo-task-nav select{width:100%;min-width:0;font-size:11px}
-.combo-task-nav p{color:#a2b3aa;font-size:10px;padding:10px 4px;border-top:1px solid #354548;line-height:1.6}
+.combo-task-nav label{display:flex;align-items:center;gap:6px;font-size:11px;margin:0 4px}.combo-task-nav label>select{max-width:175px}.combo-task-nav select{width:100%;min-width:0;font-size:11px}
 .combo-author-main{display:flex;flex-direction:column;min-width:0;min-height:0;overflow:auto;background:#151d1f}
 /* The column owns scrolling. Keep inspectors and timelines at their content height. */
 .combo-author-main>*{flex-shrink:0}
-.combo-author-shell>.skill-overview{min-width:0;max-width:none;border-left:1px solid #354548}
+
 .combo-task-heading{display:flex;gap:7px;align-items:center;flex-wrap:wrap;padding:12px;border-bottom:1px solid #354548}
 .combo-task-heading>div{flex:1;min-width:130px}.combo-task-heading h3{font-size:14px;margin:0 0 4px}.combo-task-heading small{font-size:10px;color:#a2b3aa}
 .combo-task-heading button{font-size:10px;padding:5px 7px}.combo-toolbar label>input{width:70px}
@@ -53,5 +52,28 @@
 .combo-external{padding:8px 12px;color:#e3c68b;font-size:11px}.combo-external>div{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}.combo-external button{font-size:10px}
 .combo-rule-dialog details{font-size:12px;margin-top:10px}.combo-conflict{padding:12px;background:#39372c;border:1px solid #716545;border-radius:5px;margin-top:14px;font-size:12px}
 .combo-conflict ul{padding-left:18px}.combo-conflict li{margin:8px 0}.combo-conflict li small{display:block;color:#c1bca9;margin-top:4px}
-@media(max-width:1400px){.combo-author-shell{grid-template-columns:125px minmax(0,1fr)}.combo-author-shell>.skill-overview{grid-column:1/-1;max-height:280px;border-left:0;border-top:1px solid #354548}.combo-task-nav{grid-row:1}}
-@media(max-width:900px){.combo-author-shell{grid-template-columns:minmax(0,1fr)}.combo-task-nav{display:flex;flex-direction:row;flex-wrap:wrap;overflow:visible;border-right:0;border-bottom:1px solid #354548}.combo-task-nav>small,.combo-task-nav>p{display:none}.combo-task-nav>button{font-size:11px}.combo-task-nav label{margin:0;display:flex;align-items:center;gap:5px}.combo-task-nav label>select{max-width:180px}.combo-form-grid{grid-template-columns:1fr}.combo-graph-shell{min-height:380px}}
+/* Keep the selected action and feedback beside the diagram whenever the editor has room. */
+.combo-author-main{container-type:inline-size}
+.combo-work-area{display:grid;grid-template-columns:minmax(0,1fr) minmax(290px,34%);align-items:start;min-width:0}
+.combo-work-area .combo-graph-shell{height:clamp(320px,52dvh,620px);min-height:0}
+.combo-work-area .combo-graph-shell>.react-flow{min-height:0}
+.combo-inspector{min-width:0;border-left:1px solid #354548;background:#202b2d}
+.combo-inspector .combo-timeline,.combo-inspector .combo-feedback{border-top:0;border-bottom:1px solid #354548}
+.combo-selected-rule h3{font-size:14px;line-height:1.4}
+.combo-selected-rule dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:8px 0}
+.combo-selected-rule dl div{padding:6px 8px;background:#273436;border-radius:3px}
+.combo-selected-rule dt{font-size:10px;color:#b5c7bd}.combo-selected-rule dd{margin:2px 0 0;font-size:12px;overflow-wrap:anywhere}
+.combo-rule-actions{display:flex;flex-wrap:wrap;gap:6px}.combo-rule-actions:empty{display:none}.combo-selected-rule details{font-size:11px;margin-top:6px}.combo-selected-rule details button{margin-top:5px}
+.combo-timeline h3{margin:0 0 5px}.combo-window-summary{margin:6px 0;color:#e3c68b;font-variant-numeric:tabular-nums}
+.combo-trial-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:8px 0}
+.combo-trial-fields label{display:grid;gap:4px;color:#bbccc2;font-size:11px}.combo-trial-fields select{width:100%;min-width:0}
+.combo-frame-strip{margin-top:10px;padding:8px;border:1px solid #354548;border-radius:4px;font-size:11px}
+.combo-frame-strip header{display:flex;justify-content:space-between;gap:7px;color:#c4d4cc}
+.combo-frame-strip ol{list-style:none;margin:6px 0 0;padding:0;max-height:96px;overflow:auto}
+.combo-frame-strip li{display:flex;gap:9px;padding:3px 0}.combo-frame-strip li span{min-width:44px;color:#a2b3aa;font-variant-numeric:tabular-nums}
+.combo-frame-strip li b{font-weight:500;overflow-wrap:anywhere}.combo-frame-strip .input{color:#acc9f5}.combo-frame-strip .hit,.combo-frame-strip .cast{color:#8ed4b6}.combo-frame-strip .check{color:#e3c68b}
+.combo-frame-track{position:relative;height:10px;margin:6px 4px;border-bottom:1px solid #486060}
+.combo-frame-track i{position:absolute;bottom:0;width:3px;height:8px;background:currentColor;border-radius:2px}.combo-frame-track i.check{height:5px}.combo-frame-track i.cast{height:10px}
+.combo-skill-overview>summary{padding:10px 12px;font-size:11px;cursor:pointer}.combo-skill-overview>.skill-overview{max-width:none}
+@container(max-width:680px){.combo-work-area{grid-template-columns:minmax(0,1fr)}.combo-inspector{border-left:0}.combo-work-area .combo-graph-shell{height:340px}}
+@media(max-width:900px){.combo-task-nav>button{font-size:11px}.combo-form-grid{grid-template-columns:1fr}}

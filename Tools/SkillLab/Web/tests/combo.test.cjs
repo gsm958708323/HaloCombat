@@ -1,13 +1,13 @@
 const test=require('node:test'),assert=require('node:assert/strict'),path=require('node:path');
 const {readProject}=require('./projectFixture.cjs');
-const {withComboRuntime,connectCombo,patchCombo,removeCombo,moveComboNode,removeComboSkill,comboSkills,comboStart}=require('../../.local/web-checks/authoring/comboEdits.js');
+const {withComboRuntime,connectCombo,patchCombo,removeCombo,moveComboNode,removeComboSkill,comboSkills,comboStart,nextComboInput}=require('../../.local/web-checks/authoring/comboEdits.js');
 const {renameContent,deleteContent}=require('../../.local/web-checks/authoring/contentEdits.js');
 const examples=()=>readProject(path.resolve(__dirname,'../../../../Content/SkillLab/project.json'));
 const {layoutCombo}=require('../../.local/web-checks/authoring/comboLayout.js');
 const {comboScope,saveComboView,deleteComboView}=require('../../.local/web-checks/authoring/comboViews.js');
 const {overlappingRules,rulePurpose}=require('../../.local/web-checks/authoring/comboRules.js');
 const {applyComboRule}=require('../../.local/web-checks/authoring/comboEdits.js');
-const {comboTrace}=require('../../.local/web-checks/authoring/comboTrace.js');
+const {comboTrace,comboFrameMarks,comboFeedbackReason}=require('../../.local/web-checks/authoring/comboTrace.js');
 const {mergeProjects}=require('../../.local/web-checks/authoring/mergeProjects.js');
 const formal=()=>readProject(path.resolve(__dirname,'../../../../Assets/StreamingAssets/Combat/project.json'));
 
@@ -27,6 +27,11 @@ test('layered layout separates formal scope nodes without using runtime state',(
   }
   const view=comboScope(p,'arena-ammo-shot'),positions=layoutCombo(view.ids,[...view.entries,...view.rows]);
   assert(positions.get('arena-ammo-shot').x>positions.get(comboStart).x);
+  const main=positions.get('arena-ammo-shot').y;
+  assert.equal(positions.get('arena-combo-second').y,main);
+  assert.equal(positions.get('arena-combo-finisher').y,main);
+  assert(positions.get('arena-returning-shot').y>main);
+  assert(positions.get('arena-bomb-shot').y>main);
   for(const row of view.rows)assert(positions.get(row.toSkill).x>positions.get(row.preSkills[0]).x);
 });
 test('connections and reference removal affect only the selected input chain',()=>{
@@ -101,4 +106,30 @@ test('runtime trace preserves repeated successful skills and separates rejected 
   assert.deepEqual(trace.steps.map(s=>s.skill),['g1','g2','g1']);assert.equal(trace.decision.phase,'rejected');
   assert(!trace.executedRules.has('r4'));assert(trace.hasIdleStart);
   assert(trace.executedEdges.has('r3::g2'));assert(!trace.executedEdges.has('r3::g1'));
+});
+
+
+test('adding the next segment uses the latest authored input or inherits the predecessor input',()=>{
+  const project=formal();
+  assert.equal(nextComboInput(project,'arena-combo-second'),'ArenaPrimary');
+  assert.equal(nextComboInput(project,'arena-combo-second','ArenaArea'),'ArenaArea');
+  assert.equal(nextComboInput(examples(),'basic-shot'),'Attack');
+});
+
+test('the trial strip displays real input, hit confirmation, window check, and success on simulation steps',()=>{
+  const caster={kind:'caster',id:'player',name:'caster'};
+  const decision=(phase,step)=>({sequence:step,step,sourceId:'player',comboDecision:{phase,fromSkill:'arena-ammo-shot',windowOpen:phase!=='waiting'}});
+  const event=(kind,result,step,source='caster')=>({sequence:step,step,source,result,kind});
+  const marks=comboFrameMarks({actors:[caster],events:[event('combo-confirmation','Granted',14),event('input','ArenaPrimary',23),
+    event('combo-confirmation','Lookup',28),event('combo-confirmation','Granted',25,'another caster')],
+    comboDecisions:[decision('waiting',24),decision('matched',28),decision('cast',28)]});
+  assert.deepEqual(marks.map(({step,kind})=>[step,kind]),[[14,'hit'],[23,'input'],[24,'check'],[28,'cast']]);
+});
+
+test('failure feedback distinguishes buffering from actual missing confirmation',()=>{
+  assert.match(comboFeedbackReason({phase:'waiting'},true),/仍在缓冲/);
+  assert.match(comboFeedbackReason({phase:'waiting'},false),/缓冲已空/);
+  const decision={phase:'unmatched',windowOpen:true,candidates:[{missingTags:[1017]}],reason:'没有匹配规则'};
+  assert.match(comboFeedbackReason(decision,false),/缺少本次命中确认/);
+  assert.equal(comboFeedbackReason({...decision,candidates:[{missingTags:[200]}]},false),'没有匹配规则');
 });
