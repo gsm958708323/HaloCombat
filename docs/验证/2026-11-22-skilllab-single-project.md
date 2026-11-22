@@ -38,9 +38,11 @@
 | `skilllab-final-impact-720p.png`，1280×720，早期命中帧 | 显示 `80.0` 总伤害、`1` 次有效命中、近 5 秒 `16.0` DPS，并可见木桩命中闪光和伤害跳字。该帧的跳字与目标标签局部相叠。 |
 | `final-label-fix-impact-720p-0.png` 至 `final-label-fix-impact-720p-3.png`，1280×720 | 修订后对 `target-7` 再次命中的四帧中，伤害数字 `80` 均与目标标签分开。 |
 | `hud-hit-regions-720p.json` | 720p 下实测 HUD 坐标判定，`(70,75)`、`(1110,180)`、`(333,658)`、`(900,660)` 位于 HUD 内，场地点 `(600,200)` 位于 HUD 外。 |
-| `audio-assets.json`、`skilllab-audio-feedback.txt`、`skilllab-pause-audio.txt` | 四个音频 Clip 和粒子贴图可加载，施放和命中时 `AudioSource.isPlaying` 为真。命中记录 7 个粒子与 1 个跳字。静音或暂停时音源停止，恢复时未补播。独立系统音频听感、连段确认音及范围爆发音的实际触发待补证。 |
+| `audio-assets.json`、`skilllab-audio-feedback.txt`、`skilllab-pause-audio.txt` | 四个音频 Clip 和粒子贴图可加载，施放和命中时 `AudioSource.isPlaying` 为真。命中记录 7 个粒子与 1 个跳字。静音或暂停时音源停止，恢复时未补播。|
+| `audio-final-combo.txt` | 弹药射击实际命中近处目标 `target-7`，触发 `combo-confirmation`，结果为 `Granted`。对应 `confirmation_001` 的 `AudioSource` 正在播放，音源输出峰值约 `0.1713`。 |
+| `audio-final-blast.txt` | 爆裂弹的范围事件实际影响 `target-1` 和 `target-3`。对应 `explosionCrunch_001` 的 `AudioSource` 正在播放，音源输出峰值约 `0.2025`。 |
 
-跳字复验及最终输入复验的 Unity Console 查询均返回 0 条 Error。最后一轮结束后隔离 Editor 已关闭，原 Editor 与 8080 监听仍在。见 `unity-final-errors.json`、`stage3-unity-console.json`、`stage3-cleanup.json`。
+跳字、实体输入和音效复验的 Unity Console 查询均返回 0 条 Error。音效记录见 `audio-final-unity-errors.json`。最后一轮结束后隔离 Editor 已关闭，原 Editor 与 8080 监听仍在。见 `unity-final-errors.json`、`stage3-unity-console.json`、`stage3-cleanup.json`。
 
 ## 构建、回归与旧数据清理
 
@@ -50,4 +52,4 @@
 
 ## 尚未独立覆盖
 
-第四槽悬停全名、角色移动和镜头缩放待独立验证。连段确认音和范围爆发音正在补测。独立听感仍缺系统音频或硬件取证。
+第四槽悬停全名、角色移动和镜头缩放待独立验证。通过实际扬声器或耳机的独立听感尚未测试。
