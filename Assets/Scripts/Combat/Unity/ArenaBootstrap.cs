@@ -79,9 +79,7 @@ namespace Combat.Unity
             if(!_session.Slots.ContainsKey(slot)){Status="Publish "+slot.ToUpperInvariant()+" from the formal project, then F5 reload.";return false;}
             bool result=_session.CastSlot(slot);if(!result&&_session.World.TryGetActor(_session.PlayerId,out var player))Status=player.GetComp<SkillCastComp>().LastRejection??"Casting blocked";return result;
         }
-        public void StepForTests(int steps)=>_session?.Advance(steps);
         public void ReleasePublished(string slot)=>_session?.ReleaseSlot(slot);
-        public void AdvanceWallForTests(float dt)=>_session?.AdvanceWall(dt);
         void OnProjectileTeleport(EvProjectileTeleport result)=>Status=result.Result;
         static string[] ResolveSkillNames(SkillProjectDocument project)
         {

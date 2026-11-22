@@ -31,19 +31,5 @@ namespace Combat.EditorTools
             }
             finally{EditorSceneManager.CloseScene(scene,true);if(old.IsValid()&&old.isLoaded)SceneManager.SetActiveScene(old);}
         }
-        public static void Verify()
-        {
-            if(!File.Exists(Path))throw new InvalidOperationException("Arena scene is missing.");
-            var loaded=SceneManager.GetSceneByPath(Path);bool opened=!loaded.isLoaded;
-            if(opened)loaded=EditorSceneManager.OpenScene(Path,OpenSceneMode.Additive);
-            try
-            {
-                int count=loaded.GetRootGameObjects().SelectMany(root=>root.GetComponentsInChildren<ArenaBootstrap>(true)).Count();
-                if(count!=1)throw new InvalidOperationException("Arena must contain exactly one direct bootstrap.");
-                foreach(var root in loaded.GetRootGameObjects())foreach(var transform in root.GetComponentsInChildren<Transform>(true))
-                    if(GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(transform.gameObject)>0)throw new InvalidOperationException("Arena has missing scripts: "+transform.name);
-            }
-            finally{if(opened)EditorSceneManager.CloseScene(loaded,true);}
-        }
     }
 }

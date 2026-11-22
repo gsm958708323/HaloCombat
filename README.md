@@ -37,15 +37,16 @@ dotnet run --project Combat.csproj -- json Assets/StreamingAssets/Combat/project
 
 ## 运行
 
-dotnet run
-dotnet run -- tag
-dotnet run -- attr
-dotnet run -- buff
-dotnet run -- motor
-dotnet run -- clip
-dotnet run -- melee
-dotnet run -- proj
-dotnet run -- season
+```powershell
+dotnet run --project Combat.csproj
+dotnet run --project Combat.csproj -- tag
+dotnet run --project Combat.csproj -- attr
+dotnet run --project Combat.csproj -- buff
+dotnet run --project Combat.csproj -- motor
+dotnet run --project Combat.csproj -- clip
+dotnet run --project Combat.csproj -- melee
+dotnet run --project Combat.csproj -- proj
+dotnet run --project Combat.csproj -- season
 dotnet run --project Combat.csproj -- knock
 dotnet run --project Combat.csproj -- dodge
 dotnet run --project Combat.csproj -- aura
@@ -54,9 +55,10 @@ dotnet run --project Combat.csproj -- perc
 dotnet run --project Combat.csproj -- enemy
 dotnet run --project Combat.csproj -- summon
 dotnet run --project Combat.csproj -- season2
-dotnet run --project Combat.csproj -- regress
+dotnet run --project Combat.csproj -- all
+```
 
-默认`season`验证G1近战/刀光/火球灼烧、G2火地叠层、受击停轴和死亡清理。
+默认 `season` 演示 G1 近战、刀光和火球灼烧、G2 火地叠层、受击停轴与死亡清理。`all` 按 Unity 教学场景 01–16 的顺序运行，每个 Demo 开始前恢复 G1 默认配置，全部完成后输出 `ALL 16 TEACHING DEMOS COMPLETED`。
 
 ## 冻结
 
@@ -127,10 +129,10 @@ Buff 自然到期 → 以持有者位置做范围伤害 → 爆炸 Cue
 
 使用独立临时工程验证正常触发、无效目标、打断/清理、重复触发及必要的嵌套组合，保留用户工作工程和发布槽数据。根据改动范围执行相关检查：
 
-- 核心行为：`dotnet run --project Combat.csproj -- regress`。
-- JSON 与预览宿主：`dotnet run --project Tools/SkillLab/SkillLab.Host.csproj -- --self-test`。
-- 网页作者操作：在 `Tools/SkillLab/Web` 执行 `npm run test:authoring` 和 `npm run build`。
-- JSON 或输入链路：使用实际文件验证网页与 Unity；通过 Coplay Unity MCP 检查编译、相关 EditMode/PlayMode、真实场景和 Error 日志。
+- 教学样例使用 `dotnet run --project Combat.csproj -- all`。
+- 正式内容使用 `dotnet run --project Combat.csproj -- json Assets/StreamingAssets/Combat/project.json` 校验并试放。
+- 网页在 `Tools/SkillLab/Web` 执行 `npm run build`，再通过独立临时工程验证实际作者操作、预览、发布与回放。
+- JSON 或输入链路使用实际文件验证网页与 Unity。通过 Coplay Unity MCP 检查编译，在实际场景中进行 Play Mode 操作，并检查 Error 日志。
 
 非显然的设计决策、限制与风险写入 ADR，验收证据记录到 `docs/验证`。完成相关验证后按工程约定本地提交。
 
@@ -140,6 +142,7 @@ Buff 自然到期 → 以持有者位置做范围伤害 → 爆炸 Cue
 验证场景，位于 `Assets/Scenes/HaloCombat`；场景中的 `HaloCombatDemoRunner` 会在 Play Mode
 启动时运行对应 Demo，并把结果写入 Unity Console。第二季场景仍是逻辑验证场景，不包含
 SO、Bake 或可操作表现层关卡。
+在 Unity 中选择 `Tools/HaloCombat/运行全部教学 Demo`，可按 01–16 顺序批量运行。
 
 ## 日志
 

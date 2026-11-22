@@ -69,7 +69,7 @@ namespace Combat.Unity.Editor
             Debug.Log($"[HaloCombat] Created {Specs.Length} demo scenes.");
         }
 
-        [MenuItem("Tools/HaloCombat/Verify Demo Scenes")]
+        [MenuItem("Tools/HaloCombat/运行全部教学 Demo")]
         public static void VerifyAll()
         {
             for (int i = 0; i < Specs.Length; i++)

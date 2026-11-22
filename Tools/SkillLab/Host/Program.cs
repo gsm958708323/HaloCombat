@@ -2,9 +2,31 @@ using Combat.Config;
 using SkillLab;
 using System.Collections.Concurrent;
 
+bool upgradeEffects = args.Contains("--upgrade-effects");
+bool splitContent = args.Contains("--split-content") || args.Contains("--migrate-tracked-layout");
+// Reject missing values before ASP.NET can consume the next long option as a value.
+for (int i = 0; i < args.Length; i++)
+{
+    string argument = args[i];
+    if (argument is "--upgrade-effects" or "--split-content" or "--migrate-tracked-layout")
+        continue;
+    if (argument.Contains('=') || !(argument.StartsWith("--", StringComparison.Ordinal) || argument.StartsWith('/')))
+        continue;
+
+    int valueIndex = i + 1;
+    if (valueIndex == args.Length || args[valueIndex].StartsWith("--", StringComparison.Ordinal))
+    {
+        Console.Error.WriteLine($"Unknown option or missing value: {argument}");
+        Environment.ExitCode = 2;
+        return;
+    }
+
+    i = valueIndex;
+}
+
 var paths=new HostPaths(args,Directory.GetCurrentDirectory(),AppContext.BaseDirectory);var root=paths.Root;
-if(args.Contains("--upgrade-effects")){EffectNodeMigration.Run(root);return;}
-if(args.Contains("--split-content")||args.Contains("--migrate-tracked-layout"))
+if(upgradeEffects){EffectNodeMigration.Run(root);return;}
+if(splitContent)
 {
     foreach(var relative in new[]{"Content/SkillLab/project.json","Assets/StreamingAssets/Combat/project.json"})
     {
@@ -20,12 +42,6 @@ if(args.Contains("--split-content")||args.Contains("--migrate-tracked-layout"))
         });
         Console.WriteLine("Split "+relative+" -> "+SkillProjectFiles.ReferencedPaths(path).Length+" modules");
     }
-    return;
-}
-if(args.Contains("--self-test"))
-{
-    try { PreviewChecks.Run(root); }
-    catch(Exception error) { Console.Error.WriteLine(error.ToString()); Environment.ExitCode=1; }
     return;
 }
 var builder=WebApplication.CreateBuilder(args);

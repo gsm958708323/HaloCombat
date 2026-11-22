@@ -1,5 +1,0 @@
-{
-  "extends":"./tsconfig.json",
-  "compilerOptions":{"noEmit":false,"module":"CommonJS","moduleResolution":"Node","verbatimModuleSyntax":false,"allowImportingTsExtensions":false,"rootDir":"src","outDir":"../.local/web-checks"},
-  "include":["src/authoring/**/*.ts","src/model.ts"]
-}

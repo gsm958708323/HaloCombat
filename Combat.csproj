@@ -30,7 +30,6 @@
     <Compile Include="Assets/Scripts/Combat/Demos/SummonDemo.cs" />
     <Compile Include="Assets/Scripts/Combat/Demos/SeasonTwoDemo.cs" />
     <Compile Include="Assets/Scripts/Combat/Demos/DemoWorld.cs" />
-    <Compile Include="Assets/Scripts/Combat/Demos/PresentationDemos.cs" />
   </ItemGroup>
   <ItemGroup><PackageReference Include="Newtonsoft.Json" Version="13.0.3" /></ItemGroup>
 </Project>

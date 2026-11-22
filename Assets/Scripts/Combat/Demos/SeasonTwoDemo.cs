@@ -341,11 +341,12 @@ namespace Combat.Demos
             trace.Complete($"八个跨系统契约阶段完成 immune={immune} hitstops={hitstops} damages={damages}");
         }
 
-        public static void Regression()
+        public static void RunAllTeachingDemos()
         {
-            // 回归入口逐个运行全部 Demo，并在每次运行前恢复共享的 G1 默认配置。
+            // 每个教学 Demo 开始前恢复共享的 G1 默认配置。
             Season2Contracts.EnsureAiMustNotStopDirector();
 
+            // Keep the 01–16 order aligned with HaloCombatDemoSceneBuilder.Specs.
             var steps = new (string name, Action run)[]
             {
                 ("tag", TagInputDemo.Run),
@@ -364,18 +365,16 @@ namespace Combat.Demos
                 ("enemy", EnemyAiDemo.Run),
                 ("summon", SummonDemo.Run),
                 ("season2", SeasonTwoDemo.Run),
-                ("clock", ClockDemo.Run),
-                ("spawn", SpawnEventDemo.Run),
             };
 
             for (int i = 0; i < steps.Length; i++)
             {
-                Console.WriteLine($"======== REGRESS {steps[i].name} ========");
+                Console.WriteLine($"======== TEACHING DEMO {i + 1:00}/{steps.Length} {steps[i].name} ========");
                 DemoTables.ResetG1MeleeDefaults();
                 steps[i].run();
             }
 
-            Console.WriteLine("======== ALL S1+S2 REGRESSION PASSED ========");
+            Console.WriteLine($"======== ALL {steps.Length} TEACHING DEMOS COMPLETED ========");
         }
     }
 }

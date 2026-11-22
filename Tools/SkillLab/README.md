@@ -84,16 +84,9 @@ Arena 草稿在首次打开时从 `Assets/StreamingAssets/Combat/project.json` �
 
 Arena 工作区的「发布正式内容」先保存当前草稿，验证已保存修订后更新正式文件。Arena 正式和木桩模式用 F5 重载，坏文件保留有效会话。网页发布到四个槽位时会裁剪技能依赖，并携带 Motor/Cue/View。Unity的Cue使用明确cube或prefab类型；prefab/音效资源键在加载时验证，原生资源仍由Unity保留。示例cube Cue是明确表现配置，不能替代缺失的prefab。
 
-前端工程操作检查使用现有 TypeScript 和 Node 内置测试，无新增测试框架依赖：
-
 普通“效果传递”卡片可直接切换目标、区域、投射物、近战、位移、射线、召唤。主结算分支和节点身份保留；不适用的独占事件分支停用，可一次撤销恢复。共享定义根固定类型，继续从调用侧更换引用。分裂需要投射物命中上下文；相关分支仍连接时先拆开，再切换模块。召唤需要工程内有效蓝图。
 
 事件面板默认显示关键事件，可切换全部、伤害（包含暴击）、施放、生成、弹体判定、生命周期和拒绝等分组。数量为筛选后/保留条数；清空仅隐藏当前会话的旧记录，伤害统计和输入复现不变，重置后恢复。实例默认显示概要，展开“查看状态”检查身份/属性/弹道；驱散和移除仍修改真实运行。弹窗支持Tab循环和Escape关闭，关闭后返回原入口。
-
-```powershell
-cd Tools/SkillLab/Web
-npm run test:authoring
-```
 
 预置工程为 `Content/SkillLab/project.json`，现有 54 个模板，涵盖射击、区域、近战/位移、射线、召唤、Buff、投射物行为、结算事件、弹药换弹、传送弹、木桶连锁、范围引爆、有限随机连发和飞行触发。“新建”可从模板复制并分配新技能/定义身份；补入缺失的技能/Buff/蓝图依赖，同身份资源复用工程现有版本，保留本地编辑。Lab 草稿首次初始化时加载示例，升级示例不会覆盖已保存工程。预览节点参数改变后校验并更新同一世界，切换技能或初始场景才创建独立世界；校验/重建期间禁用施放和播放，成功后显示“当前配置已应用”，错误时显示字段路径。拖动技能或 Buff 图节点只改布局，不重建战斗。暂停、单步、倍速和重置不调用 Unity。
 
@@ -219,12 +212,10 @@ git restore --source=HEAD -- Assets/Scenes/SkillLab.unity Assets/Scenes/SkillLab
 
 相机使用正式`runtime.arena`的`cameraDistance/cameraHeight/cameraFov/cameraFocusHeight`；原站立视点为1.6米。可选`cameraDownedFocusHeight`默认0.55、`cameraSpringHz`默认8（0为立即跟随）、`cameraShakeEnabled`默认true，保持原命中等级冲量、渲染时间衰减和倒地/死亡视点。相机跟随不会修改角色/逻辑时间，重开会创建独立表现状态；训练目标使用原敌人骨骼模型，保持静止不还手。
 
-独立验证：
+### 验证改动
 
-```powershell
-dotnet run --project Tools/SkillLab/SkillLab.Host.csproj -- --self-test
-```
+在 `Tools/SkillLab/Web` 执行 `npm run build`。使用独立临时工程和槽目录，通过实际网页检查配置校验、预览出弹与伤害、发布和回放导入，用同一份下载原件核对 Unity。通过 Coplay Unity MCP 检查编译，在实际场景中进行 Play Mode 操作，并检查 Error 日志。结果见 `docs/实施进度.md`。
 
-覆盖真实出弹/伤害、冷却拒绝、能量无额外消耗、相同配置/种子/输入的重置复现，以及 JSON 字段、端口、引用和递归错误。Unity EditMode 另覆盖发布包、跨槽资源、坏文件保留、引导/小间隔/分段耗能与中断；PlayMode 从磁盘发布包加载真实 SkillLab 场景。Core 回归仍使用 `dotnet build Combat.csproj` 与 `dotnet run --project Combat.csproj -- regress`；Unity 验证通过 MCP，结果见 `docs/实施进度.md`。
+从仓库根目录校验并试放正式 JSON 可执行 `dotnet run --project Combat.csproj -- json Assets/StreamingAssets/Combat/project.json`。第一、二季教学样例可用 `dotnet run --project Combat.csproj -- all` 批量运行。
 
 本地宿主仅监听回环地址，每个预览会话独立。网页开发时在 Web 目录运行 `npm run dev`，Vite 将 `/api` 代理到本地 C# 宿主。

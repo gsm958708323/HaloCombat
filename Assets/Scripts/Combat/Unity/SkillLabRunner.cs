@@ -141,7 +141,7 @@ namespace Combat.Unity
             _heldSlot = -1;
         }
 
-        public void StepLogicForTests(int steps)
+        public void AdvanceSimulation(int steps)
         {
             if (_publication.Simulation == null) return;
             _publication.Simulation.Advance(steps);
@@ -157,11 +157,11 @@ namespace Combat.Unity
 
             UpdateAim();
             if (_publication.Simulation != null) SampleSkills();
-            if (Paused && Input.GetKeyDown(CombatControls.Step)) { StepLogicForTests(1); return; }
+            if (Paused && Input.GetKeyDown(CombatControls.Step)) { AdvanceSimulation(1); return; }
             if (!AutoAdvance || Paused || _publication.Simulation == null) return;
             SetMovement(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
             int steps = _clock.BeginFrame(Time.unscaledDeltaTime * _hud.Rate);
-            if (steps > 0) StepLogicForTests(steps);
+            if (steps > 0) AdvanceSimulation(steps);
         }
 
         void SampleSkills()

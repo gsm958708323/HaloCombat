@@ -73,7 +73,7 @@ namespace Combat.Unity
                 {
                     if (GUILayout.Button(runner.Paused ? "Play" : "Pause")) runner.TogglePause();
                     using (new EnabledScope(runner.Paused))
-                        if (GUILayout.Button("Step")) runner.StepLogicForTests(1);
+                        if (GUILayout.Button("Step")) runner.AdvanceSimulation(1);
                 }
                 if (GUILayout.Button("Reset view")) runner.GetComponent<SkillLabVisuals>()?.ResetView();
                 GUILayout.EndHorizontal();
