@@ -42,6 +42,7 @@ namespace Combat.Core
     {
         public int SpecId;
         public float Radius = 1.3f;
+        public float InnerRadius;
         public float Duration = 2f;
         public float PulseInterval = 0.45f;
         public bool PulseOnSpawn = true;
@@ -81,7 +82,9 @@ namespace Combat.Core
         readonly Dictionary<int, AoeDefinition> _map = new Dictionary<int, AoeDefinition>(8);
         public void Register(AoeDefinition def)
         {
-            if (def == null || def.SpecId == 0) throw new ArgumentException("AoeDefinition");
+            if (def == null || def.SpecId == 0 || !(def.InnerRadius >= 0) ||
+                (def.InnerRadius > 0 && !(def.InnerRadius < def.Radius)))
+                throw new ArgumentException("Invalid area definition.");
             _map[def.SpecId] = def;
         }
 
@@ -191,7 +194,9 @@ namespace Combat.Core
         public SkillOrigin Origin {get;private set;}
         public HashSet<long> Inside => _inside;
         public float BaseRadius {get;private set;}
-        public float Radius=>BaseRadius*(1+AbsorbedProjectiles*(Def?.ProjectileRadiusScale??0));
+        float RadiusScale => 1 + AbsorbedProjectiles * (Def?.ProjectileRadiusScale ?? 0);
+        public float Radius => BaseRadius * RadiusScale;
+        public float InnerRadius => (Def?.InnerRadius ?? 0) * RadiusScale;
         public int AbsorbedProjectiles {get;private set;}
         public SimVec3 Velocity {get;private set;}
         internal void Absorb(SimVec3 velocity)

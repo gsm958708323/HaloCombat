@@ -194,7 +194,7 @@ namespace Combat.Core
 
         public bool Play(SkillNodeId skill, TimelineId timelineId, SkillAim aim = default,
             Func<float, float> advanceBudget = null, Func<int, bool> payPulse = null, Func<bool,SkillAim?> aimResolver = null,
-            ChargeDefinition charge = null,float power=1)
+            ChargeDefinition charge = null,float power=1,Action onAccepted = null)
         {
             if(!CanStartSkill)return false;
             if(aim.HasYaw&&(float.IsNaN(aim.Yaw)||float.IsInfinity(aim.Yaw)))return false;
@@ -214,6 +214,7 @@ namespace Combat.Core
             CurrentOrigin = new SkillOrigin(skill,Self.World.NextCastId(),caster:Self.Id);
             _player.Play(so, aim, advanceBudget, payPulse, aimResolver, charge,power,CurrentOrigin);
             foreach(var tag in so.ControlTags??Array.Empty<TagId>())if(_tags!=null)_controls.Add(_tags.Acquire(tag));
+            onAccepted?.Invoke();
             if (Self.TryGetComp<BuffComp>(out var buffs))
                 buffs.DispatchOnOwnerCast();
             return true;

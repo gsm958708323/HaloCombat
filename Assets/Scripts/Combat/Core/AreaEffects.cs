@@ -57,10 +57,22 @@ namespace Combat.Core
 
     internal static class AreaTargets
     {
-        public static EntityId[] Query(CombatWorld world, SimVec3 point, float radius, Actor source, int mask, int maximum)
+        public static EntityId[] Query(CombatWorld world, SimVec3 point, float radius, Actor source, int mask, int maximum, float innerRadius = 0)
         {
             var buffer = new Actor[world.RegistryActive().Count];
             int count = world.Query.OverlapCircle(point, radius, source, mask, buffer);
+            if (innerRadius > 0)
+            {
+                float innerSquared = innerRadius * innerRadius;
+                int kept = 0;
+                for (int i = 0; i < count; i++)
+                {
+                    var target = buffer[i];
+                    if (SpatialGeometry.DistanceSquared(point, target.GetComp<TransformComp>().Position) >= innerSquared)
+                        buffer[kept++] = target;
+                }
+                count = kept;
+            }
             if (maximum > 0) count = Math.Min(count, maximum);
             var ids = new EntityId[count];
             for (int i = 0; i < count; i++) ids[i] = buffer[i].Id;

@@ -32,7 +32,9 @@ namespace Combat.Config
                     byte[] bytes=Encoding.UTF8.GetBytes(file.Value);
                     var old=File.Exists(file.Key)?File.ReadAllBytes(file.Key):null;
                     if(old!=null&&Same(old,bytes))continue;
-                    originals.Add(file.Key,old);changed.Add(file.Key);Atomic(file.Key,bytes);
+                    originals.Add(file.Key,old);
+                    // A failed atomic replacement leaves its original intact. Roll back only completed writes.
+                    Atomic(file.Key,bytes);changed.Add(file.Key);
                 }
             }
             catch

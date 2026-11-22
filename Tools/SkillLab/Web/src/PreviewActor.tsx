@@ -1,16 +1,23 @@
 import {memo,useCallback} from 'react';
 
+function circlePath(radius:number) {
+  return `M${radius},0A${radius},${radius} 0 1 0 ${-radius},0A${radius},${radius} 0 1 0 ${radius},0Z`;
+}
+
 // Only visible glyph state crosses this boundary. Horizontal movement is painted
 // directly by useActorAnimation and does not require reconciling a glyph.
 interface Props {
-  id:string; sceneId?:string|null; name:string; kind:string; radius:number;
+  id:string; sceneId?:string|null; name:string; kind:string; radius:number; innerRadius?:number|null;
   height:number; hp?:number|null; maxHp?:number|null; remaining?:string;
   dead:boolean; stopped:boolean; hurt:boolean; ally:boolean; selected:boolean; buffs?:string;
   bind:(id:string,element:SVGGElement|null)=>void;
 }
-export const PreviewActor=memo(function PreviewActor({id,sceneId,name,kind,radius,height,hp,maxHp,remaining,dead,stopped,hurt,ally,selected,buffs,bind}:Props) {
+export const PreviewActor=memo(function PreviewActor({id,sceneId,name,kind,radius,innerRadius,height,hp,maxHp,remaining,dead,stopped,hurt,ally,selected,buffs,bind}:Props) {
   const ref=useCallback((element:SVGGElement|null)=>bind(id,element),[bind,id]);
-  if(kind==='aoe') return <g ref={ref}><circle r={radius} fill="#817ba3" fillOpacity=".15" stroke="#b1a4db" strokeWidth=".05"/>
+  if(kind==='aoe') return <g ref={ref} pointerEvents="none">
+    {innerRadius&&innerRadius>0&&innerRadius<radius
+      ?<path aria-label="环形区域" d={circlePath(radius)+circlePath(innerRadius)} fillRule="evenodd" fill="#817ba3" fillOpacity=".20" stroke="#b1a4db" strokeWidth=".05"/>
+      :<circle r={radius} fill="#817ba3" fillOpacity=".15" stroke="#b1a4db" strokeWidth=".05"/>}
     <text y={-radius-.2} textAnchor="middle" fill="#c3b8df" fontSize=".25">{remaining}s</text></g>;
   const projectile=kind==='projectile', caster=kind==='caster';
   const fill=caster?'#3b746a':projectile?'#e8d7a1':kind==='summon'||ally?'#4c9568':kind==='construct'?'#b37b3c':'#95664b';

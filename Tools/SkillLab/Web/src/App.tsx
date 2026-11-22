@@ -2,6 +2,8 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import { ReactFlow, ReactFlowProvider, Background, BackgroundVariant } from '@xyflow/react';
 import { Plus, Save, Download, Upload, Undo2, Redo2, Maximize, Workflow } from 'lucide-react';
 import { api, clone, kinds, deliveryLabel } from './model';
+import { publicationSlotLabel, publicationSlots } from './publicationSlots';
+import type { PublicationSlot } from './publicationSlots';
 
 import type { Project, Skill, BuffDefinition } from './model';
 import { SkillNode } from './SkillNode';
@@ -95,7 +97,7 @@ function Workbench({editor,workspace,project,message,setMessage}:{editor:ReturnT
     try{const available=examples.length?examples:(await api<Project>('/examples',undefined,'GET')).skills;setExamples(available);setTemplate(skill?'copy':available[0]?.id??'');setNewName('');}
     catch(error){setMessage(String(error));}
   }
-  async function publish(slot:string){
+  async function publish(slot:PublicationSlot){
     const p=editor.current.current;if(!p||!skill)return;
     try{const result=await api<{message:string;revision:string;skillId:string}>('/publish/'+slot+'?skillId='+encodeURIComponent(skill.id),p);setMessage(result.message+' · '+result.skillId+' · '+result.revision.slice(0,8));}
     catch(error){setMessage(String(error));}
@@ -182,8 +184,8 @@ function Workbench({editor,workspace,project,message,setMessage}:{editor:ReturnT
       <div className="header-actions"><WorkspacePicker editor={editor} report={setMessage} disabled={creating||copying}/><details className="project-menu"><summary>工程 ▾</summary><div><label>工程名称<input aria-label="工程名称" value={project.name??''} onChange={event=>editor.edit(p=>({...p,name:event.target.value}))}/></label><small>{project.skills.length} 技能 · {project.buffs?.length??0} Buff · {project.summonBlueprints?.length??0} 蓝图</small>
         <button onClick={()=>{setNewProjectName('新工程');setProjectTemplate('empty');}}>新建工程</button><button disabled={editor.saving||editor.publishing||editor.loading} onClick={()=>void editor.load().catch(e=>setMessage(String(e)))}>重新载入磁盘</button><p>手动保存。刷新恢复最近磁盘版本。</p></div></details>
         <small className={editor.dirty?'unsaved':''} role="status">{editor.saveStatus}</small><button className="save-project" disabled={editor.saving||editor.publishing||editor.loading} onClick={()=>void editor.save()}><Save size={13}/>保存</button>
-        <button disabled={!skill} onClick={()=>void publish('f6')}>发布到 F6</button><button disabled={!skill} onClick={()=>void publish('f7')}>发布到 F7</button>
-        <button onClick={()=>void api<{message:string}>('/publish/sync',editor.current.current).then(result=>setMessage(result.message)).catch(error=>setMessage(String(error)))}>同步两槽</button>
+        {publicationSlots.map(slot=><button key={slot} disabled={!skill} onClick={()=>void publish(slot)}>发布到{publicationSlotLabel(slot)}</button>)}
+        <button onClick={()=>void api<{message:string}>('/publish/sync',editor.current.current).then(result=>setMessage(result.message)).catch(error=>setMessage(String(error)))}>同步现有槽位</button>
         {workspace==='arena'&&<button disabled={editor.loading||editor.saving||editor.publishing||!project.runtime?.arena||!project.runtime?.actors.length} onClick={()=>void editor.publishArena()}>{editor.publishing?'发布中…':'发布正式内容'}</button>}
         <button onClick={()=>setSettings('project')}>工程设置</button><button onClick={()=>setExporting(true)}><Download size={13}/>导出</button><button onClick={()=>setImporting(true)}><Upload size={13}/>导入</button>
       </div></header>

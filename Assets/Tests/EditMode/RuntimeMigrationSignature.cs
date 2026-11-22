@@ -75,7 +75,7 @@ namespace Combat.Tests
                 {
                     if((field.Name=="MoveForward"||field.Name=="AbsorbProjectiles")&&!(bool)field.GetValue(value))continue;
                     if(field.Name=="RemoveOnObstacle"&&(bool)field.GetValue(value))continue;
-                    if((field.Name=="MoveSpeed"||field.Name=="ProjectileAbsorbForce"||field.Name=="ProjectileRadiusScale")&&(float)field.GetValue(value)==0)continue;
+                    if((field.Name=="InnerRadius"||field.Name=="MoveSpeed"||field.Name=="ProjectileAbsorbForce"||field.Name=="ProjectileRadiusScale")&&(float)field.GetValue(value)==0)continue;
                     if(field.Name=="OnAbsorb"&&area.OnAbsorb.Length==0)continue;
                 }
                 // The old circle wrapper used implicit hostility; zero preserves that rule.

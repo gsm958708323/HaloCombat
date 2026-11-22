@@ -1,7 +1,7 @@
 import { clone } from '../model';
 import type { GraphNode, Project, RuntimeContent } from '../model';
 import { withComboRuntime } from './comboEdits';
-import { allGraphs, selectGraph } from './contentEdits';
+import { allGraphs, buffReferenceField, selectGraph } from './contentEdits';
 import type { ImportCandidate } from './importCandidate';
 import { mergeWithIdentities } from './mergeProjects';
 
@@ -135,7 +135,9 @@ export function planSkillCopy(destination:Project,candidate:ImportCandidate,root
       const id=node.parameters[field];
       if(typeof id==='string'&&id&&!ids.has(id))detach(field,id);
     }
-    if(node.kind==='buff'||node.kind==='dispel')detachMissing('buff',included.get('buffs')!);
+    const buffField=buffReferenceField(node);
+    if(buffField)detachMissing(buffField,included.get('buffs')!);
+    if(node.kind==='cast'&&!node.parameters.requiredBuff)delete node.parameters.buffStackCost;
     if(node.kind==='projectile-ref')detachMissing('projectile',included.get('projectiles')!);
     if(node.kind==='area-ref')detachMissing('area',included.get('areas')!);
     if(node.kind==='delivery')detachMissing('blueprint',blueprints);

@@ -219,10 +219,13 @@ namespace Combat.Config
 
         IEffect Delivery(SkillNodeDocument node, string path)
         {
-            var p = new NodeParameters(node, path, "mode", "recipient", "center", "radius", "maxTargets", "persistent", "duration", "interval", "pulseOnSpawn",
+            var p = new NodeParameters(node, path, "mode", "recipient", "center", "radius", "maxTargets", "persistent", "duration", "interval", "pulseOnSpawn", "innerRadius",
                 "shape","length","width","angle","startup","activeDuration","movementMode","distance","speed","hitRadius","blueprint","count","spacing","maxAlive","permanent","cueId","hostileMask",
                 "areaMotion","moveSpeed","removeOnObstacle","absorbProjectiles","absorbForce","radiusPerProjectile","forwardOffset","view");
             string mode = p.Choice("mode", "target", "target", "area","ray","summon");
+            bool persistent = mode == "area" && p.Boolean("persistent", false);
+            if (!persistent && node.Parameters.Property("innerRadius") != null)
+                throw new ContentValidationException(path + ".parameters.innerRadius", "Inner radius requires a persistent area.");
             if(mode=="summon")
             {
                 _graph.RequireNoOutputs(node,"enter","exit","stay","wall","complete","absorb");
@@ -247,7 +250,6 @@ namespace Combat.Config
                     p.Number("length",20,.01f,1000),p.Number("width",.3f,.01f,100),p.Integer("maxTargets",0,0,128));
             }
             _graph.RequireNoOutputs(node,"wall","complete");
-            bool persistent = mode == "area" && p.Boolean("persistent", false);
             if (!persistent) _graph.RequireNoOutputs(node, "enter", "exit", "stay", "expire","absorb");
             var apply = Outputs(node, "apply");
             if (!persistent && apply.Length == 0) throw new ContentValidationException(path, "Delivery needs an enabled apply effect.");
@@ -255,6 +257,9 @@ namespace Combat.Config
             var center = Center(p); float radius = p.Number("radius", 3, .01f, 100);
             int maximum = p.Integer("maxTargets", 0, 0, 128);
             if (!persistent) return new CircleEffects(apply, center, radius, maximum,p.Integer("hostileMask",0,0,int.MaxValue));
+            float innerRadius = p.Number("innerRadius", 0, 0, radius);
+            if (innerRadius >= radius)
+                throw new ContentValidationException(path + ".parameters.innerRadius", "Inner radius must be less than radius.");
             CheckId(node, path, _aoes, "area");
             int areaCue=p.Integer("cueId",0,0,1000000);if(areaCue>0)_content.RequiredCues.Add(areaCue);
             var enter = Outputs(node, "enter"); var exit = Outputs(node, "exit"); var stay = Outputs(node, "stay");
@@ -266,7 +271,7 @@ namespace Combat.Config
                 throw new ContentValidationException(path, "Persistent area needs a lifecycle effect.");
             _content.Aoes.Register(new AoeDefinition
             {
-                SpecId = node.RuntimeId, Radius = radius, Duration = p.Boolean("permanent",false)?0:p.Number("duration", 2, .02f, 120),
+                SpecId = node.RuntimeId, Radius = radius, InnerRadius = innerRadius, Duration = p.Boolean("permanent",false)?0:p.Number("duration", 2, .02f, 120),
                 PulseInterval = p.Number("interval", .5f, 0, 60), PulseOnSpawn = p.Boolean("pulseOnSpawn", true), MaxTargets = maximum,
                 CueId=areaCue,HostileMask=p.Integer("hostileMask",0,0,int.MaxValue),
                 View=BodyView(p),

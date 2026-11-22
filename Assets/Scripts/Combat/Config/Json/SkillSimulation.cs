@@ -64,6 +64,8 @@ namespace Combat.Config
             _world.Events.Subscribe<EvBuffLifecycle>(OnBuff);
             _world.Events.Subscribe<EvSkillOperation>(e=>
             {_content.Skills.TryGet(e.Skill,out var skill);Record("operation",Name(e.Source),skill?.Name??e.Skill.ToString(),new SkillOrigin(e.Skill,0,caster:e.Source),node:_content.Sources.Definition("skill",e.Skill.Value),sourceId:e.Source);});
+            _world.Events.Subscribe<EvSkillReturned>(e => Record("skill-return", Name(e.Source), SkillName(e.Origin), e.Origin,
+                node:_content.Sources.Definition("skill", e.Origin.Skill.Value), sourceId:e.Source));
             _world.Events.Subscribe<EvSkillStarted>(e=>
             {_casts++;var origin=OriginOf(e.Source);if(origin.CastId>0)_actionSources[origin.CastId]=_content.Sources;
                 _content.Skills.TryGet(e.Skill,out var skill);Record("cast",Name(e.Source),skill?.Name??e.Skill.ToString(),origin,node:_content.Sources.Definition("skill",e.Skill.Value),sourceId:e.Source);});
@@ -114,8 +116,8 @@ namespace Combat.Config
         }
 
         public SkillCastResult Cast(string key, float x, float z)
-            =>Cast(key,x,z,true);
-        SkillCastResult Cast(string key,float x,float z,bool reportRejection)
+            => Cast(key, x, z, explicitPress:true);
+        SkillCastResult Cast(string key, float x, float z, bool explicitPress)
         {
             EnsureAlive();
             if (!SkillSceneValidation.Finite(x) || !SkillSceneValidation.Finite(z))
@@ -128,8 +130,8 @@ namespace Combat.Config
             float heading = LocomotionComp.YawFromStick(new SimVec3(point.X - origin.X, 0, point.Z - origin.Z));
             if(caster.TryGetComp<PlayerAimComp>(out var aiming)){aiming.Valid=true;aiming.Aim=new SkillAim(EntityId.Invalid,point,heading);}
             var cast = caster.GetComp<SkillCastComp>();
-            bool accepted = cast.TryCast(skill.Id, new SkillAim(EntityId.Invalid, point, heading));
-            if(!accepted&&reportRejection)Record("rejected",skill.Name,cast.LastRejection,node:_content.Sources.Definition("skill",skill.Id.Value),sourceId:caster.Id);
+            bool accepted = cast.TryCast(skill.Id, new SkillAim(EntityId.Invalid, point, heading), allowReturn:explicitPress);
+            if(!accepted&&explicitPress)Record("rejected",skill.Name,cast.LastRejection,node:_content.Sources.Definition("skill",skill.Id.Value),sourceId:caster.Id);
             return new SkillCastResult(accepted, cast.LastRejection);
         }
 
@@ -250,7 +252,7 @@ namespace Combat.Config
                 if(_continuousSkill!=null&&_world.TryGetActor(_caster,out var firing))
                 {
                     var cast=firing.GetComp<SkillCastComp>();
-                    if(!cast.IsChanneling&&!cast.IsCharging)Cast(_continuousSkill,_aimPoint.X,_aimPoint.Z,false);
+                    if(!cast.IsChanneling&&!cast.IsCharging)Cast(_continuousSkill, _aimPoint.X, _aimPoint.Z, explicitPress:false);
                     else Aim(_aimPoint.X,_aimPoint.Z);
                 }
                 if (_world.TryGetActor(_caster, out var caster)) caster.GetComp<LocomotionComp>().RequestMoveIntent(_movement.X, _movement.Z);
@@ -318,6 +320,8 @@ namespace Combat.Config
                     Speed=projectile!=null?(float?)ProjectileKinematics.Speed(projectile):null,VerticalSpeed=projectile?.Def.Motion?.Bounce!=null||projectile?.Def.Motion?.ScheduledBounce!=null?(float?)projectile.VerticalSpeed:null,
                     Returning=projectile?.Returning??false,GroundBouncesLeft=projectile?.GroundBouncesLeft??0,WallBouncesLeft=projectile?.WallBouncesLeft??0,
                     AbsorbedProjectiles=area?.AbsorbedProjectiles??0,AreaVelocityX=area?.Velocity.X,AreaVelocityZ=area?.Velocity.Z,
+                    InnerRadius=area != null && area.InnerRadius > 0 ? (float?)area.InnerRadius : null,
+                    ReturnAnchors=CaptureReturnAnchors(a),
                     Buffs=!includeDetails?null:a.TryGetComp<BuffComp>(out var buffs)?buffs.Snapshot().Select(b=>new SkillBuffSnapshot{InstanceId=b.InstanceId,Id=b.Key??b.BuffId.ToString(),Name=b.Name??b.Key??b.BuffId.ToString(),
                         Source=Name(b.Source),Stacks=b.Stacks,Remaining=b.Remaining}).ToArray():Array.Empty<SkillBuffSnapshot>(),
                     Tags=!includeDetails?null:a.TryGetComp<TagComp>(out var tagValues)?tagValues.Snapshot():new Dictionary<int,int>(),Attributes=includeDetails?Attributes(attr):null
@@ -336,6 +340,27 @@ namespace Combat.Config
                 Cooldowns = _content.Skills.All.ToDictionary(s => s.Key, s => cast?.CooldownLeft(s.Id) ?? 0),
                 Statistics = new SkillStatistics { Damage = _damage, Hits = _hits, Casts = _casts, Projectiles = _spawned, Areas = _spawnedAreas,Summons=_spawnedSummons,Constructs=_spawnedConstructs,Chains=_chains,Splits=_splits }
             };
+        }
+
+        SkillReturnAnchorSnapshot[] CaptureReturnAnchors(Actor actor)
+        {
+            if (!actor.TryGetComp<SkillCastComp>(out var cast)) return null;
+            var anchors = cast.ReturnAnchors();
+            if (anchors.Length == 0) return null;
+            return anchors.Select(anchor =>
+            {
+                _content.Skills.TryGet(anchor.RequestedSkill, out var skill);
+                return new SkillReturnAnchorSnapshot
+                {
+                    SkillId = skill?.Key,
+                    Input = anchor.Input.IsValid ? anchor.Input.Action : null,
+                    CastId = anchor.Origin.CastId,
+                    X = anchor.Position.X,
+                    Y = anchor.Position.Y,
+                    Z = anchor.Position.Z,
+                    Remaining = anchor.Remaining
+                };
+            }).ToArray();
         }
 
         void OnSpawn(EvEntitySpawn e)

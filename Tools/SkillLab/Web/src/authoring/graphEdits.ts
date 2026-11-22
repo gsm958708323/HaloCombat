@@ -1,6 +1,6 @@
 import { clone, kinds, nodeOutputs } from '../model';
 import type { GraphEdge, GraphNode, Project } from '../model';
-import { copyGraph, definitionAllocator, graphOf, updateGraph } from './contentEdits';
+import { buffReferenceField, copyGraph, definitionAllocator, graphOf, updateGraph } from './contentEdits';
 import type { EditableGraph, GraphKey } from './contentEdits';
 
 export interface GraphClipboard { nodes:GraphNode[];edges:GraphEdge[] }
@@ -21,7 +21,8 @@ export function pasteSelection(p:Project,key:GraphKey,clipboard:GraphClipboard,p
   if(graph.nodes.length+nodes.length>256)throw new Error('粘贴后节点数超过256个');
   for(const node of nodes){
     if(node.kind==='cast'&&['fallbackSkill','recastSkill'].some(field=>node.parameters[field]&&!p.skills.some(s=>s.id===node.parameters[field])))throw new Error('待粘贴施放节点引用了工程中不存在的技能');
-    if((node.kind==='buff'||node.kind==='dispel')&&node.parameters.buff&&!p.buffs?.some(b=>b.id===node.parameters.buff))throw new Error('待粘贴节点引用了工程中不存在的 Buff');
+    const buffField=buffReferenceField(node);
+    if(buffField&&node.parameters[buffField]&&!p.buffs?.some(b=>b.id===node.parameters[buffField]))throw new Error('待粘贴节点引用了工程中不存在的 Buff');
     if(node.kind==='delivery'&&node.parameters.blueprint&&!p.summonBlueprints?.some(b=>b.id===node.parameters.blueprint))throw new Error('待粘贴节点引用了工程中不存在的召唤蓝图');
     if(node.kind==='area-ref'&&!p.areas?.some(v=>v.id===node.parameters.area))throw new Error('待粘贴节点引用了工程中不存在的区域定义');
     if(node.kind==='projectile-ref'&&!p.projectiles?.some(v=>v.id===node.parameters.projectile))throw new Error('待粘贴节点引用了工程中不存在的弹体定义');

@@ -38,7 +38,4 @@ namespace Combat.Presentation
     }
 
     public interface ICuePlayer { void Play(EvCue e); }
-    public interface IFloaterPlayer { void Play(EvDamage e); void PlayImmune(EvImmune e); }
-    public interface IHitstopOverlay { void ShowFlash(); void SetActive(bool on); }
-    public interface IDebugOverlay { bool Enabled { get; set; } void Refresh(CombatWorld world); }
 }

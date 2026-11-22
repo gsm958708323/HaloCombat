@@ -111,7 +111,7 @@ namespace Combat.Config
                 if(skill.TimelineRef!=null)
                 {authored=shared[skill.TimelineRef];content.Dependencies.Add(graph.ContentKey,ContentDependencies.Timeline(skill.TimelineRef));}
                 if (authored==null&&effects.Length + compiler.Clips.Count + compiler.Followups.Count == 0) Fail(graph.NodePath(cast), "Cast needs an enabled delivery/effect.");
-                var definition = SkillCastCompiler.Compile(skill, cast, graph.NodePath(cast), effects, content.Timelines,compiler.Clips.ToArray(),compiler.Followups.ToArray(),authored,skillIds,content.Dependencies);
+                var definition = SkillCastCompiler.Compile(skill, cast, graph.NodePath(cast), effects, content.Timelines,compiler.Clips.ToArray(),compiler.Followups.ToArray(),authored,skillIds,content);
                 definition.AimRange=compiler.AimRange;
                 definition.TargetMode = (SkillTargetMode)Array.IndexOf(new[] { "point", "entity", "nearest", "random", "direction", "self","facing" }, mode);
                 definition.TargetRange = range;

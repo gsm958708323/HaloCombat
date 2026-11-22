@@ -83,7 +83,7 @@ app.MapPost("/api/runtime/publish",async(HttpContext context)=>
     await jsonLock.WaitAsync();
     try{workspaces.Get(WorkspaceStores.Arena).PublishArena(context.Request.Headers.IfMatch,runtimeFile);}
     finally{jsonLock.Release();}
-    return Results.Ok(new{message="正式JSON已发布；Arena按F5载入，演示场景按F1重建，训练场点击重置。"});
+    return Results.Ok(new{message="正式工程已发布。Arena 正式或木桩模式按 F5 重载。"});
 });
 app.MapGet("/api/templates/{id}",(string id)=>
 {var project=SkillProjectFiles.Read(exampleFile);return Results.Text(SkillProjectJson.Write(SkillProjectJson.SelectTemplate(project,id)),"application/json");});
@@ -110,12 +110,7 @@ app.MapPost("/api/document/import",async(HttpContext context)=>
 });
 app.MapPost("/api/export/{kind}",async(string kind,HttpContext context)=>
 {var project=await ReadProject(context);return Results.Ok(SkillJsonTransfer.Export(project,kind,context.Request.Query["skillId"]));});
-app.MapGet("/api/publications",async()=>
-{
-    await jsonLock.WaitAsync();
-    try {var directory=paths.Publications;return Results.Ok(new[]{PublicationInspection.Read(directory,"f6"),PublicationInspection.Read(directory,"f7")});}
-    finally{jsonLock.Release();}
-});
+app.MapGet("/api/publications", () => Results.Ok(PublicationFiles.Inspect(paths.Publications)));
 app.MapPost("/api/validate",async(HttpContext context)=>
 {var project=await ReadProject(context);CombatContentCompiler.Compile(project);return Results.Ok(new{valid=true});});
 app.MapPost("/api/preview",async(HttpContext context)=>
@@ -164,37 +159,30 @@ app.MapPost("/api/replays",async(HttpContext context)=>
 });
 app.MapDelete("/api/preview/{id}",(string id)=>
 {if(sessions.TryRemove(id,out var session))lock(session)session.Dispose();return Results.NoContent();});
-app.MapPost("/api/publish/sync",async(HttpContext context)=>
+app.MapPost("/api/publish/sync", async (HttpContext context) =>
 {
-    var project=await ReadProject(context);var directory=paths.Publications;
-    await jsonLock.WaitAsync();
-    try
+    var project = await ReadProject(context);
+    var plan = PublicationFiles.Sync(paths.Publications, project);
+    return Results.Ok(new
     {
-        var plan=PublicationFiles.PlanSync(project,PublicationFiles.Read(directory));
-        foreach(var pair in plan){string path=Path.Combine(directory,pair.Key+".json"),temporary=path+".tmp";await File.WriteAllTextAsync(temporary,SkillPublicationJson.Write(pair.Value));File.Move(temporary,path,true);}
-        return Results.Ok(new{message="已按当前工程同步现有槽位；SkillLab按F5或点击Reload载入。",slots=plan.ToDictionary(p=>p.Key,p=>new{skillId=p.Value.SkillId,revision=p.Value.Revision})});
-    }
-    finally{jsonLock.Release();}
+        message = "已按当前工程同步全部现有槽位。Unity SkillLab 按 F5 或点击 Reload 载入。",
+        slots = plan.ToDictionary(pair => pair.Key, pair => new { skillId = pair.Value.SkillId, revision = pair.Value.Revision })
+    });
 });
-app.MapPost("/api/publish/{slot}",async(string slot,HttpContext context)=>
+app.MapPost("/api/publish/{slot}", async (string slot, HttpContext context) =>
 {
-    if(slot!="f6"&&slot!="f7")return Results.BadRequest(new{error="Expected f6 or f7."});
-    var project=await ReadProject(context);
-    var publication=SkillPublicationJson.Create(project,context.Request.Query["skillId"]);
-    var directory=paths.Publications;Directory.CreateDirectory(directory);
-    var path=Path.Combine(directory,slot+".json");
-    await jsonLock.WaitAsync();
-    string warning;
-    try
+    if (!PublishedSkillSlots.Ordered.Contains(slot))
+        return Results.BadRequest(new { error = "Expected a publication slot: " + string.Join(", ", PublishedSkillSlots.Ordered) + "." });
+    var project = await ReadProject(context);
+    var publication = SkillPublicationJson.Create(project, context.Request.Query["skillId"]);
+    var warning = PublicationFiles.Publish(paths.Publications, slot, publication);
+    var number = PublicationFiles.Number(slot);
+    return Results.Ok(new
     {
-        var temporary=path+".tmp";
-        await File.WriteAllTextAsync(temporary,SkillPublicationJson.Write(publication));
-        File.Move(temporary,path,true);
-        warning=PublicationFiles.LoadWarning(directory,slot,publication.Project.Id);
-    }
-    finally{jsonLock.Release();}
-    return Results.Ok(new{written=true,path,revision=publication.Revision,skillId=publication.SkillId,
-        message=warning??"已发布到 "+slot.ToUpperInvariant()+"；Unity SkillLab 场景按 F5 重载，再按 F6/F7 施放。"});
+        written = true, path = PublicationFiles.SlotPath(paths.Publications, slot),
+        revision = publication.Revision, skillId = publication.SkillId,
+        message = warning ?? $"已发布到槽位 {number}。Unity SkillLab 按 F5 重载，再按小键盘 {number} 施放。"
+    });
 });
 var dist=Path.Combine(root,"Tools/SkillLab/Web/dist");
 if(Directory.Exists(dist))

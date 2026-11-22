@@ -1,6 +1,6 @@
 import { clone } from '../model';
 import type { GraphNode, Project } from '../model';
-import { actionNumbers,allGraphs, copyGraph, definitionAllocator, numberAllocator,remapTimeline } from './contentEdits';
+import { actionNumbers,allGraphs,buffReferenceField, copyGraph, definitionAllocator, numberAllocator,remapTimeline } from './contentEdits';
 
 // Source references always stay within the imported set, including when a shared ID conflicts.
 export function mergeProjects(destination:Project,source:Project,newId:()=>string=()=>crypto.randomUUID()):Project {
@@ -22,11 +22,14 @@ export function mergeWithIdentities(destination:Project,source:Project,newId:()=
   const definitionNumber=definitionAllocator(destination);
   const references=(nodes:GraphNode[])=>nodes.map(original=>{
     const builtIn=original.kind==='construct'&&['barrel','crate'].includes(String(original.parameters.view));
-    const node=!builtIn&&typeof original.parameters.view==='string'&&viewIds.has(original.parameters.view)?{...original,parameters:{...original.parameters,view:viewIds.get(original.parameters.view)!}}:original;
+    let node=!builtIn&&typeof original.parameters.view==='string'&&viewIds.has(original.parameters.view)?{...original,parameters:{...original.parameters,view:viewIds.get(original.parameters.view)!}}:original;
     if(node.kind==='area-ref'&&typeof node.parameters.area==='string')return {...node,parameters:{...node.parameters,area:areaIds.get(node.parameters.area)??node.parameters.area}};
     if(node.kind==='projectile-ref'&&typeof node.parameters.projectile==='string')return {...node,parameters:{...node.parameters,projectile:projectileIds.get(node.parameters.projectile)??node.parameters.projectile}};
+    const buffField=buffReferenceField(node);
+    const buffId=buffField?node.parameters[buffField]:undefined;
+    if(buffField&&typeof buffId==='string'&&buffIds.has(buffId))
+      node={...node,parameters:{...node.parameters,[buffField]:buffIds.get(buffId)!}};
     if(node.kind==='cast')return {...node,parameters:{...node.parameters,...Object.fromEntries(['fallbackSkill','recastSkill'].filter(field=>typeof node.parameters[field]==='string'&&skillIds.has(String(node.parameters[field]))).map(field=>[field,skillIds.get(String(node.parameters[field]))!]))}};
-    if((node.kind==='buff'||node.kind==='dispel')&&typeof node.parameters.buff==='string'&&buffIds.has(node.parameters.buff))return {...node,parameters:{...node.parameters,buff:buffIds.get(node.parameters.buff)!}};
     if(node.kind==='delivery'&&typeof node.parameters.blueprint==='string'&&blueprintIds.has(node.parameters.blueprint))return {...node,parameters:{...node.parameters,blueprint:blueprintIds.get(node.parameters.blueprint)!}};
     return node;
   });

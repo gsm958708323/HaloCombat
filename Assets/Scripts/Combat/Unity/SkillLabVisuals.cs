@@ -66,7 +66,19 @@ namespace Combat.Unity
             var alive = new HashSet<string>();
             foreach (var actor in snapshot.Actors)
             {
+                if (actor.Kind == "aoe" && actor.InnerRadius > 0)
+                {
+                    if (_runner.ShowRanges)
+                    {
+                        DrawGroundOutline(actor.Id + ":inner", actor.X, actor.Z, actor.InnerRadius.Value, alive);
+                        DrawGroundOutline(actor.Id + ":outer", actor.X, actor.Z, actor.Radius, alive);
+                    }
+                    if (actor.View == null) continue;
+                }
                 if (actor.Kind == "aoe" && actor.View == null && !_runner.ShowRanges) continue;
+                if (actor.ReturnAnchors != null)
+                    foreach (var anchor in actor.ReturnAnchors)
+                        DrawGroundOutline($"anchor:{actor.Id}:{anchor.CastId}", anchor.X, anchor.Z, .42f, alive);
                 alive.Add(actor.Id);
                 if (!_objects.TryGetValue(actor.Id, out var visual))
                 {
@@ -98,6 +110,19 @@ namespace Combat.Unity
             var removed = new List<string>();
             foreach (var item in _objects) if (!alive.Contains(item.Key)) removed.Add(item.Key);
             foreach (var id in removed) { Destroy(_objects[id]); _objects.Remove(id);_bodies.Remove(id); }
+        }
+
+        void DrawGroundOutline(string id, float x, float z, float radius, HashSet<string> alive)
+        {
+            alive.Add(id);
+            if (!_objects.TryGetValue(id, out var visual))
+            {
+                var line=CombatGroundOutline.Create(transform, _aimMaterial, id);
+                visual=line.gameObject;
+                _objects.Add(id, visual);
+            }
+            CombatGroundOutline.SetRadius(visual.GetComponent<LineRenderer>(), radius);
+            visual.transform.position=new Vector3(x, 0, z);
         }
 
         void DrawRanges(SkillSimulationSnapshot snapshot, HashSet<string> alive)

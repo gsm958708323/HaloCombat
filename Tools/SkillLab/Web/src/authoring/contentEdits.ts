@@ -19,8 +19,13 @@ export function updateGraph(p:Project,key:GraphKey,change:(graph:EditableGraph)=
     {...p,buffs:p.buffs?.map(b=>b.id===key.id?{...b,...change(b)}:b)};
 }
 
+export function buffReferenceField(node:GraphNode) {
+  if(node.kind==='cast')return 'requiredBuff';
+  if(node.kind==='buff'||node.kind==='dispel')return 'buff';
+  return null;
+}
 function referenceField(node:GraphNode,kind:ContentKind) {
-  return kind==='buff'&&(node.kind==='buff'||node.kind==='dispel')?'buff':kind==='blueprint'&&node.kind==='delivery'?'blueprint':kind==='projectile'&&node.kind==='projectile-ref'?'projectile':kind==='area'&&node.kind==='area-ref'?'area':null;
+  return kind==='buff'?buffReferenceField(node):kind==='blueprint'&&node.kind==='delivery'?'blueprint':kind==='projectile'&&node.kind==='projectile-ref'?'projectile':kind==='area'&&node.kind==='area-ref'?'area':null;
 }
 export function referencesTo(p:Project,kind:ContentKind,id:string):ContentReference[] {
   if(kind==='timeline')return p.skills.filter(s=>s.timelineRef===id).map(s=>({kind:'skill',id:s.id,name:s.name,field:'timelineRef'}));

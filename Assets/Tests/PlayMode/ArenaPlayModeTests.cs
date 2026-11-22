@@ -13,6 +13,37 @@ using Object=UnityEngine.Object;
 
 namespace Combat.Tests
 {
+    public sealed class CombatControlsTests
+    {
+        [Test]
+        public void AliasesProduceOnePressAndReleaseOnlyOnceBothAreUp()
+        {
+            var button = new CombatControls.ButtonState();
+            AssertFrame(button.Sample(true, true, false, false), true, true, false);
+            AssertFrame(button.Sample(false, true, true, true), false, true, false);
+            AssertFrame(button.Sample(false, false, false, true), false, true, false);
+            AssertFrame(button.Sample(false, false, false, false), false, false, true);
+            AssertFrame(button.Sample(false, false, false, false), false, false, false);
+            AssertFrame(button.Sample(true, true, true, true), true, true, false);
+        }
+
+        [Test]
+        public void SuppressedMouseDownDoesNotInheritAKeyboardHold()
+        {
+            var button = new CombatControls.ButtonState();
+            AssertFrame(button.Sample(false, true, false, false), false, false, false);
+            AssertFrame(button.Sample(false, true, true, true), true, true, false);
+            AssertFrame(button.Sample(false, true, false, false), false, false, true);
+            AssertFrame(button.Sample(false, true, false, false), false, false, false);
+            AssertFrame(button.Sample(true, false, false, false), true, false, true);
+        }
+
+        static void AssertFrame(CombatControls.ButtonFrame frame, bool pressed, bool held, bool released)
+        {
+            Assert.That((frame.Pressed, frame.Held, frame.Released), Is.EqualTo((pressed, held, released)));
+        }
+    }
+
     public sealed class ArenaPlayModeTests
     {
         ArenaBootstrap _runner;
@@ -29,7 +60,7 @@ namespace Combat.Tests
             _runner=Object.FindFirstObjectByType<ArenaBootstrap>();Assert.IsNotNull(_runner);_runner.AutoAdvance=false;
             _runner.Configure(_relative+"/project.json",true);Assert.IsTrue(_runner.Reload(false),_runner.LastLoadError);
         }
-        void Save()=>File.WriteAllText(ProjectFile,SkillProjectJson.Write(_project));
+        void Save()=>SkillProjectFiles.Write(ProjectFile,_project);
         static ArenaInputFrame Input(bool held=false,params string[] presses)=>new ArenaInputFrame{PrimaryHeld=held,Pressed=presses,AimValid=true,Aim=new SkillAim(EntityId.Invalid,new SimVec3(4,0,0),0)};
         [UnityTearDown]
         public IEnumerator TearDown()
@@ -72,6 +103,41 @@ namespace Combat.Tests
             File.WriteAllText(ProjectFile,"{broken");Assert.IsFalse(_runner.Reload(false));Assert.AreSame(previous,_runner.Session);Assert.IsNotNull(_runner.LastLoadError);
             Assert.IsTrue(Player.GetComp<SkillDirectorComp>().IsPlaying);_runner.StepForTests(50);Assert.AreEqual(54,previous.World.Time.Frame);
             yield return null;Assert.IsTrue(_runner.GetComponentsInChildren<UnityActorView>().Length>=2);LogAssert.NoUnexpectedReceived();
+        }
+        [UnityTest]
+        public IEnumerator MissingRuntimeFileKeepsTheLiveSessionAndItsInFlightSkill()
+        {
+            var session = _runner.Session;
+            var player = Player;
+            var director = player.GetComp<SkillDirectorComp>();
+            var viewRoot = _runner.transform.Find("ArenaRuntime");
+            _runner.Submit(Input(false, "Fire1"));
+            _runner.StepForTests(4);
+            Assert.IsTrue(director.IsPlaying);
+            var castId = director.CurrentOrigin.CastId;
+            var timelineTime = director.TimelineTime;
+            var frame = session.World.Time.Frame;
+
+            var runtimeFile = Path.GetFullPath(Path.Combine(_directory, "runtime", "arena.json"));
+            Assert.IsTrue(File.Exists(runtimeFile));
+            File.Delete(runtimeFile);
+            Assert.IsFalse(_runner.Reload(false));
+            StringAssert.Contains(runtimeFile, _runner.LastLoadError);
+            Assert.AreSame(session, _runner.Session);
+            Assert.AreSame(player, Player);
+            Assert.AreEqual(frame, session.World.Time.Frame);
+            Assert.IsTrue(director.IsPlaying);
+            Assert.AreEqual(castId, director.CurrentOrigin.CastId);
+            Assert.AreEqual(timelineTime, director.TimelineTime);
+
+            _runner.StepForTests(1);
+            Assert.AreEqual(frame + 1, session.World.Time.Frame);
+            Assert.AreEqual(castId, director.CurrentOrigin.CastId);
+            Assert.Greater(director.TimelineTime, timelineTime);
+            yield return null;
+            Assert.AreSame(viewRoot, _runner.transform.Find("ArenaRuntime"));
+            Assert.IsTrue(viewRoot.gameObject.activeInHierarchy);
+            LogAssert.NoUnexpectedReceived();
         }
         [UnityTest]
         public IEnumerator FailureDuringCandidateStartAlsoKeepsTheLiveSessionAndViewTree()

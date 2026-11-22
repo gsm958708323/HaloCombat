@@ -6,7 +6,7 @@
 
 磁盘project.json是`formatVersion/id/name/files`索引。files.skills/projectiles/areas/buffs/timelines/summonBlueprints为按稳定ID命名的相对文件数组，files.preview/editor为独立文件；files.runtime保存motor/actors/combos/cues/views/arena等文件路径。SkillProjectFiles 组合为 SkillProjectDocument 后校验与编译。磁盘版节点坐标位于 `editor.json` 的 `nodePositions`，按集合、图和节点身份定位。运行时只读取玩法分片与试验布置。可携带作者工程在 `nodes[].position` 表示布局。
 
-路径必须留在索引目录内，重复文件、未知字段、重复JSON键及坏模块拒绝并报文件。保存使用跨进程互斥、逐文件原子替换和失败回滚；ETag基于展开文档，单独改模块也使原ETag失效。示例、正式和用户工作工程均采用该结构，部署时携带索引引用闭包。以下单文件协议继续用于HTTP、下载、独立F6/F7和输入记录；磁盘索引不能脱离目录单独导入浏览器。
+路径必须留在索引目录内，重复文件、未知字段、重复JSON键及坏模块拒绝并报文件。保存使用跨进程互斥、逐文件原子替换和失败回滚；ETag基于展开文档，单独改模块也使原ETag失效。示例、正式和用户工作工程均采用该结构，部署时携带索引引用闭包。以下单文件协议继续用于HTTP、下载、技能槽和输入记录；磁盘索引不能脱离目录单独导入浏览器。
 
 ## 三种内容文件
 
@@ -52,4 +52,4 @@ cast.allowMovement允许动作中的自主移动；远程自动时序默认true�
 
 保存允许空工程/断线草稿，要求合法结构与保留引用；预览、配置应用和发布要求完整编译。ETag条件写入和原子替换防止覆盖新磁盘版本，保存仅确认请求时快照。导入原始文本先过C#，再预览替换/合并；合并重分配冲突身份并同步内部引用，可撤销。未知模块/枚举/字段不会静默变成空效果。
 
-源工程宿主默认4192，仅监听127.0.0.1；F6/F7写`Assets/StreamingAssets/Combat`，Unity按F5明确加载。两槽共享工程/依赖版本不一致时保留旧会话，使用同步两槽更新。独立分发包默认保存在包内，可显式指定发布目录；正式内容发布仍写当前内容根的正式project.json。参见SkillLab使用说明、ADR及最终验收记录。
+源工程宿主默认4192，仅监听127.0.0.1；技能槽写到 `Assets/StreamingAssets/Combat`，槽位 1–4 对应 `f6.json`、`f7.json`、`slot3.json`、`slot4.json`。Unity 按 F5 重载。SkillLab 检查四槽工程和共享依赖版本，Arena 仅使用前两槽。同步重建现有槽位，失败时保留有效会话。独立分发包默认保存在包内，可显式指定发布目录；正式内容发布仍写当前内容根的正式project.json。参见SkillLab使用说明、ADR及最终验收记录。

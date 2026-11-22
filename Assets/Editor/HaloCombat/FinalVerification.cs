@@ -8,8 +8,8 @@ namespace Combat.EditorTools
         public static void Run()
         {
             UnityRuntimeContent.Load();
+            ArenaSceneBuilder.Verify();
             HaloCombatDemoSceneBuilder.VerifyAll();
-            SeasonThreeSceneBuilder.VerifyAll();
         }
     }
 }

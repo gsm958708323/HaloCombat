@@ -5,8 +5,8 @@ namespace Combat.Core
 {
     public enum StackPolicy : byte { RefreshDuration, AddStack, Independent, RejectIfExists }
     public enum DispelMode : byte { ByBuffId, ByMutexGroup, ByTag, BySource }
-    public enum BuffEventKind { Applied, Stacked, Refreshed, Period, Expired, Hurt, Cast, Removed, Rejected }
-    public enum BuffRemovalReason { Expired, Dispelled, Mutex, Death, Manual, Detached }
+    public enum BuffEventKind { Applied, Stacked, Refreshed, Period, Expired, Hurt, Cast, Removed, Rejected, Consumed }
+    public enum BuffRemovalReason { Expired, Dispelled, Mutex, Death, Manual, Detached, Consumed }
 
     public sealed class DurationSpec
     {

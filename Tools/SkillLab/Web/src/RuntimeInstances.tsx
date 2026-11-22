@@ -13,7 +13,10 @@ export function RuntimeInstances({actors,ready,inspectEntity,inspectSource,remov
       <div className="instance-owner">动作 {a.actionTime?.toFixed(2)??'-'}/{a.actionDuration?.toFixed(2)??'-'}s · {a.actionRate?.toFixed(2)}× · 控制 {a.controlTags?.join(' / ')||'无'}</div>
       {(a.currentSkill||a.bufferedInput||a.comboConfirmed)&&<div className="instance-owner">技能 {a.currentSkill??'空闲'} · 确认 {a.comboConfirmed?'可用':'无'} · 输入 {a.bufferedInput??'无'}</div>}
       {a.hp!=null&&<div className="instance-owner">生命 {a.hp}/{a.maxHp} · 护盾 {a.attributes?.Shield?.toFixed(1)} · 高度 {a.y?.toFixed(2)} · 攻击 {a.attributes?.Atk?.toFixed(1)} · 防御 {a.attributes?.Def?.toFixed(1)} · 移速 {a.attributes?.MoveSpeed?.toFixed(1)} · Tag {Object.entries(a.tags??{}).map(([key,value])=>`${key}×${value}`).join(' / ')}</div>}
-      {a.kind==='aoe'&&<div className="instance-owner">区域半径 {a.radius?.toFixed(3)}m · 吸收 {a.absorbedProjectiles} · 冲量速度 {a.areaVelocityX?.toFixed(3)} / {a.areaVelocityZ?.toFixed(3)}</div>}
+      {a.returnAnchors?.map(anchor=><div className="instance-owner" key={anchor.castId}>
+        返回起点 · {anchor.skillId} · {anchor.remaining.toFixed(2)}s · ({anchor.x.toFixed(2)}, {anchor.z.toFixed(2)})
+      </div>)}
+      {a.kind==='aoe'&&<div className="instance-owner">区域半径 {a.radius?.toFixed(3)}m{a.innerRadius?` · 内半径 ${a.innerRadius.toFixed(3)}m`:''} · 吸收 {a.absorbedProjectiles} · 冲量速度 {a.areaVelocityX?.toFixed(3)} / {a.areaVelocityZ?.toFixed(3)}</div>}
       {a.kind==='construct'&&<div className="instance-owner">归属 {a.owner} · 连爆组 {a.group} · 受伤上限 {a.damageCap===0?'不限':a.damageCap} · 下次自伤 {a.nextDecay?.toFixed(2)??'关闭'}s</div>}
       {a.kind==='summon'&&<div className="instance-owner">归属 {a.owner} · 技能 {a.skill} · 能量 {a.energy?.toFixed(1)}</div>}
     </details>

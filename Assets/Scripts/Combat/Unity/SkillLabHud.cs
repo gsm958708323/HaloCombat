@@ -1,4 +1,5 @@
 using System.Linq;
+using Combat.Config;
 using UnityEngine;
 
 namespace Combat.Unity
@@ -25,7 +26,7 @@ namespace Combat.Unity
                 return new Rect(panel.position * Scale, panel.size * Scale);
             }
         }
-        public static bool PointerOver => Bounds.Contains(new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y));
+        public static bool PointerOver => CombatControls.OverPanel(Bounds);
 
         public void Draw(SkillLabRunner runner, string status)
         {
@@ -35,24 +36,32 @@ namespace Combat.Unity
             _scroll = GUILayout.BeginScrollView(_scroll);
             GUILayout.Label("HaloCombat  /  Skill Lab", GUI.skin.box);
             GUILayout.BeginHorizontal();
-            foreach (string slot in new[] { "f6", "f7" })
+            for (int i = 0; i < PublishedSkillSlots.Ordered.Count; i++)
             {
+                string slot = PublishedSkillSlots.Ordered[i];
+                var control = CombatControls.At(i);
                 bool selected = runner.CurrentSlot == slot;
                 using (new EnabledScope(runner.SlotSkills.ContainsKey(slot) && !runner.ReplayMode))
-                    if (GUILayout.Toggle(selected, slot.ToUpperInvariant(), GUI.skin.button) && !selected)
+                    if (GUILayout.Toggle(selected, new GUIContent(control.Label, control.AlternateLabel), GUI.skin.button) && !selected)
                         runner.SelectSlot(slot);
             }
-            if (GUILayout.Button("Reload · F5")) runner.ReloadPublished();
+            if (GUILayout.Button("重载 · F5")) runner.ReloadPublished();
             GUILayout.EndHorizontal();
             if (runner.PendingPublication) GUILayout.Label("New publication on disk");
-            if (runner.HasDifferentSlotLayouts) GUILayout.Label("Using F6 layout. Sync both slots in the web editor.");
+            if (runner.HasDifferentSlotLayouts) GUILayout.Label("布阵取编号最小的已发布槽。可在网页同步全部槽位。");
             GUILayout.Label(status);
 
             var state = runner.Snapshot;
             if (state != null)
             {
-                foreach (var slot in runner.SlotSkills)
-                    GUILayout.Label($"{slot.Key.ToUpperInvariant()}  {slot.Value}  ·  {runner.SlotRevisions[slot.Key].Substring(0, 8)}");
+                for (int i = 0; i < PublishedSkillSlots.Ordered.Count; i++)
+                {
+                    string slot = PublishedSkillSlots.Ordered[i];
+                    string description = runner.SlotSkills.TryGetValue(slot, out var skill)
+                        ? $"{runner.DisplaySkillName(skill)} · {runner.SlotRevisions[slot].Substring(0, 8)}"
+                        : "未发布";
+                    GUILayout.Label($"{i + 1}  {CombatControls.At(i).Label}  {description}");
+                }
                 var aim = runner.AimPreview;
                 if (aim != null)
                 {
@@ -88,7 +97,7 @@ namespace Combat.Unity
                     }
                 }
             }
-            GUILayout.Label("WASD move   ·   Click or hold to cast   ·   Wheel zoom");
+            GUILayout.Label("WASD 移动 · 小键盘 1–4 · Esc 暂停 · . 单步 · 滚轮缩放");
             GUILayout.EndScrollView();
             GUILayout.EndArea();
             GUI.matrix = original;

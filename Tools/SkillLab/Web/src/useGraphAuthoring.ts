@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNodesInitialized, useReactFlow } from '@xyflow/react';
 import type { Connection, Edge, EdgeChange, NodeChange, Viewport } from '@xyflow/react';
-import { kinds, nodeOutputs } from './model';
+import { nodeOutputs } from './model';
 import type { Project,ParameterValue } from './model';
 import type { EditorNode } from './SkillNode';
 import type { useProjectDocument } from './useProjectDocument';
@@ -13,6 +13,7 @@ import { connectGraph, copySelection, deleteSelection, pasteSelection } from './
 import type { GraphClipboard } from './authoring/graphEdits';
 import {setCastExecution,setBurst,defaultCastMovement} from './authoring/castExecution';
 import {switchDelivery,reconcileNodeOutputs} from './authoring/deliveryEdits';
+import {defaultNodeParameters,editNodeParameter} from './authoring/nodeParameterEdits';
 
 export function useGraphAuthoring(document:ReturnType<typeof useProjectDocument>,key:GraphKey,report:(text:string)=>void,focus:{key:GraphKey;nodeId:string;request:number}|null=null) {
   const flow=useReactFlow<EditorNode>();const initialized=useNodesInitialized();
@@ -48,11 +49,11 @@ export function useGraphAuthoring(document:ReturnType<typeof useProjectDocument>
     document.endGroup();document.edit(p=>deleteSelection(p,key,ids,edges));setSelectedNodes([]);setSelectedEdges([]);
   },[document.edit,document.endGroup,key.kind,key.id]);
   const parameter=useCallback((id:string,field:string,value:ParameterValue)=>editGraph(g=>{
-    const nodes=g.nodes.map(n=>n.id!==id?n:n.kind==='cast'&&field==='execution'?setCastExecution(n,String(value)):n.kind==='cast'&&field==='burst'?setBurst(n,!!value):{...n,parameters:{...n.parameters,[field]:value}});
+    const nodes=g.nodes.map(n=>n.id!==id?n:n.kind==='cast'&&field==='execution'?setCastExecution(n,String(value)):n.kind==='cast'&&field==='burst'?setBurst(n,!!value):editNodeParameter(n,field,value));
     return reconcileNodeOutputs(g,nodes,id);
   }),[editGraph]);
   const changeKind=useCallback((id:string,kind:string)=>editGraph(g=>{
-    const nodes=g.nodes.map(n=>n.id===id?{...n,kind,parameters:Object.fromEntries(kinds[kind].fields.map(f=>[f.key,f.initial]))}:n);
+    const nodes=g.nodes.map(n=>n.id===id?{...n,kind,parameters:defaultNodeParameters(kind)}:n);
     const ports=nodeOutputs(nodes.find(n=>n.id===id)!).map(([p])=>p);
     return {...g,nodes,edges:g.edges.filter(e=>e.source!==id||ports.includes(e.sourcePort))};
   }),[editGraph]);
@@ -103,7 +104,7 @@ export function useGraphAuthoring(document:ReturnType<typeof useProjectDocument>
   function add(kind:string){
     const p=document.current.current;if(!p||!key.id)return;document.endGroup();
     const position=flow.screenToFlowPosition({x:window.innerWidth*.55,y:250});const runtimeId=kind==='projectile'||kind==='delivery'||kind==='construct'?definitionAllocator(p)():0;
-    editGraph(g=>({...g,nodes:[...g.nodes,{id:crypto.randomUUID(),kind,runtimeId,enabled:true,position,parameters:Object.fromEntries(kinds[kind].fields.map(f=>[f.key,f.initial]))}]}));
+    editGraph(g=>({...g,nodes:[...g.nodes,{id:crypto.randomUUID(),kind,runtimeId,enabled:true,position,parameters:defaultNodeParameters(kind)}]}));
   }
   function copy(){
     const p=document.current.current;const g=p&&graphOf(p,key);if(!g||!selectedNodes.length)return;

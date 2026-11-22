@@ -28,7 +28,7 @@ export function PreviewWorld({project,preview,inspected,update,select,selectedId
           {state?.rays.map(ray=><line key={ray.sequence} x1={ray.fromX} y1={-ray.fromZ} x2={ray.toX} y2={-ray.toZ} stroke="#f6d797" strokeWidth={ray.width} strokeLinecap="round" opacity={Math.max(.1,1-(state.step-ray.step)/26)}/>)}
           {state?.areas.map(a=><circle key={a.sequence} cx={a.x} cy={-a.z} r={a.radius} fill="#e3b573" fillOpacity=".08" stroke="#deb977" strokeWidth=".06" opacity={Math.max(.05,1-(state.step-a.step)/26)}/>)}
           {state && [...state.actors.filter(a=>a.kind==='aoe'),...state.actors.filter(a=>a.kind!=='aoe')].map(a=><PreviewActor
-            key={a.id} id={a.id} sceneId={a.sceneId} name={a.name} kind={a.kind} radius={a.radius} height={a.y??0}
+            key={a.id} id={a.id} sceneId={a.sceneId} name={a.name} kind={a.kind} radius={a.radius} innerRadius={a.innerRadius} height={a.y??0}
             hp={a.hp} maxHp={a.maxHp} remaining={a.kind==='aoe'?a.remaining?.toFixed(1):undefined} dead={a.dead} stopped={a.stopped}
             hurt={a.hurtAge!=null&&a.hurtAge<.18} ally={a.team===casterTeam} selected={a.sceneId===selectedId}
             buffs={a.buffs?.map(buff=>`${buff.name}×${buff.stacks}`).join(' ')} bind={actorElement}/>)}

@@ -4,18 +4,29 @@ using UnityEngine;
 
 namespace Combat.Unity
 {
-    public static class ArenaInputSource
+    internal sealed class ArenaInputSource
     {
-        public static ArenaInputFrame Sample(Camera camera,Vector3 origin)
+        readonly CombatControls.Sampler _skills = new CombatControls.Sampler();
+        readonly List<string> _pressed = new List<string>(CombatControls.Count);
+
+        public void Cancel() => _skills.Cancel();
+
+        public ArenaInputFrame Sample(Camera camera, Vector3 origin, bool pointerOverHud)
         {
-            var keys=new List<string>();
-            if(Input.GetKeyDown(KeyCode.Space))keys.Add("Roll");
-            if(Input.GetKeyDown(KeyCode.Q))keys.Add("Homing");
-            if(Input.GetKeyDown(KeyCode.E))keys.Add("Monkey");
-            KeyCode[] codes={KeyCode.Alpha1,KeyCode.Alpha2,KeyCode.Alpha3,KeyCode.Alpha4,KeyCode.Alpha5};
-            for(int i=0;i<codes.Length;i++)if(Input.GetKeyDown(codes[i])||Input.GetMouseButtonDown(i))keys.Add("Fire"+(i+1));
-            var frame=new ArenaInputFrame{MoveX=Input.GetAxisRaw("Horizontal"),MoveZ=Input.GetAxisRaw("Vertical"),PrimaryHeld=Input.GetKey(KeyCode.Alpha1)||Input.GetMouseButton(0),Pressed=keys.ToArray()};
-            if(camera!=null)
+            _pressed.Clear();
+            bool primaryHeld = false;
+            for (int i = 0; i < CombatControls.Count; i++)
+            {
+                var input = _skills.Read(i, !pointerOverHud);
+                if (input.Pressed) _pressed.Add(CombatControls.At(i).Action);
+                if (i == 0) primaryHeld = input.Held;
+            }
+            var frame = new ArenaInputFrame
+            {
+                MoveX = Input.GetAxisRaw("Horizontal"), MoveZ = Input.GetAxisRaw("Vertical"),
+                PrimaryHeld = primaryHeld, Pressed = _pressed.Count == 0 ? System.Array.Empty<string>() : _pressed.ToArray()
+            };
+            if(camera!=null&&!pointerOverHud&&camera.pixelRect.Contains(Input.mousePosition))
             {
                 var ray=camera.ScreenPointToRay(Input.mousePosition);
                 if(ray.direction.y<-.05f&&new Plane(Vector3.up,new Vector3(0,origin.y,0)).Raycast(ray,out float distance)&&distance<200)

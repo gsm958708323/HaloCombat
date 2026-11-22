@@ -1,0 +1,871 @@
+{
+  "formatVersion": 1,
+  "id": "halo-sword-practice",
+  "name": "剑客练习场",
+  "skills": [
+    {
+      "id": "practice-strike",
+      "runtimeId": 2401,
+      "name": "教学普攻",
+      "category": "剑客课程",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "runtimeId": 0,
+          "enabled": true,
+          "position": {
+            "x": 0.0,
+            "y": 80.0
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "runtimeId": 0,
+          "enabled": true,
+          "position": {
+            "x": 270.0,
+            "y": 80.0
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 0,
+            "cooldown": 0.36,
+            "delay": 0.02,
+            "duration": 0.36,
+            "count": 1,
+            "interval": 0.1,
+            "cancelStart": 0.18,
+            "cancelEnd": 0.34
+          }
+        },
+        {
+          "id": "action",
+          "kind": "delivery",
+          "runtimeId": 5100,
+          "enabled": true,
+          "position": {
+            "x": 540.0,
+            "y": 80.0
+          },
+          "parameters": {
+            "mode": "melee",
+            "shape": "thrust",
+            "length": 2.4,
+            "width": 1,
+            "angle": 90,
+            "maxTargets": 1,
+            "startup": 0.02,
+            "activeDuration": 0.08
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "runtimeId": 0,
+          "enabled": true,
+          "position": {
+            "x": 810.0,
+            "y": 80.0
+          },
+          "parameters": {
+            "flat": 12,
+            "coefficient": 0,
+            "critChance": 0,
+            "critMultiplier": 1.8,
+            "ignoreDefense": false,
+            "hitstopFrames": 0,
+            "notifyHurt": false
+          }
+        },
+        {
+          "id": "on-strike",
+          "kind": "skill-events",
+          "runtimeId": 0,
+          "enabled": true,
+          "position": {
+            "x": 0.0,
+            "y": 420.0
+          },
+          "parameters": {}
+        },
+        {
+          "id": "gain-edge",
+          "kind": "buff",
+          "runtimeId": 0,
+          "enabled": true,
+          "position": {
+            "x": 370.0,
+            "y": 420.0
+          },
+          "parameters": {
+            "buff": "practice-edge",
+            "recipient": "self",
+            "stacks": 1
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "action",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "action",
+          "sourcePort": "apply",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "on-strike-gain-edge",
+          "source": "on-strike",
+          "sourcePort": "hit",
+          "target": "gain-edge",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "practice-step",
+      "runtimeId": 2402,
+      "name": "折步",
+      "category": "剑客课程",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "runtimeId": 0,
+          "enabled": true,
+          "position": {
+            "x": 0.0,
+            "y": 80.0
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "runtimeId": 0,
+          "enabled": true,
+          "position": {
+            "x": 270.0,
+            "y": 80.0
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 0,
+            "cooldown": 3.2,
+            "delay": 0,
+            "duration": 0.26,
+            "count": 1,
+            "interval": 0.1,
+            "returnWindow": 2.4
+          }
+        },
+        {
+          "id": "action",
+          "kind": "delivery",
+          "runtimeId": 5103,
+          "enabled": true,
+          "position": {
+            "x": 540.0,
+            "y": 80.0
+          },
+          "parameters": {
+            "mode": "displacement",
+            "movementMode": "dash",
+            "distance": 3,
+            "speed": 16,
+            "hitRadius": 0.55,
+            "maxTargets": 0,
+            "startup": 0
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "runtimeId": 0,
+          "enabled": true,
+          "position": {
+            "x": 810.0,
+            "y": 80.0
+          },
+          "parameters": {
+            "flat": 8,
+            "coefficient": 0,
+            "critChance": 0,
+            "critMultiplier": 1.8,
+            "ignoreDefense": false,
+            "hitstopFrames": 0,
+            "notifyHurt": false
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "action",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "action",
+          "sourcePort": "apply",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "practice-ring",
+      "runtimeId": 2403,
+      "name": "守环",
+      "category": "剑客课程",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "runtimeId": 0,
+          "enabled": true,
+          "position": {
+            "x": 0.0,
+            "y": 80.0
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "runtimeId": 0,
+          "enabled": true,
+          "position": {
+            "x": 270.0,
+            "y": 80.0
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 0,
+            "cooldown": 3,
+            "delay": 0.02,
+            "duration": 0.2,
+            "count": 1,
+            "interval": 0.1
+          }
+        },
+        {
+          "id": "area",
+          "kind": "delivery",
+          "runtimeId": 5023,
+          "enabled": true,
+          "position": {
+            "x": 540.0,
+            "y": 80.0
+          },
+          "parameters": {
+            "mode": "area",
+            "center": "source",
+            "radius": 3,
+            "maxTargets": 0,
+            "persistent": true,
+            "duration": 2.4,
+            "interval": 0,
+            "pulseOnSpawn": false,
+            "innerRadius": 1.5
+          }
+        },
+        {
+          "id": "slow",
+          "kind": "buff",
+          "runtimeId": 0,
+          "enabled": true,
+          "position": {
+            "x": 810.0,
+            "y": 80.0
+          },
+          "parameters": {
+            "buff": "practice-slow",
+            "stacks": 1,
+            "recipient": "target"
+          }
+        },
+        {
+          "id": "guard",
+          "kind": "impact",
+          "runtimeId": 0,
+          "enabled": true,
+          "position": {
+            "x": 680.0,
+            "y": 445.0
+          },
+          "parameters": {
+            "mode": "shield",
+            "recipient": "self",
+            "amount": 25
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "area",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "area",
+          "sourcePort": "enter",
+          "target": "slow",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "cast-guard",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "guard",
+          "targetPort": "execute",
+          "order": 1
+        }
+      ]
+    },
+    {
+      "id": "practice-burst",
+      "runtimeId": 2404,
+      "name": "三叠斩",
+      "category": "剑客课程",
+      "nodes": [
+        {
+          "id": "target",
+          "kind": "target",
+          "runtimeId": 0,
+          "enabled": true,
+          "position": {
+            "x": 0.0,
+            "y": 80.0
+          },
+          "parameters": {
+            "mode": "point",
+            "range": 20
+          }
+        },
+        {
+          "id": "cast",
+          "kind": "cast",
+          "runtimeId": 0,
+          "enabled": true,
+          "position": {
+            "x": 270.0,
+            "y": 80.0
+          },
+          "parameters": {
+            "mode": "instant",
+            "cost": 0,
+            "cooldown": 1,
+            "delay": 0.06,
+            "duration": 0.58,
+            "count": 3,
+            "interval": 0.2,
+            "burst": true,
+            "requiredBuff": "practice-edge",
+            "buffStackCost": 3
+          }
+        },
+        {
+          "id": "action",
+          "kind": "delivery",
+          "runtimeId": 5101,
+          "enabled": true,
+          "position": {
+            "x": 540.0,
+            "y": 80.0
+          },
+          "parameters": {
+            "mode": "melee",
+            "shape": "fan",
+            "length": 3.4,
+            "width": 1,
+            "angle": 72,
+            "maxTargets": 0,
+            "startup": 0,
+            "activeDuration": 0.08
+          }
+        },
+        {
+          "id": "damage",
+          "kind": "damage",
+          "runtimeId": 0,
+          "enabled": true,
+          "position": {
+            "x": 810.0,
+            "y": 80.0
+          },
+          "parameters": {
+            "flat": 18,
+            "coefficient": 0,
+            "critChance": 0,
+            "critMultiplier": 1.8,
+            "ignoreDefense": false,
+            "hitstopFrames": 0,
+            "notifyHurt": false
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "target-cast",
+          "source": "target",
+          "sourcePort": "target",
+          "target": "cast",
+          "targetPort": "target",
+          "order": 0
+        },
+        {
+          "id": "cast-delivery",
+          "source": "cast",
+          "sourcePort": "cast",
+          "target": "action",
+          "targetPort": "execute",
+          "order": 0
+        },
+        {
+          "id": "hit-damage",
+          "source": "action",
+          "sourcePort": "apply",
+          "target": "damage",
+          "targetPort": "execute",
+          "order": 0
+        }
+      ]
+    }
+  ],
+  "buffs": [
+    {
+      "id": "practice-edge",
+      "runtimeId": 8401,
+      "name": "蓄锋",
+      "permanent": false,
+      "duration": 6.0,
+      "interval": 0.0,
+      "stack": "add",
+      "maxStacks": 3,
+      "mutexGroup": 0,
+      "tags": [],
+      "modifiers": [],
+      "nodes": [
+        {
+          "id": "events",
+          "kind": "buff-events",
+          "runtimeId": 0,
+          "enabled": true,
+          "position": {
+            "x": 0.0,
+            "y": 80.0
+          },
+          "parameters": {}
+        }
+      ],
+      "edges": []
+    },
+    {
+      "id": "practice-slow",
+      "runtimeId": 8402,
+      "name": "守环减速",
+      "permanent": false,
+      "duration": 1.0,
+      "interval": 0.0,
+      "stack": "refresh",
+      "maxStacks": 1,
+      "mutexGroup": 0,
+      "tags": [],
+      "modifiers": [
+        {
+          "attribute": "moveSpeed",
+          "operation": "mul",
+          "value": 0.5,
+          "priority": 0
+        }
+      ],
+      "nodes": [
+        {
+          "id": "events",
+          "kind": "buff-events",
+          "runtimeId": 0,
+          "enabled": true,
+          "position": {
+            "x": 0.0,
+            "y": 80.0
+          },
+          "parameters": {}
+        }
+      ],
+      "edges": []
+    }
+  ],
+  "preview": {
+    "inputBufferSeconds": 0.8,
+    "seed": 1,
+    "energy": 100.0,
+    "recovery": 10.0,
+    "caster": {
+      "id": "caster",
+      "x": 0.0,
+      "z": 0.0,
+      "hp": 1000.0,
+      "atk": 50.0,
+      "def": 0.0,
+      "collisionRadius": 0.25
+    },
+    "targets": [
+      {
+        "id": "target-1",
+        "x": 2.0,
+        "z": 0.0,
+        "hp": 900.0,
+        "atk": 0.0,
+        "def": 0.0,
+        "collisionRadius": 0.25
+      }
+    ]
+  },
+  "editor": {
+    "selectedSkill": "practice-strike",
+    "selectedBuff": null,
+    "viewports": []
+  },
+  "runtime": {
+    "motor": {
+      "gravity": -20.0,
+      "jumpSpeed": 6.0,
+      "airSteer": 0.35,
+      "groundY": 0.0,
+      "stickDeadzone": 0.25
+    },
+    "combos": [
+      {
+        "id": "entry-practice-strike",
+        "purpose": "entry",
+        "preSkills": [],
+        "input": "PracticeStrike",
+        "requiredTags": [],
+        "priority": 0,
+        "toSkill": "practice-strike"
+      },
+      {
+        "id": "entry-practice-step",
+        "purpose": "entry",
+        "preSkills": [],
+        "input": "PracticeStep",
+        "requiredTags": [],
+        "priority": 0,
+        "toSkill": "practice-step"
+      },
+      {
+        "id": "entry-practice-ring",
+        "purpose": "entry",
+        "preSkills": [],
+        "input": "PracticeRing",
+        "requiredTags": [],
+        "priority": 0,
+        "toSkill": "practice-ring"
+      },
+      {
+        "id": "entry-practice-burst",
+        "purpose": "entry",
+        "preSkills": [],
+        "input": "PracticeBurst",
+        "requiredTags": [],
+        "priority": 0,
+        "toSkill": "practice-burst"
+      },
+      {
+        "id": "practice-strike-followup",
+        "purpose": "transition",
+        "preSkills": [
+          "practice-strike"
+        ],
+        "input": "PracticeBurst",
+        "requiredTags": [],
+        "priority": 0,
+        "toSkill": "practice-burst"
+      }
+    ],
+    "actors": [
+      {
+        "id": "practice-player",
+        "role": "player",
+        "team": 1,
+        "hp": 1000.0,
+        "attack": 50.0,
+        "defense": 0.0,
+        "moveSpeed": 3.0,
+        "shield": 0.0,
+        "critRate": 0.0,
+        "damageDealt": 1.0,
+        "damageTaken": 1.0,
+        "collisionRadius": 0.25,
+        "energy": 100.0,
+        "recovery": 10.0,
+        "inputBufferSeconds": 0.8,
+        "ammo": 60,
+        "skillId": null,
+        "dodgeSkill": null,
+        "slots": [],
+        "ai": "none",
+        "acquireRadius": 8.0,
+        "attackRange": 1.15,
+        "followRange": 1.5,
+        "leashRange": 20.0,
+        "patrolRadius": 0.0,
+        "view": "arena-player-view"
+      },
+      {
+        "id": "practice-partner",
+        "role": "ai",
+        "team": 2,
+        "hp": 900.0,
+        "attack": 0.0,
+        "defense": 0.0,
+        "moveSpeed": 3.0,
+        "shield": 0.0,
+        "critRate": 0.0,
+        "damageDealt": 1.0,
+        "damageTaken": 1.0,
+        "collisionRadius": 0.25,
+        "energy": 0.0,
+        "recovery": 0.0,
+        "skillId": "practice-strike",
+        "dodgeSkill": null,
+        "slots": [],
+        "ai": "puncher",
+        "spawnStats": {
+          "hpPerSpawn": 0.0,
+          "attackPerSpawn": 0.0,
+          "attackRandomRange": 0
+        },
+        "acquireRadius": 8.0,
+        "attackRange": 1.15,
+        "followRange": 1.5,
+        "leashRange": 20.0,
+        "patrolRadius": 0.0,
+        "view": "arena-enemy-view"
+      },
+      {
+        "id": "practice-target",
+        "role": "target",
+        "team": 2,
+        "hp": 900.0,
+        "attack": 0.0,
+        "defense": 0.0,
+        "moveSpeed": 0.0,
+        "shield": 0.0,
+        "critRate": 0.0,
+        "damageDealt": 1.0,
+        "damageTaken": 1.0,
+        "collisionRadius": 0.25,
+        "energy": 0.0,
+        "recovery": 0.0,
+        "skillId": null,
+        "dodgeSkill": null,
+        "slots": [],
+        "ai": "none",
+        "spawnStats": {
+          "hpPerSpawn": 0.0,
+          "attackPerSpawn": 0.0,
+          "attackRandomRange": 0
+        },
+        "acquireRadius": 8.0,
+        "attackRange": 1.15,
+        "followRange": 1.5,
+        "leashRange": 20.0,
+        "patrolRadius": 0.0,
+        "view": "arena-enemy-view"
+      }
+    ],
+    "cues": [],
+    "views": [
+      {
+        "id": "arena-player-view",
+        "resource": "Combat/Actors/FemaleGunner",
+        "scale": 1.0,
+        "yawOffset": 0.0,
+        "states": {
+          "Stand": "Base Layer.Stand",
+          "MoveForward": "Base Layer.MoveForward",
+          "MoveBack": "Base Layer.MoveBack",
+          "MoveLeft": "Base Layer.MoveLeft",
+          "MoveRight": "Base Layer.MoveRight",
+          "JumpAir": "Base Layer.JumpAir",
+          "Hurt0": "Base Layer.Hurt0",
+          "Hurt1": "Base Layer.Hurt1",
+          "Dead": "Base Layer.Dead",
+          "Fire": "Base Layer.Fire",
+          "RapidFire": "Base Layer.RapidFire",
+          "Reload": "Base Layer.Reload",
+          "RollForward": "Base Layer.RollForward",
+          "RollBack": "Base Layer.RollBack",
+          "RollLeft": "Base Layer.RollLeft",
+          "RollRight": "Base Layer.RollRight",
+          "PowerUp": "Base Layer.PowerUp"
+        },
+        "anchors": [
+          {
+            "key": "Body",
+            "path": "Body02",
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          {
+            "key": "Head",
+            "path": "Head02",
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          {
+            "key": "Muzzle",
+            "path": "root/pelvis/spine_01/spine_02/spine_03/clavicle_r/upperarm_r/lowerarm_r/hand_r/PistolPBR",
+            "x": 0.0,
+            "y": 0.2,
+            "z": 0.5
+          }
+        ]
+      },
+      {
+        "id": "arena-enemy-view",
+        "resource": "Combat/Actors/MaleGunner",
+        "scale": 1.0,
+        "yawOffset": 0.0,
+        "states": {
+          "Stand": "Base Layer.Stand",
+          "MoveForward": "Base Layer.MoveForward",
+          "MoveBack": "Base Layer.MoveBack",
+          "MoveLeft": "Base Layer.MoveLeft",
+          "MoveRight": "Base Layer.MoveRight",
+          "JumpAir": "Base Layer.JumpAir",
+          "Hurt0": "Base Layer.Hurt0",
+          "Hurt1": "Base Layer.Hurt1",
+          "Dead": "Base Layer.Dead",
+          "Fire": "Base Layer.Fire",
+          "RapidFire": "Base Layer.RapidFire",
+          "Reload": "Base Layer.Reload",
+          "RollForward": "Base Layer.RollForward",
+          "RollBack": "Base Layer.RollBack",
+          "RollLeft": "Base Layer.RollLeft",
+          "RollRight": "Base Layer.RollRight",
+          "PowerUp": "Base Layer.PowerUp"
+        },
+        "anchors": [
+          {
+            "key": "Body",
+            "path": "Body01",
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          {
+            "key": "Head",
+            "path": "Head01",
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          {
+            "key": "Muzzle",
+            "path": "root/pelvis/spine_01/spine_02/spine_03/clavicle_r/upperarm_r/lowerarm_r/hand_r/PistolPBR",
+            "x": 0.0,
+            "y": 0.2,
+            "z": 0.5
+          }
+        ]
+      }
+    ],
+    "arena": {
+      "player": "practice-player",
+      "enemy": "practice-partner",
+      "trainingTarget": "practice-target",
+      "seed": 1,
+      "maxEnemies": 1,
+      "spawnPeriod": 10.0,
+      "cleanupDelay": 5.0,
+      "halfWidth": 16.0,
+      "halfDepth": 12.0,
+      "spawnDistance": 4.0,
+      "playerX": 0.0,
+      "playerZ": 0.0,
+      "playerYaw": 0.0,
+      "cameraDistance": 2.5,
+      "cameraHeight": 2.5,
+      "cameraFov": 60.0,
+      "cameraFocusHeight": 1.6,
+      "bindings": [
+        {
+          "action": "Fire1",
+          "input": "PracticeStrike"
+        },
+        {
+          "action": "Fire2",
+          "input": "PracticeStep"
+        },
+        {
+          "action": "Fire3",
+          "input": "PracticeRing"
+        },
+        {
+          "action": "Fire4",
+          "input": "PracticeBurst"
+        }
+      ],
+      "obstacles": []
+    }
+  }
+}

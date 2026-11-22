@@ -4,30 +4,102 @@ namespace SkillLab;
 
 internal static class PublicationSyncChecks
 {
+    private static readonly string[] Roots = ["basic-shot", "summon-gunners", "melee-fan", "melee-whirl"];
+
     public static void Run(string root)
     {
-        var p=SkillProjectFiles.Read(Path.Combine(root,"Content/SkillLab/project.json"));
-        var slots=new Dictionary<string,string>{{"f6",SkillPublicationJson.Write(SkillPublicationJson.Create(p,"basic-shot"))},{"f7",SkillPublicationJson.Write(SkillPublicationJson.Create(p,"summon-gunners"))}};
-        p.Skills.Single(s=>s.Id=="basic-shot").Nodes.Single(n=>n.Kind=="projectile").Parameters["speed"]=9;
-        var plan=PublicationFiles.PlanSync(p,slots);
-        if(plan["f6"].SkillId!="basic-shot"||plan["f7"].SkillId!="summon-gunners")throw new Exception("Sync lost the selected slot roots.");
-        using(var session=new PublishedSkillSession())session.Replace(plan.ToDictionary(e=>e.Key,e=>SkillPublicationJson.Write(e.Value)));
-        var empty=new Dictionary<string,string>();try{PublicationFiles.PlanSync(p,empty);throw new Exception("Empty sync should fail.");}catch(ContentValidationException){}
-        var other=SkillProjectJson.Read(SkillProjectJson.Write(p));other.Id="other-project";try{PublicationFiles.PlanSync(other,slots);throw new Exception("Foreign project sync should fail.");}catch(ContentValidationException){}
-        var directory=Directory.CreateTempSubdirectory("halo-slot-replace-");
+        var project = SkillProjectFiles.Read(Path.Combine(root, "Content/SkillLab/project.json"));
+        using var session = new PublishedSkillSession();
+        var directory = Directory.CreateTempSubdirectory("halo-publication-slots-");
+        string path = directory.FullName;
         try
         {
-            foreach(var slot in slots)File.WriteAllText(Path.Combine(directory.FullName,slot.Key+".json"),slot.Value);
-            string f6=Path.Combine(directory.FullName,"f6.json"), f7=Path.Combine(directory.FullName,"f7.json");
-            File.WriteAllText(f6,SkillPublicationJson.Write(SkillPublicationJson.Create(other,"basic-shot")));
-            var warning=PublicationFiles.LoadWarning(directory.FullName,"f6",other.Id);
-            if(warning==null||!warning.Contains("F7")||warning.Contains("同步两槽")||File.ReadAllText(f7)!=slots["f7"])
-                throw new Exception("A mixed pair must ask to republish the other slot without changing it.");
-            File.WriteAllText(f7,SkillPublicationJson.Write(SkillPublicationJson.Create(other,"summon-gunners")));
-            if(PublicationFiles.LoadWarning(directory.FullName,"f7",other.Id)!=null)
-                throw new Exception("Replacing the second slot from the same workspace must resolve the mixed pair.");
+            var names = PublishedSkillSlots.Ordered;
+            Require(names.SequenceEqual(new[] { "f6", "f7", "slot3", "slot4" }), "Publication filenames or order changed.");
+            ExpectContentError(() => PublicationFiles.Sync(path, project), "$.slots");
+            Require(PublicationFiles.Inspect(path).All(slot => slot.SkillId == null), "Empty slots must be listed.");
+
+            // Populate in reverse order to verify the merge and inspection use slot order.
+            foreach (int index in Enumerable.Range(0, names.Count).Reverse())
+            {
+                var publication = SkillPublicationJson.Create(project, Roots[index]);
+                Require(publication.FormatVersion == 1, "Portable publication version changed.");
+                Require(PublicationFiles.Publish(path, names[index], publication) == null, "Same-project publications should be compatible.");
+                if (index == 3)
+                {
+                    var sparse = PublicationFiles.Sync(path, project);
+                    Require(sparse.Count == 1 && sparse.ContainsKey(names[index]), "Sync filled empty slots.");
+                    session.Replace(new Dictionary<string, string> { [names[index]] = SkillPublicationJson.Write(publication) });
+                    Require(session.Slots.Single().Value == Roots[index], "A lone slot 4 should load.");
+                }
+            }
+            var before = Paths(names, path).Select(File.ReadAllText).ToArray();
+            var read = PublishedSkillSlots.Read(path + Path.DirectorySeparatorChar);
+            Require(names.Select(name => read[name]).SequenceEqual(before), "Shared slot reader did not return all four files.");
+            var reversed = names.Zip(before).Reverse().ToDictionary(pair => pair.First, pair => pair.Second);
+            session.Replace(reversed);
+            Require(names.Select(name => session.Slots[name]).SequenceEqual(Roots), "Four-slot load lost selected roots.");
+            string revision = session.Revision;
+            session.Replace(names.Zip(before).ToDictionary(pair => pair.First, pair => pair.Second));
+            Require(session.Revision == revision, "Combined revision depends on input order.");
+            ExpectContentError(() => session.Replace(new Dictionary<string, string> { ["slot5"] = before[0] }), "$.slots");
+            Require(session.Revision == revision, "Rejected slot replaced the working session.");
+            VerifyInspection(path, names);
+
+            project.Preview.Caster.X += 0.125f;
+            if (OperatingSystem.IsWindows())
+            {
+                // The plan can read slot 4, but Windows rejects replacement while it is open without FileShare.Delete.
+                using (File.Open(Paths(names, path).Last(), FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    try { PublicationFiles.Sync(path, project); throw new Exception("Sync should fail on the locked fourth slot."); }
+                    catch (IOException) { }
+                }
+                Require(Paths(names, path).Select(File.ReadAllText).SequenceEqual(before), "Sync failed to roll back previous writes.");
+                Require(!Directory.EnumerateFiles(path, "*.tmp").Any(), "A failed sync left a temporary file.");
+            }
+
+            var plan = PublicationFiles.Sync(path, project);
+            Require(plan.Count == 4 && names.Select(name => plan[name].SkillId).SequenceEqual(Roots), "Sync lost occupied roots.");
+            var synced = Paths(names, path).Select(File.ReadAllText).ToArray();
+            Require(synced.Zip(before).All(pair => pair.First != pair.Second), "Sync did not rewrite all occupied slots.");
+            var foreign = SkillProjectJson.Read(SkillProjectJson.Write(project));
+            foreign.Id = "other-project";
+            ExpectContentError(() => PublicationFiles.Sync(path, foreign), "$.slots.f6");
+            Require(Paths(names, path).Select(File.ReadAllText).SequenceEqual(synced), "Rejected sync wrote slot files.");
+
+            // Single publication permits explicit replacement and reports every remaining foreign slot.
+            var warning = PublicationFiles.Publish(path, names[0], SkillPublicationJson.Create(foreign, Roots[0]));
+            Require(warning?.Contains("槽位 2、3、4") == true, "Mixed-source warning omitted foreign slots.");
+            Require(Paths(names, path).Skip(1).Select(File.ReadAllText).SequenceEqual(synced.Skip(1)), "Single publish changed another slot.");
+            for (int index = 1; index < names.Count; index++)
+                warning = PublicationFiles.Publish(path, names[index], SkillPublicationJson.Create(foreign, Roots[index]));
+            Require(warning == null, "Republishing the remaining slots did not resolve mixed sources.");
+            VerifyInspection(path, names);
         }
-        finally {directory.Delete(true);}
-        Console.WriteLine("PASS: slot sync preserves roots, refuses foreign projects, and explicit sequential replacement resolves a mixed pair.");
+        finally { directory.Delete(true); }
+        Console.WriteLine("PASS: four-slot inspection, sparse/ordered load, sync, mixed-source replacement and Windows disk rollback.");
+    }
+
+    private static IEnumerable<string> Paths(IEnumerable<string> names, string directory) =>
+        names.Select(name => Path.Combine(directory, name + ".json"));
+
+    private static void VerifyInspection(string path, IReadOnlyList<string> names)
+    {
+        var inspection = PublicationFiles.Inspect(path);
+        Require(inspection.Select(slot => slot.Slot).SequenceEqual(names), "Inspection returned slots out of order.");
+        Require(inspection.Select(slot => slot.SkillId).SequenceEqual(Roots), "Inspection lost selected roots.");
+    }
+
+    private static void ExpectContentError(Action operation, string path)
+    {
+        try { operation(); }
+        catch (ContentValidationException error) when (error.Path == path) { return; }
+        throw new Exception("Expected slot validation failure at " + path);
+    }
+
+    private static void Require(bool condition, string message)
+    {
+        if (!condition) throw new Exception(message);
     }
 }

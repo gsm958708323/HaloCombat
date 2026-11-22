@@ -22,7 +22,12 @@ namespace Combat.Core
         int _nextLocal,_clearing,_dispatchDepth;
         public int Count=>_list.Count;
         public int StacksOf(int buffId)
-        {int count=0;foreach(var item in _list)if(item.Spec.BuffId==buffId)count+=item.Stacks;return count;}
+        {
+            long count = 0;
+            foreach (var item in _list)
+                if (item.Spec.BuffId == buffId) count += item.Stacks;
+            return (int)Math.Min(int.MaxValue, count);
+        }
         protected override void OnAttach(){_attr=Self.GetComp<AttributeSet>();_tags=Self.GetComp<TagComp>();}
         protected override void OnDetach()
         {ClearAll(BuffRemovalReason.Detached,false);_attr=null;_tags=null;_dispatching.Clear();}
@@ -97,6 +102,35 @@ namespace Combat.Core
                 if(_list.Contains(item)&&item.Age+.000001>=item.ExpiresAt)Remove(item,BuffRemovalReason.Expired);
             }
         }
+        // A cost is paid across oldest instances first. All debits happen before
+        // OnRemoved effects can apply or consume another buff.
+        public bool TryConsumeStacks(int buffId, int count)
+        {
+            if (count <= 0 || StacksOf(buffId) < count) return false;
+            var debits = new List<(Instance Item, bool Removed)>();
+            for (int i = 0; count > 0;)
+            {
+                var item = _list[i];
+                if (item.Spec.BuffId != buffId) { i++; continue; }
+                if (item.Stacks <= count)
+                {
+                    count -= item.Stacks;
+                    _list.RemoveAt(i);
+                    ReleaseContributions(item);
+                    debits.Add((item, true));
+                    continue;
+                }
+                item.Stacks -= count;
+                count = 0;
+                debits.Add((item, false));
+            }
+            foreach (var debit in debits)
+            {
+                if (debit.Removed) NotifyRemoval(debit.Item, BuffRemovalReason.Consumed, true);
+                else Record(debit.Item, BuffEventKind.Consumed, BuffRemovalReason.Consumed);
+            }
+            return true;
+        }
         public bool RemoveInstance(int id)
         {foreach(var item in _list.ToArray())if(item.Id==id){Remove(item,BuffRemovalReason.Manual);return true;}return false;}
         public int Dispel(DispelMode mode,int key,TagId tag,int maxCount,EntityId source=default)
@@ -123,7 +157,17 @@ namespace Combat.Core
         void Remove(Instance item,BuffRemovalReason reason,bool effects=true)
         {
             if(!_list.Remove(item))return;
-            _attr.RemoveBySource(item.Id);foreach(var lease in item.Leases)lease.Dispose();item.Leases.Clear();
+            ReleaseContributions(item);
+            NotifyRemoval(item, reason, effects);
+        }
+        void ReleaseContributions(Instance item)
+        {
+            _attr.RemoveBySource(item.Id);
+            foreach (var lease in item.Leases) lease.Dispose();
+            item.Leases.Clear();
+        }
+        void NotifyRemoval(Instance item, BuffRemovalReason reason, bool effects)
+        {
             if(reason==BuffRemovalReason.Expired)
             {Record(item,BuffEventKind.Expired,reason);if(effects)Dispatch(item,BuffEventKind.Expired,item.Spec.OnExpire,removed:true);}
             Record(item,BuffEventKind.Removed,reason);

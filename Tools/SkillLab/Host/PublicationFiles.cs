@@ -4,33 +4,98 @@ namespace SkillLab;
 
 internal static class PublicationFiles
 {
-    public static Dictionary<string,string> Read(string directory)
+    public static PublicationInfo[] Inspect(string directory) => PublishedSkillSlots.Locked(directory, () =>
+        PublishedSkillSlots.Ordered.Select(slot => PublicationInspection.Read(directory, slot)).ToArray());
+
+    public static Dictionary<string, SkillPublicationDocument> Sync(string directory, SkillProjectDocument project)
     {
-        var result=new Dictionary<string,string>();foreach(string slot in new[]{"f6","f7"}){string path=Path.Combine(directory,slot+".json");if(File.Exists(path))result.Add(slot,File.ReadAllText(path));}return result;
-    }
-    public static Dictionary<string,SkillPublicationDocument> PlanSync(SkillProjectDocument project,IReadOnlyDictionary<string,string> current)
-    {
-        if(current.Count==0)throw new ContentValidationException("$.slots","请先发布至少一个技能槽，再同步现有槽位。");
-        var result=new Dictionary<string,SkillPublicationDocument>();
-        foreach(var pair in current)
+        return PublishedSkillSlots.Locked(directory, () =>
         {
-            var old=SkillPublicationJson.Read(pair.Value).Document;
-            if(old.Project.Id!=project.Id)throw new ContentValidationException("$.slots."+pair.Key,"两槽需要来自当前工程；先为此槽选择技能并重新发布。");
-            result.Add(pair.Key,SkillPublicationJson.Create(project,old.SkillId));
+            var plan = PlanSync(project, PublishedSkillSlots.ReadUnlocked(directory));
+            ProjectFileTransaction.Commit(plan.ToDictionary(
+                pair => SlotPath(directory, pair.Key), pair => SkillPublicationJson.Write(pair.Value)), []);
+            return plan;
+        });
+    }
+
+    public static string Publish(string directory, string slot, SkillPublicationDocument publication)
+    {
+        if (!PublishedSkillSlots.Ordered.Contains(slot))
+            throw new ContentValidationException("$.slots", "Unknown slot: " + slot);
+        return PublishedSkillSlots.Locked(directory, () =>
+        {
+            ProjectFileTransaction.Commit(new Dictionary<string, string>
+                { [SlotPath(directory, slot)] = SkillPublicationJson.Write(publication) }, []);
+            return LoadWarning(directory, publication.Project.Id);
+        });
+    }
+
+    public static Dictionary<string, SkillPublicationDocument> PlanSync(
+        SkillProjectDocument project, IReadOnlyDictionary<string, string> current)
+    {
+        if (current.Count == 0)
+            throw new ContentValidationException("$.slots", "请先发布至少一个技能槽，再同步现有槽位。");
+        var result = new Dictionary<string, SkillPublicationDocument>();
+        foreach (var pair in current)
+        {
+            var original = ReadPublication(pair.Key, pair.Value);
+            if (original.Project.Id != project.Id)
+                throw new ContentValidationException("$.slots." + pair.Key,
+                    $"槽位 {Number(pair.Key)} 来自其他工程。请为该槽选择技能并重新发布，再同步现有槽位。");
+            result.Add(pair.Key, SkillPublicationJson.Create(project, original.SkillId));
         }
-        using(var session=new PublishedSkillSession())session.Replace(result.ToDictionary(p=>p.Key,p=>SkillPublicationJson.Write(p.Value)));
+        using var session = new PublishedSkillSession();
+        session.Replace(result.ToDictionary(pair => pair.Key, pair => SkillPublicationJson.Write(pair.Value)));
         return result;
     }
-    public static string LoadWarning(string directory,string publishedSlot,string projectId)
+
+    public static int Number(string slot) => Enumerable.Range(0, PublishedSkillSlots.Ordered.Count)
+        .First(index => PublishedSkillSlots.Ordered[index] == slot) + 1;
+
+    public static string SlotPath(string directory, string slot) => PublishedSkillSlots.PathOf(directory, slot);
+
+    private static string LoadWarning(string directory, string projectId)
     {
-        var slots=Read(directory);
-        string otherSlot=publishedSlot=="f6"?"f7":"f6";
         try
         {
-            if(slots.TryGetValue(otherSlot,out var other)&&SkillPublicationJson.Read(other).Document.Project.Id!=projectId)
-                return "两槽来自不同工程。请在当前工作区选择技能，重新发布到 "+otherSlot.ToUpperInvariant()+"；完成后再在 Unity SkillLab 载入两槽。";
-            using var session=new PublishedSkillSession();session.Replace(slots);return null;
+            var slots = PublishedSkillSlots.ReadUnlocked(directory);
+            var foreign = new List<int>();
+            var unreadable = new List<int>();
+            foreach (var pair in slots)
+            {
+                try
+                {
+                    if (ReadPublication(pair.Key, pair.Value).Project.Id != projectId) foreign.Add(Number(pair.Key));
+                }
+                catch (ContentValidationException) { unreadable.Add(Number(pair.Key)); }
+            }
+            var warnings = new List<string>();
+            if (foreign.Count > 0)
+                warnings.Add($"发布槽位来自不同工程。请为槽位 {string.Join("、", foreign)} 选择当前工程的技能并重新发布。");
+            if (unreadable.Count > 0)
+                warnings.Add($"槽位 {string.Join("、", unreadable)} 的快照无法读取，请重新发布。");
+            if (warnings.Count > 0) return string.Join(" ", warnings);
+
+            using var session = new PublishedSkillSession();
+            session.Replace(slots);
+            return null;
         }
-        catch(ContentValidationException error){return "当前磁盘两槽暂不能共同载入："+error.Message+"。同工程共享内容修改后，请点击“同步两槽”。";}
+        catch (ContentValidationException error)
+        {
+            return "当前发布槽位暂不能共同载入。" + error.Message + "。同工程共享内容修改后，请点击“同步现有槽位”。";
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // Publication is already committed. Report the inspection failure as a warning.
+            return "已发布，暂无法检查其他发布槽位。" + error.Message;
+        }
     }
+
+    private static SkillPublicationDocument ReadPublication(string slot, string text)
+    {
+        try { return SkillPublicationJson.Read(text).Document; }
+        catch (ContentValidationException error)
+        { throw new ContentValidationException("$.slots." + slot, error.Message); }
+    }
+
 }

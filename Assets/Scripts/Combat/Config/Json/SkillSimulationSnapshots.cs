@@ -80,11 +80,25 @@ namespace Combat.Config
         public int GroundBouncesLeft {get;internal set;}
         public int WallBouncesLeft {get;internal set;}
         public int AbsorbedProjectiles {get;internal set;}
+        [Newtonsoft.Json.JsonProperty(NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public float? InnerRadius { get; internal set; }
+        [Newtonsoft.Json.JsonProperty(NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public SkillReturnAnchorSnapshot[] ReturnAnchors { get; internal set; }
         public float? AreaVelocityX {get;internal set;}
         public float? AreaVelocityZ {get;internal set;}
         public SkillBuffSnapshot[] Buffs {get;internal set;}
         public Dictionary<int,int> Tags {get;internal set;}
         public Dictionary<string,float> Attributes {get;internal set;}
+    }
+    public sealed class SkillReturnAnchorSnapshot
+    {
+        public string SkillId { get; internal set; }
+        public string Input { get; internal set; }
+        public int CastId { get; internal set; }
+        public float X { get; internal set; }
+        public float Y { get; internal set; }
+        public float Z { get; internal set; }
+        public float Remaining { get; internal set; }
     }
     public sealed class SkillBuffSnapshot
     {

@@ -84,6 +84,13 @@ namespace Combat.Core
             if(!buffered){if(!aiming.PrimaryHeld||!aiming.PrimaryToken.IsValid||Self.GetComp<SkillDirectorComp>().IsPlaying)return;token=aiming.PrimaryToken;}
             if(token==InputToken.Jump)
             {if(tags.Has(CommonTags.Grounded)){input.Consume();Self.GetComp<LocomotionComp>().ImpulseJump();}return;}
+            if (!buffered && cast.HasInputReturnAnchor(token)) return;
+            if (buffered && cast.TryReturnFromInput(token, out _))
+            {
+                // A rejected return keeps its anchor and can be tried on a fresh press.
+                input.Consume();
+                return;
+            }
             SkillNodeId selected;
             if(token==Season2Tokens.Dodge)selected=_dodge;
             else
@@ -93,7 +100,7 @@ namespace Combat.Core
             }
             var transform=Self.GetComp<TransformComp>();
             var aim=aiming.Valid?aiming.Aim:new SkillAim(EntityId.Invalid,transform.Position,transform.YawDegrees,false);
-            bool accepted=selected.IsValid&&cast.TryCast(selected,aim);
+            bool accepted=selected.IsValid&&cast.TryCast(selected,aim,token,allowReturn:false);
             if(token!=Season2Tokens.Dodge)Self.GetComp<ComboComp>().ReportCastOutcome(accepted,cast.LastAcceptedSkill,cast.LastRejection);
             if(accepted)
             {

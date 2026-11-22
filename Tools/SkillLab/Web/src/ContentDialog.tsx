@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { api } from './model';
+import { publicationSlotLabel } from './publicationSlots';
+import type { PublicationSlot } from './publicationSlots';
 import type { Project } from './model';
 import { contentItems, contentLabel, deleteContent, referencesTo, renameContent } from './authoring/contentEdits';
 import type { ContentKind, ContentReference } from './authoring/contentEdits';
 import {Dialog} from './Dialog';
 
 export interface ContentAction { kind:ContentKind;id:string;mode:'rename'|'delete' }
-interface Publication {slot:string;projectId:string;skills:string[];buffs:string[];blueprints:string[];timelines:string[];projectiles:string[];areas:string[];error:string|null}
+interface Publication {slot:PublicationSlot;projectId:string|null;skills:string[];buffs:string[];blueprints:string[];timelines:string[];projectiles:string[];areas:string[];error:string|null}
 export function ContentDialog({project,action,close,edit,locate}:{project:Project;action:ContentAction;close:()=>void;edit:(change:(p:Project)=>Project)=>void;locate:(ref:ContentReference)=>void}) {
   const [id,setId]=useState(action.id);const [replacement,setReplacement]=useState('');const [error,setError]=useState('');
   const [slots,setSlots]=useState<Publication[]|null>(null);const [loadError,setLoadError]=useState('');
@@ -26,9 +28,9 @@ export function ContentDialog({project,action,close,edit,locate}:{project:Projec
       {action.mode==='rename'&&<p>同步修改这些引用，运行时数字身份保持不变。</p>}
     </section>
     {action.mode==='delete'&&references.length>0&&<label>替换引用为<select aria-label="删除时的替代内容" value={replacement} onChange={event=>setReplacement(event.target.value)}><option value="">选择替代内容</option>{contentItems(project,action.kind).filter(v=>v.id!==action.id).map(v=><option key={v.id} value={v.id}>{v.name} · {v.id}</option>)}</select></label>}
-    <section><h3>磁盘发布槽位</h3>{!slots&&!loadError&&<p>正在读取 F6 / F7…</p>}{loadError&&<><p role="alert">{loadError}</p><button type="button" onClick={()=>void inspect()}>重试读取</button></>}
-      {slots&&<p>{affected.length?affected.map(s=>s.slot.toUpperCase()).join('、')+' 包含此内容。':slots.some(s=>s.error)?'未能确认全部槽位的引用。':'当前两槽没有引用此内容。'} 已发布快照保留原版本，更新时需重新发布。</p>}
-      {slots?.filter(s=>s.error).map(s=><p key={s.slot} role="alert">{s.slot.toUpperCase()} 无法检查：{s.error}</p>)}
+    <section><h3>磁盘发布槽位</h3>{!slots&&!loadError&&<p>正在读取发布槽位…</p>}{loadError&&<><p role="alert">{loadError}</p><button type="button" onClick={()=>void inspect()}>重试读取</button></>}
+      {slots&&<p>{affected.length?affected.map(s=>publicationSlotLabel(s.slot)).join('、')+' 包含此内容。':slots.some(s=>s.error)?'未能确认全部槽位的引用。':'当前发布槽位没有引用此内容。'} 已发布快照保留原版本，更新时需重新发布。</p>}
+      {slots?.filter(s=>s.error).map(s=><p key={s.slot} role="alert">{publicationSlotLabel(s.slot)} 无法检查：{s.error}</p>)}
     </section>
     {error&&<p role="alert">{error}</p>}
     <div><button type="button" onClick={close}>取消</button><button className={action.mode==='delete'?'danger':'primary'} disabled={!slots||action.mode==='delete'&&references.length>0&&!replacement}>{action.mode==='rename'?'应用 ID 与引用':'删除'+(replacement?'并替换引用':'')}</button></div>

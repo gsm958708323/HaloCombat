@@ -204,3 +204,20 @@ test('copy remaps all uses of colliding projectile tracking keys across the clos
   assert.equal(plan.project.skills[0].nodes[0].parameters.trackingKey,'warp');
   assert.equal(source.projectiles[0].nodes[0].parameters.trackingKey,'warp');
 });
+
+test('copy preserves an included cast Buff and removes the cost when the Buff must be detached',()=>{
+  const qi={id:'sword-qi',name:'Sword qi',runtimeId:8500,nodes:[],edges:[]};
+  const destination=project([],{buffs:[qi]});
+  const source=project([skill('root',[node('cast','cast',{requiredBuff:qi.id,buffStackCost:3,returnWindow:1.5})])],{buffs:[qi]});
+  const copied=planSkillCopy(destination,candidate(source),'root',ids());
+  const included=byKind(copied.project.skills.at(-1),'cast').parameters;
+  assert.equal(included.requiredBuff,copied.project.buffs.at(-1).id);
+  assert.notEqual(included.requiredBuff,qi.id);
+  assert.equal(included.buffStackCost,3);
+  const detached=planSkillCopy(destination,candidate({...source,buffs:[]}),'root',ids());
+  const missing=byKind(detached.project.skills.at(-1),'cast').parameters;
+  assert.equal(missing.requiredBuff,undefined);
+  assert.equal(missing.buffStackCost,undefined);
+  assert.equal(missing.returnWindow,1.5);
+  assert(detached.detachedReferences.some(ref=>ref.field==='requiredBuff'));
+});

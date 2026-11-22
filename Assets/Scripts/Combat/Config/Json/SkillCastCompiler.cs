@@ -7,26 +7,26 @@ namespace Combat.Config
     internal static class SkillCastCompiler
     {
         public static SkillDefinition Compile(SkillGraphDocument skill, SkillNodeDocument node, string path, IEffect[] effects, TimelineLibrary timelines,
-            TimelineClip[] actionClips,TimelinePayload[] followups,TimelineDefinition authored,Dictionary<string,SkillNodeId> skills,ContentDependencies dependencies)
+            TimelineClip[] actionClips,TimelinePayload[] followups,TimelineDefinition authored,Dictionary<string,SkillNodeId> skills,CombatContentSnapshot content)
         {
             var c = new NodeParameters(node, path, "mode", "cost", "cooldown", "delay", "duration", "burst", "count", "interval", "sustained", "channelDuration",
                 "energyPerSecond", "costPerPulse", "chargeMin", "chargeMax", "powerMin", "powerMax", "autoRelease",
-                "ammoCost","fallbackSkill","recastSkill","recastProjectile","requiredProjectile","hitFeedback","execution","allowMovement","cancelStart","cancelEnd");
+                "ammoCost","fallbackSkill","recastSkill","recastProjectile","requiredProjectile","hitFeedback","execution","allowMovement","cancelStart","cancelEnd","requiredBuff","buffStackCost","returnWindow");
             string mode = c.Choice("mode", "instant", "instant", "channel", "charge");
             if(c.Choice("execution","timeline","timeline","operation")=="operation")
             {
                 if(mode!="instant"||authored!=null||skill.TimelineRef!=null||actionClips.Length>0||followups.Length>0||effects.Length==0)
                     Fail(path+".parameters.execution","Operation requires immediate effects, instant mode and no Timeline or scheduled actor action.");
                 foreach(var property in node.Parameters.Properties())
-                    if(Array.IndexOf(new[]{"mode","execution","cost","cooldown","ammoCost","fallbackSkill","recastSkill","recastProjectile","requiredProjectile","hitFeedback","allowMovement"},property.Name)<0)
+                    if(Array.IndexOf(new[]{"mode","execution","cost","cooldown","ammoCost","fallbackSkill","recastSkill","recastProjectile","requiredProjectile","hitFeedback","allowMovement","requiredBuff","buffStackCost","returnWindow"},property.Name)<0)
                         Fail(path+".parameters."+property.Name,"Operation has no timed cast schedule fields.");
                 return SkillCastRoutingCompiler.Apply(new SkillDefinition{Id=new SkillNodeId(skill.RuntimeId),Key=skill.Id,Name=skill.Name,
-                    Cooldown=c.Number("cooldown",0,0,3600),EnergyCost=c.Number("cost",0,0,1000000),Mode=SkillCastMode.Instant,OperationEffects=effects},skill.Id,c,path,skills,dependencies);
+                    Cooldown=c.Number("cooldown",0,0,3600),EnergyCost=c.Number("cost",0,0,1000000),Mode=SkillCastMode.Instant,OperationEffects=effects},skill.Id,c,path,skills,content);
             }
             if(authored!=null)
             {
                 foreach(var property in node.Parameters.Properties())
-                    if(System.Array.IndexOf(new[]{"mode","execution","cost","cooldown","count","delay","ammoCost","fallbackSkill","recastSkill","recastProjectile","requiredProjectile","hitFeedback","allowMovement"},property.Name)<0)
+                    if(System.Array.IndexOf(new[]{"mode","execution","cost","cooldown","count","delay","ammoCost","fallbackSkill","recastSkill","recastProjectile","requiredProjectile","hitFeedback","allowMovement","requiredBuff","buffStackCost","returnWindow"},property.Name)<0)
                         Fail(path+".parameters."+property.Name,"Explicit timeline owns timing and has no automatic cast schedule fields.");
                 if(mode!="instant"||effects.Length>0||actionClips.Length>0||followups.Length>0||
                     c.Integer("count",1,1,1000)!=1||c.Number("delay",0,0,60)!=0)
@@ -34,7 +34,7 @@ namespace Combat.Config
                 if(skill.TimelineRef==null)timelines.Register(authored);
                 return SkillCastRoutingCompiler.Apply(new SkillDefinition{Id=new SkillNodeId(skill.RuntimeId),Timeline=authored.Id,Key=skill.Id,Name=skill.Name,
                     Cooldown=c.Number("cooldown",0,0,3600),EnergyCost=c.Number("cost",0,0,1000000),Mode=SkillCastMode.Instant,
-                    AllowMovement=c.Boolean("allowMovement",!Array.Exists(authored.Clips,clip=>clip.Kind==ClipKind.Melee||clip.Kind==ClipKind.Dash||clip.Kind==ClipKind.Hitbox))},skill.Id,c,path,skills,dependencies);
+                    AllowMovement=c.Boolean("allowMovement",!Array.Exists(authored.Clips,clip=>clip.Kind==ClipKind.Melee||clip.Kind==ClipKind.Dash||clip.Kind==ClipKind.Hitbox))},skill.Id,c,path,skills,content);
             }
             float delay = c.Number("delay", 0, 0, 60);
             float interval = c.Number("interval", .1f, .001f, 60);
@@ -88,7 +88,7 @@ namespace Combat.Config
                 EnergyPerSecond = mode == "instant" ? 0 : c.Number("energyPerSecond", mode == "channel" ? 12 : 0, 0, 1000000),
                 CostPerPulse = mode == "instant" && c.Boolean("costPerPulse", false),
                 AllowMovement=c.Boolean("allowMovement",actionClips.Length==0&&followups.Length==0)
-            },skill.Id,c,path,skills,dependencies);
+            },skill.Id,c,path,skills,content);
         }
 
         static void Fail(string path, string message) => throw new ContentValidationException(path, message);

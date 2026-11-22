@@ -30,13 +30,44 @@ namespace Combat.Unity
         public HitFeedbackState Feedback {get;}=new HitFeedbackState();
         readonly System.Collections.Generic.List<Material> _materials=new System.Collections.Generic.List<Material>();
         readonly System.Collections.Generic.List<Color> _baseColors=new System.Collections.Generic.List<Color>();
-        public void SetAreaRadius(float radius){if(_ring!=null&&_blueprint=="aoe"){_ringScale=new Vector3(radius*2,.025f,radius*2);_ring.localScale=_ringScale;}}
+        LineRenderer _areaInner, _areaOuter;
+        float _innerRadius, _outerRadius;
+
+        public void SetAreaRadius(float radius, float innerRadius = 0)
+        {
+            if (_blueprint != "aoe") return;
+            if (_ring != null)
+            {
+                _ring.gameObject.SetActive(innerRadius <= 0 && !_dead);
+                _ringScale = new Vector3(radius * 2, .025f, radius * 2);
+                _ring.localScale = _ringScale;
+            }
+            if (innerRadius <= 0)
+            {
+                if (_areaInner != null) { _areaInner.enabled = false; _areaOuter.enabled = false; }
+                return;
+            }
+            if (_areaInner == null)
+            {
+                var shader = Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Unlit/Color");
+                var material = new Material(shader) { color = new Color(.32f, .84f, .74f) };
+                _materials.Add(material);
+                _baseColors.Add(material.color);
+                _areaInner = CombatGroundOutline.Create(transform, material, "Area inner boundary");
+                _areaOuter = CombatGroundOutline.Create(transform, material, "Area outer boundary");
+            }
+            _areaInner.enabled = _areaOuter.enabled = !_dead;
+            if (_innerRadius != innerRadius) { _innerRadius = innerRadius; CombatGroundOutline.SetRadius(_areaInner, innerRadius); }
+            if (_outerRadius != radius) { _outerRadius = radius; CombatGroundOutline.SetRadius(_areaOuter, radius); }
+        }
 
         public void Bind(EntityId id, string blueprintId)
         {
             Id = id;
             _blueprint = blueprintId ?? string.Empty;
             _anchors.Clear();_bodyVisual=null;Animation=null;
+            _areaInner = _areaOuter = null;
+            _innerRadius = _outerRadius = 0;
             _dead = false;
             _feedbackBlock=new MaterialPropertyBlock();
             Feedback.Reset();_poseTime=0;_feedbackWallTime=Time.realtimeSinceStartupAsDouble;

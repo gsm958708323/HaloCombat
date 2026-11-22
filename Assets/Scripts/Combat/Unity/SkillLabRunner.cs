@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Collections.Generic;
 using Combat.Config;
 using Combat.Presentation;
@@ -14,10 +15,10 @@ namespace Combat.Unity
         readonly SkillLabHud _hud = new SkillLabHud();
         readonly SimulationClock _clock = new SimulationClock(SkillSimulation.Step, 12);
         string _directory;
-        KeyCode _heldKey;
-        bool _heldMouse;
+        readonly CombatControls.Sampler _input = new CombatControls.Sampler();
+        int _heldSlot = -1;
         Vector2 _aim;
-        string _status = "Publish skills from the web editor, then press F5 to load.";
+        string _status = "在网页发布到技能槽，然后按 F5 载入。";
 
         public bool AutoAdvance { get; set; } = true;
         public bool Paused { get; set; }
@@ -55,22 +56,19 @@ namespace Combat.Unity
             string path = ContentDirectory;
             try
             {
-                var slots = new Dictionary<string, string>();
-                foreach (string slot in new[] { "f6", "f7" })
-                {
-                    path = Path.Combine(ContentDirectory, slot + ".json");
-                    if (File.Exists(path)) slots.Add(slot, File.ReadAllText(path));
-                }
-                _publication.ValidateViews=UnityActorResources.Validate;_publication.Replace(slots);
-                _heldKey = KeyCode.None;
-                _heldMouse = false;
+                var before = FilesStamp();
+                var slots = PublishedSkillSlots.Read(ContentDirectory);
+                _publication.ValidateViews = UnityActorResources.Validate;
+                _publication.Replace(slots);
+                _heldSlot = -1;
+                _input.Cancel();
                 _clock.Reset();
                 Generation++;
-                CurrentSlot = _publication.Slots.ContainsKey("f6") ? "f6" : "f7";
+                CurrentSlot = PublishedSkillSlots.Ordered.First(_publication.Slots.ContainsKey);
                 AimPreview = null;
                 LastLoadError = null;
                 Snapshot = _publication.Simulation.Snapshot();
-                _loadedFiles=FilesStamp();PendingPublication=false;
+                _loadedFiles=before;CheckPublications();
                 if(ReplayMode)AutoAdvance=_resumeAutoAdvance;
                 ReplayMode=false;ReplayComparison=null;
                 _status = "Loaded " + string.Join(" / ", _publication.Slots.Keys) + " / " + Revision.Substring(0, 12);
@@ -92,9 +90,13 @@ namespace Combat.Unity
             return true;
         }
 
+        internal string DisplaySkillName(string key) =>
+            _publication.Simulation?.InspectAim(key, _aim.x, _aim.y)?.Name ?? key;
+
         public void TogglePause()
         {
             Paused = !Paused;
+            CancelInput();
             _clock.Reset();
         }
 
@@ -113,7 +115,7 @@ namespace Combat.Unity
         {
             _publication.Simulation?.Execute(new SkillSimulationCommand{Kind="release"});
             if (_publication.Simulation != null) Snapshot = _publication.Simulation.Snapshot();
-            _heldKey = KeyCode.None; _heldMouse = false;
+            _heldSlot = -1;
         }
 
         public void SetMovement(float x, float z) => _publication.Simulation?.Execute(new SkillSimulationCommand{Kind="move",X=x,Z=z});
@@ -133,9 +135,10 @@ namespace Combat.Unity
 
         public void CancelInput()
         {
+            _input.Cancel();
             _publication.Simulation?.Execute(new SkillSimulationCommand{Kind="cancel"});
             if (_publication.Simulation != null) Snapshot = _publication.Simulation.Snapshot();
-            _heldKey = KeyCode.None; _heldMouse = false;
+            _heldSlot = -1;
         }
 
         public void StepLogicForTests(int steps)
@@ -147,27 +150,45 @@ namespace Combat.Unity
 
         void Update()
         {
-            if(ReplayMode){if(Input.GetKeyDown(KeyCode.F5))ReloadPublished();return;}
-            if(Time.unscaledTime>=_nextFileCheck){_nextFileCheck=Time.unscaledTime+.5f;CheckPublications();}
+            if (Input.GetKeyDown(CombatControls.Reload) && ReloadPublished()) return;
+            if (ReplayMode) return;
+            if (Time.unscaledTime >= _nextFileCheck) { _nextFileCheck = Time.unscaledTime + .5f; CheckPublications(); }
+            if (Input.GetKeyDown(CombatControls.Pause)) { TogglePause(); return; }
+
             UpdateAim();
-            foreach (var key in new[] { KeyCode.F6, KeyCode.F7 })
-                if (PointerInWorld && Input.GetKeyDown(key))
-                { var result = CastSlot(key == KeyCode.F6 ? "f6" : "f7", _aim.x, _aim.y); if (result != null && result.Accepted) _heldKey = key; }
-            if (_heldKey != KeyCode.None && Input.GetKeyUp(_heldKey)) ReleaseCast();
-            if (Input.GetKeyDown(KeyCode.F5)) ReloadPublished();
-            if (Input.GetKeyDown(KeyCode.Space)) TogglePause();
-            if (PointerInWorld && Input.GetMouseButtonDown(0))
-            { var result = CastSlot(CurrentSlot, _aim.x, _aim.y); _heldMouse = result != null && result.Accepted; }
-            if (_heldMouse && Input.GetMouseButtonUp(0)) ReleaseCast();
-            if (AutoAdvance&&!Paused) SetMovement(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+            if (_publication.Simulation != null) SampleSkills();
+            if (Paused && Input.GetKeyDown(CombatControls.Step)) { StepLogicForTests(1); return; }
             if (!AutoAdvance || Paused || _publication.Simulation == null) return;
+            SetMovement(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
             int steps = _clock.BeginFrame(Time.unscaledDeltaTime * _hud.Rate);
             if (steps > 0) StepLogicForTests(steps);
         }
+
+        void SampleSkills()
+        {
+            for (int i = 0; i < CombatControls.MainSkillCount; i++)
+            {
+                var frame = _input.Read(i, PointerInWorld);
+                if (frame.Released && _heldSlot == i) ReleaseCast();
+                if (!frame.Pressed) continue;
+                var result = CastSlot(PublishedSkillSlots.Ordered[i], _aim.x, _aim.y);
+                if (result == null || !result.Accepted) continue;
+                _heldSlot = i;
+                if (frame.Released) ReleaseCast();
+            }
+        }
+
         public void CheckPublications()
         {
             if(ReplayMode){PendingPublication=false;return;}
-            try{PendingPublication=_publication.Simulation==null?File.Exists(Path.Combine(ContentDirectory,"f6.json"))||File.Exists(Path.Combine(ContentDirectory,"f7.json")):FilesStamp()!=_loadedFiles;}catch(IOException){PendingPublication=true;}catch(UnauthorizedAccessException){PendingPublication=true;}
+            try
+            {
+                PendingPublication = _publication.Simulation == null
+                    ? PublishedSkillSlots.Ordered.Any(slot => File.Exists(Path.Combine(ContentDirectory, slot + ".json")))
+                    : FilesStamp() != _loadedFiles;
+            }
+            catch (IOException) { PendingPublication = true; }
+            catch (UnauthorizedAccessException) { PendingPublication = true; }
         }
         public bool LoadReplayFile(string path)
         {
@@ -176,17 +197,17 @@ namespace Combat.Unity
                 _publication.ValidateViews=UnityActorResources.Validate;var comparison=_publication.ReplaceReplay(File.ReadAllText(path));
                 if(!ReplayMode)_resumeAutoAdvance=AutoAdvance;
                 ReplayComparison=comparison;
-                _clock.Reset();_heldKey=KeyCode.None;_heldMouse=false;Generation++;CurrentSlot="f6";ReplayMode=true;PendingPublication=false;LastLoadError=null;
+                _clock.Reset();_heldSlot=-1;_input.Cancel();Generation++;CurrentSlot=PublishedSkillSlots.Ordered[0];ReplayMode=true;PendingPublication=false;LastLoadError=null;
                 AimPreview = null;
                 Snapshot=_publication.Simulation.Snapshot();AutoAdvance=false;_status="Replay matched "+Snapshot.Step+" steps / "+ReplayComparison.Values+" values";return true;
             }
             catch(Exception error) when(error is IOException||error is UnauthorizedAccessException||error is ContentValidationException)
             {LastLoadError=path+": "+error.Message;_status=LastLoadError;return false;}
         }
-        public string CaptureReplayJson()=>_publication.Simulation==null?null:SkillReplayJson.Write(_publication.Simulation.CaptureReplay(SkillId??(_publication.Slots.ContainsKey("f6")?_publication.Slots["f6"]:_publication.Slots["f7"])));
+        public string CaptureReplayJson()=>_publication.Simulation==null?null:SkillReplayJson.Write(_publication.Simulation.CaptureReplay(SkillId??_publication.Slots[PublishedSkillSlots.Ordered.First(_publication.Slots.ContainsKey)]));
         string FilesStamp()
         {
-            var values=new List<string>();foreach(string slot in new[]{"f6","f7"}){string path=Path.Combine(ContentDirectory,slot+".json");var info=new FileInfo(path);values.Add(info.Exists?slot+":"+info.Length+":"+info.LastWriteTimeUtc.Ticks:slot+":missing");}return string.Join("|",values);
+            var values=new List<string>();foreach(string slot in PublishedSkillSlots.Ordered){string path=Path.Combine(ContentDirectory,slot+".json");var info=new FileInfo(path);values.Add(info.Exists?slot+":"+info.Length+":"+info.LastWriteTimeUtc.Ticks:slot+":missing");}return string.Join("|",values);
         }
 
         void UpdateAim()

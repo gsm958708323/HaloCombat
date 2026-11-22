@@ -1,4 +1,5 @@
 import {kinds,nodeFields,nodeOutputs,parameterValue} from '../model';
+import {defaultNodeParameters,omitDefault} from './nodeParameterEdits';
 import type {GraphNode,Project,Parameters} from '../model';
 import {definitionAllocator,graphOf,updateGraph} from './contentEdits';
 import type {EditableGraph,GraphKey} from './contentEdits';
@@ -34,14 +35,14 @@ function unboundContactEffects(graph:EditableGraph):Set<string> {
 }
 function parametersFor(node:GraphNode,mode:string):Parameters {
   const kind=mode==='projectile'?'projectile':'delivery';
-  const parameters:Parameters=Object.fromEntries(kinds[kind].fields.map(f=>[f.key,f.initial]));if(kind==='delivery')parameters.mode=mode;
+  const parameters:Parameters=defaultNodeParameters(kind);if(kind==='delivery')parameters.mode=mode;
   const previous=nodeFields(node),allowed=new Set(previous.map(f=>f.key));
   // A projectile collision radius and an effect area radius are different quantities.
   const unrelated=new Set(node.kind===kind?[]:['radius','count','view','removeOnObstacle']);
   for(const field of kinds[kind].fields)if(field.key!=='mode'&&allowed.has(field.key)&&!unrelated.has(field.key)){
     const old=previous.find(f=>f.key===field.key)!;parameters[field.key]=parameterValue(old,node.parameters);
   }
-  const next={...node,kind,parameters};return Object.fromEntries(nodeFields(next).map(f=>[f.key,parameterValue(f,parameters)]));
+  const next={...node,kind,parameters};return Object.fromEntries(nodeFields(next).map(f=>[f.key,parameterValue(f,parameters)] as const).filter(([key,value])=>!omitDefault(key,value)));
 }
 function disableDetached(before:EditableGraph,after:EditableGraph) {
   const oldReach=reachable(before),newReach=reachable(after);let disabledNodes=0;

@@ -422,3 +422,52 @@ test('current skill JSON excludes project data and layout; applying preserves ot
   const duplicated=text.replace('"id": "basic-shot"','"id": "basic-shot", "id": "basic-shot"');
   assert(applySkillConfiguration(source,'basic-shot',duplicated).json.includes('"id": "basic-shot", "id": "basic-shot"'));
 });
+
+const {defaultNodeParameters,editNodeParameter}=require('../../.local/web-checks/authoring/nodeParameterEdits.js');
+test('sword cast rules stay editable on authored timelines and omit protocol defaults',()=>{
+  const {nodeFields}=require('../../.local/web-checks/model.js');
+  const project=runtime(),skill=project.skills.find(s=>s.id==='g1'),cast=skill.nodes.find(n=>n.kind==='cast');
+  Object.assign(cast.parameters,{requiredBuff:'sword-qi',buffStackCost:3,returnWindow:1.5});
+  for(const node of [cast,setCastExecution(cast,'operation')]) {
+    const fields=nodeFields(node,{authoredTimeline:node===cast}).map(field=>field.key);
+    for(const name of ['requiredBuff','buffStackCost','returnWindow'])assert(fields.includes(name));
+  }
+  const bound=timelineEdits.bindTimeline(project,skill.id,'arena-confirmed-shot').skills.find(s=>s.id===skill.id).nodes.find(n=>n.kind==='cast');
+  assert.equal(bound.parameters.requiredBuff,'sword-qi');
+  assert.equal(bound.parameters.buffStackCost,3);
+  assert.equal(bound.parameters.returnWindow,1.5);
+  assert.equal(editNodeParameter(cast,'buffStackCost',0).parameters.buffStackCost,undefined);
+  const cleared=editNodeParameter(cast,'requiredBuff','').parameters;
+  assert.equal(cleared.requiredBuff,undefined);
+  assert.equal(cleared.buffStackCost,undefined);
+  assert.equal(defaultNodeParameters('cast').buffStackCost,undefined);
+});
+
+test('Buff cast references are found, renamed, replaced and remapped on import',()=>{
+  const project=example(),skill=project.skills[0],buff=project.buffs[0],replacement=project.buffs[1];
+  const cast=skill.nodes.find(n=>n.kind==='cast');
+  Object.assign(cast.parameters,{requiredBuff:buff.id,buffStackCost:2});
+  const params=p=>p.skills.find(s=>s.id===skill.id).nodes.find(n=>n.id===cast.id).parameters;
+  assert(edits.referencesTo(project,'buff',buff.id).some(ref=>ref.id===skill.id&&ref.nodeId===cast.id&&ref.field==='requiredBuff'));
+  const renamed=edits.renameContent(project,'buff',buff.id,'sword-qi-renamed');
+  assert.equal(params(renamed).requiredBuff,'sword-qi-renamed');
+  const deleted=edits.deleteContent(project,'buff',buff.id,replacement.id);
+  assert.equal(params(deleted).requiredBuff,replacement.id);
+  assert.equal(params(deleted).buffStackCost,2);
+  const merged=mergeProjects(project,project,ids());
+  const importedCast=merged.skills[project.skills.length].nodes.find(n=>n.kind==='cast');
+  assert.equal(importedCast.parameters.requiredBuff,merged.buffs[project.buffs.length].id);
+  assert.equal(importedCast.parameters.buffStackCost,2);
+});
+
+test('a ring draws from an authored persistent area and clears its inner radius when disabled',()=>{
+  const {nodeFields}=require('../../.local/web-checks/model.js');
+  const project=example(),skill=project.skills.find(s=>s.id==='burning-field'),root=skill.nodes.find(n=>n.kind==='delivery');
+  const ring=editNodeParameter(root,'innerRadius',1.25);
+  assert.equal(ring.parameters.innerRadius,1.25);
+  assert(nodeFields(ring).some(field=>field.key==='innerRadius'));
+  const instant=editNodeParameter(ring,'persistent',false);
+  assert.equal(instant.parameters.innerRadius,undefined);
+  assert(!nodeFields(instant).some(field=>field.key==='innerRadius'));
+  assert.equal(defaultNodeParameters('delivery').innerRadius,undefined);
+});

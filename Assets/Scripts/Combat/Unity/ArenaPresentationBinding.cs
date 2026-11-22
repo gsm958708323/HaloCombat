@@ -17,6 +17,7 @@ namespace Combat.Unity
         readonly PresentationRouter _router;
         readonly ArenaCameraMotion _cameraMotion;
         bool _disposed;
+        LineRenderer _originMarker;
         public Camera Camera {get;}
         public ArenaPresentationBinding(Transform parent,Camera camera,ArenaSession session,CombatContentSnapshot content)
         {
@@ -64,10 +65,32 @@ namespace Combat.Unity
                 var shake=new Vector3(Mathf.Sin(realTime*70),Mathf.Cos(realTime*61),0)*impulse*.045f;
                 Camera.transform.position=target+new Vector3(0,definition.CameraHeight,-definition.CameraDistance)+shake;
                 Camera.transform.LookAt(target);Camera.fieldOfView=definition.CameraFov+impulse*2.5f;
+                DrawReturnMarker(player);
             }
             foreach(var body in _root.GetComponentsInChildren<UnityActorView>())
-                if(_session.World.TryGetActor(body.Id,out var actor)&&actor.TryGetComp<AoeComp>(out var area))body.SetAreaRadius(area.Radius);
+                if(_session.World.TryGetActor(body.Id,out var actor)&&actor.TryGetComp<AoeComp>(out var area))body.SetAreaRadius(area.Radius, area.InnerRadius);
         }
+        void DrawReturnMarker(Actor player)
+        {
+            var anchors = player.GetComp<SkillCastComp>().ReturnAnchors();
+            if (anchors.Length == 0)
+            {
+                if (_originMarker != null) _originMarker.enabled = false;
+                return;
+            }
+            if (_originMarker == null)
+            {
+                var shader = Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Unlit/Color");
+                var material = new Material(shader) { color = new Color(.92f, .76f, .28f) };
+                _materials.Add(material);
+                _originMarker = CombatGroundOutline.Create(_root, material, "Skill return origin");
+                CombatGroundOutline.SetRadius(_originMarker, .42f);
+            }
+            var origin = anchors[anchors.Length - 1].Position;
+            _originMarker.enabled = true;
+            _originMarker.transform.position = new Vector3(origin.X, origin.Y, origin.Z);
+        }
+
         public void Dispose()
         {
             if(_disposed)return;_disposed=true;_router?.Unbind(_session.World.Events);_views?.ReleaseAll();

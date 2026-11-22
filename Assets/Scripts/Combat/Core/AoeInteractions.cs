@@ -36,7 +36,9 @@ namespace Combat.Core
                 if(!projectile.IsActive||!projectile.TryGetComp<ProjectileComp>(out var shot)||shot.Def==null||shot.Exhausted||
                     !projectile.TryGetComp<TeamComp>(out var shotTeam)||team.TeamId!=shotTeam.TeamId)continue;
                 var transform=projectile.GetComp<TransformComp>();float radius=body.Radius+shot.Def.HitRadius;
-                if(SpatialGeometry.DistanceSquared(center,transform.Position)>radius*radius)continue;
+                float distanceSquared = SpatialGeometry.DistanceSquared(center, transform.Position);
+                float inner = Math.Max(0, body.InnerRadius - shot.Def.HitRadius);
+                if (distanceSquared > radius * radius || distanceSquared < inner * inner) continue;
                 body.Absorb(shot.Velocity);shot.Exhausted=true;
                 var absorbed=new EvAoeAbsorbed(area.Id,projectile.Id,body.OwnerId,body.AbsorbedProjectiles,body.Radius,body.Velocity,body.Origin);
                 var ended=new EvProjectileEnded(shot.OwnerId,projectile.Id,ProjectileEndReason.Absorbed,transform.Position);

@@ -74,7 +74,6 @@
     <Compile Include="Assets\Scripts\Combat\Demos\SeasonTwoDemoSupport.cs" />
     <Compile Include="Assets\Scripts\Combat\Demos\DodgeHitstopDemo.cs" />
     <Compile Include="Assets\Scripts\Combat\Demos\KnockdownDemo.cs" />
-    <Compile Include="Assets\Scripts\Combat\Demos\SeasonThreeLessonDemo.cs" />
     <Compile Include="Assets\Scripts\Combat\Demos\SummonDemo.cs" />
     <Compile Include="Assets\Scripts\Combat\Demos\BehaviorTreeDemo.cs" />
     <Compile Include="Assets\Scripts\Combat\Demos\DemoWorld.cs" />

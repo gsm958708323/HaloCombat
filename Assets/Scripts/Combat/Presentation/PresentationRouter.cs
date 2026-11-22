@@ -7,26 +7,12 @@ namespace Combat.Presentation
         readonly CombatWorld _world;
         readonly ViewRegistry _views;
         readonly ICuePlayer _cues;
-        readonly IFloaterPlayer _floaters;
-        readonly IHitstopOverlay _hitstop;
-        readonly IDebugOverlay _debug;
-        readonly System.Action<EvHitstop> _onHitstop;
 
-        public PresentationRouter(
-            CombatWorld world,
-            ViewRegistry views,
-            ICuePlayer cues = null,
-            IFloaterPlayer floaters = null,
-            IHitstopOverlay hitstop = null,
-            IDebugOverlay debug = null)
+        public PresentationRouter(CombatWorld world, ViewRegistry views, ICuePlayer cues = null)
         {
             _world = world;
             _views = views;
             _cues = cues;
-            _floaters = floaters;
-            _hitstop = hitstop;
-            _debug = debug;
-            _onHitstop=e=>{if(e.Scope==HitstopScope.World)_hitstop?.ShowFlash();};
         }
 
         public void Bind(EventBus bus)
@@ -37,14 +23,6 @@ namespace Combat.Presentation
             bus.Subscribe<EvEntityCleanup>(_views.HandleCleanup);
             bus.Subscribe<EvHurt>(_views.HandleHurt);
             if (_cues != null) bus.Subscribe<EvCue>(_cues.Play);
-            if (_floaters != null)
-            {
-                bus.Subscribe<EvDamage>(_floaters.Play);
-                bus.Subscribe<EvImmune>(_floaters.PlayImmune);
-            }
-
-            if (_hitstop != null)
-                bus.Subscribe<EvHitstop>(_onHitstop);
         }
 
         public void Unbind(EventBus bus)
@@ -55,21 +33,12 @@ namespace Combat.Presentation
             bus.Unsubscribe<EvEntityCleanup>(_views.HandleCleanup);
             bus.Unsubscribe<EvHurt>(_views.HandleHurt);
             if (_cues != null) bus.Unsubscribe<EvCue>(_cues.Play);
-            if (_floaters != null)
-            {
-                bus.Unsubscribe<EvDamage>(_floaters.Play);
-                bus.Unsubscribe<EvImmune>(_floaters.PlayImmune);
-            }
-            if(_hitstop!=null)bus.Unsubscribe<EvHitstop>(_onHitstop);
         }
 
         public void SampleLate(float alpha,bool paused=false)
         {
             bool hitstop = _world != null && _world.InHitstop;
             _views?.SampleAll(_world, hitstop ? 1f : alpha, hitstop,paused);
-            _hitstop?.SetActive(hitstop);
-            if (_debug != null && _debug.Enabled)
-                _debug.Refresh(_world);
         }
     }
 }

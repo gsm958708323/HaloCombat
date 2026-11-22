@@ -22,12 +22,6 @@ namespace Combat.Tests
             public View Last;
             public IActorView Create(string blueprint)=>Last=new View();
         }
-        sealed class Overlay : IHitstopOverlay
-        {
-            public int Flashes;
-            public void ShowFlash()=>Flashes++;
-            public void SetActive(bool on){}
-        }
         [Test]
         public void OldGenerationDeathAndCleanupCannotChangeTheReplacementView()
         {
@@ -36,13 +30,6 @@ namespace Combat.Tests
             views.HandleSpawn(new EvEntitySpawn(current,"player",EntityId.Invalid));var replacement=factory.Last;Assert.AreEqual(1,original.Releases);
             views.HandleDead(new EvEntityDead(old,EntityId.Invalid));views.HandleCleanup(new EvEntityCleanup(old,"old"));Assert.AreEqual(0,replacement.Deaths);Assert.AreEqual(0,replacement.Releases);
             views.HandleDead(new EvEntityDead(current,EntityId.Invalid));views.HandleCleanup(new EvEntityCleanup(current,"current"));Assert.AreEqual(1,replacement.Deaths);Assert.AreEqual(1,replacement.Releases);
-        }
-        [Test]
-        public void UnbindingRouterStopsHitstopCallbacksBeforeTheNextSessionBinds()
-        {
-            var bus=new EventBus();var overlay=new Overlay();var router=new PresentationRouter(null,new ViewRegistry(new Factory()),hitstop:overlay);
-            var hit=new EvHitstop(EntityId.Invalid,EntityId.Invalid,3);router.Bind(bus);bus.Publish(hit);router.Unbind(bus);bus.Publish(hit);Assert.AreEqual(1,overlay.Flashes);
-            router.Bind(bus);bus.Publish(hit);Assert.AreEqual(2,overlay.Flashes);router.Unbind(bus);
         }
         [Test]
         public void HurtFeedbackUsesFullEntityGenerationAndRouterUnbindsIt()
