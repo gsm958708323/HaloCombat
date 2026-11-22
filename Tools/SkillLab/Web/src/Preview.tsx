@@ -12,10 +12,11 @@ import {SkillConfiguration} from './SkillConfiguration';
 import {ComboInput} from './ComboInput';
 import './trace.css';
 import {ReplayControls} from './ReplayControls';
+import {ComboRunFeedback} from './ComboRunFeedback';
 
 const number=new Intl.NumberFormat('zh-CN',{maximumFractionDigits:1}).format;
 
-export function Preview({ preview, project, update,inspectSource,root }: { inspectSource:(source:AuthorNodeSource)=>void;root:string; preview: ReturnType<typeof usePreview>; project: Project; update: (p: Project) => void }) {
+export function Preview({ preview, project, update,inspectSource,root,mode }: { mode:'skill'|'combo';inspectSource:(source:AuthorNodeSource)=>void;root:string; preview: ReturnType<typeof usePreview>; project: Project; update: (p: Project) => void }) {
   const [entity,setEntity]=useState(''),[sceneActor,setSceneActor]=useState(project.preview.caster.id);
   useEffect(()=>setEntity(''),[preview.sessionId]);
   const inspected=preview.state?.actors.find(a=>a.id===entity);
@@ -37,6 +38,10 @@ export function Preview({ preview, project, update,inspectSource,root }: { inspe
   function stopMovement(){if(!moveKeys.current.size)return;moveKeys.current.clear();void preview.move(0,0);}
   const state=preview.state;
   return <aside className="left-column" onKeyDown={e=>{if(e.target instanceof HTMLInputElement||e.target instanceof HTMLTextAreaElement||e.target instanceof HTMLSelectElement)return;moveKey(e.key.toLowerCase(),true);}} onKeyUp={e=>moveKey(e.key.toLowerCase(),false)}>
+    {mode==='combo'?<section className="preview-panel combo-preview-panel" aria-label="连招预览">
+      <ComboRunFeedback project={project} preview={preview}/>
+      <PreviewWorld project={project} preview={preview} update={update} select={setSceneActor} selectedId={sceneActor} onBlur={stopMovement} aimOnly/>
+    </section>:<>
     <section className="preview-panel"><div className="panel-title"><b>试验场</b><span className="grow"/><button className={!configuration?'active':''} onClick={()=>setConfiguration(false)}>测试场景</button><button className={configuration?'active':''} onClick={()=>setConfiguration(true)}>配置</button></div>
       <div className="preview-root">预览技能：{project.skills.find(s=>s.id===root)?.name??root}</div>
       {entity&&<div className="entity-focus" role="status">{inspected?('实体 '+inspected.name+' · '+entity):('实体已回收 · '+entity)}<button onClick={()=>setEntity('')}>取消定位</button></div>}
@@ -56,5 +61,6 @@ export function Preview({ preview, project, update,inspectSource,root }: { inspe
       </>}
     </section>
     <RuntimePanel state={state} sessionId={preview.sessionId} ready={preview.ready} inspectSource={inspectSource} inspectEntity={setEntity} remove={preview.remove} removeBuff={preview.removeBuff}/>
+    </>}
   </aside>;
 }

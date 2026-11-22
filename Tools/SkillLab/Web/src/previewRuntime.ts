@@ -1,13 +1,20 @@
 import type {PreviewState} from './model';
 
-export type PreviewAim = {x:number;z:number};
-
-export interface PreviewRuntime{state:PreviewState|null;ready:boolean;send:(input:string,aim?:PreviewAim)=>void;inputAndStep:(input:string,aim?:PreviewAim)=>void;step:()=>void;reset:()=>void;playing:boolean;setPlaying:(playing:boolean)=>void}
-const idle:PreviewRuntime={state:null,ready:false,send:()=>{},inputAndStep:()=>{},step:()=>{},reset:()=>{},playing:false,setPlaying:()=>{}};
-// Only subscribers to runtime display receive frames; graph authoring stays independent.
-export function createPreviewRuntime(){
-  let value=idle;const listeners=new Set<()=>void>();
-  return {get:()=>value,subscribe:(listener:()=>void)=>{listeners.add(listener);return()=>{listeners.delete(listener);};},
-    publish:(next:PreviewRuntime)=>{value=next;listeners.forEach(listener=>listener());}};
+// Graph and timeline subscribers can select their own values from each preview snapshot.
+export function createPreviewRuntime() {
+  let snapshot: {state: PreviewState | null} = {state: null};
+  const listeners = new Set<() => void>();
+  return {
+    get: () => snapshot,
+    subscribe(listener: () => void) {
+      listeners.add(listener);
+      return () => { listeners.delete(listener); };
+    },
+    publish(state: PreviewState | null) {
+      if (snapshot.state === state) return;
+      snapshot = {state};
+      listeners.forEach(listener => listener());
+    },
+  };
 }
-export type PreviewRuntimeStore=ReturnType<typeof createPreviewRuntime>;
+export type PreviewRuntimeStore = ReturnType<typeof createPreviewRuntime>;

@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from './model';
-import type {PreviewAim} from './previewRuntime';
 import type { Project, PreviewState } from './model';
 import {previewSemanticKey,previewSceneKey,previewFrameBudget} from './authoring/previewTiming';
 import type {RecordingStatus,ReplayComparison,ReplayResponse} from './replayModel';
 import {moveSceneActor} from './authoring/scenePlacement';
 import {mergePreviewFrame} from './authoring/previewFrames';
 
+type PreviewAim = {x:number;z:number};
+
 const sessionSemanticKey=(project:Project|null,selected:string,record:boolean,unlimited:boolean)=>previewSemanticKey(project,selected)+'/'+record+'/'+unlimited;
 
-export function usePreview(project: Project | null, selected: string, report: (message: string) => void,adoptReplay:(project:Project,root:string)=>void) {
+export function usePreview(project: Project | null, selected: string, report: (message: string) => void,adoptReplay:(project:Project,root:string)=>void, initialUnlimitedAmmo = true) {
   const [state, setState] = useState<PreviewState | null>(null);
   const [playing, setPlayingState] = useState(false);
   const playingRequested = useRef(false);
@@ -19,7 +20,7 @@ export function usePreview(project: Project | null, selected: string, report: (m
   }, []);
   const [speed, setSpeed] = useState(1);
   const [continuous, setContinuous] = useState(false);
-  const [recordInputs,setRecordInputs]=useState(false),[unlimitedAmmo,setUnlimitedAmmo]=useState(true);
+  const [recordInputs,setRecordInputs]=useState(false),[unlimitedAmmo,setUnlimitedAmmo]=useState(initialUnlimitedAmmo);
   const options=useRef({recordInputs,unlimitedAmmo});options.current={recordInputs,unlimitedAmmo};
   const [appliedKey, setAppliedKey] = useState('');
   const [error, setError] = useState('');
@@ -129,10 +130,10 @@ export function usePreview(project: Project | null, selected: string, report: (m
     return () => {window.removeEventListener('blur',stop);document.removeEventListener('visibilitychange',visibility);};
   }, [cancel,run]);
   useEffect(() => {
-    if(!ready)return;
+    if(!ready||!selected)return;
     void run(continuous?{kind:'auto-cast',skillId:skill.current,...aim.current}:{kind:'auto-cast'});
     if(!continuous&&!held.current)void release();
-  }, [continuous,release,ready,run]);
+  }, [continuous,release,ready,run,selected]);
   useEffect(() => {
     lastTime.current = performance.now(); accumulator.current = 0;
     if (!playing || !ready) return;

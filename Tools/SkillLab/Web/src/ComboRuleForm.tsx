@@ -1,54 +1,80 @@
-import {useRef,useState} from 'react';
-import type {Project,RuntimeCombo} from './model';
-import {clone} from './model';
-import {Dialog} from './Dialog';
-import {changedResolution,inputLabel,overlappingRules,purposeLabel,rulePurpose,validateRule} from './authoring/comboRules';
-import {tagLabel} from './authoring/comboTrace';
+import {useLayoutEffect, useRef, useState} from 'react';
+import type {Project, RuntimeCombo} from './model';
+import {prepareComboEdit} from './authoring/comboEdits';
 
-export function ComboRuleForm({project,initial,apply,close}:{project:Project;initial:RuntimeCombo;apply:(row:RuntimeCombo)=>Promise<void>;close:()=>void}){
-  const [row,setRow]=useState(()=>clone(initial)),[tags,setTags]=useState(initial.requiredTags.filter(t=>t!==1017).join(', '));
-  const [order,setOrder]=useState(''),[acknowledged,setAcknowledged]=useState(false),[message,setMessage]=useState(''),[busy,setBusy]=useState(false);
-  const original=project.runtime?.combos.find(r=>r.id===initial.id),changed=changedResolution(original,row);
-  const overlaps=overlappingRules(project,row),needsDecision=changed&&overlaps.length>0;
-  const usedBy=project.editor?.comboViews?.filter(v=>v.ruleIds.includes(row.id))??[];
-  const baseline=useRef(JSON.stringify(project.runtime?.combos));
-  const stale=baseline.current!==JSON.stringify(project.runtime?.combos);
-  const name=(id:string)=>project.skills.find(s=>s.id===id)?.name??id;
-  function edit(patch:Partial<RuntimeCombo>){setRow(r=>({...r,...patch}));setOrder('');setAcknowledged(false);setMessage('');}
-  function choose(value:string){
-    setOrder(value);setAcknowledged(false);
-    if(value==='existing')setRow(r=>({...r,priority:Math.min(...overlaps.map(c=>c.priority))-1}));
-    if(value==='draft')setRow(r=>({...r,priority:Math.max(...overlaps.map(c=>c.priority))+1}));
+type Props = {
+  project: Project;
+  row?: RuntimeCombo;
+  initial: RuntimeCombo;
+  update: (edit: (project: Project) => Project, remember?: boolean, group?: string) => void;
+  committed: (previous: RuntimeCombo | undefined, next: RuntimeCombo | null) => void;
+  cancelNew: () => void;
+  report: (message: string) => void;
+};
+
+export function ComboRuleForm({project, row, initial, update, committed, cancelNew, report}: Props) {
+  const latest = useRef(project);
+  latest.current = project;
+  const request = useRef<AbortController | null>(null);
+  useLayoutEffect(() => () => request.current?.abort(), []);
+  const baseline = JSON.stringify(initial, null, 2);
+  const [draft, setDraft] = useState<{text: string; baseline: string} | null>(null);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const text = draft?.text ?? baseline;
+  const stale = !!draft && draft.baseline !== baseline;
+
+  async function apply(deleting: boolean) {
+    if (request.current) return;
+    const controller = new AbortController();
+    request.current = controller;
+    const before = latest.current;
+    try {
+      setBusy(true);
+      setError('');
+      if (stale && !deleting) throw new Error('工程中的规则已变更，请读取当前规则后再应用');
+      const candidate = prepareComboEdit(before, row?.id, deleting ? null : text);
+      const response = await fetch('/api/validate', {method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: candidate.json, signal: controller.signal});
+      if (!response.ok) {
+        const result = await response.json().catch(() => null);
+        throw new Error(result?.error ?? result?.detail ?? `连招校验失败 (${response.status})`);
+      }
+      if (controller.signal.aborted) return;
+      let applied = false;
+      // Compare the editor's authoritative value, including edits before the next React render.
+      update(current => {
+        if (current !== before || controller.signal.aborted) return current;
+        applied = true;
+        return candidate.project;
+      }, true, '');
+      if (!applied) throw new Error('校验期间工程已改变，请检查规则后重新应用');
+      setDraft(null);
+      setConfirmDelete(false);
+      committed(row, candidate.rule);
+      report(deleting ? '已删除接续规则' : candidate.rule?.preSkills.length ? '已应用接续规则' : '已保存为空前置规则，此规则不显示在连招图中');
+    } catch (error) {
+      if (!controller.signal.aborted) setError(error instanceof Error ? error.message : String(error));
+    } finally {
+      request.current = null;
+      if (!controller.signal.aborted) setBusy(false);
+    }
   }
-  async function submit(){
-    try{
-      if(stale)throw new Error('规则表已改变，请关闭草稿后重新打开');
-      if(needsDecision&&(!order||!acknowledged))throw new Error('请明确选择优先顺序并确认影响范围');
-      const parts=tags.trim()?tags.trim().split(/[\s,，]+/).map(Number):[];
-      if(parts.some(t=>!Number.isInteger(t)||t<=0||t>2147483647))throw new Error('状态Tag必须是正整数');
-      const next={...row,requiredTags:[...new Set([...parts,...(row.requiredTags.includes(1017)?[1017]:[])])]};
-      validateRule(project,next);setBusy(true);await apply(next);close();
-    }catch(error){setMessage(String(error));}finally{setBusy(false);}
-  }
-  return <Dialog label={original?'编辑接续规则':'新增接续规则'} close={close} busy={busy}><form className="modal combo-rule-dialog" onSubmit={e=>{e.preventDefault();void submit();}}>
-    <div className="settings-heading"><h2>{original?'编辑规则':'新增规则'}</h2><button type="button" disabled={busy} onClick={close}>关闭</button></div>
-    <label>用途<select aria-label="规则用途" value={row.purpose??(row.preSkills.length?'':'entry')} onChange={e=>edit({purpose:e.target.value?e.target.value as RuntimeCombo['purpose']:undefined,preSkills:e.target.value==='entry'?[]:row.preSkills})}>
-      {!row.purpose&&row.preSkills.length>0&&<option value="">未标用途 · 保留原行为</option>}<option value="entry">起手绑定</option><option value="transition">动作接续</option><option value="cancel">公共取消</option></select></label>
-    {row.purpose!=='entry'&&!(row.preSkills.length===0&&!row.purpose)&&<label>适用前置技能 · 满足其中一个<select aria-label="规则前置技能" multiple size={Math.min(6,project.skills.length)} value={row.preSkills} onChange={e=>edit({preSkills:[...e.target.selectedOptions].map(o=>o.value)})}>{project.skills.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label>}
-    {rulePurpose(row)==='entry'&&<p className="combo-note">前置状态：空闲。动作播放中不会使用空闲入口替代接续规则。</p>}
-    <div className="combo-form-grid"><label>触发输入<input aria-label="规则触发输入" list="combo-input-identities" value={row.input} maxLength={128} onChange={e=>edit({input:e.target.value})}/><datalist id="combo-input-identities">{[...new Set(project.runtime?.combos.map(r=>r.input)??[])].map(input=><option key={input} value={input}>{inputLabel(project,input)}</option>)}</datalist></label>
-      <label>目标技能<select aria-label="规则目标技能" required value={row.toSkill} onChange={e=>edit({toSkill:e.target.value})}><option value="" disabled>选择下一招</option>{project.skills.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label></div>
-    <label className="combo-check"><input type="checkbox" aria-label="规则需要本次命中" checked={row.requiredTags.includes(1017)} onChange={e=>edit({requiredTags:[...row.requiredTags.filter(t=>t!==1017),...(e.target.checked?[1017]:[])]})}/>需要本次施法命中确认</label>
-    <p className="combo-note">动作播放中统一要求前置技能的接续窗口开启；其他所需状态必须全部满足。</p>
-    <details><summary>其他状态与优先级</summary><label>所需状态 Tag<input aria-label="规则其他状态" value={tags} onChange={e=>{setTags(e.target.value);const parsed=e.target.value.trim()?e.target.value.trim().split(/[\s,，]+/).map(Number):[];edit({requiredTags:[...parsed,...(row.requiredTags.includes(1017)?[1017]:[])]});}}/></label>
-      <label>优先级<input aria-label="规则优先级" type="number" step="1" value={row.priority} onChange={e=>{edit({priority:Number(e.target.value)});setOrder('manual');}}/></label></details>
-    {overlaps.length>0&&<section className="combo-conflict" aria-label="规则重叠与影响范围"><strong>{needsDecision?'条件可能同时满足，请决定优先顺序':'现有重叠规则'}</strong>
-      <ul>{overlaps.map(r=><li key={r.id}>{r.preSkills.map(name).join(' / ')||'空闲'} → {name(r.toSkill)} · {purposeLabel[rulePurpose(r)]} · 优先级 {r.priority}<small>{r.requiredTags.map(tagLabel).join(' + ')||'无附加状态'} · {r.id}</small></li>)}</ul>
-      {needsDecision&&<><label>冲突处理<select aria-label="规则冲突处理" value={order} onChange={e=>choose(e.target.value)}><option value="">请选择</option><option value="existing">已有规则优先，当前草稿作为后备</option><option value="draft">当前草稿优先，覆盖重叠候选</option><option value="manual">使用手动优先级</option></select></label>
-        <p>草稿优先级：{row.priority}。本次查找不回退其他候选；输入保留在缓冲时，后续逻辑步仍会按变化后的状态重新匹配。</p><label className="combo-check"><input type="checkbox" aria-label="确认规则重叠影响" checked={acknowledged} onChange={e=>setAcknowledged(e.target.checked)}/>确认对全部重叠规则的影响</label></>}
-    </section>}
-    {usedBy.length>0&&<p className="combo-note">修改同一规则会同步影响：{usedBy.map(v=>v.name).join('、')}。</p>}
-    {stale&&<p role="alert" className="error">规则表已改变，请重新打开草稿。</p>}{message&&<p role="alert" className="error">{message}</p>}
-    <div className="dialog-actions"><button type="button" disabled={busy} onClick={close}>取消</button><button className="primary" disabled={busy||stale||!row.toSkill||needsDecision&&(!order||!acknowledged)}>{busy?'校验中…':'应用规则'}</button></div>
-  </form></Dialog>;
+
+  return <div className="combo-rule-editor">
+    <label htmlFor="combo-rule-json">ComboEntry JSON</label>
+    <textarea id="combo-rule-json" spellCheck={false} value={text} disabled={busy}
+      onChange={event => { setDraft({text: event.target.value, baseline: draft?.baseline ?? baseline}); setConfirmDelete(false); }}/>
+    {stale && <p role="status">规则已变更。可复制草稿，再读取工程中的规则。</p>}
+    <div className="combo-rule-actions">
+      <button type="button" className="primary" disabled={busy || stale} onClick={() => void apply(false)}>{busy ? '校验中…' : '应用规则'}</button>
+      {row ? <>
+        <button type="button" disabled={busy} onClick={() => { setDraft(null); setError(''); setConfirmDelete(false); }}>读取当前规则</button>
+        <button type="button" disabled={busy} onClick={() => confirmDelete ? void apply(true) : setConfirmDelete(true)}>{confirmDelete ? '确认删除规则' : '删除规则'}</button>
+        {confirmDelete && <button type="button" disabled={busy} onClick={() => setConfirmDelete(false)}>取消删除</button>}
+      </> : <button type="button" onClick={cancelNew}>取消新增</button>}
+    </div>
+    {error && <p className="combo-rule-error" role="alert">{error}</p>}
+  </div>;
 }

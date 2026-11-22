@@ -1,11 +1,139 @@
-.combo-editor{display:flex;flex-direction:column;min-height:0;background:#172125;border:1px solid #435257;border-radius:5px;overflow:hidden}
-.combo-toolbar{display:flex;gap:7px;align-items:center;flex-wrap:wrap;padding:9px;border-bottom:1px solid #435257}
-.combo-toolbar>span{font-size:10px;color:#9cb0b3}.combo-toolbar select{max-width:160px}
-.combo-toolbar>label{display:flex;gap:6px;align-items:center;font-size:11px}.combo-toolbar>label>select{max-width:180px}
-.combo-workspace{display:grid;grid-template-columns:minmax(0,1fr)255px;min-height:0;flex:1}.combo-canvas{display:flex;flex-direction:column;min-height:0}.combo-canvas>.react-flow{min-height:280px;flex:1}
-.combo-skill-node{display:grid;gap:6px;padding:12px;background:#253237;border:1px solid #6c7e7d;border-radius:5px;min-width:160px}.combo-skill-node.selected{border-color:#dac17b}.combo-skill-node.running{outline:2px solid #8ccbad}.combo-skill-node small{font-size:10px}.combo-skill-node button{font-size:10px;padding:3px}
-.combo-skill-node{width:210px;min-height:100px}.combo-skill-node strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.combo-editor .react-flow__edge-textbg{fill:#233036}.combo-editor .react-flow__edge-text{fill:#d3ded7}
-.combo-overview{padding:12px;overflow:auto;border-left:1px solid #435257}.combo-overview label{display:flex;flex-direction:column;gap:4px;margin:10px 0;font-size:11px}.combo-overview section{border-top:1px solid #435257;margin-top:14px;padding-top:8px}.combo-overview section>button{display:block;text-align:left;width:100%;margin:5px 0;white-space:normal;font-size:10px}.combo-overview button small{display:block}
-.combo-live{padding:9px;border-top:1px solid #435257;display:flex;gap:6px;flex-wrap:wrap;align-items:center}.combo-live>small,.combo-live>span{width:100%;font-size:10px;color:#bdcec9}
-.combo-timeline{padding:10px;border-top:1px solid #435257;font-size:11px}.combo-timeline>.timeline-properties{margin-top:12px}.combo-tracks{display:grid;gap:5px;margin-top:8px}.combo-track{display:grid;grid-template-columns:70px 1fr;gap:7px}.combo-track>div{position:relative;background:#253237;height:12px}.combo-track i{position:absolute;background:#b9a56c;height:100%}.combo-track b{position:absolute;width:2px;height:100%;background:#b9e4d4}.combo-timeline fieldset{margin:7px 0}.combo-timeline label{display:flex;gap:8px;margin:6px 0}.combo-timeline input{max-width:120px}
-.app-navigation button{padding:4px 15px;background:none;border:0}.app-navigation button.active{border-bottom:1px solid #d1bd83}
+.combo-editor {
+  display: flex;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  container-type: inline-size;
+}
+.combo-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(280px, 35%, 390px);
+  width: 100%;
+  min-height: 0;
+}
+.combo-canvas {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+  min-width: 0;
+}
+.combo-canvas > .react-flow {
+  min-height: 0;
+  background: var(--desk-field, #172125);
+}
+.combo-graph-tools, .combo-rule-section > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.combo-graph-tools {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--desk-line, #435257);
+  font-size: 11px;
+}
+.combo-empty-graph {
+  position: absolute;
+  inset: auto 12px 12px;
+  margin: 0;
+  padding: 6px 8px;
+  pointer-events: none;
+}
+.combo-skill-node {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto auto;
+  align-content: center;
+  gap: 5px;
+  width: 188px;
+  height: 74px;
+  padding: 10px 13px;
+  border: 1px solid #6f8288;
+  border-radius: 6px;
+  background: #25343a;
+  color: #e8f0f1;
+  text-align: left;
+}
+.combo-skill-node strong, .combo-skill-node small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.combo-skill-node small { color: #b7c8ca; }
+.combo-skill-node[data-combo-reference='true'] { border-style: dashed; }
+.combo-skill-node[data-combo-reference='true'] small { padding-right: 30px; }
+.combo-reference-label {
+  position: absolute;
+  right: 9px;
+  bottom: 9px;
+  color: #b7c8ca;
+  font-size: 10px;
+}
+.combo-skill-node[aria-pressed='true'] { border: 2px solid #ffda8f; }
+.combo-skill-node[data-combo-active='true'] {
+  background: #16453a;
+  box-shadow: 0 0 0 3px #7ce6bd, 0 0 0 6px #398d75a1;
+}
+.combo-skill-node[data-combo-active='true'] small { color: #a8f2d4; font-weight: 650; }
+.combo-skill-node:focus-visible { outline: 2px solid #b6dbf4; outline-offset: 5px; }
+.combo-root { background: #202c33; border-style: dashed; }
+.combo-canvas .react-flow__handle { pointer-events: none; width: 6px; height: 6px; background: #adbdc4; }
+.combo-canvas .combo-routing-handle { visibility: hidden; }
+.combo-canvas .combo-return-handle { top: 28%; }
+.combo-canvas .combo-loop-out { left: 72%; }
+.combo-canvas .combo-loop-in { left: 28%; }
+.combo-canvas .react-flow__edge-path { stroke: #a3b9bf; stroke-width: 1.6px; }
+.combo-canvas .react-flow__edge.selectable:hover .react-flow__edge-path,
+.combo-canvas .react-flow__edge.selectable:focus-visible .react-flow__edge-path,
+.combo-canvas .react-flow__edge.selected .react-flow__edge-path { stroke: #ffda8f; stroke-width: 2.4px; }
+.combo-canvas .combo-guide-edge { pointer-events: none; }
+.combo-canvas .combo-guide-edge .react-flow__edge-path { stroke: #789199; stroke-dasharray: 5 5; }
+.combo-canvas .react-flow__edge-textbg { fill: #1a2a30; }
+.combo-canvas .react-flow__edge-text { fill: #e2ecee; font-size: 12px; }
+
+.combo-edit-inspector {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  border-left: 1px solid var(--desk-line, #435257);
+  background: var(--desk-panel, #1f2c31);
+  font-size: 12px;
+}
+.combo-inspector-hint, .combo-timeline, .combo-rule-section { padding: 12px; margin: 0; }
+.combo-timeline { border-bottom: 1px solid var(--desk-line, #435257); }
+.combo-timeline h3, .combo-rule-section h3 { margin: 0; font-size: 14px; overflow-wrap: anywhere; }
+.combo-timeline > small, .combo-timeline > p { overflow-wrap: anywhere; }
+.combo-timeline > small { color: #b7c8ca; }
+.combo-timeline > .timeline-properties { margin-top: 12px; }
+.combo-timeline .timeline-row > div, .combo-timeline .timeline-entries > div { flex-wrap: wrap; }
+.combo-cast-times { display: grid; gap: 6px; }
+.combo-cast-times label { display: grid; gap: 4px; }
+.combo-cast-times input { width: 100%; }
+.combo-tracks { display: grid; gap: 6px; }
+.combo-track { display: grid; grid-template-columns: 60px minmax(0, 1fr); gap: 8px; font-size: 11px; }
+.combo-track-ruler { display: flex; justify-content: space-between; }
+.combo-track > div { position: relative; height: 14px; background: #34454b; }
+.combo-track i { position: absolute; height: 100%; background: #d8b76b; }
+.combo-track i.combo-payload-marker { width: 5px; height: 7px; border-radius: 50%; background: #c1dbec; transform: translateX(-50%); }
+.combo-track b { position: absolute; top: 0; bottom: 0; width: 2px; background: #9ff4cf; pointer-events: none; }
+.combo-related, .combo-rule-editor { display: grid; gap: 6px; margin-top: 10px; }
+.combo-related select { width: 100%; min-width: 0; }
+.combo-rule-editor textarea {
+  width: 100%;
+  min-height: 180px;
+  resize: vertical;
+  padding: 8px;
+  border: 1px solid var(--desk-line, #435257);
+  border-radius: 4px;
+  background: var(--desk-field, #172125);
+  color: inherit;
+  font: 12px/1.45 monospace;
+}
+.combo-rule-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.combo-rule-error { margin: 3px 0; color: #ffb099; overflow-wrap: anywhere; }
+@container (max-width: 620px) {
+  .combo-workspace { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(220px, 48%) minmax(0, 1fr); }
+  .combo-edit-inspector { border-left: 0; border-top: 1px solid var(--desk-line, #435257); }
+}

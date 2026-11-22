@@ -117,6 +117,10 @@ small { color: var(--desk-muted); }
   reading-flow: grid-rows;
 }
 .workspace > .left-column, .workspace > .editor-panel { display: contents; }
+.workspace.workspace--combo-preview {
+  grid-template-columns: clamp(250px, 21vw, 340px) minmax(0, 1fr);
+  grid-template-areas: "stage editor";
+}
 .workspace:has(> .editor-panel) {
   grid-template-areas: "heading heading" "stage editor" "records records";
 }
@@ -269,6 +273,16 @@ small { color: var(--desk-muted); }
     grid-template-areas: "heading" "stage" "editor" "records";
     gap: 10px;
   }
+  .workspace.workspace--combo-preview {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "stage" "editor";
+  }
+  .preview-panel.combo-preview-panel {
+    display: grid;
+    grid-template-columns: minmax(230px, 300px) minmax(0, 1fr);
+    height: auto;
+  }
+  .combo-preview-panel > .world-canvas { height: 232px; margin: 8px; }
   .workspace:not(:has(> .editor-panel)) { grid-template-areas: "stage" "editor" "records"; }
   .preview-panel, .editor-body, .combo-editor {
     border-right: 1px solid var(--desk-line);
@@ -278,6 +292,7 @@ small { color: var(--desk-muted); }
   .editor-heading > .graph-title { flex-basis: 100%; }
 }
 
+  .preview-panel.combo-preview-panel { grid-template-columns: minmax(0, 1fr); }
 @media (max-width: 640px) {
   .app-navigation small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .editor-body { height: auto; grid-template-columns: minmax(0, 1fr); }

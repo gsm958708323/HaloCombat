@@ -7,7 +7,7 @@ import type {WorldPoint,WorldViewport} from './authoring/scenePlacement';
 interface Drag {pointer:number;entity:ActorView|null;start:WorldPoint;point:WorldPoint;from:WorldPoint;moved:boolean}
 export function useSceneViewport({project,sessionId,ready,actors,pause,aim,place,select,cast,release,cancelCast}:{project:Project;sessionId:string;ready:boolean;actors:ActorView[];
   pause:()=>void;aim:(point:WorldPoint)=>void;place:(actor:ActorView,point:WorldPoint)=>Promise<boolean>;select:(id:string)=>void;
-  cast:()=>void;release:()=>void;cancelCast:()=>void}) {
+  cast?:()=>void;release:()=>void;cancelCast:()=>void}) {
   const svg=useRef<SVGSVGElement>(null),[view,setView]=useState<WorldViewport>({x:-10,y:-9,width:24,height:18}),[ghost,setGhost]=useState<{actor:ActorView;point:WorldPoint;valid:boolean}|null>(null),[message,setMessage]=useState('');
   const current=useRef(project);current.current=project;
   const aspect=useRef(4/3),touched=useRef(false),drag=useRef<Drag|null>(null),firing=useRef<number|null>(null),pending=useRef(false),version=useRef(sessionId);version.current=sessionId;
@@ -43,7 +43,7 @@ export function useSceneViewport({project,sessionId,ready,actors,pause,aim,place
     if(!panning&&(!entity||!ready||entity.dead)){
       if(e.button!==0)return;
       svg.current?.focus();aim(point);
-      if(ready&&!entity&&!e.shiftKey&&!e.ctrlKey&&!e.metaKey&&!e.altKey){
+      if(cast&&ready&&!entity&&!e.shiftKey&&!e.ctrlKey&&!e.metaKey&&!e.altKey){
         e.preventDefault();firing.current=e.pointerId;e.currentTarget.setPointerCapture(e.pointerId);cast();
       }
       return;

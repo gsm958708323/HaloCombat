@@ -1,49 +1,46 @@
-import {useState,useSyncExternalStore} from 'react';
-import type {Project} from './model';
-import type {PreviewRuntimeStore} from './previewRuntime';
-import {comboFeedbackReason,comboFrameMarks,comboTrace,decisionTitle,tagLabel} from './authoring/comboTrace';
+import {useState} from 'react';
+import {Pause, Play, RotateCcw, SkipForward} from 'lucide-react';
+import type {ComboDecision,Project} from './model';
 import {inputLabel} from './authoring/comboRules';
+import type {usePreview} from './usePreview';
 
-export function ComboRunFeedback({project,store,inputs,selectedInput,selection}:{project:Project;store:PreviewRuntimeStore;inputs:string[];selectedInput?:string;selection:string}){
-  const runtime=useSyncExternalStore(store.subscribe,store.get),trace=comboTrace(runtime.state),d=trace.decision;
-  const [choice,setChoice]=useState({selection:'',token:''}),[lastInput,setLastInput]=useState(''),tokens=[...new Set([selectedInput,...inputs].filter((v):v is string=>!!v))];
-  const token=choice.selection===selection&&tokens.includes(choice.token)?choice.token:selectedInput??tokens[0]??'';
-  const name=(id:string|null)=>project.skills.find(s=>s.id===id)?.name??id??'空闲';
-  const [aimId,setAimId]=useState('');
-  const targets=runtime.state?.actors.filter(actor=>actor.kind==='target'&&!actor.dead)??[];
-  const aim=targets.find(target=>target.sceneId===aimId);
-  const marks=comboFrameMarks(runtime.state),first=marks[0]?.step??0;
-  const duration=Math.max(1,(runtime.state?.step??first)-first);
-  function send(input:string,advance:boolean){
-    setLastInput(input);
-    const point=aim?{x:aim.x,z:aim.z}:undefined;
-    if(advance)runtime.inputAndStep(input,point);
-    else {runtime.send(input,point);runtime.setPlaying(true);}
+function inputStatus(decision:ComboDecision|null, buffered:string|null) {
+  if (!decision) return buffered?'输入已缓冲，等待逻辑帧':'';
+  switch (decision.phase) {
+    case 'waiting': return buffered?'接续窗口未开，输入仍在缓冲':'接续窗口未开，缓冲已结束';
+    case 'blocked': return '当前角色状态无法接续';
+    case 'unmatched': return '没有满足条件的连招规则';
+    case 'rejected': return decision.reason?('施放失败 · '+decision.reason):'施放失败';
+    default: return '';
   }
-  return <section className="combo-feedback" aria-label="连招真实运行反馈">
-    <div className="combo-feedback-tools"><strong>试放与运行反馈</strong></div>
-    <div className="combo-trial-fields"><label>输入<select aria-label="连招试放输入" value={token} disabled={!tokens.length} onChange={e=>setChoice({selection,token:e.target.value})}>{tokens.map(t=><option key={t} value={t}>{inputLabel(project,t)}</option>)}</select></label>
-      <label>瞄准点<select aria-label="连招试放瞄准点" value={aim?.sceneId??''} onChange={e=>setAimId(e.target.value)}>
-        <option value="">场上指针位置</option>{targets.filter(target=>target.sceneId).map(target=><option key={target.id} value={target.sceneId!}>{target.name}</option>)}
-      </select></label></div>
-    <div className="combo-feedback-tools">
-      <button disabled={!runtime.ready||!token} onClick={()=>send(token,false)}>发送输入</button>
-      <button className="primary" disabled={!runtime.ready||!token} onClick={()=>send(token,true)}>输入并单步</button>
-      <button disabled={!runtime.ready} onClick={()=>runtime.setPlaying(!runtime.playing)}>{runtime.playing?'暂停':'播放'}</button>
-      <button disabled={!runtime.ready||runtime.playing} onClick={runtime.step}>单步</button>
-      <button disabled={!runtime.ready||!lastInput} onClick={()=>send(lastInput,!runtime.playing)} title={lastInput}>重试上次输入</button>
-      <button disabled={!runtime.ready} onClick={runtime.reset}>重置试放</button></div>
-    <div className={'combo-decision '+(d?.phase??'')} role="status"><strong>{!d&&trace.caster?.bufferedInput?'输入已入缓冲，等待逻辑步':decisionTitle(d)}</strong>{d&&<><span>{inputLabel(project,d.input)} · {name(d.fromSkill)}{d.toSkill?' → '+name(d.toSkill):''}</span>
-      <small>{comboFeedbackReason(d,!!trace.caster?.bufferedInput)}</small>
-      {d.phase==='cast'&&d.actualSkill!==d.toSkill&&<small>运行路由实际执行：{name(d.actualSkill)}。</small>}</>}</div>
-    {marks.length>0&&<section className="combo-frame-strip" aria-label="试放帧记录">
-      <header><strong>试放帧记录</strong><span>当前第 {runtime.state?.step} 帧</span></header>
-      <div className="combo-frame-track" aria-hidden="true">{marks.map(mark=><i key={mark.id} className={mark.kind} style={{left:(mark.step-first)/duration*100+'%'}}/>)}</div>
-      <ol>{marks.slice().reverse().map(mark=><li key={mark.id}><span>{mark.step} 帧</span><b className={mark.kind}>{mark.kind==='input'?'输入 '+inputLabel(project,mark.label):mark.label}</b></li>)}</ol>
-    </section>}
-    {d&&<details className="combo-candidates"><summary>查看本次候选与判断依据 · {d.candidates.length}条</summary><p>窗口：{d.windowOpen?'已开启 / 空闲':'未开启'} · 查找前命中确认：{d.confirmed?'有':'无'}</p>
-      {d.candidates.map(c=><div key={c.rule}><strong>{name(c.skill)}</strong><span>优先级 {c.priority} · {c.missingTags.length?'缺少 '+c.missingTags.map(tagLabel).join('、'):c.rule===d.rule?'已选中':'条件满足，优先级未胜出'}</span><small>{c.rule}</small></div>)}</details>}
-    <div className="combo-execution-path" aria-label="本次实际执行路径"><small>本次执行</small>{trace.hasIdleStart&&<><span>起手</span><i>→</i></>}
-      {trace.steps.length?trace.steps.map((step,index)=><span className="combo-path-step" key={step.event+':'+index}>{index>0&&<i>→</i>}<b>{name(step.skill)}</b></span>):<small>尚无通过接续输入成功施放的技能</small>}</div>
-  </section>;
+}
+
+export function ComboRunFeedback({project,preview}:{project:Project;preview:ReturnType<typeof usePreview>}) {
+  const [choice,setChoice]=useState('');
+  const tokens=[...new Set(project.runtime?.combos.map(rule=>rule.input))];
+  const token=tokens.includes(choice)?choice:tokens.includes('Attack')?'Attack':tokens[0]??'';
+  const caster=preview.state?.actors.find(actor=>actor.kind==='caster');
+  const current=caster?.currentSkill;
+  const decision=caster?.comboDecision;
+  const feedback=inputStatus(decision?.inputSequence===caster?.comboInputSequence?decision??null:null,caster?.bufferedInput??null);
+  const ready=preview.ready&&!!token;
+  return <div className="combo-preview-controls">
+    <div className="panel-title"><b>连招预览</b><span className="grow"/><span>{preview.state?.step??0} 帧</span></div>
+    <div className="combo-preview-content">
+      <div className="combo-preview-current">当前动作 <strong>{current?(project.skills.find(skill=>skill.id===current)?.name??current):'空闲'}</strong></div>
+      <label className="combo-preview-input">逻辑输入 <select aria-label="连招试放输入" value={token} disabled={!tokens.length} onChange={event=>setChoice(event.target.value)}>
+        {!tokens.length&&<option value="">无连招输入</option>}
+        {tokens.map(input=><option key={input} value={input}>{inputLabel(project,input)}</option>)}
+      </select></label>
+      <div className="combo-preview-buttons">
+        <button disabled={!ready} onClick={()=>void preview.input(token)}>发送输入</button>
+        <button className="primary" disabled={!ready} onClick={()=>void preview.inputAndStep(token)}>输入并单步</button>
+        <button disabled={!preview.ready} onClick={()=>preview.setPlaying(!preview.playing)}>{preview.playing?<Pause size={12}/>:<Play size={12}/>} {preview.playing?'暂停':'继续'}</button>
+        <button disabled={!preview.ready||preview.playing} onClick={()=>void preview.step()}><SkipForward size={12}/>单步</button>
+        <button disabled={!preview.ready&&!preview.error||preview.placing} onClick={()=>void preview.reset()}><RotateCcw size={12}/>重置试放</button>
+      </div>
+      <div className="combo-preview-status" role="status">{!project.skills.length?'新建技能后可预览':preview.error?'配置无效 · '+preview.error:
+        !preview.ready?'正在应用配置…':feedback||(!tokens.length?'暂无连招规则':preview.playing?'运行中':'暂停 · 可输入并单步')}</div>
+    </div>
+  </div>;
 }

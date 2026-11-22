@@ -1,14 +1,20 @@
-import {BaseEdge,getBezierPath} from '@xyflow/react';
+import {BaseEdge} from '@xyflow/react';
 import type {EdgeProps} from '@xyflow/react';
 
-export function ComboTransitionEdge(props:EdgeProps){
-  const {sourceX:sx,sourceY:sy,targetX:tx,targetY:ty}=props;
-  const lane=Number(props.data?.lane??0);
-  // Reverse transitions and self loops arc above the nodes, keeping their
-  // direction readable even when both endpoint handles share one horizontal row.
-  const rise=135+lane*45;
-  const [path,x,y]=sx>=tx?[`M${sx},${sy} C${sx+110},${sy-rise} ${tx-110},${ty-rise} ${tx},${ty}`,(sx+tx)/2,(sy+ty)/2-rise*.75]:
-    lane>0?[`M${sx},${sy} C${sx+30},${sy-60*lane} ${tx-30},${ty-60*lane} ${tx},${ty}`,(sx+tx)/2,(sy+ty)/2-45*lane]:getBezierPath(props);
-  return <BaseEdge id={props.id} path={path} markerEnd={props.markerEnd} style={props.style} label={props.label} labelX={x} labelY={y}
-    labelStyle={props.labelStyle} labelBgStyle={props.labelBgStyle} interactionWidth={20}/>;
+export function ComboTransitionEdge({sourceX, sourceY, targetX, targetY, data, ...props}: EdgeProps) {
+  const middleX = (sourceX + targetX) / 2;
+  const lane = Number(data?.lane ?? 0);
+  const count = Number(data?.laneCount ?? 1);
+  const spread = (lane - (count - 1) / 2) * 44;
+  const route = data?.route;
+  // Forward and return ports face the same empty strip. Keeping both controls
+  // between the ports keeps the entire Bézier curve out of the card columns.
+  const loop = route === 'loop';
+  const lift = loop ? 16 + lane * 20 : route === 'return' ? 38 + lane * 40 : -spread;
+  const controlX1 = loop ? sourceX : middleX;
+  const controlX2 = loop ? targetX : middleX;
+  const path = `M${sourceX},${sourceY} C${controlX1},${sourceY - lift} ${controlX2},${targetY - lift} ${targetX},${targetY}`;
+  const labelY = (sourceY + targetY) / 2 - lift * .75;
+  return <BaseEdge id={props.id} path={path} markerEnd={props.markerEnd} label={props.label}
+    labelX={middleX} labelY={labelY} interactionWidth={14}/>;
 }

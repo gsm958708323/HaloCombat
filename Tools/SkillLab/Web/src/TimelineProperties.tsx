@@ -1,6 +1,14 @@
+import { useState } from 'react';
 import type { AuthoredTimeline,Skill,TimelineClip } from './model';
 
-export function TimelineProperties({skill,change}:{skill:Pick<Skill,'nodes'|'timeline'>;change:(timeline:AuthoredTimeline)=>void}) {
+type Props = {
+  skill: Pick<Skill, 'nodes' | 'timeline'>;
+  change: (timeline: AuthoredTimeline) => void;
+  defaultCollapsed?: boolean;
+};
+
+export function TimelineProperties({skill, change, defaultCollapsed = false}: Props) {
+  const [expanded, setExpanded] = useState(!defaultCollapsed);
   const value=skill.timeline;if(!value)return null;
   const controls:[[number,string],...Array<[number,string]>]=[[1011,'禁止走动/跳跃'],[1012,'禁止转向'],[1013,'禁止新施放'],[1014,'禁止技能增量位移'],[1015,'禁止受击位移'],[1016,'暂停重力']];
   const number=(text:string,set:(number:number)=>void)=>{if(text!=='')set(Number(text));};
@@ -8,7 +16,8 @@ export function TimelineProperties({skill,change}:{skill:Pick<Skill,'nodes'|'tim
   const candidates=skill.nodes.filter(n=>!['target','cast','skill-events'].includes(n.kind));
   const entries=(ids:string[],set:(ids:string[])=>void)=><div className="timeline-entries">{ids.map((id,i)=><div key={i}><span>{i+1}. {skill.nodes.find(n=>n.id===id)?.kind??'缺失'}<small>{id}</small></span><button disabled={i===0} onClick={()=>{const next=[...ids];[next[i-1],next[i]]=[next[i],next[i-1]];set(next);}}>↑</button><button onClick={()=>set(ids.filter((_,index)=>index!==i))}>×</button></div>)}
     <select aria-label="添加时间轴效果入口" value="" onChange={event=>{if(event.target.value)set([...ids,event.target.value]);}}><option value="">添加效果入口…</option>{candidates.map(n=><option key={n.id} value={n.id}>{n.kind} · {n.id}</option>)}</select></div>;
-  return <details className="timeline-properties" open><summary>显式时间轴 · {value.clips.length} 区间 / {value.payloads.length} 触发</summary>
+  return <details className="timeline-properties" open={expanded} onToggle={event => setExpanded(event.currentTarget.open)}>
+    <summary>{defaultCollapsed ? '编辑显式时间轴' : '显式时间轴'} · {value.clips.length} 区间 / {value.payloads.length} 触发</summary>
     <p>时间轴决定区间与离散触发。引用图中的效果节点，列表顺序可重复；卡片位置不改变时序。</p>
     <label>总时长 (秒)<input aria-label="时间轴总时长" type="number" step=".01" min=".001" value={value.duration} onChange={event=>number(event.target.value,duration=>change({...value,duration}))}/></label>
     <small>Timeline ID {value.runtimeId}</small>

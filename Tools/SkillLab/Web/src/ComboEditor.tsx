@@ -1,121 +1,102 @@
-import {useMemo,useRef,useState,useSyncExternalStore} from 'react';
-import type {ComboPurpose,ComboView,Project,RuntimeCombo} from './model';
-import {api} from './model';
+import {useCallback, useMemo, useState} from 'react';
+import type {Project, RuntimeCombo} from './model';
 import type {PreviewRuntimeStore} from './previewRuntime';
-import {applyComboRule,comboStart,moveComboNode,nextComboInput,removeCombo} from './authoring/comboEdits';
-import {automaticComboView,comboScope,deleteComboView,saveComboView} from './authoring/comboViews';
-import {inputLabel,purposeLabel,rulePurpose} from './authoring/comboRules';
-import {ComboGraph,comboDraft} from './ComboGraph';
+import {ComboGraph} from './ComboGraph';
 import {ComboRuleForm} from './ComboRuleForm';
-import {ComboBindings} from './ComboBindings';
-import {ComboCancellation} from './ComboCancellation';
-import {ComboProperties} from './ComboProperties';
-import {ComboRunFeedback} from './ComboRunFeedback';
 import {ComboTimeline} from './ComboTimeline';
-import {SkillOverview} from './SkillOverview';
-import {Dialog} from './Dialog';
+import {comboLinkId, layoutCombo} from './authoring/comboLayout';
+import type {ComboCard, ComboLink} from './authoring/comboLayout';
 import './combo-editor.css';
-import './combo-authoring.css';
 
-type Mode=ComboPurpose|'all';
-type Props={project:Project;update:(f:(p:Project)=>Project)=>void;store:PreviewRuntimeStore;report:(s:string)=>void;
-  beginEdit:()=>void;endEdit:()=>void;selectContext:(id:string)=>void;openSkill:(id:string)=>void;openTimeline:(skillId:string,timelineId:string)=>void};
-function LiveTimeline({project,skillId,store,update}:{project:Project;skillId:string;store:PreviewRuntimeStore;update:Props['update']}){
-  const runtime=useSyncExternalStore(store.subscribe,store.get),actor=runtime.state?.actors.find(a=>a.kind==='caster'),skill=project.skills.find(s=>s.id===skillId);
-  return <ComboTimeline project={project} skill={skill} progress={actor?.currentSkill===skillId?actor.actionTime??0:0}
-    changeWindow={(field,value)=>update(p=>({...p,skills:p.skills.map(s=>s.id!==skillId?s:{...s,nodes:s.nodes.map(n=>n.kind==='cast'?{...n,parameters:{...n.parameters,[field]:value}}:n)})}))}
-    change={(timeline,sharedId)=>update(p=>sharedId?{...p,timelines:p.timelines?.map(t=>t.id===sharedId?{...t,timeline}:t)}:{...p,skills:p.skills.map(s=>s.id===skillId?{...s,timeline}:s)})}/>;
-}
-export function ComboEditor(props:Props){
-  const {project,update,report,store}=props,latest=useRef(project);latest.current=project;
-  const views=project.editor?.comboViews??[];
-  const initialRoot=project.editor?.selectedSkill??project.skills[0]?.id??'',initialView=views.find(v=>v.rootSkill===initialRoot);
-  const [mode,setMode]=useState<Mode>('transition'),[root,setRoot]=useState(initialRoot);
-  const [viewId,setViewId]=useState(initialView?.id??automaticComboView),[expanded,setExpanded]=useState(false),[extraIds,setExtraIds]=useState<string[]>([]);
-  const [selected,setSelected]=useState(''),[selectedSource,setSelectedSource]=useState(''),[skillId,setSkillId]=useState(''),[draft,setDraft]=useState<RuntimeCombo|null>(null);
-  const lastAuthoredInput=useRef('');
-  const [savingView,setSavingView]=useState(false),[viewName,setViewName]=useState('');
-  const activeView=views.some(v=>v.id===viewId)?viewId:automaticComboView;
-  const currentRoot=project.skills.some(s=>s.id===root)?root:project.skills[0]?.id??'';
-  const scope=useMemo(()=>comboScope(project,currentRoot,activeView,expanded,extraIds),[project,currentRoot,activeView,expanded,extraIds]);
-  const rules=project.runtime?.combos??[],selectedRule=rules.find(r=>r.id===selected);
-  const contextSkill=project.skills.find(s=>s.id===(mode==='transition'?scope.root:currentRoot));
-  const ruleSource=selectedRule?.preSkills.includes(selectedSource)?selectedSource:selectedRule?.preSkills[0];
-  const timelineId=skillId&&skillId!==comboStart?skillId:selectedRule?ruleSource??selectedRule.toSkill:scope.root;
-  const unassigned=rules.filter(r=>rulePurpose(r)==='unassigned');
-  function editRule(row:RuntimeCombo){if(selected!==row.id)setSelectedSource(row.preSkills[0]??comboStart);setSkillId('');setSelected(row.id);setDraft(row);}
-  function add(purpose:ComboPurpose,source=scope.root,target=purpose==='transition'?'':contextSkill?.id??project.skills[0]?.id??''){
-    setDraft({id:crypto.randomUUID(),purpose,input:purpose==='transition'?nextComboInput(project,source,lastAuthoredInput.current):nextComboInput(project,target),
-      preSkills:purpose==='entry'?[]:source?[source]:[],toSkill:target,requiredTags:[],priority:0});
+type Props = {
+  project: Project;
+  update: (edit: (project: Project) => Project, remember?: boolean, group?: string) => void;
+  store: PreviewRuntimeStore;
+  report: (message: string) => void;
+};
+
+type Selection = {skillId: string; occurrenceId?: string; ruleId?: string; edgeId?: string};
+const cardSelection = ({id, skillId}: ComboCard): Selection => ({occurrenceId: id, skillId});
+const emptyRules: RuntimeCombo[] = [];
+
+export function ComboEditor({project, update, store, report}: Props) {
+  const rules = project.runtime?.combos ?? emptyRules;
+  const layout = useMemo(() => layoutCombo(rules), [rules]);
+  const [selection, setSelection] = useState<Selection | null>(null);
+  const [creation, setCreation] = useState<RuntimeCombo | null>(null);
+  const edge = selection?.edgeId ? layout.linksById.get(selection.edgeId) : undefined;
+  const card = edge ? layout.cards.get(edge.targetId) : selection ?
+    layout.cards.get(selection.occurrenceId ?? '') ?? layout.mainCards.get(selection.skillId) : undefined;
+  const skill = card && project.skills.find(item => item.id === card.skillId);
+  const related = useMemo(() => {
+    if (!skill) return [];
+    const incoming = rules.filter(rule => rule.preSkills.length && rule.toSkill === skill.id);
+    const outgoing = rules.filter(rule => rule.toSkill !== skill.id && rule.preSkills.includes(skill.id));
+    return [...incoming, ...outgoing];
+  }, [rules, skill]);
+  const localIncoming = card && layout.edges.find(link => link.targetId === card.id && link.sourceId !== card.id);
+  const preferredRuleId = edge?.rule.id ?? selection?.ruleId ?? localIncoming?.rule.id;
+  const row = related.find(item => item.id === preferredRuleId) ?? related[0];
+
+  const selectSkill = useCallback((occurrenceId: string) => {
+    const clicked = layout.cards.get(occurrenceId);
+    if (!clicked) return;
+    setSelection(cardSelection(clicked));
+    setCreation(null);
+  }, [layout]);
+  const selectEdge = useCallback((link: ComboLink) => {
+    setSelection({skillId: link.target, occurrenceId: link.targetId, ruleId: link.rule.id, edgeId: link.id});
+    setCreation(null);
+  }, []);
+
+  function addRule() {
+    const source = skill ?? project.skills.find(item => item.id === layout.roots[0]?.skillId) ?? project.skills[0];
+    if (!source) return;
+    const target = project.skills.find(item => item.id !== source.id) ?? source;
+    setCreation({id: crypto.randomUUID(), purpose: 'transition', preSkills: [source.id],
+      input: row?.input ?? 'Attack', requiredTags: [], priority: 0, toSkill: target.id});
   }
-  async function apply(row:RuntimeCombo){
-    const before=latest.current,candidate=applyComboRule(before,row,activeView===automaticComboView?undefined:activeView);
-    await api('/document/validate',candidate);
-    if(latest.current!==before)throw new Error('校验期间工程已改变，请重新应用草稿');
-    props.endEdit();update(()=>candidate);lastAuthoredInput.current=row.input;setSkillId('');setSelected(row.id);if(selected!==row.id||!row.preSkills.includes(selectedSource))setSelectedSource(row.preSkills[0]??comboStart);report('已应用'+purposeLabel[rulePurpose(row)]+'；修改同一规则会同步影响全部引用');
+
+  function committed(previous: RuntimeCombo | undefined, next: RuntimeCombo | null) {
+    setCreation(null);
+    if (!next?.preSkills.length) {
+      setSelection(card ? cardSelection(card) : null);
+      return;
+    }
+    if (!previous || edge) {
+      const source = edge && next.preSkills.includes(edge.source) ? edge.source : next.preSkills[0];
+      setSelection({skillId: next.toSkill, ruleId: next.id, edgeId: comboLinkId(next.id, source),
+        occurrenceId: card?.skillId === next.toSkill ? card.id : undefined});
+      return;
+    }
+    if (card && (next.toSkill === card.skillId || next.preSkills.includes(card.skillId))) {
+      setSelection({...cardSelection(card), ruleId: next.id});
+    } else {
+      setSelection({skillId: next.toSkill, ruleId: next.id, edgeId: comboLinkId(next.id, next.preSkills[0])});
+    }
   }
-  function remove(id:string){props.endEdit();update(p=>removeCombo(p,id));if(selected===id)setSelected('');report('已删除运行规则，可撤销恢复；所有视图引用已同步');}
-  function saveView(){
-    const id=scope.view?.id??crypto.randomUUID(),value:ComboView={id,name:viewName,rootSkill:scope.root,ruleIds:scope.rows.map(r=>r.id),
-      positions:scope.view?.positions??(project.editor?.comboPositions??[]).filter(p=>scope.ids.includes(p.skillId)||p.skillId===comboStart)};
-    try{props.endEdit();update(p=>saveComboView(p,value));setViewId(id);setSavingView(false);report('已保存编排视图；保存工程后写入磁盘，视图不改变运行匹配');}catch(error){report(String(error));}
-  }
-  const name=(id:string)=>project.skills.find(s=>s.id===id)?.name??id;
-  const inputs=mode==='transition'?[...scope.entries,...scope.rows,...scope.cancels].map(r=>r.input):mode==='entry'?rules.filter(r=>!r.preSkills.length&&r.toSkill===contextSkill?.id).map(r=>r.input):mode==='cancel'?rules.filter(r=>rulePurpose(r)==='cancel').map(r=>r.input):rules.map(r=>r.input);
-  return <section className="combo-editor" aria-label="连招编排工作台">
-    <header className="combo-toolbar"><strong>技能与连招编排</strong><span>规则定义行为 · 视图组织内容</span><label>输入缓冲 / 秒<input aria-label="连招输入缓冲" type="number" min=".01" max="10" step=".05"
-      value={project.runtime?.arena?Number(project.runtime.actors.find(a=>a.id===project.runtime!.arena!.player)?.inputBufferSeconds??.2):project.preview.inputBufferSeconds??.2}
-      onChange={e=>{if(e.target.value!==''){const value=Number(e.target.value);update(p=>p.runtime?.arena?{...p,runtime:{...p.runtime,actors:p.runtime.actors.map(a=>a.id===p.runtime!.arena!.player?{...a,inputBufferSeconds:value}:a)}}:{...p,preview:{...p.preview,inputBufferSeconds:value}});}}}/></label>
-      <button onClick={()=>void api('/validate',project).then(()=>report('全部技能与全表规则校验通过')).catch(e=>report(String(e)))}>校验工程</button></header>
-    <div className="combo-author-shell"><aside className="combo-task-nav" aria-label="连招作者操作">
-      <small>操作配置</small>{([['entry','起手绑定'],['transition','动作接续'],['cancel','公共取消'],['all','规则总览']] as const).map(([id,label])=><button key={id} aria-pressed={mode===id} onClick={()=>setMode(id)}>{label}{id==='all'&&unassigned.length>0?' · 待标注'+unassigned.length:''}</button>)}
-      <label>当前技能<select aria-label="连招当前技能" value={currentRoot} onChange={e=>{setRoot(e.target.value);props.selectContext(e.target.value);setViewId(automaticComboView);setSelected('');setSkillId('');setExtraIds([]);}}>{project.skills.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
-      <small>功能编排视图</small><button aria-pressed={activeView===automaticComboView} onClick={()=>{setViewId(automaticComboView);setExpanded(false);}}>从当前技能展开</button>
-      {views.map(v=><button key={v.id} aria-pressed={activeView===v.id} onClick={()=>{setRoot(v.rootSkill);props.selectContext(v.rootSkill);setViewId(v.id);setMode('transition');setExpanded(false);setSelected('');setSkillId('');setExtraIds([]);}}>{v.name}</button>)}
-      <p>视图引用同一技能与规则。公共规则仍在全表生效。</p>
-    </aside><div className="combo-author-main">
-      <div className="combo-task-heading"><div><h3>{mode==='transition'?scope.view?.name??name(scope.root):mode==='entry'?name(contextSkill?.id??'')+' · 起手':mode==='cancel'?'公共取消':'全部运行规则'}</h3>
-        <small>{mode==='transition'?scope.ids.length+'个技能引用 · '+scope.rows.length+'条接续':rules.length+'条运行规则；不等于连招套数'}</small></div>
-        {mode==='transition'&&<><button onClick={()=>{setViewName(scope.view?.name??name(scope.root)+'接续');setSavingView(true);}}>保存视图</button>{scope.view&&<button onClick={()=>{props.endEdit();update(p=>deleteComboView(p,scope.view!.id));setViewId(automaticComboView);}}>删除视图</button>}<button disabled={!scope.root} onClick={()=>add('transition')}>添加接续</button></>}
-      </div>
-      {mode==='transition'?<><div className="combo-scope-summary"><button onClick={()=>setMode('cancel')}>公共取消 · {scope.cancels.length}条影响当前范围</button><button onClick={()=>setExpanded(!expanded)}>{expanded?'折叠':'展开'}其他接入来源 · {scope.incoming.length}条规则</button></div>
-        {scope.external.length>0&&<details className="combo-external"><summary>当前视图外仍生效的接续 · {scope.external.length}条</summary>{scope.external.map(row=><div key={row.id}><span>{row.preSkills.map(name).join(' / ')} → {name(row.toSkill)} · {row.input}</span><button onClick={()=>update(p=>saveComboView(p,{...scope.view!,ruleIds:[...scope.view!.ruleIds,row.id]}))}>加入当前视图</button><button onClick={()=>editRule(row)}>编辑规则</button></div>)}</details>}
-        {scope.unassigned.length>0&&<p className="combo-notice">当前范围有 {scope.unassigned.length} 条旧接续未标用途，运行行为保持；可编辑规则明确归类。</p>}
-        <div className="combo-work-area">
-        <ComboGraph project={project} scope={scope} store={store} selected={selected} selectedSource={ruleSource??comboStart} skillId={skillId}
-          update={update} beginEdit={props.beginEdit} endEdit={props.endEdit} openSkill={props.openSkill}
-          selectRule={(id,source)=>{setSelected(id);setSelectedSource(source);setSkillId('');}} selectSkill={id=>{setSkillId(id);setSelected('');}}
-          draft={(source,target)=>{try{setDraft(comboDraft(project,source,target,lastAuthoredInput.current));}catch(error){report(String(error));}}}
-          addReference={id=>{setExtraIds(previous=>[...new Set([...previous,id])]);setSkillId(id);update(p=>moveComboNode(p,id,{x:350+extraIds.length*45,y:400},scope.view?.id));}}/>
-        <aside className="combo-inspector" aria-label="接续检查与试放">
-          <section className="combo-selected-rule">
-            <h3>{selectedRule?`${ruleSource?name(ruleSource):'空闲'} → ${name(selectedRule.toSkill)}`:skillId&&skillId!==comboStart?name(skillId):'选择连线查看接续'}</h3>
-            {selectedRule&&<>
-              <dl><div><dt>输入</dt><dd>{inputLabel(project,selectedRule.input)}</dd></div>
-                <div><dt>需要命中</dt><dd>{selectedRule.requiredTags.includes(1017)?'是':'否'}</dd></div></dl>
-            </>}
-            <div className="combo-rule-actions">
-              {selectedRule&&<button className="primary" onClick={()=>editRule(selectedRule)}>编辑接续条件</button>}
-              {(selectedRule||skillId&&skillId!==comboStart)&&<button onClick={()=>add('transition',selectedRule?.toSkill??skillId)}>添加下一段</button>}
-            </div>
-            {selectedRule&&<details><summary>规则管理</summary>
-                <small>{purposeLabel[rulePurpose(selectedRule)]} · 优先级 {selectedRule.priority} · {views.filter(v=>v.ruleIds.includes(selectedRule.id)).length} 个视图引用{selectedRule.preSkills.length>1?' · 多个前置共用此规则':''}</small>
-                {scope.view?.ruleIds.includes(selectedRule.id)&&<button onClick={()=>{update(p=>saveComboView(p,{...scope.view!,ruleIds:scope.view!.ruleIds.filter(id=>id!==selectedRule.id)}));setSelected('');}}>移出当前视图</button>}
-                <button onClick={()=>remove(selectedRule.id)}>删除运行规则</button>
-              </details>}
-          </section>
-          <LiveTimeline project={project} skillId={timelineId} store={store} update={update}/>
-          <ComboRunFeedback project={project} store={store} inputs={inputs} selectedInput={selectedRule?.input} selection={selected}/>
-        </aside></div>
-      </>:mode==='entry'?<ComboBindings project={project} skillId={contextSkill?.id??''} edit={editRule} remove={remove} add={()=>add('entry')}/>:
-        mode==='cancel'?<ComboCancellation project={project} ids={scope.ids} edit={editRule} remove={remove} add={()=>add('cancel')}/>:
-        <section className="combo-task-content"><p className="combo-note">总览包含起手、接续与公共取消。未标用途的旧规则不会被猜测归类或自动删除。</p><ComboProperties project={project} rows={rules} edit={editRule} remove={remove} showPurpose/><button onClick={()=>add('transition')}>添加规则</button></section>}
-      {mode!=='transition'&&<ComboRunFeedback project={project} store={store} inputs={inputs} selectedInput={selectedRule?.input} selection={selected}/>}
-      <details className="combo-skill-overview"><summary>查看{contextSkill?`「${contextSkill.name}」`:''}技能总览</summary>
-        <SkillOverview project={project} skill={contextSkill} openTimeline={id=>props.openTimeline(contextSkill?.id??'',id)}/>
-      </details>
-    </div></div>
-    {draft&&<ComboRuleForm key={draft.id} project={project} initial={draft} apply={apply} close={()=>setDraft(null)}/>}
-    {savingView&&<Dialog label="保存功能编排视图" close={()=>setSavingView(false)}><form className="modal" onSubmit={e=>{e.preventDefault();saveView();}}><h2>保存功能编排视图</h2><label>名称<input aria-label="编排视图名称" value={viewName} maxLength={128} onChange={e=>setViewName(e.target.value)}/></label><p>保存根技能、当前接续规则引用和布局。其他全局规则仍会参与运行匹配。</p><div className="dialog-actions"><button type="button" onClick={()=>setSavingView(false)}>取消</button><button className="primary" disabled={!viewName.trim()}>保存视图</button></div></form></Dialog>}
+
+  return <section className="combo-editor" aria-label="连招编辑器">
+    <div className="combo-workspace">
+      <ComboGraph project={project} layout={layout} store={store} occurrenceId={card?.id} edgeId={edge?.id}
+        selectSkill={selectSkill} selectEdge={selectEdge}/>
+      <aside className="combo-edit-inspector" aria-label="选中技能与连招配置">
+        {skill ? <ComboTimeline key={skill.id} project={project} skill={skill} store={store} update={update}/>
+          : <p className="combo-inspector-hint">选择技能或接续线查看 Timeline 和规则。</p>}
+        <section className="combo-rule-section" aria-label="连招配置">
+          <header><h3>连招配置</h3><button type="button" disabled={!!creation || !project.skills.length} onClick={addRule}>新增接续</button></header>
+          {creation ? <p>新增接续 · 编辑前置和目标技能 ID</p> : row && <label className="combo-related">
+            关联规则<select value={row.id} onChange={event => card && setSelection({...cardSelection(card), ruleId: event.target.value})}>
+              {related.map(item => <option key={item.id} value={item.id}>
+                {item.toSkill === skill?.id ? '入边' : '出边'} · {item.input} · {item.id}
+              </option>)}
+            </select>
+          </label>}
+          {(creation || row) && <ComboRuleForm key={JSON.stringify(creation ? ['new', creation.id] : [card?.id, edge?.id, row!.id])}
+            project={project} row={creation ? undefined : row} initial={creation ?? row!} update={update}
+            committed={committed} cancelNew={() => setCreation(null)} report={report}/>}
+        </section>
+      </aside>
+    </div>
   </section>;
 }
