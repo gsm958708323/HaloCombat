@@ -4,7 +4,7 @@
 
 JSON 网页技能编辑器位于 `codex/web-skill-editor-json` 分支。源码版双击根目录 [StartSkillLab.bat](StartSkillLab.bat)，自动构建、启动并打开网页（需要 Node.js 22 与 .NET SDK 10）；也可运行 `./Tools/SkillLab/Start.ps1`。Windows独立包解压后双击`Run.cmd`，无需安装Node/.NET即可试玩。使用说明见 [Tools/SkillLab/README.md](Tools/SkillLab/README.md)，完整范围和证据见 [docs/最终验收.md](docs/最终验收.md)。
 
-网页预览和 Unity `Assets/Scenes/SkillLab.unity` 共用实际战斗核。网页发布到槽位 1–4，Unity 运行中按 F5 重载，再用左键、Q、E、R 或小键盘 1–4 施放。已接通瞬发、有限连发、引导、蓄力、目标/范围、近战、位移、射线、召唤、Buff、换弹、传送弹、木桶链爆、完整弹体行为和飞行触发，提供53个模板。工程、当前技能闭包、完整运行内容三种JSON可导出回读；事件支持作者节点定位与输入文件重放。最终Unity EditMode796/796、PlayMode100/100、前端100/100通过；54份模板记录在Unity对照94917值匹配。
+网页预览和 Unity `Assets/Scenes/SkillLab.unity` 共用实际战斗核。网页发布到槽位 1–4 后，运行中的 Unity SkillLab 会自动加载。用左键、Q、E、R 或小键盘 1–4 施放。已接通瞬发、有限连发、引导、蓄力、目标/范围、近战、位移、射线、召唤、Buff、换弹、传送弹、木桶链爆、完整弹体行为和飞行触发，提供53个模板。工程、当前技能闭包、完整运行内容三种JSON可导出回读；事件支持作者节点定位与输入文件重放。最终Unity EditMode796/796、PlayMode100/100、前端100/100通过；54份模板记录在Unity对照94917值匹配。
 
 ## JSON 正式内容
 
@@ -101,7 +101,7 @@ Buff 自然到期 → 以持有者位置做范围伤害 → 爆炸 Cue
 
 若要求实际扣血才附加灼烧，将施加 Buff 接到“扣血后条件”的 apply 端口。普通 next 连线只保证执行顺序，条件应通过明确的条件节点表达。
 
-工程读取与保存统一走 SkillProjectFiles：用户工作工程位于 `Tools/SkillLab/.local/project.json` 及其引用模块，正式内容从 `Assets/StreamingAssets/Combat/project.json` 索引加载。具体作者操作见 [技能工作台使用说明](Tools/SkillLab/README.md)。
+工程读取与保存统一走 SkillProjectFiles：用户工作工程位于 `Tools/SkillLab/.local/arena/project.json` 及其引用模块，正式内容从 `Assets/StreamingAssets/Combat/project.json` 索引加载。具体作者操作见 [技能工作台使用说明](Tools/SkillLab/README.md)。
 
 ### 3. 效果能力已有、缺少执行时机时，补触发入口
 
@@ -170,6 +170,6 @@ Unity Console 会为 category 添加颜色；`.NET` Console 保持纯文本，�
 
 ## 游戏与测试场景
 
-在 Unity 菜单 `Combat → 打开场景` 选择 Arena 正式、Arena 木桩、剑客练习场或 SkillLab。共用 WASD、鼠标瞄准、左键/Q/E/R 或小键盘 1–4、Esc 暂停、F5 重载。Arena 额外用空格翻滚、F 放木桶、C 追踪射击、X 放吸收球。SkillLab 用 `.` 逐帧推进。
+在 Unity 菜单 `Combat → 打开场景` 选择「Arena 正式」「Arena 木桩」或「SkillLab」。Arena 用 `F5` 重载正式内容和发布槽，空格翻滚、`F` 放木桶、`C` 追踪射击、`X` 放吸收球。
 
-[剑客练习教程](docs/剑客技能配置教程.md)包含课程导入、配置和逐招试放。
+打开 SkillLab 后点 Play，试验场会自动加载技能。网页重新发布后也会自动应用，可按 `F5` 手动重载，按 `.` 单步推进。两种场景均用 WASD 移动、鼠标瞄准、左键/Q/E/R 或小键盘 1–4 施放、`Esc` 暂停。

@@ -3,7 +3,7 @@
 完整需求见 `docs/网页技能编辑器功能清单.md`，当前事实见 `docs/实施进度.md`。网页参考原视频功能，允许按项目可用性适配；装备、公式编辑器、独立地图、冒险不在范围内。
 
 - 正式内容入口是 `Assets/StreamingAssets/Combat/project.json`索引，功能数据在同目录skills/projectiles/areas/buffs/timelines/summonBlueprints/runtime及preview文件中。示例索引为 `Content/SkillLab/project.json`；磁盘读取/保存统一走SkillProjectFiles，不把索引当完整文档解析，不用教学CodeCombatContent回退。
-- 用户工作工程为 `Tools/SkillLab/.local/arena/project.json` 与 `.local/lab/project.json` 索引及引用模块，`f6.json`、`f7.json`、`slot3.json`、`slot4.json` 为独立用户发布快照。测试使用独立临时工程和目录，保留用户数据；不要把槽文件、用户分片或无关生成文件混入提交。协议单文件导入/导出属于可携带文件契约，不能与磁盘分片人工双写。
+- 网页唯一工作工程为 `Tools/SkillLab/.local/arena/project.json` 及引用模块。普通保存更新草稿，「发布正式内容」显式更新 Arena 正式配置。「发布到槽位」从同一个编辑快照生成所选技能和其他有效槽，使用 `f6.json`、`f7.json`、`slot3.json`、`slot4.json`。SkillLab 进入 Play Mode 后自动加载，运行中自动接收整组发布。测试使用独立临时工程和目录，保留用户数据。槽文件、用户分片或无关生成文件不混入提交。可携带 JSON 通过协议导入或导出，磁盘分片统一由 SkillProjectFiles 管理。
 - `Combat.Core`持有领域定义和实例状态；`Combat.Config/Json`负责协议校验、独立转换及目录；网页负责作者操作、输入与快照显示，预览宿主和Unity执行同一战斗核。表现逻辑属于`Combat.Presentation`/`Combat.Unity`。
 - 内部重构直接删除过时实现；公开JSON契约的默认值、身份、版本和修订需独立评估。不得恢复SO内容作者链或双写配置。
 - 先查已有实现和依赖，优先组合与明确接口；单个源码文件不超过500行。非显然决策、限制和风险写ADR，临时问题关联可追踪任务，不留下无上下文TODO。

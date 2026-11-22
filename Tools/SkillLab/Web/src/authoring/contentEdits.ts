@@ -1,5 +1,4 @@
 import { clone } from '../model';
-import {defaultScene} from './defaultScene';
 import type { AuthoredTimeline,BuffDefinition, GraphEdge, GraphNode, GraphViewport, Project, Skill } from '../model';
 
 export type ContentKind = 'skill' | 'buff' | 'blueprint'|'timeline'|'projectile'|'area';
@@ -140,7 +139,4 @@ export function selectGraph(p:Project,skillId:string,buffId='',timelineId='',pro
 export function saveViewport(p:Project,key:GraphKey,viewport:{x:number;y:number;zoom:number}):Project {
   const value:GraphViewport={...key,...viewport};
   return {...p,editor:{...p.editor,viewports:[...(p.editor?.viewports??[]).filter(v=>v.kind!==key.kind||v.id!==key.id),value]}};
-}
-export function emptyProject(name='新工程'):Project {
-  return {formatVersion:1,id:crypto.randomUUID(),name,skills:[],buffs:[],summonBlueprints:[],preview:defaultScene()};
 }

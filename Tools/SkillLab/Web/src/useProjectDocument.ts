@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Project } from './model';
 import { EditorHistory } from './authoring/EditorHistory';
-import { ProjectSave, readDiskProject, rememberedWorkspace, rememberWorkspace } from './authoring/projectIO';
-import type { Workspace } from './authoring/projectIO';
+import { ProjectSave, readDiskProject } from './authoring/projectIO';
 
 type Update = Project | ((project:Project)=>Project);
 export function useProjectDocument(report:(text:string)=>void) {
@@ -14,24 +13,19 @@ export function useProjectDocument(report:(text:string)=>void) {
   const reportRef=useRef(report);reportRef.current=report;
   const [revision,changed]=useState(0);
   const [publishFeedback,setPublishFeedback]=useState<{text:string;error:boolean}|null>(null);
+  const reportSlotPublication=useCallback((text:string,error=false)=>setPublishFeedback({text,error}),[]);
   const refresh=useCallback(()=>{current.current=history.current?.current??null;changed(n=>n+1);},[]);
-  const load=useCallback(async(workspace?:Workspace,mode:'save'|'discard'|'clean'='clean')=>{
+  const load=useCallback(async()=>{
     const store=persistence.current;
-    const before=current.current;
     if(loading.current||store?.busy)throw new Error('请等待正在进行的工程操作完成');
-    const requested=workspace??store?.workspace??rememberedWorkspace();
-    const switching=!!store&&requested!==store.workspace;
-    if(switching&&mode==='clean'&&before&&store.dirty(before))throw new Error('当前工程有未保存的修改');
     loading.current=true;
     refresh();
     try {
-      if(switching&&mode==='save'&&before&&store.dirty(before))await store.save(before);
-      const result=await readDiskProject(requested);
-      if(history.current&&store?.workspace===result.workspace)history.current.edit(result.project);
+      const result=await readDiskProject();
+      if(history.current){history.current.endGroup();history.current.edit(result.project);}
       else history.current=new EditorHistory(result.project);
       group.current='';history.current.endGroup();
-      persistence.current=new ProjectSave(result.project,result.etag,result.workspace);
-      rememberWorkspace(result.workspace);
+      persistence.current=new ProjectSave(result.project,result.etag);
       setPublishFeedback(null);
       reportRef.current('已载入最近保存的磁盘工程');
     } finally {
@@ -40,13 +34,12 @@ export function useProjectDocument(report:(text:string)=>void) {
     }
   },[refresh]);
   useEffect(()=>{void load().catch(e=>reportRef.current(String(e)));},[load]);
-  const workspace=persistence.current?.workspace;
   const edit=useCallback((update:Update,remember=true,explicitGroup?:string)=>{
     const store=history.current;
-    if(!store||loading.current||persistence.current?.workspace!==workspace)return;
+    if(!store||loading.current)return;
     const next=typeof update==='function'?update(store.current):update;
     if(store.edit(next,explicitGroup??group.current,remember))refresh();
-  },[refresh,workspace]);
+  },[refresh]);
   const endGroup=useCallback(()=>{group.current='';history.current?.endGroup();},[]);
   const beginGroup=useCallback(()=>{group.current='field:'+ ++groupNumber.current;history.current?.endGroup();},[]);
   const undo=useCallback(()=>{if(loading.current)return;endGroup();if(history.current?.undo())refresh();},[endGroup,refresh]);
@@ -61,7 +54,7 @@ export function useProjectDocument(report:(text:string)=>void) {
   },[refresh]);
   const publishArena=useCallback(async()=>{
     const store=persistence.current;const value=current.current;
-    if(!store||!value||store.workspace!=='arena'||store.busy||loading.current)return;
+    if(!store||!value||store.busy||loading.current)return;
     setPublishFeedback(null);
     try {
       const pending=store.publishArena(value);refresh();
@@ -78,7 +71,7 @@ export function useProjectDocument(report:(text:string)=>void) {
     window.addEventListener('beforeunload',leaving);return ()=>window.removeEventListener('beforeunload',leaving);
   },[dirty]);
   return {project,current,revision,edit,save,publishArena,load,undo,redo,beginGroup,endGroup,dirty,
-    workspace,loading:loading.current,publishFeedback,dismissPublishFeedback:()=>setPublishFeedback(null),
+    loading:loading.current,publishFeedback,reportSlotPublication,dismissPublishFeedback:()=>setPublishFeedback(null),
     canUndo:!loading.current&&(history.current?.canUndo??false),canRedo:!loading.current&&(history.current?.canRedo??false),
     saving:persistence.current?.saving??false,publishing:persistence.current?.publishing??false,
     saveStatus:persistence.current?.saving?'保存中…':persistence.current?.publishing?'发布中…':loading.current?'载入中…':persistence.current?.failure?'保存失败':dirty?'未保存':'已保存到磁盘'};

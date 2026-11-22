@@ -5,6 +5,9 @@ internal sealed class HostPaths
     public string Root {get;}
     public string Data {get;}
     public string Publications {get;}
+    public string ExampleProject => Path.Combine(Root, "Content", "SkillLab", "project.json");
+    public string FormalProject => Path.Combine(Root, "Assets", "StreamingAssets", "Combat", "project.json");
+    public string DraftProject => Path.Combine(Data, "arena", "project.json");
     public int Port {get;}
     public string Url=>"http://127.0.0.1:"+Port;
     public HostPaths(string[] args,string workingDirectory,string baseDirectory)

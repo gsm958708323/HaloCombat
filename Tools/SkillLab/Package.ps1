@@ -62,7 +62,7 @@ $taskReadme=@'
 2. 浏览器打开 http://127.0.0.1:4192/ ，新建技能后“施放”并“播放”。
 3. 如果4192已使用，可在PowerShell运行 ./Start.ps1 -Port 4193。
 
-工作工程保存在本包Tools/SkillLab/.local/project.json，示例与正式JSON独立保留，不会自动覆盖已有工作。
+工作工程保存在本包Tools/SkillLab/.local/arena/project.json，示例与正式JSON独立保留，不会自动覆盖已有工作。
 工程可下载、回读、合并、撤销。导入支持选择文件或粘贴JSON。F6/F7默认发布到包内Assets/StreamingAssets/Combat，不能直接启动Unity游戏。
 要发布到现有Unity工程，运行 ./Start.ps1 -PublishDirectory 'D:/your-project/Assets/StreamingAssets/Combat'，再到Unity SkillLab按F5重载；Unity项目与原Prefab/动画/材质随源工程交付，本包不会复制或替换它们。
 “发布正式内容”写包内正式JSON；若要更新源工程，请导出完整运行内容并按源工程约定放置。不要用示例工程替换正式Arena内容。

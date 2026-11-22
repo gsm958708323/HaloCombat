@@ -2,100 +2,70 @@ using Combat.Config;
 
 namespace SkillLab;
 
+internal sealed record InvalidPublicationSlot(string Slot, string Reason);
+internal sealed record PublicationConflict(string Error, string GroupRevision, IReadOnlyList<InvalidPublicationSlot> InvalidSlots);
+internal sealed record PublicationResult(Dictionary<string, SkillPublicationDocument> Published, PublicationConflict Conflict);
+
 internal static class PublicationFiles
 {
     public static PublicationInfo[] Inspect(string directory) => PublishedSkillSlots.Locked(directory, () =>
         PublishedSkillSlots.Ordered.Select(slot => PublicationInspection.Read(directory, slot)).ToArray());
 
-    public static Dictionary<string, SkillPublicationDocument> Sync(string directory, SkillProjectDocument project)
+    public static PublicationResult Publish(string directory, string selected, SkillProjectDocument project, string skillId,
+        string expectedGroup, IReadOnlyList<string> clearInvalidSlots) => PublishedSkillSlots.Locked<PublicationResult>(directory, () =>
     {
-        return PublishedSkillSlots.Locked(directory, () =>
+        SkillProjectStructure.ValidateRuntimeStructure(project);
+        var current = PublishedSkillSlots.ReadUnlocked(directory);
+        var roots = new Dictionary<string, string> { [selected] = skillId };
+        var invalid = new List<InvalidPublicationSlot>();
+        var available = project.Skills.Select(skill => skill.Id).ToHashSet(StringComparer.Ordinal);
+        foreach (var (slot, text) in current)
         {
-            var plan = PlanSync(project, PublishedSkillSlots.ReadUnlocked(directory));
-            ProjectFileTransaction.Commit(plan.ToDictionary(
-                pair => SlotPath(directory, pair.Key), pair => SkillPublicationJson.Write(pair.Value)), []);
-            return plan;
-        });
-    }
-
-    public static string Publish(string directory, string slot, SkillPublicationDocument publication)
-    {
-        if (!PublishedSkillSlots.Ordered.Contains(slot))
-            throw new ContentValidationException("$.slots", "Unknown slot: " + slot);
-        return PublishedSkillSlots.Locked(directory, () =>
-        {
-            ProjectFileTransaction.Commit(new Dictionary<string, string>
-                { [SlotPath(directory, slot)] = SkillPublicationJson.Write(publication) }, []);
-            return LoadWarning(directory, publication.Project.Id);
-        });
-    }
-
-    public static Dictionary<string, SkillPublicationDocument> PlanSync(
-        SkillProjectDocument project, IReadOnlyDictionary<string, string> current)
-    {
-        if (current.Count == 0)
-            throw new ContentValidationException("$.slots", "请先发布至少一个技能槽，再同步现有槽位。");
-        var result = new Dictionary<string, SkillPublicationDocument>();
-        foreach (var pair in current)
-        {
-            var original = ReadPublication(pair.Key, pair.Value);
-            if (original.Project.Id != project.Id)
-                throw new ContentValidationException("$.slots." + pair.Key,
-                    $"槽位 {Number(pair.Key)} 来自其他工程。请为该槽选择技能并重新发布，再同步现有槽位。");
-            result.Add(pair.Key, SkillPublicationJson.Create(project, original.SkillId));
+            if (slot == selected) continue;
+            try
+            {
+                var prior = SkillPublicationJson.Read(text).Document;
+                if (prior.Project.Id != project.Id)
+                    invalid.Add(new(slot, "快照来自其他工程。"));
+                else if (!available.Contains(prior.SkillId))
+                    invalid.Add(new(slot, $"当前工程已没有技能 {prior.SkillId}。"));
+                else
+                    roots.Add(slot, prior.SkillId);
+            }
+            catch (ContentValidationException error)
+            {
+                invalid.Add(new(slot, "快照无法载入。" + error.Message));
+            }
         }
+
+        // Fingerprint the entire observed group, including malformed files and empty slots.
+        // The confirmation grants permission to remove exactly the invalid slots from this observation.
+        string groupRevision = "\"" + SkillJsonCodec.Fingerprint(SkillJsonCodec.Write(current)) + "\"";
+        bool confirming = !string.IsNullOrEmpty(expectedGroup) || clearInvalidSlots.Count > 0;
+        if (confirming && expectedGroup != groupRevision)
+            return new(null, new("槽位已发生变化，请检查当前槽位后重新发布。", groupRevision, invalid));
+        var invalidNames = invalid.Select(entry => entry.Slot).ToHashSet(StringComparer.Ordinal);
+        if (clearInvalidSlots.Count != invalid.Count || !invalidNames.SetEquals(clearInvalidSlots))
+            return new(null, new("清空下列失效槽位后才能发布。", groupRevision, invalid));
+
+        var plan = new Dictionary<string, SkillPublicationDocument>();
+        foreach (var (slot, root) in roots)
+        {
+            try { plan.Add(slot, SkillPublicationJson.Create(project, root)); }
+            catch (ContentValidationException error)
+            {
+                throw new ContentValidationException("$.slots." + slot, $"槽位 {Number(slot)} 发布校验失败。{error.Message}");
+            }
+        }
+        var output = plan.ToDictionary(pair => pair.Key, pair => SkillPublicationJson.Write(pair.Value));
         using var session = new PublishedSkillSession();
-        session.Replace(result.ToDictionary(pair => pair.Key, pair => SkillPublicationJson.Write(pair.Value)));
-        return result;
-    }
+        session.Replace(output);
+        ProjectFileTransaction.Commit(
+            output.ToDictionary(pair => PublishedSkillSlots.PathOf(directory, pair.Key), pair => pair.Value),
+            [], invalid.Select(entry => PublishedSkillSlots.PathOf(directory, entry.Slot)));
+        return new(plan, null);
+    });
 
     public static int Number(string slot) => Enumerable.Range(0, PublishedSkillSlots.Ordered.Count)
         .First(index => PublishedSkillSlots.Ordered[index] == slot) + 1;
-
-    public static string SlotPath(string directory, string slot) => PublishedSkillSlots.PathOf(directory, slot);
-
-    private static string LoadWarning(string directory, string projectId)
-    {
-        try
-        {
-            var slots = PublishedSkillSlots.ReadUnlocked(directory);
-            var foreign = new List<int>();
-            var unreadable = new List<int>();
-            foreach (var pair in slots)
-            {
-                try
-                {
-                    if (ReadPublication(pair.Key, pair.Value).Project.Id != projectId) foreign.Add(Number(pair.Key));
-                }
-                catch (ContentValidationException) { unreadable.Add(Number(pair.Key)); }
-            }
-            var warnings = new List<string>();
-            if (foreign.Count > 0)
-                warnings.Add($"发布槽位来自不同工程。请为槽位 {string.Join("、", foreign)} 选择当前工程的技能并重新发布。");
-            if (unreadable.Count > 0)
-                warnings.Add($"槽位 {string.Join("、", unreadable)} 的快照无法读取，请重新发布。");
-            if (warnings.Count > 0) return string.Join(" ", warnings);
-
-            using var session = new PublishedSkillSession();
-            session.Replace(slots);
-            return null;
-        }
-        catch (ContentValidationException error)
-        {
-            return "当前发布槽位暂不能共同载入。" + error.Message + "。同工程共享内容修改后，请点击“同步现有槽位”。";
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            // Publication is already committed. Report the inspection failure as a warning.
-            return "已发布，暂无法检查其他发布槽位。" + error.Message;
-        }
-    }
-
-    private static SkillPublicationDocument ReadPublication(string slot, string text)
-    {
-        try { return SkillPublicationJson.Read(text).Document; }
-        catch (ContentValidationException error)
-        { throw new ContentValidationException("$.slots." + slot, error.Message); }
-    }
-
 }

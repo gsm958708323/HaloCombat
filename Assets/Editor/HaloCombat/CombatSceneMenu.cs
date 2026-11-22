@@ -21,9 +21,6 @@ namespace Combat.EditorTools
         [MenuItem("Combat/打开场景/Arena 木桩", false, 11)]
         static void PlayTraining() => Open(ArenaSceneBuilder.Path, training: true);
 
-        [MenuItem("Combat/打开场景/剑客练习场", false, 12)]
-        static void OpenPractice() => Open("Assets/Scenes/SwordPractice.unity");
-
         [MenuItem("Combat/打开场景/SkillLab", false, 13)]
         static void OpenSkillLab() => Open("Assets/Scenes/SkillLab.unity");
 

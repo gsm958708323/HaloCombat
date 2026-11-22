@@ -18,13 +18,13 @@
   font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif;
 }
 
-button, input, select, textarea, .project-menu > summary {
+button, input, select, textarea {
   border-color: var(--desk-line);
   border-radius: 6px;
 }
-button, .project-menu > summary { background: var(--desk-surface); }
+button { background: var(--desk-surface); }
 input, select, textarea { background: var(--desk-field); }
-button:not(:disabled):hover, select:hover, .project-menu > summary:hover { border-color: #77918b; }
+button:not(:disabled):hover, select:hover { border-color: #77918b; }
 button:not(:disabled):hover { background: #293a38; }
 button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible {
   outline: 2px solid var(--desk-accent);
@@ -75,7 +75,7 @@ small { color: var(--desk-muted); }
   border-left: 1px solid var(--desk-line);
 }
 .header-actions { gap: 5px 6px; min-width: 0; }
-.header-actions > button, .project-menu > summary { padding: 5px 8px; }
+.header-actions > button { padding: 5px 8px; }
 .header-actions > small {
   display: inline-flex;
   align-items: center;
@@ -248,7 +248,7 @@ small { color: var(--desk-muted); }
 .event-table th:nth-child(2) { width: 85px; }
 .event-table th:nth-child(3) { width: 110px; }
 .event-table tr:nth-child(even) { background: #1b2728; }
-.skill-library, .node-menu, .modal, .project-menu > div {
+.skill-library, .node-menu, .modal {
   background: var(--desk-panel);
   border-color: var(--desk-line);
   border-radius: 8px;
@@ -259,7 +259,6 @@ small { color: var(--desk-muted); }
 .skill-library details > button { min-width: 0; border-color: var(--desk-line); background: var(--desk-surface); }
 .skill-library button.active { background: #22332d; }
 .search { border-color: #799d82; }
-.project-menu > div { left: 0; right: auto; }
 .application > footer {
   height: auto;
   padding: 8px var(--desk-inset);
@@ -306,11 +305,4 @@ small { color: var(--desk-muted); }
   .event-table :is(th, td) { padding-inline: 5px; }
 }
 
-.skill-library-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.skill-copy-dialog { width: min(580px, calc(100vw - 32px)); max-height: 90vh; overflow: auto; }
-.skill-copy-dialog p { margin: 0; line-height: 1.6; }
-.skill-copy-preview { overflow: auto; max-height: 48vh; padding: 10px; border: 1px solid var(--desk-line); overflow-wrap: anywhere; }
-.skill-copy-preview h3 { margin: 4px 0; font-size: 12px; }
-.skill-copy-preview ul { padding-left: 20px; }
-.skill-copy-preview li { padding-bottom: 6px; }
 .publish-feedback { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 5px var(--desk-inset); font-size: 11px; background: var(--desk-surface); }

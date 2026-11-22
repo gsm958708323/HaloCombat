@@ -13,7 +13,6 @@ namespace Combat.Unity
     {
         [SerializeField]string _contentFile=UnityRuntimeContent.DefaultFile;
         [SerializeField]bool _training;
-        [SerializeField]bool _practice;
         readonly ArenaInputSource _input = new ArenaInputSource();
         string[] _skillNames = System.Array.Empty<string>();
         ArenaSession _session;
@@ -25,14 +24,13 @@ namespace Combat.Unity
         public bool AutoAdvance {get;set;}=true;
         public bool Training=>_training;
         public string ContentFile=>_contentFile;
-        public bool IsPractice => _practice;
         internal IReadOnlyList<string> SkillNames => _skillNames;
         public const string EditorModeKey = "HaloCombat.Arena.NextPlayTraining";
 
         void Start()
         {
 #if UNITY_EDITOR
-            if (!_practice && gameObject.scene.path == "Assets/Scenes/Arena.unity")
+            if (gameObject.scene.path == "Assets/Scenes/Arena.unity")
             {
                 _training = UnityEditor.SessionState.GetBool(EditorModeKey, _training);
                 UnityEditor.SessionState.EraseBool(EditorModeKey);
@@ -45,7 +43,6 @@ namespace Combat.Unity
         public void Configure(string contentFile,bool training=false){_contentFile=contentFile;_training=training;}
         public bool Reload(bool includePublished=true)
         {
-            includePublished &= !_practice;
             ArenaSession candidate=null;
             ArenaPresentationBinding prepared=null;
             try
@@ -70,7 +67,12 @@ namespace Combat.Unity
             {prepared?.Dispose();candidate?.Dispose();LastLoadError=error.Message;Status=LastLoadError;return false;}
         }
         public void Restart(){Reload(false);}
-        public void SetTraining(bool value){if(_practice)return;bool previous=_training;_training=value;if(!Reload(false))_training=previous;}
+        public void SetTraining(bool value)
+        {
+            bool previous = _training;
+            _training = value;
+            if (!Reload(false)) _training = previous;
+        }
         public void SetPaused(bool paused){_session?.SetPaused(paused);_input.Cancel();_clock.Reset();}
         public void Submit(in ArenaInputFrame frame)=>_session?.ApplyInput(frame);
         public bool CastPublished(string slot)
@@ -106,11 +108,10 @@ namespace Combat.Unity
             {
                 var p = player.GetComp<TransformComp>().Position;
                 Submit(_input.Sample(_present.Camera,new Vector3(p.X,p.Y,p.Z),ArenaHud.PointerOver(_session.PlayerDead)));
-                if (!_practice)
-                {
-                    if(Input.GetKeyDown(KeyCode.F6))CastPublished("f6");if(Input.GetKeyDown(KeyCode.F7))CastPublished("f7");
-                    if(!Input.GetKey(KeyCode.F6))ReleasePublished("f6");if(!Input.GetKey(KeyCode.F7))ReleasePublished("f7");
-                }
+                if (Input.GetKeyDown(KeyCode.F6)) CastPublished("f6");
+                if (Input.GetKeyDown(KeyCode.F7)) CastPublished("f7");
+                if (!Input.GetKey(KeyCode.F6)) ReleasePublished("f6");
+                if (!Input.GetKey(KeyCode.F7)) ReleasePublished("f7");
                 _session.Advance(_clock.BeginFrame(Time.unscaledDeltaTime));
             }
             else

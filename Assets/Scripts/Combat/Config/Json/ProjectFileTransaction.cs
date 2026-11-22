@@ -22,7 +22,8 @@ namespace Combat.Config
                 finally{if(entered)mutex.ReleaseMutex();}
             }
         }
-        public static void Commit(IReadOnlyDictionary<string,string> files,IEnumerable<string> obsolete)
+        public static void Commit(IReadOnlyDictionary<string,string> files,IEnumerable<string> obsolete,
+            IEnumerable<string> requiredDeletes=null)
         {
             var originals=new Dictionary<string,byte[]>();var changed=new List<string>();
             try
@@ -36,11 +37,34 @@ namespace Combat.Config
                     // A failed atomic replacement leaves its original intact. Roll back only completed writes.
                     Atomic(file.Key,bytes);changed.Add(file.Key);
                 }
+                // Published slots remain live until removed, so their deletions are part of the commit.
+                if(requiredDeletes!=null)foreach(string path in requiredDeletes)
+                {
+                    if(files.ContainsKey(path))throw new ArgumentException("Cannot write and delete the same path: "+path);
+                    originals.Add(path,File.ReadAllBytes(path));
+                    File.Delete(path);
+                    changed.Add(path);
+                }
             }
-            catch
+            catch(Exception error)
             {
+                var rollbackErrors=new List<Exception>();
                 for(int i=changed.Count-1;i>=0;i--)
-                {var path=changed[i];if(originals[path]==null){if(File.Exists(path))File.Delete(path);}else Atomic(path,originals[path]);}
+                {
+                    var path=changed[i];
+                    try
+                    {
+                        if(originals[path]==null)File.Delete(path);
+                        else Atomic(path,originals[path]);
+                    }
+                    catch(Exception rollbackError) when(rollbackError is IOException||rollbackError is UnauthorizedAccessException)
+                    {rollbackErrors.Add(rollbackError);}
+                }
+                if(rollbackErrors.Count>0)
+                {
+                    rollbackErrors.Insert(0,error);
+                    throw new IOException("Project commit failed and some files could not be restored.",new AggregateException(rollbackErrors));
+                }
                 throw;
             }
             // The new index is committed. Only remove paths owned by its previous index.

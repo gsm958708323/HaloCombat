@@ -14,15 +14,55 @@ namespace Combat.Config
         public IReadOnlyDictionary<string, string> Slots { get; private set; } = new ReadOnlyDictionary<string, string>(new Dictionary<string, string>());
         public IReadOnlyDictionary<string,string> SlotRevisions {get;private set;}=new ReadOnlyDictionary<string,string>(new Dictionary<string,string>());
 
-        // Invalid input cannot destroy the last working session. Existing actors keep their
-        // original definitions until a fully validated replacement world has been created.
-        public void Replace(IReadOnlyDictionary<string, string> slots)
+        SkillProjectDocument _skillLabProject;
+        CombatContentSnapshot _skillLabContent;
+
+        public void Replace(IReadOnlyDictionary<string, string> slots) => ReplacePublications(slots, false);
+
+        public void ReplaceForSkillLab(IReadOnlyDictionary<string, string> slots) => ReplacePublications(slots, true);
+
+        public void ReplaceWithSkillLabDefaults(RuntimeProjectLoader runtime)
+        {
+            var defaults = SkillLabDefaultContent.Create(runtime);
+            ReplaceCore(PublishedSkillSlots.Ordered.Where(defaults.ContainsKey)
+                .Select(slot => (slot, defaults[slot])), true);
+        }
+
+        public void RestartSkillLabSimulation()
+        {
+            if (_skillLabProject == null) throw new InvalidOperationException("No SkillLab training content is loaded.");
+            var candidate = new SkillSimulation(_skillLabProject, _skillLabContent);
+            var previous = Simulation;
+            Simulation = candidate;
+            previous.Dispose();
+        }
+
+        void ReplacePublications(IReadOnlyDictionary<string, string> slots, bool skillLab)
         {
             if (slots == null || slots.Count == 0)
                 throw new ContentValidationException("$.slots", "Expected at least one publication.");
             foreach (var name in slots.Keys)
                 if (!PublishedSkillSlots.Ordered.Contains(name))
                     throw new ContentValidationException("$.slots", "Unknown slot: " + name);
+            ReplaceCore(VerifySlots(slots), skillLab);
+        }
+
+        static IEnumerable<(string Slot, CompiledSkillPublication Publication)> VerifySlots(IReadOnlyDictionary<string, string> slots)
+        {
+            foreach (var slot in PublishedSkillSlots.Ordered)
+            {
+                if (!slots.TryGetValue(slot, out var text)) continue;
+                CompiledSkillPublication publication;
+                try { publication = SkillPublicationJson.Read(text); }
+                catch (ContentValidationException error)
+                { throw new ContentValidationException("$.slots." + slot, error.Message); }
+                yield return (slot, publication);
+            }
+        }
+
+        // Finish validation and construct a world before replacing any active session state.
+        void ReplaceCore(IEnumerable<(string Slot, CompiledSkillPublication Publication)> slots, bool skillLab)
+        {
             var mappings = new Dictionary<string, string>();
             var slotRevisions=new Dictionary<string,string>();
             var skills = new Dictionary<string, SkillGraphDocument>();
@@ -34,16 +74,12 @@ namespace Combat.Config
             var revisions = new List<string>();
             SkillProjectDocument project = null;
             bool differentLayouts = false;
-            foreach (var slot in PublishedSkillSlots.Ordered)
+            foreach (var (slot, publication) in slots)
             {
-                if (!slots.TryGetValue(slot, out var text)) continue;
-                CompiledSkillPublication publication;
-                try { publication = SkillPublicationJson.Read(text); }
-                catch (ContentValidationException error) { throw new ContentValidationException("$.slots." + slot, error.Message); }
                 var document=publication.Document;var closure=SkillContentClosure.Select(document.Project,publication.Content,document.SkillId);
                 if (project == null)
                     project = new SkillProjectDocument { Id = document.Project.Id, Name = document.Project.Name, Preview = document.Project.Preview,Runtime=document.Project.Runtime };
-                    else if (SkillJsonCodec.Write(project.Preview) != SkillJsonCodec.Write(document.Project.Preview))
+                else if (SkillJsonCodec.Write(project.Preview) != SkillJsonCodec.Write(document.Project.Preview))
                     differentLayouts = true;
                 if (project.Id != document.Project.Id)
                     throw new ContentValidationException("$.slots." + slot, "Slots must be published from the same project.");
@@ -95,10 +131,20 @@ namespace Combat.Config
             project.Timelines=timelines.Values.ToArray();
             project.Projectiles=projectiles.Values.ToArray();
             project.Areas=areas.Values.ToArray();
-            var compiled=CombatContentCompiler.Compile(project);ValidateViews?.Invoke(compiled.Runtime?.Views);
-            var candidate = new SkillSimulation(project,compiled);
+            if (skillLab)
+            {
+                // Preserve the verified payload and apply the lab resource rule to a private
+                // preview copy. Recording sees exactly the preview used to create the player.
+                project.Preview = SkillJsonCodec.Read<PreviewDocument>(SkillJsonCodec.Write(project.Preview));
+                project.Preview.UnlimitedAmmo = true;
+            }
+            var compiled = CombatContentCompiler.Compile(project);
+            ValidateViews?.Invoke(compiled.Runtime?.Views);
+            var candidate = new SkillSimulation(project, compiled);
             var previous = Simulation;
             Simulation = candidate;
+            _skillLabProject = skillLab ? project : null;
+            _skillLabContent = skillLab ? compiled : null;
             HasDifferentSlotLayouts = differentLayouts;
             Revision = SkillJsonCodec.Fingerprint(string.Join("\n", revisions));
             Slots = new ReadOnlyDictionary<string, string>(mappings);
@@ -107,7 +153,16 @@ namespace Combat.Config
         }
 
         public void Dispose()
-        { Simulation?.Dispose(); Simulation = null; Revision = null; Slots = new ReadOnlyDictionary<string, string>(new Dictionary<string, string>()); }
+        {
+            Simulation?.Dispose();
+            Simulation = null;
+            Revision = null;
+            _skillLabProject = null;
+            _skillLabContent = null;
+            HasDifferentSlotLayouts = false;
+            Slots = new ReadOnlyDictionary<string, string>(new Dictionary<string, string>());
+            SlotRevisions = new ReadOnlyDictionary<string, string>(new Dictionary<string, string>());
+        }
 
         public SkillReplayComparison ReplaceReplay(string text)
         {
@@ -117,6 +172,9 @@ namespace Combat.Config
                 ValidateViews?.Invoke(run.Simulation.Views);
                 if(!run.Comparison.Matches)throw new ContentValidationException("$.expectedState","Replay differs at "+run.Comparison.Differences[0].Path);
                 var previous=Simulation;Simulation=run.TakeSimulation();Revision=SkillJsonCodec.Fingerprint(text);
+                _skillLabProject = null;
+                _skillLabContent = null;
+                HasDifferentSlotLayouts = false;
                 Slots=new ReadOnlyDictionary<string,string>(new Dictionary<string,string>{{PublishedSkillSlots.Ordered[0],document.RootSkillId}});
                 SlotRevisions=new ReadOnlyDictionary<string,string>(new Dictionary<string,string>{{PublishedSkillSlots.Ordered[0],Revision}});
                 previous?.Dispose();return run.Comparison;

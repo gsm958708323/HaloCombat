@@ -10,48 +10,36 @@ public sealed class ProjectVersionException(string message,int statusCode):Excep
     public int StatusCode {get;}=statusCode;
 }
 
-public sealed class ProjectFileStore(string path,string workspace="")
+public sealed class ProjectFileStore(string path,string formalPath)
 {
-    readonly SemaphoreSlim gate=new(1);
-    ProjectFileSnapshot Snapshot(SkillProjectDiskSnapshot loaded)
+    static ProjectFileSnapshot Snapshot(SkillProjectDiskSnapshot loaded)
     {
         string text = SkillProjectJson.Write(loaded.Project);
         // Include missing-position keys so removing an explicit (0,0) disk position also conflicts.
         var layout = loaded.MissingPositions.OrderBy(key => key.Item1, StringComparer.Ordinal)
             .ThenBy(key => key.Item2, StringComparer.Ordinal).ThenBy(key => key.Item3, StringComparer.Ordinal)
             .Select(key => new[] { key.Item1, key.Item2, key.Item3 });
-        var bytes = Encoding.UTF8.GetBytes(workspace + "\n" + System.Text.Json.JsonSerializer.Serialize(layout) + "\n" + text);
+        var bytes = Encoding.UTF8.GetBytes(System.Text.Json.JsonSerializer.Serialize(layout) + "\n" + text);
         string etag = "\"" + Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant() + "\"";
         return new ProjectFileSnapshot(text, etag, loaded.NeedsLayout);
     }
-    public async Task<ProjectFileSnapshot> Read()
-    {
-        await gate.WaitAsync();
-        try {return Snapshot(SkillProjectFiles.ReadAuthoring(path));}
-        finally {gate.Release();}
-    }
-    internal SkillJsonImport PrepareCopy(string skillId)
-        => CrossWorkspaceCopy.Prepare(SkillProjectFiles.ReadAuthoring(path), skillId);
+    public ProjectFileSnapshot Read()
+        => ProjectFileTransaction.Locked(path, () => Snapshot(ReadOrInitialize()));
 
-    public async Task<ProjectFileSnapshot> Save(SkillProjectDocument project,string expectedVersion)
+    public ProjectFileSnapshot Save(SkillProjectDocument project, string expectedVersion)
     {
         SkillProjectStructure.Validate(project);
-        await gate.WaitAsync();
-        try
+        return WithVersion(expectedVersion, saved =>
         {
-            return WithVersion(expectedVersion, _ =>
-            {
-                SkillProjectFiles.Write(path, project);
-                return Snapshot(SkillProjectFiles.ReadAuthoring(path));
-            });
-        }
-        finally {gate.Release();}
+            if (!string.Equals(project.Id, saved.Project.Id, StringComparison.Ordinal))
+                throw new ContentValidationException("$.id", "保存必须保留当前工程的 ID。请通过导入合并其他工程的内容。");
+            SkillProjectFiles.Write(path, project);
+            return Snapshot(SkillProjectFiles.ReadAuthoring(path));
+        });
     }
 
-    internal void PublishArena(string expectedVersion, string formalPath)
+    internal void PublishArena(string expectedVersion)
     {
-        if (workspace != WorkspaceStores.Arena)
-            throw new ProjectVersionException("只有 Arena 工作区可以发布正式内容。", 403);
         WithVersion(expectedVersion, saved =>
         {
             var project = saved.Project;
@@ -72,29 +60,21 @@ public sealed class ProjectFileStore(string path,string workspace="")
             throw new ProjectVersionException("缺少草稿版本，请先重新载入工程。", 428);
         return ProjectFileTransaction.Locked(path, () =>
         {
-            var saved = SkillProjectFiles.ReadAuthoring(path);
+            var saved = ReadOrInitialize();
             if (expectedVersion != Snapshot(saved).ETag)
                 throw new ProjectVersionException("磁盘工程已被其他窗口修改。当前编辑已保留，请重新载入磁盘版本。", 409);
             return update(saved);
         });
     }
-}
 
-public sealed record PublicationInfo(string Slot,string ProjectId,string SkillId,string Revision,string[] Skills,string[] Buffs,string[] Blueprints,string[] Timelines,string[] Projectiles,string[] Areas,string Error);
-public static class PublicationInspection
-{
-    public static PublicationInfo Read(string directory,string slot)
+    // Called under the draft lock so concurrent readers cannot initialize over a save.
+    SkillProjectDiskSnapshot ReadOrInitialize()
     {
-        var path=Path.Combine(directory,slot+".json");
-        if(!File.Exists(path))return new(slot,null,null,null,[],[],[],[],[],[],null);
-        try
+        if (!File.Exists(path))
         {
-            var publication=SkillPublicationJson.Read(File.ReadAllText(path)).Document;
-            return new(slot,publication.Project.Id,publication.SkillId,publication.Revision,
-                publication.Project.Skills.Select(s=>s.Id).ToArray(),publication.Project.Buffs.Select(b=>b.Id).ToArray(),
-                publication.Project.SummonBlueprints.Select(b=>b.Id).ToArray(),publication.Project.Timelines.Select(t=>t.Id).ToArray(),publication.Project.Projectiles.Select(p=>p.Id).ToArray(),publication.Project.Areas.Select(a=>a.Id).ToArray(),null);
+            var source = SkillProjectFiles.ReadAuthoring(formalPath);
+            SkillProjectFiles.Write(path, source.Project, source.MissingPositions);
         }
-        catch(Exception error) when(error is ContentValidationException or IOException or UnauthorizedAccessException)
-        {return new(slot,null,null,null,[],[],[],[],[],[],error.Message);}
+        return SkillProjectFiles.ReadAuthoring(path);
     }
 }

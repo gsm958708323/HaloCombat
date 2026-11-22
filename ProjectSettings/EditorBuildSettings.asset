@@ -59,9 +59,6 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/SkillLab.unity
     guid: 43ec1b8cec522424a98dc3f6df5e2dc9
-  - enabled: 1
-    path: Assets/Scenes/SwordPractice.unity
-    guid: f5ec593f15f6476584987c5a401156f4
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

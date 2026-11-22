@@ -25,7 +25,7 @@ for (int i = 0; i < args.Length; i++)
 }
 
 var paths=new HostPaths(args,Directory.GetCurrentDirectory(),AppContext.BaseDirectory);var root=paths.Root;
-if(upgradeEffects){EffectNodeMigration.Run(root);return;}
+if(upgradeEffects){EffectNodeMigration.Run(paths);return;}
 if(splitContent)
 {
     foreach(var relative in new[]{"Content/SkillLab/project.json","Assets/StreamingAssets/Combat/project.json"})
@@ -57,10 +57,9 @@ app.Use(async(context,next)=>
     await next();
 });
 var sessions=new ConcurrentDictionary<string,SkillSimulation>();
-var exampleFile=Path.Combine(root,"Content/SkillLab/project.json");
-var runtimeFile=Path.Combine(root,"Assets/StreamingAssets/Combat/project.json");
-var workspaces=new WorkspaceStores(paths.Data,exampleFile,runtimeFile);
-var jsonLock=new SemaphoreSlim(1);
+var exampleFile=paths.ExampleProject;
+var runtimeFile=paths.FormalProject;
+var draft=new ProjectFileStore(paths.DraftProject,runtimeFile);
 app.Use(async(context,next)=>
 {
     // Local tool: reject cross-site writes, including requests from a public site's loopback fetch.
@@ -74,42 +73,28 @@ app.Use(async(context,next)=>
     catch(Exception error) when(error is IOException or UnauthorizedAccessException)
     {context.Response.StatusCode=500;await context.Response.WriteAsJsonAsync(new{error="磁盘操作失败："+error.Message});}
 });
-app.MapGet("/api/project",async(HttpContext context)=>
+app.MapGet("/api/project",(HttpContext context)=>
 {
-    string workspace=workspaces.Resolve(context.Request.Query["workspace"]);
-    var snapshot=await workspaces.Get(workspace).Read();
+    var snapshot=draft.Read();
     context.Response.Headers.ETag=snapshot.ETag;
-    context.Response.Headers["X-Workspace"]=workspace;
     if(snapshot.NeedsLayout)context.Response.Headers["X-Needs-Layout"]="true";
     context.Response.Headers.CacheControl="no-store";
     return Results.Text(snapshot.Json,"application/json");
 });
-app.MapGet("/api/project/copy-source",(HttpContext context)=>
-{
-    string workspace=workspaces.Resolve(context.Request.Query["workspace"]);
-    context.Response.Headers.CacheControl="no-store";
-    return ImportCandidate(workspaces.Get(workspace).PrepareCopy(context.Request.Query["skillId"]));
-});
 app.MapGet("/api/examples",()=>Results.Text(SkillProjectJson.Write(SkillProjectFiles.Read(exampleFile)),"application/json"));
 app.MapGet("/api/runtime",()=>Results.Text(SkillProjectJson.Write(SkillProjectFiles.Read(runtimeFile)),"application/json"));
-app.MapPost("/api/runtime/publish",async(HttpContext context)=>
+app.MapPost("/api/runtime/publish",(HttpContext context)=>
 {
-    if(context.Request.Query["workspace"]!=WorkspaceStores.Arena)
-        throw new ProjectVersionException("只有 Arena 工作区可以发布正式内容。",403);
-    await jsonLock.WaitAsync();
-    try{workspaces.Get(WorkspaceStores.Arena).PublishArena(context.Request.Headers.IfMatch,runtimeFile);}
-    finally{jsonLock.Release();}
+    draft.PublishArena(context.Request.Headers.IfMatch);
     return Results.Ok(new{message="正式工程已发布。Arena 正式或木桩模式按 F5 重载。"});
 });
 app.MapGet("/api/templates/{id}",(string id)=>
 {var project=SkillProjectFiles.Read(exampleFile);return Results.Text(SkillProjectJson.Write(SkillProjectJson.SelectTemplate(project,id)),"application/json");});
 app.MapPost("/api/project",async(HttpContext context)=>
 {
-    string workspace=workspaces.Resolve(context.Request.Query["workspace"]);
     var document=await ReadProject(context);
-    var snapshot=await workspaces.Get(workspace).Save(document,context.Request.Headers.IfMatch);
+    var snapshot=draft.Save(document,context.Request.Headers.IfMatch);
     context.Response.Headers.ETag=snapshot.ETag;
-    context.Response.Headers["X-Workspace"]=workspace;
     return Results.Ok(new{saved=true});
 });
 app.MapPost("/api/document/validate",async(HttpContext context)=>
@@ -175,29 +160,26 @@ app.MapPost("/api/replays",async(HttpContext context)=>
 });
 app.MapDelete("/api/preview/{id}",(string id)=>
 {if(sessions.TryRemove(id,out var session))lock(session)session.Dispose();return Results.NoContent();});
-app.MapPost("/api/publish/sync", async (HttpContext context) =>
-{
-    var project = await ReadProject(context);
-    var plan = PublicationFiles.Sync(paths.Publications, project);
-    return Results.Ok(new
-    {
-        message = "已按当前工程同步全部现有槽位。Unity SkillLab 按 F5 或点击 Reload 载入。",
-        slots = plan.ToDictionary(pair => pair.Key, pair => new { skillId = pair.Value.SkillId, revision = pair.Value.Revision })
-    });
-});
 app.MapPost("/api/publish/{slot}", async (string slot, HttpContext context) =>
 {
     if (!PublishedSkillSlots.Ordered.Contains(slot))
         return Results.BadRequest(new { error = "Expected a publication slot: " + string.Join(", ", PublishedSkillSlots.Ordered) + "." });
     var project = await ReadProject(context);
-    var publication = SkillPublicationJson.Create(project, context.Request.Query["skillId"]);
-    var warning = PublicationFiles.Publish(paths.Publications, slot, publication);
-    var number = PublicationFiles.Number(slot);
+    string[] clearInvalidSlots = context.Request.Query["clearInvalidSlots"].ToArray();
+    var result = PublicationFiles.Publish(paths.Publications, slot, project, context.Request.Query["skillId"],
+        context.Request.Headers.IfMatch, clearInvalidSlots);
+    if (result.Conflict is { } conflict)
+        return Results.Conflict(conflict);
+    var plan = result.Published;
+    var publication = plan[slot];
+    int number = PublicationFiles.Number(slot);
     return Results.Ok(new
     {
-        written = true, path = PublicationFiles.SlotPath(paths.Publications, slot),
+        written = true, path = PublishedSkillSlots.PathOf(paths.Publications, slot),
         revision = publication.Revision, skillId = publication.SkillId,
-        message = warning ?? $"已发布到槽位 {number}。Unity SkillLab 按 F5 重载，再按小键盘 {number} 施放。"
+        slots = plan.ToDictionary(pair => pair.Key, pair => new { skillId = pair.Value.SkillId, revision = pair.Value.Revision }),
+        clearedSlots = clearInvalidSlots,
+        message = $"已发布到槽位 {number}，共更新 {plan.Count} 个槽位。Unity SkillLab 将自动载入，按小键盘 {number} 试放。"
     });
 });
 var dist=Path.Combine(root,"Tools/SkillLab/Web/dist");
