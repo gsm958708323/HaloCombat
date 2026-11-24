@@ -30,6 +30,7 @@ namespace Combat.Core
         public HitShape Shape;
         public float Length, Width, Angle;
         public int MaxTargets;
+        public string CancelChannel;
     }
 
     [Serializable]
@@ -206,12 +207,22 @@ namespace Combat.Core
     public sealed class CancelTagClipHandler : IClipHandler
     {
         public void Open(in ClipRuntime rt)
-            => rt.Self.GetComp<TagComp>().Add(CommonTags.Cancel, 1, TagSource.Effect("Clip.Cancel"));
+        {
+            if (string.IsNullOrEmpty(rt.Clip.CancelChannel))
+                rt.Self.GetComp<TagComp>().Add(CommonTags.Cancel, 1, TagSource.Effect("Clip.Cancel"));
+            else
+                rt.Self.GetComp<SkillDirectorComp>()?.AddCancelChannel(rt.Clip.CancelChannel);
+        }
 
         public void Tick(in ClipRuntime rt, float dt) { }
 
         public void Close(in ClipRuntime rt, bool interrupted)
-            => rt.Self.GetComp<TagComp>().Remove(CommonTags.Cancel, 1, TagSource.Effect("Clip.Cancel"));
+        {
+            if (string.IsNullOrEmpty(rt.Clip.CancelChannel))
+                rt.Self.GetComp<TagComp>().Remove(CommonTags.Cancel, 1, TagSource.Effect("Clip.Cancel"));
+            else
+                rt.Self.GetComp<SkillDirectorComp>()?.RemoveCancelChannel(rt.Clip.CancelChannel);
+        }
     }
 
     public sealed class MoveClipHandler : IClipHandler

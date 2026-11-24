@@ -19,6 +19,7 @@ namespace Combat.Config
         public string Kind {get;set;}
         public float Start {get;set;}
         public float End {get;set;}
+        [Newtonsoft.Json.JsonProperty(NullValueHandling=Newtonsoft.Json.NullValueHandling.Ignore)]public string Channel {get;set;}
         public float MoveX {get;set;}
         public float MoveY {get;set;}
         public float MoveZ {get;set;}

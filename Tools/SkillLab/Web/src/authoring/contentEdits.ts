@@ -33,10 +33,13 @@ export function referencesTo(p:Project,kind:ContentKind,id:string):ContentRefere
     ...(p.summonBlueprints??[]).filter(b=>b.skillId===id).map(b=>({kind:'blueprint' as const,id:b.id,name:b.name,field:'skillId'})),
     ...(p.runtime?.actors??[]).flatMap(a=>[...(['skillId','dodgeSkill'] as const).filter(k=>a[k]===id).map(field=>({kind:'actor' as const,id:a.id,name:a.id,field})),...(a.slots??[]).flatMap((v,i)=>v===id?[{kind:'actor' as const,id:a.id,name:a.id,field:'slots['+i+']'}]:[])]),
     ...(p.runtime?.combos??[]).flatMap(c=>[...(c.toSkill===id?[{kind:'combo' as const,id:c.id,name:c.id,field:'toSkill'}]:[]),...c.preSkills.flatMap((v,i)=>v===id?[{kind:'combo' as const,id:c.id,name:c.id,field:'preSkills['+i+']'}]:[])])];
-  return allGraphs(p).flatMap(({kind:owner,graph})=>graph.nodes.flatMap(node=>{
-    const field=referenceField(node,kind);
-    return field&&node.parameters[field]===id?[{kind:owner,id:graph.id,name:graph.name,nodeId:node.id,field}]:[];
-  }));
+  return [
+    ...allGraphs(p).flatMap(({kind:owner,graph})=>graph.nodes.flatMap(node=>{
+      const field=referenceField(node,kind);
+      return field&&node.parameters[field]===id?[{kind:owner,id:graph.id,name:graph.name,nodeId:node.id,field}]:[];
+    })),
+    ...(kind==='buff'?(p.runtime?.combos??[]).flatMap(c=>(c.conditions??[]).flatMap((cond,i)=>cond.kind==='buff'&&cond.buff===id?[{kind:'combo' as const,id:c.id,name:c.id,field:`conditions[${i}].buff`}]:[])):[])
+  ];
 }
 function rewriteReferences(p:Project,kind:ContentKind,from:string,to:string):Project {
   if(kind==='timeline')return {...p,skills:p.skills.map(s=>s.timelineRef===from?{...s,timelineRef:to}:s)};
@@ -44,7 +47,8 @@ function rewriteReferences(p:Project,kind:ContentKind,from:string,to:string):Pro
     actors:p.runtime.actors.map(a=>({...a,skillId:a.skillId===from?to:a.skillId,dodgeSkill:a.dodgeSkill===from?to:a.dodgeSkill,slots:a.slots?.map(id=>id===from?to:id)})),
     combos:p.runtime.combos.map(c=>({...c,toSkill:c.toSkill===from?to:c.toSkill,preSkills:c.preSkills.map(id=>id===from?to:id)}))}:undefined};
   const nodes=(items:GraphNode[])=>items.map(node=>{const field=referenceField(node,kind);return field&&node.parameters[field]===from?{...node,parameters:{...node.parameters,[field]:to}}:node;});
-  return {...p,skills:p.skills.map(s=>({...s,nodes:nodes(s.nodes)})),buffs:p.buffs?.map(b=>({...b,nodes:nodes(b.nodes)})),timelines:p.timelines?.map(t=>({...t,nodes:nodes(t.nodes)})),projectiles:p.projectiles?.map(t=>({...t,nodes:nodes(t.nodes)})),areas:p.areas?.map(t=>({...t,nodes:nodes(t.nodes)}))};
+  const runtime=kind==='buff'&&p.runtime?{...p.runtime,combos:p.runtime.combos.map(c=>({...c,conditions:(c.conditions??[]).map(cond=>cond.kind==='buff'&&cond.buff===from?{...cond,buff:to}:cond)}))}:p.runtime;
+  return {...p,runtime,skills:p.skills.map(s=>({...s,nodes:nodes(s.nodes)})),buffs:p.buffs?.map(b=>({...b,nodes:nodes(b.nodes)})),timelines:p.timelines?.map(t=>({...t,nodes:nodes(t.nodes)})),projectiles:p.projectiles?.map(t=>({...t,nodes:nodes(t.nodes)})),areas:p.areas?.map(t=>({...t,nodes:nodes(t.nodes)}))};
 }
 function mapContent(p:Project,kind:ContentKind,from:string,to:string):Project {
   return kind==='skill'?{...p,skills:p.skills.map(s=>s.id===from?{...s,id:to}:s)}:

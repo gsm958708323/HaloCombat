@@ -24,7 +24,12 @@ namespace Combat.Config
                 int kind=Array.IndexOf(new[]{"cancel","move","hitbox","iframe"},c.Kind);if(kind<0)Fail(p+".kind","Unknown clip kind.");
                 Number(c.HitRadius,kind==2?.001f:0,100,p+".hitRadius");Number(c.HitOffsetX,-1000,1000,p+".hitOffsetX");Number(c.HitOffsetY,-1000,1000,p+".hitOffsetY");Number(c.HitOffsetZ,-1000,1000,p+".hitOffsetZ");
                 if(kind!=2&&c.Effects?.Length>0)Fail(p+".effects","Only hitbox clips deliver effects.");
-                return new TimelineClip{Start=c.Start,End=c.End,Kind=(ClipKind)(kind+1),MoveX=c.MoveX,MoveY=c.MoveY,MoveZ=c.MoveZ,Steer=c.Steer,
+                if(!string.IsNullOrEmpty(c.Channel))
+                {
+                    if(kind!=0)Fail(p+".channel","Only cancel clips may specify a window channel.");
+                    if(string.IsNullOrWhiteSpace(c.Channel)||c.Channel.Length>64)Fail(p+".channel","Expected a nonempty cancel channel up to 64 characters.");
+                }
+                return new TimelineClip{Start=c.Start,End=c.End,Kind=(ClipKind)(kind+1),CancelChannel=string.IsNullOrEmpty(c.Channel)?null:c.Channel,MoveX=c.MoveX,MoveY=c.MoveY,MoveZ=c.MoveZ,Steer=c.Steer,
                     HitRadius=c.HitRadius,HitOffsetX=c.HitOffsetX,HitOffsetY=c.HitOffsetY,HitOffsetZ=c.HitOffsetZ,OnHit=effects.Entries(c.Effects,p+".effects")};
             }).ToArray();
             var payloads=source.Payloads.Select(p=>

@@ -1,114 +1,317 @@
-import {useCallback, useMemo, useSyncExternalStore} from 'react';
-import {Background, BackgroundVariant, Handle, MarkerType, Position, ReactFlow, ReactFlowProvider, useReactFlow} from '@xyflow/react';
-import type {Edge, Node, NodeProps} from '@xyflow/react';
-import type {Project} from './model';
+import {useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore} from 'react';
+import {Background, BackgroundVariant, MarkerType, MiniMap, ReactFlow, ReactFlowProvider, useReactFlow} from '@xyflow/react';
+import type {Connection, NodeChange} from '@xyflow/react';
+import {Search} from 'lucide-react';
+import type {Project, RuntimeCombo} from './model';
 import type {PreviewRuntimeStore} from './previewRuntime';
-import type {ComboLink, layoutCombo} from './authoring/comboLayout';
+import type {ComboDagEdge, ComboDagLayout} from './authoring/comboLayout';
+import {createActiveComboTracker} from './authoring/comboActiveCard';
+import {
+  conditionBadge, IDLE_NODE_ID, inputColor, inputShortLabel,
+  priorityConflict, skillMeta, windowBadge,
+} from './authoring/comboModel';
+import {ComboSkillNode} from './ComboSkillNode';
+import type {CancelDotInfo, ComboFlowNode} from './ComboSkillNode';
 import {ComboTransitionEdge} from './ComboTransitionEdge';
-import {createActiveComboCard} from './authoring/comboActiveCard';
+import type {ComboFlowEdge} from './ComboTransitionEdge';
 
-const rootId = 'guide:root';
-const realEdgeId = (id: string) => 'rule:' + id;
-const minZoom = .05;
-const fitOptions = {padding: .2, minZoom, maxZoom: 1};
-const nodeOrigin: [number, number] = [0, 0];
-
-type ComboNode = Node<{skillId?: string; name: string; active: boolean; reference?: boolean;
-  select: (occurrenceId: string) => void}, 'combo'>;
-
-function ComboSkillNode({id, data, selected}: NodeProps<ComboNode>) {
-  if (data.skillId === undefined) return <div className="combo-skill-node combo-root" data-combo-root="true">
-    <strong>连招总览</strong><small>各接续链入口</small><Handle type="source" position={Position.Right}/>
-  </div>;
-  const skillId = data.skillId;
-  return <div className="combo-node-shell">
-    <Handle id="forward-in" type="target" position={Position.Left}/>
-    <button type="button" className="combo-skill-node nodrag" data-skill-id={skillId} data-combo-active={data.active}
-      data-combo-occurrence={id} data-combo-reference={!!data.reference}
-      aria-pressed={selected} aria-label={`${data.name} (${skillId})${data.reference ? ' · 引用' : ''}${data.active ? ' · 正在执行' : ''}`}
-      onClick={() => data.select(id)}>
-      <strong title={data.name}>{data.name}</strong>
-      <small title={skillId}>{data.active ? '正在执行' : skillId}</small>
-      {data.reference && <span className="combo-reference-label">引用</span>}
-    </button>
-    {!data.reference && <>
-      <Handle id="forward-out" type="source" position={Position.Right}/>
-      <Handle id="return-out" type="source" position={Position.Left} className="combo-routing-handle combo-return-handle"/>
-      <Handle id="return-in" type="target" position={Position.Right} className="combo-routing-handle combo-return-handle"/>
-      <Handle id="loop-out" type="source" position={Position.Top} className="combo-routing-handle combo-loop-out"/>
-      <Handle id="loop-in" type="target" position={Position.Top} className="combo-routing-handle combo-loop-in"/>
-    </>}
-  </div>;
-}
-
-const nodeTypes = {combo: ComboSkillNode};
-const edgeTypes = {transition: ComboTransitionEdge};
+const nodeTypes = {comboSkill: ComboSkillNode};
+const edgeTypes = {comboTransition: ComboTransitionEdge};
+const minZoom = 0.15;
+const fitOptions = {padding: 0.18, minZoom, maxZoom: 1.15};
 
 type Props = {
   project: Project;
-  layout: ReturnType<typeof layoutCombo>;
+  rules: readonly RuntimeCombo[];
+  layout: ComboDagLayout;
+  cancelRuleIds: ReadonlySet<string>;
+  activeCancelRuleId: string | null;
+  hoveredCancelRuleId: string | null;
   store: PreviewRuntimeStore;
-  occurrenceId?: string;
-  edgeId?: string;
-  selectSkill: (id: string) => void;
-  selectEdge: (edge: ComboLink) => void;
+  selectedNodeId?: string;
+  selectedEdgeId?: string;
+  fitNonce: number;
+  onSelectNode: (id: string) => void;
+  onSelectEdge: (edge: ComboDagEdge) => void;
+  onOpenSkill: (skillId: string) => void;
+  onConnectNodes: (sourceId: string, targetSkillId: string) => void;
+  onDeleteEdge: (edge: ComboDagEdge) => void;
+  onMoveNodes: (positions: Record<string, {x: number; y: number}>) => void;
+  onDropSkill: (skillId: string, position: {x: number; y: number}) => void;
+  onToggleCancelSkill: (skillId: string) => void;
 };
 
-function Canvas({project, layout, store, occurrenceId, edgeId, selectSkill, selectEdge}: Props) {
-  const flow = useReactFlow<ComboNode>();
-  const activeCard = useMemo(() => createActiveComboCard(layout), [layout]);
-  const getActive = useCallback(() => activeCard(store.get().state), [activeCard, store]);
-  const active = useSyncExternalStore(store.subscribe, getActive);
-  const nodes = useMemo<ComboNode[]>(() => {
-    const names = new Map(project.skills.map(skill => [skill.id, skill.name]));
-    return [{id: rootId, type: 'combo', position: {x: 0, y: 0}, selectable: false, focusable: false,
-      data: {name: '连招总览', active: false, select: selectSkill}},
-    ...Array.from(layout.cards.values(), ({id, skillId, position, reference}): ComboNode => ({
-      id, type: 'combo', position, selected: id === occurrenceId, focusable: false,
-      data: {skillId, name: names.get(skillId) ?? skillId, active: id === active, reference, select: selectSkill},
-    }))];
-  }, [project.skills, layout, occurrenceId, active, selectSkill]);
-  const edges = useMemo<Edge[]>(() => {
-    const guides = layout.roots.map(({id}): Edge => ({id: 'guide-edge:' + id, source: rootId, target: id,
-      targetHandle: 'forward-in', type: 'default', selectable: false, focusable: false, className: 'combo-guide-edge'}));
-    const rules = layout.edges.map((link): Edge => {
-      const selected = link.id === edgeId;
-      const from = layout.cards.get(link.sourceId)!;
-      const to = layout.cards.get(link.targetId)!;
-      const route = from.id === to.id ? 'loop' : from.position.x > to.position.x ? 'return' : 'forward';
-      return {
-        id: realEdgeId(link.id), source: link.sourceId, target: link.targetId, type: 'transition', selected,
-        sourceHandle: `${route}-out`, targetHandle: `${route}-in`,
-        markerEnd: {type: MarkerType.ArrowClosed, color: selected ? '#ffda8f' : '#a3b9bf', width: 15, height: 15},
-        label: link.rule.input, ariaLabel: `${link.source} → ${link.target} · ${link.rule.input} · ${link.rule.id}`,
-        domAttributes: {'data-combo-rule-id': link.rule.id, 'data-combo-source': link.source,
-          'data-combo-source-occurrence': link.sourceId, 'data-combo-target-occurrence': link.targetId, onKeyDown: event => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            event.stopPropagation();
-            selectEdge(link);
-          }
-        }} as Edge['domAttributes'],
-        data: {lane: link.lane, laneCount: link.laneCount, route},
-      };
-    });
-    return [...guides, ...rules];
-  }, [layout, edgeId, selectEdge]);
-  const edgeById = useMemo(() => new Map(layout.edges.map(edge => [realEdgeId(edge.id), edge])), [layout]);
+function Canvas(props: Props) {
+  const {
+    project, rules, layout, cancelRuleIds, activeCancelRuleId, hoveredCancelRuleId,
+    store, selectedNodeId, selectedEdgeId, fitNonce,
+    onSelectNode, onSelectEdge, onOpenSkill, onConnectNodes, onDeleteEdge,
+    onMoveNodes, onDropSkill, onToggleCancelSkill,
+  } = props;
 
-  return <div className="combo-canvas">
-    <div className="combo-graph-tools">
-      <span>{layout.ruleCount} 条规则 · {layout.mainCards.size} 个技能 · {layout.cards.size} 张卡片 · {layout.edges.length} 条接续线</span>
-      <button type="button" onClick={() => void flow.fitView({...fitOptions, duration: 180})}>适应画布</button>
+  const flow = useReactFlow<ComboFlowNode, ComboFlowEdge>();
+  const tracker = useMemo(() => createActiveComboTracker(), []);
+  const getHighlight = useCallback(() => tracker(store.get().state), [tracker, store]);
+  const highlight = useSyncExternalStore(store.subscribe, getHighlight);
+
+  const [dragPositions, setDragPositions] = useState<Map<string, {x: number; y: number}>>(new Map());
+  const [appendSource, setAppendSource] = useState<{sourceId: string; x: number; y: number} | null>(null);
+  const [appendQuery, setAppendQuery] = useState('');
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setDragPositions(new Map());
+  }, [layout.positions]);
+
+  useEffect(() => {
+    if (fitNonce <= 0) return;
+    const frame = requestAnimationFrame(() => void flow.fitView({...fitOptions, duration: 200}));
+    return () => cancelAnimationFrame(frame);
+  }, [fitNonce, flow]);
+
+  const openQuickAppend = useCallback((sourceId: string, anchorRect?: DOMRect) => {
+    const container = wrapperRef.current?.getBoundingClientRect();
+    const x = anchorRect && container ? Math.min(container.width - 235, Math.max(12, anchorRect.right - container.left + 8)) : 180;
+    const y = anchorRect && container ? Math.min(container.height - 250, Math.max(12, anchorRect.top - container.top - 10)) : 80;
+    setAppendQuery('');
+    setAppendSource({sourceId, x, y});
+  }, []);
+
+  const activeCancelRule = useMemo(
+    () => (activeCancelRuleId ? rules.find(r => r.id === activeCancelRuleId) : undefined),
+    [rules, activeCancelRuleId],
+  );
+  const hoveredCancelRule = useMemo(
+    () => (hoveredCancelRuleId ? rules.find(r => r.id === hoveredCancelRuleId) : undefined),
+    [rules, hoveredCancelRuleId],
+  );
+
+  const cancelDotsBySkill = useMemo(() => {
+    const map = new Map<string, CancelDotInfo[]>();
+    const names = new Map(project.skills.map(s => [s.id, s.name]));
+    for (const rule of rules) {
+      if (!cancelRuleIds.has(rule.id)) continue;
+      const color = inputColor(rule.input);
+      const label = `${inputShortLabel(project, rule.input)} · ${names.get(rule.toSkill) ?? rule.toSkill}`;
+      for (const pre of rule.preSkills) {
+        let list = map.get(pre);
+        if (!list) map.set(pre, list = []);
+        list.push({ruleId: rule.id, label, color});
+      }
+    }
+    return map;
+  }, [project, rules, cancelRuleIds]);
+
+  const entryCount = useMemo(() => rules.filter(r => !r.preSkills.length).length, [rules]);
+
+  const nodes = useMemo<ComboFlowNode[]>(() => {
+    const skillMap = new Map(project.skills.map(s => [s.id, s]));
+    const idlePos = dragPositions.get(IDLE_NODE_ID) ?? layout.positions.get(IDLE_NODE_ID) ?? {x: 0, y: 0};
+    const result: ComboFlowNode[] = [{
+      id: IDLE_NODE_ID,
+      type: 'comboSkill',
+      position: idlePos,
+      selected: selectedNodeId === IDLE_NODE_ID,
+      data: {
+        isIdle: true,
+        entryCount,
+        name: '空闲起手',
+        active: false,
+        playProgress: null,
+        onSelect: onSelectNode,
+        onOpenSkill,
+        onQuickAppend: openQuickAppend,
+      },
+    }];
+
+    for (const skillId of layout.skillIds) {
+      const skill = skillMap.get(skillId);
+      if (!skill) continue;
+      const meta = skillMeta(project, skill);
+      const isActive = highlight.skillId === skillId;
+      const dur = highlight.actionDuration ?? meta.duration;
+      const progress = isActive && highlight.actionTime !== null && dur > 0 ? highlight.actionTime / dur : null;
+      const pos = dragPositions.get(skillId) ?? layout.positions.get(skillId) ?? {x: 310, y: 0};
+      const hoverHit = hoveredCancelRule ? hoveredCancelRule.preSkills.includes(skillId) : false;
+      const hoverDim = !!hoveredCancelRule && !hoverHit;
+
+      result.push({
+        id: skillId,
+        type: 'comboSkill',
+        position: pos,
+        selected: selectedNodeId === skillId,
+        data: {
+          skillId,
+          name: skill.name,
+          meta,
+          active: isActive,
+          playProgress: progress,
+          cancelDots: cancelDotsBySkill.get(skillId),
+          cancelInspectMode: !!activeCancelRule,
+          cancelMember: activeCancelRule ? activeCancelRule.preSkills.includes(skillId) : false,
+          cancelHoverHighlighted: hoverHit,
+          cancelHoverDimmed: hoverDim,
+          onSelect: onSelectNode,
+          onOpenSkill,
+          onQuickAppend: openQuickAppend,
+          onToggleCancelSkill,
+        },
+      });
+    }
+    return result;
+  }, [
+    project, layout, dragPositions, selectedNodeId, entryCount, highlight,
+    cancelDotsBySkill, activeCancelRule, hoveredCancelRule,
+    onSelectNode, onOpenSkill, openQuickAppend, onToggleCancelSkill,
+  ]);
+
+  const edges = useMemo<ComboFlowEdge[]>(() => layout.edges.map(link => {
+    const selected = link.id === selectedEdgeId;
+    const active = highlight.edgeId === link.id;
+    const color = inputColor(link.rule.input);
+    const conflict = !!priorityConflict(rules, link.rule);
+    const badges = (link.rule.conditions ?? []).map(c => conditionBadge(c, project));
+    const win = link.source === IDLE_NODE_ID ? null : windowBadge(link.rule.window);
+    const strokeColor = active ? '#7ce6bd' : selected ? '#f2d99b' : conflict ? '#f08775' : color;
+    return {
+      id: link.id,
+      source: link.source,
+      target: link.target,
+      type: 'comboTransition',
+      selected,
+      sourceHandle: link.route === 'loop' ? 'loop-out' : link.route === 'return' ? 'return-out' : 'forward-out',
+      targetHandle: link.route === 'loop' ? 'loop-in' : link.route === 'return' ? 'return-in' : 'forward-in',
+      markerEnd: {type: MarkerType.ArrowClosed, color: strokeColor, width: 15, height: 15},
+      data: {
+        ruleId: link.rule.id,
+        sourceSkill: link.source,
+        inputLabel: inputShortLabel(project, link.rule.input),
+        color,
+        lane: link.lane,
+        laneCount: link.laneCount,
+        route: link.route,
+        badges,
+        windowText: win?.text,
+        hasConflict: conflict,
+        active,
+        isCancelOverlay: link.isCancelOverlay,
+        onSelect: () => onSelectEdge(link),
+      },
+    };
+  }), [layout, selectedEdgeId, highlight.edgeId, rules, project, onSelectEdge]);
+
+  const handleNodesChange = useCallback((changes: NodeChange<ComboFlowNode>[]) => {
+    const moving = changes.filter(c => c.type === 'position' && c.position);
+    if (!moving.length) return;
+    setDragPositions(prev => {
+      const next = new Map(prev);
+      for (const item of moving) {
+        if (item.type === 'position' && item.position) next.set(item.id, item.position);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleNodeDragStop = useCallback((_: unknown, node: ComboFlowNode, allDragged: ComboFlowNode[]) => {
+    const updates: Record<string, {x: number; y: number}> = {};
+    const list = allDragged.length ? allDragged : [node];
+    for (const item of list) updates[item.id] = {x: item.position.x, y: item.position.y};
+    onMoveNodes(updates);
+  }, [onMoveNodes]);
+
+  const handleConnect = useCallback((connection: Connection) => {
+    if (!connection.source || !connection.target || connection.target === IDLE_NODE_ID) return;
+    onConnectNodes(connection.source, connection.target);
+  }, [onConnectNodes]);
+
+  const appendCandidates = useMemo(() => {
+    const q = appendQuery.trim().toLowerCase();
+    return project.skills.filter(s => !q || s.name.toLowerCase().includes(q) || s.id.toLowerCase().includes(q));
+  }, [project.skills, appendQuery]);
+
+  return (
+    <div ref={wrapperRef} className="combo-canvas-stage" tabIndex={0}
+      onKeyDown={event => {
+        if ((event.target as HTMLElement).closest('input,textarea,select')) return;
+        if ((event.key === 'Delete' || event.key === 'Backspace') && selectedEdgeId) {
+          const edge = layout.edgesById.get(selectedEdgeId);
+          if (edge) {
+            event.preventDefault();
+            onDeleteEdge(edge);
+          }
+        }
+        if (event.key === 'Escape') setAppendSource(null);
+      }}
+      onDragOver={event => {
+        if (event.dataTransfer.types.includes('application/x-halocombat-skill')) {
+          event.preventDefault();
+          event.dataTransfer.dropEffect = 'copy';
+        }
+      }}
+      onDrop={event => {
+        const skillId = event.dataTransfer.getData('application/x-halocombat-skill');
+        if (!skillId) return;
+        event.preventDefault();
+        const pos = flow.screenToFlowPosition({x: event.clientX, y: event.clientY});
+        onDropSkill(skillId, pos);
+      }}>
+      <ReactFlow<ComboFlowNode, ComboFlowEdge>
+        nodes={nodes}
+        edges={edges}
+        nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
+        onNodesChange={handleNodesChange}
+        onNodeDragStop={handleNodeDragStop}
+        onConnect={handleConnect}
+        onPaneClick={() => setAppendSource(null)}
+        onEdgeClick={(_, edge) => {
+          const found = layout.edgesById.get(edge.id);
+          if (found) onSelectEdge(found);
+        }}
+        fitView
+        fitViewOptions={fitOptions}
+        minZoom={minZoom}
+        maxZoom={2}
+        nodesDraggable={!activeCancelRule}
+        nodesConnectable={!activeCancelRule}
+        deleteKeyCode={null}
+        colorMode="dark"
+        proOptions={{hideAttribution: true}}>
+        <Background variant={BackgroundVariant.Dots} gap={22} size={1.1} color="#2c3c43"/>
+        <MiniMap pannable zoomable nodeColor={node => node.id === IDLE_NODE_ID ? '#526872' : (node.data?.active ? '#7ce6bd' : '#354952')}
+          maskColor="rgba(16, 24, 28, 0.72)"/>
+      </ReactFlow>
+
+      {activeCancelRule && (
+        <div className="combo-cancel-banner" role="status">
+          <span>正在配置公共取消 <strong>{inputShortLabel(project, activeCancelRule.input)} → {project.skills.find(s => s.id === activeCancelRule.toSkill)?.name ?? activeCancelRule.toSkill}</strong>：点击任意技能卡片即可勾选或取消适用范围</span>
+        </div>
+      )}
+
+      {appendSource && (
+        <div className="combo-quick-append" style={{left: appendSource.x, top: appendSource.y}} role="dialog" aria-label="快捷连接技能">
+          <div className="combo-drawer-search">
+            <Search size={12}/>
+            <input autoFocus value={appendQuery} placeholder={appendSource.sourceId === IDLE_NODE_ID ? '选择起手技能…' : '选择下一段技能…'}
+              onChange={e => setAppendQuery(e.target.value)}/>
+          </div>
+          <div className="combo-quick-append-list">
+            {appendCandidates.map(skill => (
+              <button key={skill.id} type="button" onClick={() => {
+                onConnectNodes(appendSource.sourceId, skill.id);
+                setAppendSource(null);
+              }}>
+                <span className="combo-drawer-swatch" style={{background: skillMeta(project, skill).accent}}/>
+                <span>{skill.name}</span>
+                <small>{skill.id}</small>
+              </button>
+            ))}
+            {!appendCandidates.length && <p className="combo-drawer-empty">无匹配技能</p>}
+          </div>
+        </div>
+      )}
     </div>
-    <ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} edgeTypes={edgeTypes} nodeOrigin={nodeOrigin}
-      aria-label="全项目连招图" fitView fitViewOptions={fitOptions} minZoom={minZoom} maxZoom={2}
-      nodesDraggable={false} nodesConnectable={false} deleteKeyCode={null} selectionKeyCode={null} panOnDrag
-      onEdgeClick={(_, edge) => { const link = edgeById.get(edge.id); if (link) selectEdge(link); }}>
-      <Background variant={BackgroundVariant.Dots} gap={22} size={1.2} color="#35454c"/>
-    </ReactFlow>
-    {!layout.edges.length && <p className="combo-empty-graph">暂无接续规则</p>}
-  </div>;
+  );
 }
 
 export function ComboGraph(props: Props) {

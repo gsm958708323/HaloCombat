@@ -25,7 +25,7 @@ namespace Combat.Config
             if(source.Actors.Length>256||source.Combos.Length>1024||source.Cues.Length>512)Fail(path,"Runtime collection size is invalid.");
             var m=source.Motor;N(m.Gravity,-1000,-.01f,path+".motor.gravity");N(m.JumpSpeed,.01f,100,path+".motor.jumpSpeed");
             N(m.AirSteer,0,1,path+".motor.airSteer");N(m.GroundY,-1000,1000,path+".motor.groundY");N(m.StickDeadzone,0,1,path+".motor.stickDeadzone");
-            var combo=RuntimeComboCompiler.Compile(source.Combos,(id,p)=>Skill(content,id,p));
+            var combo=RuntimeComboCompiler.Compile(source.Combos,(id,p)=>Skill(content,id,p),(id,p)=>Buff(content,id,p));
             var cues=new CueLibrary();var cueIds=new HashSet<int>();
             foreach(var cue in source.Cues)
             {
@@ -88,6 +88,8 @@ namespace Combat.Config
         }
         static SkillDefinition Skill(CombatContentSnapshot content,string key,string path)
         {foreach(var skill in content.Skills.All)if(skill.Key==key)return skill;throw new ContentValidationException(path,"Unknown skill: "+key);}
+        static DurationSpec Buff(CombatContentSnapshot content,string key,string path)
+        {if(!string.IsNullOrWhiteSpace(key)&&content.Buffs.TryGet(key,out var spec))return spec;throw new ContentValidationException(path,"Unknown Buff: "+key);}
         static void N(float v,float min,float max,string path)=>AuthoredTimelineCompiler.Number(v,min,max,path);
         static void Fail(string path,string reason)=>throw new ContentValidationException(path,reason);
     }

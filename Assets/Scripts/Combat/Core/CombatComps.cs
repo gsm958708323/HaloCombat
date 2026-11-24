@@ -154,12 +154,26 @@ namespace Combat.Core
         SkillNodeId _currentSkill = SkillNodeId.None;
         TagLease _comboConfirm;
         readonly List<TagLease> _controls=new List<TagLease>();
+        readonly Dictionary<string, int> _cancelChannels = new Dictionary<string, int>(StringComparer.Ordinal);
         public float TimelineTime=>_player.Time;
         public float TimelineDuration=>_player.Definition?.Duration??0;
         public string Animation=>IsPlaying?_player.Definition?.Animation:null;
         public float ActionRate=>IsPlaying&&_player.Definition.ScaleWithActionSpeed?Math.Max(.1f,Self.GetComp<AttributeSet>().GetFinal(AttrId.ActionSpeed)):1;
         public TagId[] ActiveControls=>IsPlaying?_player.Definition.ControlTags:Array.Empty<TagId>();
         public bool HasComboConfirmation=>_comboConfirm!=null;
+        public bool IsCancelChannelOpen(string channel)
+            => !string.IsNullOrEmpty(channel) && _cancelChannels.TryGetValue(channel, out int count) && count > 0;
+        internal void AddCancelChannel(string channel)
+        {
+            if (string.IsNullOrEmpty(channel)) return;
+            _cancelChannels[channel] = _cancelChannels.TryGetValue(channel, out int count) ? count + 1 : 1;
+        }
+        internal void RemoveCancelChannel(string channel)
+        {
+            if (string.IsNullOrEmpty(channel) || !_cancelChannels.TryGetValue(channel, out int count)) return;
+            if (count <= 1) _cancelChannels.Remove(channel);
+            else _cancelChannels[channel] = count - 1;
+        }
         public bool CanStartSkill=>Self!=null&&Self.World!=null&&!Self.World.IsActorStopped(Self)&&
             (_tags==null||!_tags.Has(CommonTags.Dead)&&!_tags.Has(CommonTags.Stunned)&&!_tags.Has(CommonTags.Downed)&&!_tags.Has(CommonTags.Silence)&&!_tags.Has(CommonTags.BlockSkill));
 
@@ -226,6 +240,7 @@ namespace Combat.Core
             var skill = _currentSkill;
             bool wasPlaying = _player.IsPlaying;
             _player.Stop();
+            _cancelChannels.Clear();
             ReleaseControls();
             _currentSkill = SkillNodeId.None;
             _loco?.ClearClipSteer();

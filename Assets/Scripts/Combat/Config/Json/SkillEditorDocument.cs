@@ -13,6 +13,7 @@ namespace Combat.Config
         public GraphViewportDocument[] Viewports {get;set;}=Array.Empty<GraphViewportDocument>();
         [Newtonsoft.Json.JsonProperty(NullValueHandling=Newtonsoft.Json.NullValueHandling.Ignore)]public ComboPositionDocument[] ComboPositions {get;set;}
         [Newtonsoft.Json.JsonProperty(NullValueHandling=Newtonsoft.Json.NullValueHandling.Ignore)]public ComboViewDocument[] ComboViews {get;set;}
+        [Newtonsoft.Json.JsonProperty(NullValueHandling=Newtonsoft.Json.NullValueHandling.Ignore)]public string[] ComboCancelRuleIds {get;set;}
     }
     public sealed class ComboPositionDocument
     {

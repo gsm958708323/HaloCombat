@@ -1,13 +1,18 @@
-import type {Project, RuntimeCombo} from '../model';
+import type {Project} from '../model';
 
-// Saved views still belong to the public JSON contract. Keep their references valid
-// as rules are renamed, removed, or become ineligible for a legacy saved view.
+// Keep editor combo view & cancel bar references valid when rules are renamed, removed, or emptied.
 export function maintainComboViews(project: Project, rename?: {from: string; to: string}): Project {
-  const views = project.editor?.comboViews;
-  if (!views) return project;
-  const valid = new Set(project.runtime?.combos.filter(row => row.purpose !== 'cancel' && row.preSkills.length).map(row => row.id));
-  return {...project, editor: {...project.editor, comboViews: views.map(view => ({
-    ...view,
-    ruleIds: [...new Set(view.ruleIds.map(id => rename && id === rename.from ? rename.to : id).filter(id => valid.has(id)))],
-  }))}};
+  const editor = project.editor;
+  if (!editor?.comboViews && !editor?.comboCancelRuleIds) return project;
+  const valid = new Set(project.runtime?.combos.filter(row => row.preSkills.length > 0).map(row => row.id));
+  const mapIds = (ids: string[]) => [...new Set(ids.map(id => rename && id === rename.from ? rename.to : id).filter(id => valid.has(id)))];
+  const nextCancelIds = editor.comboCancelRuleIds ? mapIds(editor.comboCancelRuleIds) : undefined;
+  return {
+    ...project,
+    editor: {
+      ...editor,
+      ...(editor.comboViews ? {comboViews: editor.comboViews.map(view => ({...view, ruleIds: mapIds(view.ruleIds)}))} : {}),
+      ...(nextCancelIds ? {comboCancelRuleIds: nextCancelIds.length ? nextCancelIds : undefined} : {}),
+    },
+  };
 }

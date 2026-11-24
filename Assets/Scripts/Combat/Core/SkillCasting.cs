@@ -125,7 +125,7 @@ namespace Combat.Core
         }
         public float CooldownLeft(SkillNodeId id)
             => _readyAt.TryGetValue(id.Value, out var until) ? Math.Max(0f, until - _time) : 0f;
-        public bool TryCast(SkillNodeId id, in SkillAim aim, InputToken input = default, bool allowReturn = true)
+        public bool TryCast(SkillNodeId id, in SkillAim aim, InputToken input = default, bool allowReturn = true, bool cancelWindowVerified = false)
         {
             LastRejection = null;LastAcceptedSkill=SkillNodeId.None;
             if (allowReturn)
@@ -140,7 +140,7 @@ namespace Combat.Core
             var requested = id;
             id=definition.Id;
             if (CooldownLeft(id) > 0f) return Reject("Cooldown.");
-            if (_director.IsPlaying && !_tags.Has(CommonTags.Cancel)) return Reject("Cancel window is closed.");
+            if (_director.IsPlaying && !cancelWindowVerified && !_tags.Has(CommonTags.Cancel)) return Reject("Cancel window is closed.");
             if (_tags.Has(CommonTags.Dead) || _tags.Has(CommonTags.Stunned) || _tags.Has(CommonTags.Downed) || _tags.Has(CommonTags.Silence)||_tags.Has(CommonTags.BlockSkill))
                 return Reject("Casting is blocked by actor state.");
             if (definition.EnergyCost > 0f && (_energy == null || !_energy.CanSpend(definition.EnergyCost)))

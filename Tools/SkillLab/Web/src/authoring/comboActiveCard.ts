@@ -1,23 +1,34 @@
 import type {ComboDecision, PreviewState} from '../model';
-import {comboLinkId} from './comboLayout';
-import type {layoutCombo} from './comboLayout';
+import {IDLE_NODE_ID} from './comboModel';
+import {comboEdgeId} from './comboLayout';
 
-export function createActiveComboCard(layout: ReturnType<typeof layoutCombo>) {
+export interface ActiveComboHighlight {
+  skillId: string | null;
+  edgeId: string | null;
+  actionTime: number | null;
+  actionDuration: number | null;
+}
+
+export function createActiveComboTracker() {
   let observed: {actorId: string; skillId: string; castId: number; step: number; decision?: ComboDecision} | undefined;
-  return (state: PreviewState | null): string | null => {
+  let lastSnapshot: ActiveComboHighlight = {skillId: null, edgeId: null, actionTime: null, actionDuration: null};
+
+  return (state: PreviewState | null): ActiveComboHighlight => {
     const caster = state?.actors.find(actor => actor.kind === 'caster');
-    const skillId = caster?.currentSkill;
+    const skillId = caster?.currentSkill ?? null;
     if (!state || !caster || !skillId) {
       observed = undefined;
-      return null;
+      if (lastSnapshot.skillId === null && lastSnapshot.edgeId === null) return lastSnapshot;
+      lastSnapshot = {skillId: null, edgeId: null, actionTime: null, actionDuration: null};
+      return lastSnapshot;
     }
+
     if (!observed || observed.actorId !== caster.id || observed.skillId !== skillId ||
       observed.castId !== caster.castId || observed.step > state.step) {
       observed = {actorId: caster.id, skillId, castId: caster.castId, step: state.step};
     }
     observed.step = state.step;
-    // A failed attempt can replace LastDecision without ending the current cast.
-    // Remember its successful event only for the lifetime of this same cast.
+
     const events = state.comboDecisions;
     if (events && caster.castId > 0) {
       for (let index = events.length - 1; index >= 0; index--) {
@@ -28,11 +39,20 @@ export function createActiveComboCard(layout: ReturnType<typeof layoutCombo>) {
         break;
       }
     }
+
     const decision = observed.decision;
-    if (decision?.rule && decision.fromSkill && decision.actualSkill === skillId && decision.toSkill === skillId) {
-      const link = layout.linksById.get(comboLinkId(decision.rule, decision.fromSkill));
-      if (link?.target === skillId) return link.targetId;
+    let edgeId: string | null = null;
+    if (decision?.rule && decision.actualSkill === skillId && decision.toSkill === skillId) {
+      edgeId = comboEdgeId(decision.rule, decision.fromSkill || IDLE_NODE_ID);
     }
-    return layout.mainCards.get(skillId)?.id ?? null;
+
+    const actionTime = caster.actionTime ?? null;
+    const actionDuration = caster.actionDuration ?? null;
+    if (lastSnapshot.skillId === skillId && lastSnapshot.edgeId === edgeId &&
+      lastSnapshot.actionTime === actionTime && lastSnapshot.actionDuration === actionDuration) {
+      return lastSnapshot;
+    }
+    lastSnapshot = {skillId, edgeId, actionTime, actionDuration};
+    return lastSnapshot;
   };
 }

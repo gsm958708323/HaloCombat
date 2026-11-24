@@ -2,12 +2,17 @@ export type ParameterValue=string|number|boolean|number[];
 export type Parameters = Record<string,ParameterValue>;
 export interface GraphNode { id: string; kind: string; runtimeId?: number; enabled?: boolean; position: { x: number; y: number }; parameters: Parameters }
 export interface GraphEdge { id: string; source: string; sourcePort: string; target: string; targetPort: string; order: number }
-export interface TimelineClip {id:string;kind:'cancel'|'move'|'hitbox'|'iframe';start:number;end:number;moveX?:number;moveY?:number;moveZ?:number;steer?:number;hitRadius?:number;hitOffsetX?:number;hitOffsetY?:number;hitOffsetZ?:number;effects?:string[]}
+export interface TimelineClip {id:string;kind:'cancel'|'move'|'hitbox'|'iframe';start:number;end:number;channel?:string;moveX?:number;moveY?:number;moveZ?:number;steer?:number;hitRadius?:number;hitOffsetX?:number;hitOffsetY?:number;hitOffsetZ?:number;effects?:string[]}
 export interface TimelinePayload {id:string;time:number;repeatInterval?:number;effects:string[]}
 export interface AuthoredTimeline {runtimeId:number;duration:number;clips:TimelineClip[];payloads:TimelinePayload[];controlTags?:number[];scaleWithActionSpeed?:boolean;animation?:string}
-export type ComboPurpose='entry'|'transition'|'cancel';
-export interface RuntimeCombo {id:string;purpose?:ComboPurpose;preSkills:string[];input:string;requiredTags:number[];priority:number;toSkill:string}
-export interface ComboCandidate {rule:string;skill:string;priority:number;missingTags:number[]}
+export type ComboConditionKind='tag'|'buff'|'resource';
+export type ComboCompareOp='gte'|'eq'|'lt'|'lte';
+export type ComboResourceKind='energy'|'ammo';
+export type ComboWindowMode='default'|'channel'|'range'|'anytime';
+export interface ComboCondition {kind:ComboConditionKind;negate?:boolean;tag?:number;buff?:string;resource?:ComboResourceKind;op?:ComboCompareOp;value?:number}
+export interface ComboWindow {mode:ComboWindowMode;channel?:string;start?:number;end?:number}
+export interface RuntimeCombo {id:string;preSkills:string[];input:string;conditions:ComboCondition[];window?:ComboWindow;priority:number;toSkill:string}
+export interface ComboCandidate {rule:string;skill:string;priority:number;windowOpen?:boolean;missingTags:number[];failedConditions?:string[]}
 export interface ComboDecision {sequence:number;inputSequence:number;input:string;fromSkill:string|null;rule:string|null;toSkill:string|null;actualSkill:string|null;phase:'blocked'|'waiting'|'matched'|'unmatched'|'cast'|'rejected';reason:string|null;windowOpen:boolean;confirmed:boolean;castId:number;candidates:ComboCandidate[]}
 export interface SpawnStats {hpPerSpawn:number;attackPerSpawn:number;attackRandomRange:number;moveSpeedCurve?:{base:number;randomRange:number;scale:number;divisor:number;offset:number}}
 export interface WanderTiming {firstTurn:number;turnIntervalMin:number;turnIntervalMax:number;turnAngle:number;firstShot:number;shotIntervalMin:number;shotIntervalMax:number}
@@ -28,7 +33,7 @@ export interface SharedArea {id:string;name:string;root:string;nodes:GraphNode[]
 export interface GraphViewport { kind:'skill'|'buff'|'timeline'|'projectile'|'area';id:string;x:number;y:number;zoom:number }
 export interface ComboPosition {skillId:string;x:number;y:number}
 export interface ComboView {id:string;name:string;rootSkill:string;ruleIds:string[];positions:ComboPosition[]}
-export interface EditorMetadata {comboViews?:ComboView[];comboPositions?:ComboPosition[]; selectedSkill?:string;selectedBuff?:string;selectedTimeline?:string;selectedProjectile?:string;selectedArea?:string;viewports?:GraphViewport[] }
+export interface EditorMetadata {comboViews?:ComboView[];comboPositions?:ComboPosition[];comboCancelRuleIds?:string[]; selectedSkill?:string;selectedBuff?:string;selectedTimeline?:string;selectedProjectile?:string;selectedArea?:string;viewports?:GraphViewport[] }
 export interface Project { formatVersion: number; id: string; name: string; skills: Skill[];timelines?:SharedTimeline[];projectiles?:SharedProjectile[];areas?:SharedArea[]; buffs?:BuffDefinition[]; summonBlueprints?: SummonBlueprint[];editor?:EditorMetadata;runtime?:RuntimeContent; preview: { inputBufferSeconds?:number;seed: number; energy: number; initialEnergy?: number | null; recovery: number; ammo?:number;initialAmmo?:number|null;unlimitedAmmo?:boolean;caster: ActorInitial; targets: ActorInitial[]; obstacles?: ObstacleView[] } }
 export interface BuffView {instanceId:number;id:string;name:string;source:string;stacks:number;remaining:number|null}
 export interface ReturnAnchorView {skillId:string;input:string;castId:number;x:number;y:number;z:number;remaining:number}

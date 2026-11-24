@@ -133,7 +133,7 @@ namespace Combat.Core
                     {
                         PreSkills = Array.Empty<SkillNodeId>(),
                         Input = InputToken.Attack,
-                        RequiredTags = Array.Empty<int>(),
+                        Conditions = Array.Empty<ComboCondition>(),
                         Priority = 0,
                         ToSkill = SkillNodeId.G1,
                         Timeline = TimelineId.TL_G1
@@ -142,7 +142,7 @@ namespace Combat.Core
                     {
                         PreSkills = new[] { SkillNodeId.G1 },
                         Input = InputToken.Attack,
-                        RequiredTags = new[] { CommonTags.Cancel.Value },
+                        Conditions = new[] { ComboCondition.HasTag(CommonTags.Cancel.Value) },
                         Priority = 10,
                         ToSkill = SkillNodeId.G2,
                         Timeline = TimelineId.TL_G2
@@ -151,7 +151,7 @@ namespace Combat.Core
                     {
                         PreSkills = new[] { SkillNodeId.Dodge },
                         Input = InputToken.Attack,
-                        RequiredTags = new[] { CommonTags.Cancel.Value },
+                        Conditions = new[] { ComboCondition.HasTag(CommonTags.Cancel.Value) },
                         Priority = 5,
                         ToSkill = SkillNodeId.G1,
                         Timeline = TimelineId.TL_G1

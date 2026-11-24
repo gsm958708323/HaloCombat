@@ -92,15 +92,17 @@ namespace Combat.Core
                 return;
             }
             SkillNodeId selected;
+            bool windowVerified = false;
             if(token==Season2Tokens.Dodge)selected=_dodge;
             else
             {
                 if(!Self.GetComp<ComboComp>().TryResolveCurrent(token,out var result))return;
                 selected=result.ToSkill;
+                windowVerified=result.WindowVerified;
             }
             var transform=Self.GetComp<TransformComp>();
             var aim=aiming.Valid?aiming.Aim:new SkillAim(EntityId.Invalid,transform.Position,transform.YawDegrees,false);
-            bool accepted=selected.IsValid&&cast.TryCast(selected,aim,token,allowReturn:false);
+            bool accepted=selected.IsValid&&cast.TryCast(selected,aim,token,allowReturn:false,cancelWindowVerified:windowVerified);
             if(token!=Season2Tokens.Dodge)Self.GetComp<ComboComp>().ReportCastOutcome(accepted,cast.LastAcceptedSkill,cast.LastRejection);
             if(accepted)
             {

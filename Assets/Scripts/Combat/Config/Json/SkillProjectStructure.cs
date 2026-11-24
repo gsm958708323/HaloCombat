@@ -76,7 +76,7 @@ namespace Combat.Config
                 foreach(string field in new[]{"center","forwardOffset"})if(root.Parameters[field]!=null)Fail(path+".nodes["+root.Id+"].parameters."+field,"Placement parameters belong to area-ref.");
             }
             Editor(project.Editor,skills,buffs,timelines,projectiles,areas);
-            RuntimeReferences(project.Runtime,skills);
+            RuntimeReferences(project.Runtime,skills,buffs);
             ComboAuthoringValidation.Views(project);
         }
         static void TimelineReferences(TimelineDocument timeline,SkillNodeDocument[] nodes,string path)
@@ -88,12 +88,26 @@ namespace Combat.Config
             foreach(var clip in timeline.Clips){if(clip==null)Fail(path+".clips","Null clip.");check(clip.Effects,path+".clips["+clip.Id+"].effects");}
             foreach(var payload in timeline.Payloads){if(payload==null)Fail(path+".payloads","Null payload.");check(payload.Effects,path+".payloads["+payload.Id+"].effects");}
         }
-        static void RuntimeReferences(RuntimeContentDocument runtime,HashSet<string> skills)
+        static void RuntimeReferences(RuntimeContentDocument runtime,HashSet<string> skills,HashSet<string> buffs)
         {
             if(runtime==null)return;
             Identities(runtime.Actors,a=>a.Id,"$.runtime.actors",256);Identities(runtime.Combos,c=>c.Id,"$.runtime.combos",1024);
             Action<string,string> check=(id,path)=>{if(!string.IsNullOrEmpty(id)&&!skills.Contains(id))Fail(path,"Unknown skill reference: "+id);};
-            foreach(var row in runtime.Combos){ComboAuthoringValidation.Rule(row,"$.runtime.combos["+row.Id+"]");check(row.ToSkill,"$.runtime.combos["+row.Id+"].toSkill");if(row.PreSkills==null)Fail("$.runtime.combos","PreSkills array is required.");foreach(string id in row.PreSkills)check(id,"$.runtime.combos["+row.Id+"].preSkills");}
+            foreach(var row in runtime.Combos)
+            {
+                string rowPath="$.runtime.combos["+row.Id+"]";
+                check(row.ToSkill,rowPath+".toSkill");
+                if(row.PreSkills==null)Fail(rowPath+".preSkills","PreSkills array is required.");
+                foreach(string id in row.PreSkills)check(id,rowPath+".preSkills");
+                if(row.Conditions==null)Fail(rowPath+".conditions","Conditions array is required.");
+                for(int i=0;i<row.Conditions.Length;i++)
+                {
+                    var cond=row.Conditions[i];
+                    if(cond==null)Fail(rowPath+".conditions["+i+"]","Condition is required.");
+                    if(cond.Kind=="buff"&&!string.IsNullOrEmpty(cond.Buff)&&!buffs.Contains(cond.Buff))
+                        Fail(rowPath+".conditions["+i+"].buff","Unknown Buff reference: "+cond.Buff);
+                }
+            }
             foreach(var actor in runtime.Actors){string p="$.runtime.actors["+actor.Id+"]";check(actor.SkillId,p+".skillId");check(actor.DodgeSkill,p+".dodgeSkill");if(actor.Slots==null)Fail(p+".slots","Slot array is required.");foreach(string id in actor.Slots)check(id,p+".slots");}
             if(runtime.Arena!=null)
             {
@@ -168,7 +182,7 @@ namespace Combat.Config
             {
                 var positions=new HashSet<string>();
                 foreach(var position in editor.ComboPositions)
-                    if(position==null||!positions.Add(position.SkillId??"")||position.SkillId!="$start"&&!skills.Contains(position.SkillId??"")||!Finite(position.X)||!Finite(position.Y))
+                    if(position==null||!positions.Add(position.SkillId??"")||position.SkillId!="$start"&&position.SkillId!="$idle"&&!skills.Contains(position.SkillId??"")||!Finite(position.X)||!Finite(position.Y))
                         Fail("$.editor.comboPositions","Expected unique skill identities and finite node positions.");
             }
             if(!string.IsNullOrEmpty(editor.SelectedSkill)&&!skills.Contains(editor.SelectedSkill))Fail("$.editor.selectedSkill","Unknown skill.");

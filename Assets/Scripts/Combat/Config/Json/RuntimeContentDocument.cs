@@ -23,13 +23,29 @@ namespace Combat.Config
     public sealed class RuntimeComboDocument
     {
         public string Id {get;set;}
-        // Author intent survives portable runtime JSON; it never filters combat matching.
-        [JsonProperty(NullValueHandling=NullValueHandling.Ignore)]public string Purpose {get;set;}
         public string[] PreSkills {get;set;}=Array.Empty<string>();
         public string Input {get;set;}="Attack";
-        public int[] RequiredTags {get;set;}=Array.Empty<int>();
+        public ComboConditionDocument[] Conditions {get;set;}=Array.Empty<ComboConditionDocument>();
+        [JsonProperty(NullValueHandling=NullValueHandling.Ignore)]public ComboWindowDocument Window {get;set;}
         public int Priority {get;set;}
         public string ToSkill {get;set;}
+    }
+    public sealed class ComboConditionDocument
+    {
+        public string Kind {get;set;}
+        [System.ComponentModel.DefaultValue(false),JsonProperty(DefaultValueHandling=DefaultValueHandling.Ignore)]public bool Negate {get;set;}
+        [JsonProperty(NullValueHandling=NullValueHandling.Ignore)]public int? Tag {get;set;}
+        [JsonProperty(NullValueHandling=NullValueHandling.Ignore)]public string Buff {get;set;}
+        [JsonProperty(NullValueHandling=NullValueHandling.Ignore)]public string Resource {get;set;}
+        [JsonProperty(NullValueHandling=NullValueHandling.Ignore)]public string Op {get;set;}
+        [JsonProperty(NullValueHandling=NullValueHandling.Ignore)]public float? Value {get;set;}
+    }
+    public sealed class ComboWindowDocument
+    {
+        public string Mode {get;set;}="default";
+        [JsonProperty(NullValueHandling=NullValueHandling.Ignore)]public string Channel {get;set;}
+        [JsonProperty(NullValueHandling=NullValueHandling.Ignore)]public float? Start {get;set;}
+        [JsonProperty(NullValueHandling=NullValueHandling.Ignore)]public float? End {get;set;}
     }
     public sealed class RuntimeActorDocument
     {

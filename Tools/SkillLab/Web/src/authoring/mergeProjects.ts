@@ -37,14 +37,15 @@ export function mergeProjects(destination:Project,source:Project,newId:()=>strin
   const buffs=(source.buffs??[]).map(b=>({...clone(b),...copyGraph(references(b.nodes),b.edges,definitionNumber,newId),id:buffIds.get(b.id)!,runtimeId:buffNumber()}));
   const blueprints=(source.summonBlueprints??[]).map(b=>({...clone(b),id:blueprintIds.get(b.id)!,skillId:skillIds.get(b.skillId)!}));
   const viewports=source.editor?.viewports?.map(v=>({...v,id:(v.kind==='skill'?skillIds:v.kind==='timeline'?timelineIds:v.kind==='projectile'?projectileIds:v.kind==='area'?areaIds:buffIds).get(v.id)!}))??[];
-  const runtime=source.runtime?mergeRuntime(destination,source,skillIds,newId,viewIds,comboIds):destination.runtime;
-  const comboPositions=(source.editor?.comboPositions??[]).filter(v=>v.skillId!=='$start').map(v=>({...v,skillId:skillIds.get(v.skillId)!}));
-  const comboViews=(source.editor?.comboViews??[]).map(v=>({...clone(v),id:comboViewIds.get(v.id)!,rootSkill:skillIds.get(v.rootSkill)!,ruleIds:v.ruleIds.map(id=>comboIds.get(id)!),positions:v.positions.map(p=>({...p,skillId:p.skillId==='$start'?p.skillId:skillIds.get(p.skillId)!}))}));
-  const result={...destination,runtime,skills:[...destination.skills,...skills],timelines:[...(destination.timelines??[]),...timelines],projectiles:[...(destination.projectiles??[]),...projectiles],areas:[...(destination.areas??[]),...areas],buffs:[...(destination.buffs??[]),...buffs],summonBlueprints:[...(destination.summonBlueprints??[]),...blueprints],editor:{...destination.editor,viewports:[...(destination.editor?.viewports??[]),...viewports],comboPositions:[...(destination.editor?.comboPositions??[]),...comboPositions],comboViews:[...(destination.editor?.comboViews??[]),...comboViews]}};
+  const runtime=source.runtime?mergeRuntime(destination,source,skillIds,buffIds,newId,viewIds,comboIds):destination.runtime;
+  const comboPositions=(source.editor?.comboPositions??[]).filter(v=>v.skillId!=='$start'&&v.skillId!=='$idle').map(v=>({...v,skillId:skillIds.get(v.skillId)!}));
+  const comboViews=(source.editor?.comboViews??[]).map(v=>({...clone(v),id:comboViewIds.get(v.id)!,rootSkill:skillIds.get(v.rootSkill)!,ruleIds:v.ruleIds.map(id=>comboIds.get(id)!),positions:v.positions.map(p=>({...p,skillId:p.skillId==='$start'||p.skillId==='$idle'?p.skillId:skillIds.get(p.skillId)!}))}));
+  const comboCancelRuleIds=[...(destination.editor?.comboCancelRuleIds??[]),...(source.editor?.comboCancelRuleIds??[]).map(id=>comboIds.get(id)!).filter(Boolean)];
+  const result={...destination,runtime,skills:[...destination.skills,...skills],timelines:[...(destination.timelines??[]),...timelines],projectiles:[...(destination.projectiles??[]),...projectiles],areas:[...(destination.areas??[]),...areas],buffs:[...(destination.buffs??[]),...buffs],summonBlueprints:[...(destination.summonBlueprints??[]),...blueprints],editor:{...destination.editor,viewports:[...(destination.editor?.viewports??[]),...viewports],comboPositions:[...(destination.editor?.comboPositions??[]),...comboPositions],comboViews:[...(destination.editor?.comboViews??[]),...comboViews],...(comboCancelRuleIds.length?{comboCancelRuleIds:[...new Set(comboCancelRuleIds)]}:{})}};
   if(allGraphs(result).some(({graph})=>graph.nodes.length>256))throw new Error('图节点数超过上限');
   return result;
 }
-function mergeRuntime(destination:Project,source:Project,skills:Map<string,string>,newId:()=>string,viewIds:Map<string,string>,comboIds:Map<string,string>) {
+function mergeRuntime(destination:Project,source:Project,skills:Map<string,string>,buffIds:Map<string,string>,newId:()=>string,viewIds:Map<string,string>,comboIds:Map<string,string>) {
   const incoming=source.runtime!;const current=destination.runtime;
   if(current&&JSON.stringify(current.motor)!==JSON.stringify(incoming.motor))throw new Error('导入内容的 Motor 设置与当前工程不同，请统一设置后重试');
   const ids=(existing:{id:string}[])=>{const used=new Set(existing.map(v=>v.id));return (id:string)=>{while(used.has(id))id=newId();used.add(id);return id;};};
@@ -56,5 +57,5 @@ function mergeRuntime(destination:Project,source:Project,skills:Map<string,strin
   const cues=[...(current?.cues??[])];
   for(const cue of incoming.cues){const old=cues.find(c=>c.id===cue.id);if(old&&JSON.stringify(old)!==JSON.stringify(cue))throw new Error('Cue数字身份冲突：'+cue.id+'，请先修改冲突定义');if(!old)cues.push(clone(cue));}
   return {...clone(incoming),arena,cues,views:views.length?views:undefined,actors:[...(current?.actors??[]),...incoming.actors.map(a=>({...clone(a),id:actorIds.get(a.id)!,view:viewIds.get(a.view)??a.view,skillId:a.skillId?skills.get(a.skillId):undefined,dodgeSkill:a.dodgeSkill?skills.get(a.dodgeSkill):undefined,slots:a.slots?.map(id=>skills.get(id)!)}))],
-    combos:[...(current?.combos??[]),...incoming.combos.map(c=>({...clone(c),id:comboIds.get(c.id)!,input:inputIds.get(c.input)!,toSkill:skills.get(c.toSkill)!,preSkills:c.preSkills.map(id=>skills.get(id)!)}))]};
+    combos:[...(current?.combos??[]),...incoming.combos.map(c=>({...clone(c),id:comboIds.get(c.id)!,input:inputIds.get(c.input)!,toSkill:skills.get(c.toSkill)!,preSkills:c.preSkills.map(id=>skills.get(id)!),conditions:(c.conditions??[]).map(cond=>cond.kind==='buff'&&cond.buff&&buffIds.has(cond.buff)?{...cond,buff:buffIds.get(cond.buff)!}:cond)}))]};
 }
