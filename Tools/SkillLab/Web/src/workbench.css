@@ -272,6 +272,7 @@ small { color: var(--desk-muted); }
     grid-template-areas: "heading" "stage" "editor" "records";
     gap: 10px;
   }
+  .workspace:not(:has(> .editor-panel)) { grid-template-areas: "stage" "editor" "records"; }
   .workspace.workspace--combo-preview {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas: "stage" "editor";
@@ -282,7 +283,6 @@ small { color: var(--desk-muted); }
     height: auto;
   }
   .combo-preview-panel > .world-canvas { height: 232px; margin: 8px; }
-  .workspace:not(:has(> .editor-panel)) { grid-template-areas: "stage" "editor" "records"; }
   .preview-panel, .editor-body, .combo-editor {
     border-right: 1px solid var(--desk-line);
     border-radius: 10px;
@@ -291,8 +291,8 @@ small { color: var(--desk-muted); }
   .editor-heading > .graph-title { flex-basis: 100%; }
 }
 
-  .preview-panel.combo-preview-panel { grid-template-columns: minmax(0, 1fr); }
 @media (max-width: 640px) {
+  .preview-panel.combo-preview-panel { grid-template-columns: minmax(0, 1fr); }
   .app-navigation small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .editor-body { height: auto; grid-template-columns: minmax(0, 1fr); }
   .graph-panel { height: 540px; }

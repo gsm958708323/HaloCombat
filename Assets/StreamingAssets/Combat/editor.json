@@ -14,17 +14,6 @@
         "ArenaSecond-confirm-bomb"
       ],
       "positions": []
-    },
-    {
-      "id": "alternating-attack",
-      "name": "交替攻击接续",
-      "rootSkill": "g1",
-      "ruleIds": [
-        "g1-to-g2",
-        "confirmed-g1-g2",
-        "confirmed-g2-g1"
-      ],
-      "positions": []
     }
   ],
   "nodePositions": [
