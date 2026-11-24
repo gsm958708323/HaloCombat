@@ -59,16 +59,38 @@
     <UnityVersion>6000.0.32f1</UnityVersion>
   </PropertyGroup>
   <ItemGroup>
-    <Analyzer Include="C:\Users\Halo\.vscode\extensions\visualstudiotoolsforunity.vstuc-1.3.1\Analyzers\Microsoft.Unity.Analyzers.dll" />
+    <Analyzer Include="C:\Users\Halo\.vscode\extensions\visualstudiotoolsforunity.vstuc-1.3.2\Analyzers\Microsoft.Unity.Analyzers.dll" />
     <Analyzer Include="D:\Work\UnityInstall\6000.0.32f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.SourceGenerators.dll" />
     <Analyzer Include="D:\Work\UnityInstall\6000.0.32f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.Properties.SourceGenerator.dll" />
     <Analyzer Include="D:\Work\UnityInstall\6000.0.32f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Scripts\Combat\Unity\ArenaBootstrap.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\ArenaPresentation.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\SkillLabStage.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\SkillLabSweepVisual.cs" />
     <Compile Include="Assets\Scripts\Combat\Unity\UnityCuePlayer.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\SkillLabVisuals.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\SkillLabHud.cs" />
     <Compile Include="Assets\Scripts\Combat\Unity\UnityView.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\CombatGroundOutline.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\SkillLabPublicationMonitor.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\ArenaPresentationBinding.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\UnityAnimatorDriver.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\UnityBodyVisual.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\SkillLabFeedback.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\ArenaHud.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\UnityCueLoop.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\SkillVolumeGeometry.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\SkillLabRunner.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\CombatControls.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\SkillLabActorDisplay.cs" />
     <Compile Include="Assets\Scripts\Combat\Unity\UnityLogSink.cs" />
     <Compile Include="Assets\Scripts\Combat\Unity\HaloCombatDemoRunner.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\UnityRuntimeContent.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\ArenaInputSource.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\UnityActorResources.cs" />
+    <Compile Include="Assets\Scripts\Combat\Unity\SkillLabDamageNumbers.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Scripts\Combat\Unity\Combat.Unity.asmdef" />
@@ -596,6 +618,10 @@
     </Reference>
     <Reference Include="Unity.VisualScripting.Antlr3.Runtime">
       <HintPath>Library\PackageCache\com.unity.visualscripting\Runtime\VisualScripting.Flow\Dependencies\NCalc\Unity.VisualScripting.Antlr3.Runtime.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>Library\PackageCache\com.unity.nuget.newtonsoft-json\Runtime\Newtonsoft.Json.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.VisualScripting.TextureAssets">
