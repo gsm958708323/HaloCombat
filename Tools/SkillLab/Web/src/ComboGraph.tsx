@@ -63,6 +63,14 @@ function Canvas(props: Props) {
     setDragPositions(new Map());
   }, [layout.positions]);
 
+  const initializedRef = useRef(false);
+  useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+    const timer = window.setTimeout(() => void flow.fitView({...fitOptions, duration: 160}), 80);
+    return () => window.clearTimeout(timer);
+  }, [flow]);
+
   useEffect(() => {
     if (fitNonce <= 0) return;
     const frame = requestAnimationFrame(() => void flow.fitView({...fitOptions, duration: 200}));
@@ -278,8 +286,9 @@ function Canvas(props: Props) {
         colorMode="dark"
         proOptions={{hideAttribution: true}}>
         <Background variant={BackgroundVariant.Dots} gap={22} size={1.1} color="#2c3c43"/>
-        <MiniMap pannable zoomable nodeColor={node => node.id === IDLE_NODE_ID ? '#526872' : (node.data?.active ? '#7ce6bd' : '#354952')}
-          maskColor="rgba(16, 24, 28, 0.72)"/>
+        <MiniMap pannable zoomable
+          nodeColor={node => node.id === IDLE_NODE_ID ? '#80a6b8' : node.data?.active ? '#7ce6bd' : node.selected ? '#e5c982' : '#4f6d79'}
+          maskColor="rgba(12, 19, 22, 0.72)"/>
       </ReactFlow>
 
       {activeCancelRule && (

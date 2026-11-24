@@ -1,3 +1,33 @@
+/* Full-viewport fill for Combo Mode on desktop (no bottom event records row like Skill Mode) */
+@media (min-width: 1061px) {
+  .application:has(.workspace--combo-preview) {
+    height: 100dvh;
+    overflow: hidden;
+  }
+  .application .workspace.workspace--combo-preview {
+    flex: 1 1 0;
+    min-height: 0;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    grid-template-rows: minmax(0, 1fr);
+    align-content: stretch;
+  }
+  .application .workspace.workspace--combo-preview .preview-panel,
+  .application .workspace.workspace--combo-preview > .combo-editor {
+    height: 100%;
+    min-height: 0;
+  }
+  .application .workspace.workspace--combo-preview .combo-preview-panel {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .application .workspace.workspace--combo-preview .combo-preview-panel > .world-canvas {
+    flex: 1 1 0;
+    min-height: 220px;
+  }
+}
+
 /* HaloCombat Combo Workbench — Refined Game-Engine Aesthetic */
 .combo-workbench {
   display: flex;
@@ -81,7 +111,7 @@
   background: #172227;
   border-top: 1px solid #29383f;
   min-height: 32px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 .combo-cancel-bar-label {
   display: inline-flex;
@@ -92,9 +122,23 @@
   color: #88a4ad;
   letter-spacing: .02em;
   white-space: nowrap;
+  flex-shrink: 0;
 }
-.combo-cancel-chips { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.combo-cancel-empty { font-size: 11px; color: #6e858e; }
+.combo-cancel-chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  min-width: 0;
+  flex: 1;
+}
+.combo-cancel-empty {
+  font-size: 11px;
+  color: #6e858e;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .combo-cancel-chip {
   display: inline-flex;
   align-items: center;
@@ -148,8 +192,10 @@
 }
 .combo-canvas-stage > .react-flow { width: 100%; height: 100%; }
 .combo-canvas-stage .react-flow__minimap {
-  background: #131c20;
-  border: 1px solid #304148;
+  width: 148px;
+  height: 92px;
+  background: rgba(16, 25, 29, 0.92);
+  border: 1px solid #354952;
   border-radius: 6px;
 }
 

@@ -279,9 +279,8 @@ export function ComboEditor({project, update, store, openSkill, report}: Props) 
                 </button>
               );
             })}
-            {!cancelRules.length && <small className="combo-cancel-empty">暂无公共取消（可将闪避/格挡等全技能取消规则收纳至此，避免画布连线杂乱）</small>}
+            {!cancelRules.length && <small className="combo-cancel-empty">暂无公共取消 · 可将闪避/格挡等全技能打断规则收纳至此</small>}
           </div>
-          <span className="grow"/>
           {cancelRules.length > 0 && surface === 'canvas' && (
             <button type="button" className={`combo-cancel-opt ${showCancelOverlay ? 'is-active' : ''}`}
               onClick={() => setShowCancelOverlay(v => !v)}>
