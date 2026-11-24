@@ -77,7 +77,7 @@ namespace Combat.Demos
             var pAttr = player.GetComp<AttributeSet>();
 
             ptf.Position = new SimVec3(0f, 0f, 0f);
-            ptf.YawDegrees = LocomotionComp.YawFromStick(new SimVec3(1f, 0f, 0f));
+            ptf.YawDegrees = 0f;
 
             var gtf = guard.GetComp<TransformComp>();
             gtf.Position = new SimVec3(2.2f, 0f, 0f);
@@ -157,7 +157,7 @@ namespace Combat.Demos
                         Coeff = 1f,
                         CanCrit = false,
                         UseSnapshotAtk = true,
-                        SourceHitstopFrames = 3, TargetHitstopFrames = 3
+                        HitstopFrames = 3
                     }
                 },
                 guard, player, 50f);
@@ -179,7 +179,10 @@ namespace Combat.Demos
             stakeAura.GetComp<TransformComp>().Position = new SimVec3(20f, 0f, 0f);
             world.Deliver(
                 new IEffect[] { new SpawnProjectileEffect(CombatIds.HomingBolt) },
-                player, null, pAttr.GetFinal(AttrId.Atk));
+                // The straight initial lane crosses the melee stake when it is
+                // restored below. Launch sideways toward the designated homing
+                // target so this freeze test remains isolated from that stake's body.
+                player, stakeHoming, pAttr.GetFinal(AttrId.Atk),dir:new SimVec3(0,0,1));
             Actor bolt = null;
             trace.AdvanceUntil("生成 Homing Projectile", () =>
             {
@@ -213,20 +216,20 @@ namespace Combat.Demos
 
             // Projectile Freeze：命中结算当帧完成；下一 Tick 开始冻结服务，弹的位置保持不变。
             trace.AdvanceFor("进入顿帧服务阶段", 0.02f, 1,
-                () => $"frame={time.Frame} InHitstop={player.Time.IsStopped} left={player.Time.HitstopLeft} actorPos={ptf.Position.X.ToString("F3")} projectilePos={boltTf.Position.X.ToString("F3")}");
-            trace.Check("下一逻辑帧进入顿帧状态", player.Time.IsStopped,
-                "InHitstop=true", $"InHitstop={player.Time.IsStopped} left={player.Time.HitstopLeft}",
+                () => $"frame={time.Frame} InHitstop={world.InHitstop} left={world.HitstopLeft} actorPos={ptf.Position.X.ToString("F3")} projectilePos={boltTf.Position.X.ToString("F3")}");
+            trace.Check("下一逻辑帧进入顿帧状态", world.InHitstop,
+                "InHitstop=true", $"InHitstop={world.InHitstop} left={world.HitstopLeft}",
                 () => DemoTrace.Snapshot(player));
             SimVec3 frozen = boltTf.Position;
             float frozenActorX = ptf.Position.X;
             float frozenActorZ = ptf.Position.Z;
             int freezeFrame = time.Frame;
             trace.AdvanceFor("顿帧窗口内冻结 Actor 与 Projectile", 0.02f, 2,
-                () => $"frame={time.Frame} InHitstop={player.Time.IsStopped} actorPos={ptf.Position.X.ToString("F3")} projectilePos={boltTf.Position.X.ToString("F3")}");
-            trace.Check("顿帧期间 Actor 冻结而 Projectile 继续", (Math.Abs(boltTf.Position.X - frozen.X) > 1e-4f ||
-                Math.Abs(boltTf.Position.Z - frozen.Z) > 1e-4f) && Math.Abs(ptf.Position.X - frozenActorX) <= 1e-4f &&
+                () => $"frame={time.Frame} InHitstop={world.InHitstop} actorPos={ptf.Position.X.ToString("F3")} projectilePos={boltTf.Position.X.ToString("F3")}");
+            trace.Check("顿帧期间 Actor 与 Projectile 位置不变", bolt.IsActive && Math.Abs(boltTf.Position.X - frozen.X) <= 1e-4f &&
+                Math.Abs(boltTf.Position.Z - frozen.Z) <= 1e-4f && Math.Abs(ptf.Position.X - frozenActorX) <= 1e-4f &&
                 Math.Abs(ptf.Position.Z - frozenActorZ) <= 1e-4f,
-                "顿帧期间 Actor 冻结而 Projectile 继续", $"冻结前Actor={frozenActorX.ToString("F3")},{frozenActorZ.ToString("F3")} 当前Actor={ptf.Position.X.ToString("F3")},{ptf.Position.Z.ToString("F3")} 冻结前Projectile={frozen.X.ToString("F3")},{frozen.Z.ToString("F3")} 当前Projectile={boltTf.Position.X.ToString("F3")},{boltTf.Position.Z.ToString("F3")} freezeFrame={freezeFrame} currentFrame={time.Frame}",
+                "顿帧期间 Actor 与 Projectile 位置保持不变", $"冻结前Actor={frozenActorX.ToString("F3")},{frozenActorZ.ToString("F3")} 当前Actor={ptf.Position.X.ToString("F3")},{ptf.Position.Z.ToString("F3")} 冻结前Projectile={frozen.X.ToString("F3")},{frozen.Z.ToString("F3")} 当前Projectile={boltTf.Position.X.ToString("F3")},{boltTf.Position.Z.ToString("F3")} freezeFrame={freezeFrame} currentFrame={time.Frame}",
                 () => DemoTrace.Snapshot(bolt));
             stakeAura.GetComp<TransformComp>().Position = new SimVec3(0f, 0f, 0f);
             trace.Step("记录冻前飞行与冻结后位置", () => $"冻前位置={flew.X.ToString("F3")},{flew.Z.ToString("F3")} 冻中位置={boltTf.Position.X.ToString("F3")},{boltTf.Position.Z.ToString("F3")}");
@@ -330,19 +333,20 @@ namespace Combat.Demos
                 "无 Owner 的 guard 继续存活", $"guardActive={guard.IsActive} guardActivity={guard.GetComp<StateMachineComp>().Current}",
                 () => DemoTrace.Snapshot(guard));
 
-            trace.Check("SeasonTwo 保持 G1 默认 Coeff", Math.Abs(TimelineSO.G1Melee.Damage.Coeff - 1f) <= 1e-4f,
-                "SeasonTwo 不修改 G1 默认 Coeff", $"Coeff={TimelineSO.G1Melee.Damage.Coeff}", () => DemoTrace.Snapshot(player));
+            trace.Check("SeasonTwo 保持 G1 默认 Coeff", Math.Abs(TimelineDefinition.G1Melee.Damage.Coeff - 1f) <= 1e-4f,
+                "SeasonTwo 不修改 G1 默认 Coeff", $"Coeff={TimelineDefinition.G1Melee.Damage.Coeff}", () => DemoTrace.Snapshot(player));
 
             CombatLog.Info(CombatCategories.SeasonTwo,
                 $"[DemoSummary][SeasonTwo] 八个阶段计数 immune={immune} hitstops={hitstops} damages={damages}");
             trace.Complete($"八个跨系统契约阶段完成 immune={immune} hitstops={hitstops} damages={damages}");
         }
 
-        public static void Regression()
+        public static void RunAllTeachingDemos()
         {
-            // 回归入口逐个运行全部 Demo，并在每次运行前恢复共享的 G1 默认配置。
+            // 每个教学 Demo 开始前恢复共享的 G1 默认配置。
             Season2Contracts.EnsureAiMustNotStopDirector();
 
+            // Keep the 01–16 order aligned with HaloCombatDemoSceneBuilder.Specs.
             var steps = new (string name, Action run)[]
             {
                 ("tag", TagInputDemo.Run),
@@ -361,35 +365,16 @@ namespace Combat.Demos
                 ("enemy", EnemyAiDemo.Run),
                 ("summon", SummonDemo.Run),
                 ("season2", SeasonTwoDemo.Run),
-                ("clock", ClockDemo.Run),
-                ("spawn", SpawnEventDemo.Run),
             };
 
-            var failures = new System.Collections.Generic.List<string>();
             for (int i = 0; i < steps.Length; i++)
             {
-                Console.WriteLine($"======== REGRESS {steps[i].name} ========");
+                Console.WriteLine($"======== TEACHING DEMO {i + 1:00}/{steps.Length} {steps[i].name} ========");
                 DemoTables.ResetG1MeleeDefaults();
-                try
-                {
-                    steps[i].run();
-                }
-                catch (Exception error)
-                {
-                    // Keep running the remaining demos so one failure cannot hide the
-                    // state of the rest. The aggregate result is reported through the
-                    // log and the exit code, never as an unhandled crash.
-                    failures.Add(steps[i].name + ": " + error.Message);
-                    Console.WriteLine($"======== REGRESS {steps[i].name} FAILED: {error.Message} ========");
-                    Console.WriteLine(error.StackTrace);
-                }
+                steps[i].run();
             }
 
-            if (failures.Count > 0)
-                throw new Exception("REGRESSION FAILED (" + failures.Count + "/" + steps.Length + "): " +
-                                    string.Join(" | ", failures));
-
-            Console.WriteLine("======== ALL S1+S2 REGRESSION PASSED ========");
+            Console.WriteLine($"======== ALL {steps.Length} TEACHING DEMOS COMPLETED ========");
         }
     }
 }

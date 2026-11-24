@@ -9,18 +9,18 @@ namespace Combat.Core
         public string PrefabKey;
         public string SfxKey;
         public float LifeTime;
+        public string PresentationKind;
+        public string ResourceKey;
     }
 
     public sealed class CueLibrary
     {
         readonly Dictionary<int, CueDef> _map = new Dictionary<int, CueDef>(16);
-        public int Count => _map.Count;
-        public IEnumerable<CueDef> All => _map.Values;
+        public IEnumerable<CueDef> All=>_map.Values;
 
         public void Register(in CueDef def)
         {
             if (def.CueId == 0) throw new ArgumentException("CueId");
-            if (_map.ContainsKey(def.CueId)) throw new InvalidOperationException("Duplicate cue " + def.CueId);
             _map[def.CueId] = def;
         }
 

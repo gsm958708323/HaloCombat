@@ -1,0 +1,115 @@
+{
+  "id": "absorbing-orb",
+  "runtimeId": 2043,
+  "name": "吸收移动球",
+  "category": "持续区域与接触",
+  "nodes": [
+    {
+      "id": "target",
+      "kind": "target",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "facing",
+        "range": 20
+      }
+    },
+    {
+      "id": "cast",
+      "kind": "cast",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "instant",
+        "cost": 0,
+        "cooldown": 0.1,
+        "delay": 0.1,
+        "duration": 0.5,
+        "ammoCost": 3
+      }
+    },
+    {
+      "id": "orb",
+      "kind": "delivery",
+      "runtimeId": 6501,
+      "enabled": true,
+      "parameters": {
+        "mode": "area",
+        "persistent": true,
+        "center": "source",
+        "radius": 0.25,
+        "duration": 100,
+        "interval": 0.45,
+        "pulseOnSpawn": true,
+        "areaMotion": "forward",
+        "moveSpeed": 0.1,
+        "removeOnObstacle": true,
+        "forwardOffset": 0.5,
+        "absorbProjectiles": true,
+        "absorbForce": 0.05,
+        "radiusPerProjectile": 0.05
+      }
+    },
+    {
+      "id": "damage",
+      "kind": "damage",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "flat": 0,
+        "coefficient": 0.2,
+        "canCrit": true,
+        "critChance": 0.05,
+        "critMultiplier": 1.8,
+        "notifyHurt": false,
+        "sourceHitstopFrames": 0,
+        "targetHitstopFrames": 2,
+        "feedback": "light"
+      }
+    },
+    {
+      "id": "hurt",
+      "kind": "hurt-feedback",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "level": "light",
+        "requireHpDamage": true
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "target-target-cast",
+      "source": "target",
+      "sourcePort": "target",
+      "target": "cast",
+      "targetPort": "target",
+      "order": 0
+    },
+    {
+      "id": "cast-cast-orb",
+      "source": "cast",
+      "sourcePort": "cast",
+      "target": "orb",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "orb-enter-damage",
+      "source": "orb",
+      "sourcePort": "enter",
+      "target": "damage",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "damage-next-hurt",
+      "source": "damage",
+      "sourcePort": "next",
+      "target": "hurt",
+      "targetPort": "execute",
+      "order": 0
+    }
+  ]
+}

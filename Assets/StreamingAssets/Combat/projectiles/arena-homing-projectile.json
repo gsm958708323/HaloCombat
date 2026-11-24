@@ -1,0 +1,109 @@
+{
+  "id": "arena-homing-projectile",
+  "name": "原追踪弹",
+  "root": "projectile",
+  "nodes": [
+    {
+      "id": "projectile",
+      "kind": "projectile",
+      "runtimeId": 4006,
+      "enabled": true,
+      "parameters": {
+        "speed": 3,
+        "range": 0,
+        "lifetime": 100,
+        "radius": 0.1,
+        "spawnForward": 0.4,
+        "sameTargetDelay": 0.1,
+        "passInvulnerable": true,
+        "homingRate": 36000,
+        "homingRadius": 14,
+        "view": "buff_projectile_normal_view"
+      }
+    },
+    {
+      "id": "damage",
+      "kind": "damage",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "flat": 0,
+        "coefficient": 1,
+        "canCrit": true,
+        "critChance": 0.05,
+        "critMultiplier": 1.8,
+        "notifyHurt": false,
+        "sourceHitstopFrames": 0,
+        "targetHitstopFrames": 2,
+        "feedbackHitstop": true
+      }
+    },
+    {
+      "id": "damage-hurt",
+      "kind": "hurt-feedback",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "level": "damage",
+        "requireHpDamage": false
+      }
+    },
+    {
+      "id": "hit-cue",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "id": 4204,
+        "name": "OriginalCue4204",
+        "center": "target",
+        "anchor": "Body"
+      }
+    },
+    {
+      "id": "expiry-cue",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "id": 4204,
+        "name": "OriginalCue4204",
+        "center": "point"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "hit-damage",
+      "source": "projectile",
+      "sourcePort": "hit",
+      "target": "damage",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "damage-hurt-edge",
+      "source": "damage",
+      "sourcePort": "next",
+      "target": "damage-hurt",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "damage-hurt-next-hit-cue",
+      "source": "damage-hurt",
+      "sourcePort": "next",
+      "target": "hit-cue",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "projectile-lifetime-expiry-cue",
+      "source": "projectile",
+      "sourcePort": "lifetime",
+      "target": "expiry-cue",
+      "targetPort": "execute",
+      "order": 0
+    }
+  ]
+}

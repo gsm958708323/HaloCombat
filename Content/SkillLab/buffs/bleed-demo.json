@@ -1,0 +1,48 @@
+{
+  "id": "bleed-demo",
+  "runtimeId": 8099,
+  "name": "流血",
+  "permanent": false,
+  "duration": 1.65,
+  "interval": 0.4,
+  "stack": "refresh",
+  "maxStacks": 1,
+  "mutexGroup": 0,
+  "tags": [],
+  "modifiers": [],
+  "nodes": [
+    {
+      "id": "events",
+      "kind": "buff-events",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {}
+    },
+    {
+      "id": "period-damage",
+      "kind": "damage",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "flat": 12,
+        "coefficient": 0,
+        "critChance": 0,
+        "critMultiplier": 1.8,
+        "ignoreDefense": false,
+        "hitstopFrames": 0,
+        "scaleByStacks": false,
+        "notifyHurt": false
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "period",
+      "source": "events",
+      "sourcePort": "period",
+      "target": "period-damage",
+      "targetPort": "execute",
+      "order": 0
+    }
+  ]
+}

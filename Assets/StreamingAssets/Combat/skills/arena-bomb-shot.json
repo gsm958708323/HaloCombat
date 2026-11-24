@@ -1,0 +1,66 @@
+{
+  "id": "arena-bomb-shot",
+  "runtimeId": 2007,
+  "name": "弹跳与延迟炸弹",
+  "category": "Arena 原技能",
+  "nodes": [
+    {
+      "id": "target",
+      "kind": "target",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "facing",
+        "range": 20
+      }
+    },
+    {
+      "id": "cast",
+      "kind": "cast",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "instant",
+        "cost": 0,
+        "cooldown": 0
+      }
+    },
+    {
+      "id": "projectile",
+      "kind": "projectile-ref",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "projectile": "arena-bomb-projectile",
+        "count": 1,
+        "spread": 0
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "target-target-cast-0",
+      "source": "target",
+      "sourcePort": "target",
+      "target": "cast",
+      "targetPort": "target",
+      "order": 0
+    }
+  ],
+  "timeline": {
+    "runtimeId": 3007,
+    "duration": 0.5,
+    "animation": "Fire",
+    "clips": [],
+    "payloads": [
+      {
+        "id": "throw",
+        "time": 0.1,
+        "repeatInterval": 0.0,
+        "effects": [
+          "projectile"
+        ]
+      }
+    ]
+  }
+}

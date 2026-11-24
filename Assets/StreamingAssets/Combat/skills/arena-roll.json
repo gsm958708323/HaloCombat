@@ -1,0 +1,159 @@
+{
+  "id": "arena-roll",
+  "runtimeId": 2002,
+  "name": "原翻滚与减伤",
+  "category": "Arena 原技能",
+  "nodes": [
+    {
+      "id": "target",
+      "kind": "target",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "facing",
+        "range": 20
+      }
+    },
+    {
+      "id": "cast",
+      "kind": "cast",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "instant",
+        "cost": 0,
+        "cooldown": 0
+      }
+    },
+    {
+      "id": "roll-start",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "id": 4203,
+        "name": "RollFire",
+        "center": "source",
+        "playback": "start",
+        "instanceKey": "roll_fire",
+        "stopWithCast": true,
+        "anchor": "Body"
+      }
+    },
+    {
+      "id": "guard",
+      "kind": "buff",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "buff": "arena-roll-guard",
+        "stacks": 1,
+        "recipient": "self"
+      }
+    },
+    {
+      "id": "roll-stop",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "id": 4203,
+        "name": "RollFire",
+        "center": "source",
+        "playback": "stop",
+        "instanceKey": "roll_fire",
+        "anchor": "Body"
+      }
+    },
+    {
+      "id": "roll-end",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "id": 4208,
+        "name": "RollEnd",
+        "center": "source",
+        "anchor": "Body"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "target-target-cast-0",
+      "source": "target",
+      "sourcePort": "target",
+      "target": "cast",
+      "targetPort": "target",
+      "order": 0
+    }
+  ],
+  "timeline": {
+    "runtimeId": 3002,
+    "duration": 0.9,
+    "animation": "Roll",
+    "controlTags": [
+      1011,
+      1012
+    ],
+    "clips": [
+      {
+        "id": "iframe",
+        "kind": "iframe",
+        "start": 0.1,
+        "end": 0.8,
+        "moveX": 0.0,
+        "moveY": 0.0,
+        "moveZ": 0.0,
+        "steer": 0.0,
+        "hitRadius": 0.0,
+        "hitOffsetX": 0.0,
+        "hitOffsetY": 0.0,
+        "hitOffsetZ": 0.0,
+        "effects": []
+      },
+      {
+        "id": "move",
+        "kind": "move",
+        "start": 0.2,
+        "end": 0.8,
+        "moveX": 2.0,
+        "moveY": 0.0,
+        "moveZ": 0.0,
+        "steer": 0.0,
+        "hitRadius": 0.0,
+        "hitOffsetX": 0.0,
+        "hitOffsetY": 0.0,
+        "hitOffsetZ": 0.0,
+        "effects": []
+      }
+    ],
+    "payloads": [
+      {
+        "id": "start",
+        "time": 0.0,
+        "repeatInterval": 0.0,
+        "effects": [
+          "roll-start"
+        ]
+      },
+      {
+        "id": "guard",
+        "time": 0.1,
+        "repeatInterval": 0.0,
+        "effects": [
+          "guard"
+        ]
+      },
+      {
+        "id": "end",
+        "time": 0.8,
+        "repeatInterval": 0.0,
+        "effects": [
+          "roll-stop",
+          "roll-end"
+        ]
+      }
+    ]
+  }
+}

@@ -1,59 +1,118 @@
 namespace Combat.Core
 {
-    public enum HitFeedbackLevel : byte { None, Light, ComboConfirm, Heavy, Finisher }
-
-    public static class HitFeedbackRules
+    public readonly struct EvBuffLifecycle
     {
-        public static HitFeedbackLevel ForSkill(SkillNodeId skill)
-        {
-            switch (skill.Value)
-            {
-                case 2001: return HitFeedbackLevel.Light;
-                case 2012: return HitFeedbackLevel.ComboConfirm;
-                case 2013: return HitFeedbackLevel.Finisher;
-                case 2003:
-                case 2005:
-                case 2007:
-                case 2008: return HitFeedbackLevel.Heavy;
-                default: return HitFeedbackLevel.None;
-            }
-        }
-
-        public static int TargetFrames(HitFeedbackLevel level, int hitIndex = 0)
-        {
-            switch (level)
-            {
-                case HitFeedbackLevel.Finisher: return 4;
-                case HitFeedbackLevel.Heavy: return 3;
-                case HitFeedbackLevel.ComboConfirm: return hitIndex >= 2 ? 3 : 2;
-                case HitFeedbackLevel.Light: return 2;
-                default: return 0;
-            }
-        }
-
-        public static int SourceFrames(HitFeedbackLevel level)
-        {
-            switch (level)
-            {
-                case HitFeedbackLevel.Finisher: return 2;
-                case HitFeedbackLevel.ComboConfirm: return 1;
-                case HitFeedbackLevel.Light: return 1;
-                default: return 0;
-            }
-        }
+        public readonly EntityId Owner,Source,AppliedBy;
+        public readonly int BuffId,InstanceId,Stacks;
+        public readonly BuffEventKind Kind;
+        public readonly BuffRemovalReason Reason;
+        public EvBuffLifecycle(EntityId owner,EntityId source,EntityId appliedBy,int buffId,int instanceId,int stacks,BuffEventKind kind,BuffRemovalReason reason=default)
+        {Owner=owner;Source=source;AppliedBy=appliedBy;BuffId=buffId;InstanceId=instanceId;Stacks=stacks;Kind=kind;Reason=reason;}
     }
 
-    public readonly struct CastId : System.IEquatable<CastId>
+    public readonly struct EvSkillStarted
     {
-        public readonly EntityId Owner;
+        public readonly EntityId Source;
+        public readonly SkillNodeId Skill;
+        public EvSkillStarted(EntityId source,SkillNodeId skill){Source=source;Skill=skill;}
+    }
+    public enum SummonEventKind {Spawned,Expired,OwnerRemoved,Killed,Removed,Rejected}
+    public readonly struct EvSummonLifecycle
+    {
+        public readonly EntityId Id,Owner;
+        public readonly int SpecId;
+        public readonly SummonEventKind Kind;
+        public readonly string Detail;
+        public EvSummonLifecycle(EntityId id,EntityId owner,int specId,SummonEventKind kind,string detail=null)
+        {Id=id;Owner=owner;SpecId=specId;Kind=kind;Detail=detail;}
+    }
+
+    public readonly struct EvObstacleHit
+    {
+        public readonly EntityId Source,Body;
+        public readonly string Obstacle,Kind;
+        public readonly SimVec3 Point,Normal;
+        public EvObstacleHit(EntityId source,EntityId body,string obstacle,SimVec3 point,SimVec3 normal,string kind)
+        {Source=source;Body=body;Obstacle=obstacle;Point=point;Normal=normal;Kind=kind;}
+    }
+    public readonly struct EvRayResolved
+    {
+        public readonly EntityId Source;
+        public readonly SimVec3 From,To;
+        public readonly float Width;
+        public readonly int Hits;
+        public EvRayResolved(EntityId source,SimVec3 from,SimVec3 to,float width,int hits)
+        {Source=source;From=from;To=to;Width=width;Hits=hits;}
+    }
+    public readonly struct EvProjectileBehavior
+    {
+        public readonly EntityId Source,Projectile,Target;
+        public readonly string Kind;
+        public readonly SimVec3 Point;
+        public readonly int Count,Generation;
+        public readonly SkillOrigin Origin;
+        public EvProjectileBehavior(EntityId source,EntityId projectile,string kind,SimVec3 point,EntityId target,int count,int generation,SkillOrigin origin)
+        {Source=source;Projectile=projectile;Kind=kind;Point=point;Target=target;Count=count;Generation=generation;Origin=origin;}
+    }
+    public enum ProjectileEndReason {HitLimit,Wall,Range,Lifetime,ChainExhausted,Returned,Ground,Absorbed}
+    public readonly struct EvProjectileEnded
+    {
+        public readonly EntityId Source,Id;
+        public readonly ProjectileEndReason Reason;
+        public readonly SimVec3 Point;
+        public EvProjectileEnded(EntityId source,EntityId id,ProjectileEndReason reason,SimVec3 point)
+        {Source=source;Id=id;Reason=reason;Point=point;}
+    }
+
+    public readonly struct EvSpatialVolume
+    {
+        public readonly EntityId Source;
         public readonly int Sequence;
-        public bool IsValid => Owner.IsValid && Sequence > 0;
-        public CastId(EntityId owner, int sequence) { Owner = owner; Sequence = sequence; }
-        public bool Equals(CastId other) => Owner == other.Owner && Sequence == other.Sequence;
-        public override bool Equals(object obj) => obj is CastId other && Equals(other);
-        public override int GetHashCode() => HitboxComp.Pack(Owner).GetHashCode() ^ Sequence;
-        public static bool operator ==(CastId left, CastId right) => left.Equals(right);
-        public static bool operator !=(CastId left, CastId right) => !left.Equals(right);
+        public readonly SimVec3 Origin;
+        public readonly float Yaw,Length,Width,Angle,Progress;
+        public readonly HitShape Shape;
+        public readonly bool Closed;
+        public readonly int DiagnosticSite;
+        public readonly SkillOrigin SkillOrigin;
+        public EvSpatialVolume(EntityId source,int sequence,SimVec3 origin,float yaw,HitShape shape,float length,float width,float angle,bool closed,int diagnosticSite=0,SkillOrigin skillOrigin=default,float progress=0)
+        { Source=source;Sequence=sequence;Origin=origin;Yaw=yaw;Shape=shape;Length=length;Width=width;Angle=angle;Closed=closed;DiagnosticSite=diagnosticSite;SkillOrigin=skillOrigin;Progress=progress; }
+    }
+
+    public readonly struct EvAreaResolved
+    {
+        public readonly EntityId Source;
+        public readonly SimVec3 Point;
+        public readonly float Radius;
+        public readonly int TargetCount;
+        public EvAreaResolved(EntityId source, SimVec3 point, float radius, int targetCount)
+        { Source = source; Point = point; Radius = radius; TargetCount = targetCount; }
+    }
+
+    public enum AoeEventKind { Pulse, Enter, Exit, Stay, Expired, Removed }
+    public readonly struct EvAoeLifecycle
+    {
+        public readonly EntityId Id, Source, Target;
+        public readonly AoeEventKind Kind;
+        public EvAoeLifecycle(EntityId id, EntityId source, EntityId target, AoeEventKind kind)
+        { Id = id; Source = source; Target = target; Kind = kind; }
+    }
+
+    public readonly struct EvSkillReleased
+    {
+        public readonly EntityId Source;
+        public readonly SkillNodeId Skill;
+        public readonly float Power;
+        public EvSkillReleased(EntityId source, SkillNodeId skill, float power) { Source = source; Skill = skill; Power = power; }
+    }
+
+    public readonly struct EvSkillEnded
+    {
+        public readonly EntityId Source;
+        public readonly SkillNodeId Skill;
+        public readonly DirectorStopReason Reason;
+        public readonly SkillOrigin Origin;
+        public EvSkillEnded(EntityId source, SkillNodeId skill, DirectorStopReason reason,SkillOrigin origin=default)
+        { Source = source; Skill = skill; Reason = reason;Origin=origin; }
     }
 
     public readonly struct EvEntitySpawn
@@ -61,70 +120,38 @@ namespace Combat.Core
         public readonly EntityId Id;
         public readonly string BlueprintId;
         public readonly EntityId Owner;
-        public readonly string ViewBlueprintId;
+        public readonly string ViewKey;
 
-        public EvEntitySpawn(EntityId id, string blueprintId, EntityId owner, string viewBlueprintId = null)
+        public EvEntitySpawn(EntityId id, string blueprintId, EntityId owner,string viewKey=null)
         {
             Id = id;
             BlueprintId = blueprintId ?? string.Empty;
             Owner = owner;
-            ViewBlueprintId = viewBlueprintId ?? string.Empty;
+            ViewKey=viewKey;
         }
     }
 
+    public enum CuePlayback {Once,Start,Stop}
     public readonly struct EvCue
     {
         public readonly int CueId;
         public readonly EntityId Source;
         public readonly string Name;
-        public readonly EntityId Target;
         public readonly SimVec3 Point;
         public readonly bool HasPoint;
-        public readonly string AnchorKey;
+        public readonly CuePlayback Playback;
         public readonly string InstanceKey;
-        public readonly bool Loop;
-        public readonly bool Stop;
-
-        public EvCue(int cueId, EntityId source, string name)
-            : this(cueId, source, name, EntityId.Invalid, SimVec3.Zero, false, string.Empty, string.Empty, false, false)
-        {
-        }
-
-        public EvCue(int cueId, EntityId source, string name, EntityId target, in SimVec3 point,
-            bool hasPoint, string anchorKey, string instanceKey, bool loop, bool stop)
+        public readonly bool StopWithCast;
+        public readonly SkillOrigin Origin;
+        public readonly string Anchor;
+        public EvCue(int cueId, EntityId source, string name,SimVec3? point=null,CuePlayback playback=CuePlayback.Once,string instanceKey=null,bool stopWithCast=false,SkillOrigin origin=default,string anchor=null)
         {
             CueId = cueId;
             Source = source;
             Name = name ?? string.Empty;
-            Target = target;
-            Point = point;
-            HasPoint = hasPoint;
-            AnchorKey = anchorKey ?? string.Empty;
-            InstanceKey = instanceKey ?? string.Empty;
-            Loop = loop;
-            Stop = stop;
-        }
-    }
-
-    public readonly struct EvHurt
-    {
-        public readonly EntityId Target;
-        public readonly HitFeedbackLevel Feedback;
-        public EvHurt(EntityId target, HitFeedbackLevel feedback = HitFeedbackLevel.Light)
-        {
-            Target = target;
-            Feedback = feedback;
-        }
-    }
-
-    public readonly struct EvGameplayMessage
-    {
-        public readonly EntityId Target;
-        public readonly string Text;
-        public EvGameplayMessage(EntityId target, string text)
-        {
-            Target = target;
-            Text = text ?? string.Empty;
+            Point=point??default;HasPoint=point.HasValue;
+            Playback=playback;InstanceKey=instanceKey;StopWithCast=stopWithCast;Origin=origin;
+            Anchor=anchor;
         }
     }
 
@@ -136,13 +163,9 @@ namespace Combat.Core
         public readonly bool IsCrit;
         public readonly float ShieldAbsorb;
         public readonly bool IsKill;
-        public readonly CastId CastId;
-        public readonly SkillNodeId Skill;
-        public readonly HitFeedbackLevel Feedback;
-        public readonly int HitIndex;
-        public EvDamage(EntityId source, EntityId target, float amount, bool isCrit, float shieldAbsorb, bool isKill,
-            CastId castId = default, SkillNodeId skill = default, HitFeedbackLevel feedback = HitFeedbackLevel.None,
-            int hitIndex = 0)
+        public readonly SkillOrigin Origin;
+        public readonly DamageResult Result;
+        public EvDamage(EntityId source, EntityId target, float amount, bool isCrit, float shieldAbsorb, bool isKill,SkillOrigin origin=default,DamageResult result=null)
         {
             Source = source;
             Target = target;
@@ -150,10 +173,8 @@ namespace Combat.Core
             IsCrit = isCrit;
             ShieldAbsorb = shieldAbsorb;
             IsKill = isKill;
-            CastId = castId;
-            Skill = skill;
-            Feedback = feedback;
-            HitIndex = hitIndex;
+            Origin=origin;
+            Result=result;
         }
     }
 
@@ -168,21 +189,29 @@ namespace Combat.Core
         }
     }
 
+    public enum HitstopScope {World,Actors}
     public readonly struct EvHitstop
     {
         public readonly EntityId Source;
         public readonly EntityId Target;
-        public readonly int SourceFrames;
-        public readonly int TargetFrames;
-        public int LogicFrames => System.Math.Max(SourceFrames, TargetFrames);
+        public readonly int LogicFrames;
+        public readonly bool FreezeSource;
+        public readonly bool FreezeTarget;
+        public readonly int SourceFrames,TargetFrames;
+        public readonly HitstopScope Scope;
         public int Frames => LogicFrames;
-        public bool FreezeSource => SourceFrames > 0;
-        public bool FreezeTarget => TargetFrames > 0;
-        public EvHitstop(EntityId source, EntityId target, int sourceFrames, int targetFrames)
+
+        public EvHitstop(EntityId source, EntityId target, int logicFrames)
         {
-            Source = source; Target = target;
-            SourceFrames = sourceFrames; TargetFrames = targetFrames;
+            Source = source;
+            Target = target;
+            LogicFrames = logicFrames;
+            FreezeSource = true;
+            FreezeTarget = true;
+            SourceFrames=TargetFrames=logicFrames;Scope=HitstopScope.World;
         }
+        public EvHitstop(EntityId source,EntityId target,int sourceFrames,int targetFrames)
+        {Source=source;Target=target;SourceFrames=sourceFrames;TargetFrames=targetFrames;LogicFrames=System.Math.Max(sourceFrames,targetFrames);FreezeSource=sourceFrames>0;FreezeTarget=targetFrames>0;Scope=HitstopScope.Actors;}
     }
 
     public readonly struct EvHeal

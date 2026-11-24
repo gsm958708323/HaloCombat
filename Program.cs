@@ -8,8 +8,8 @@ namespace Combat
     {
         static int Main(string[] args)
         {
-            NoPopup.Arm();
             CombatLog.SetSink(new ConsoleLogSink());
+            if(args!=null&&args.Length>0&&args[0]=="json")return RuntimeContentCli.Run(args);
             string which;
             string category;
             int parseResult = ParseArguments(args, out which, out category);
@@ -17,22 +17,6 @@ namespace Combat
                 return parseResult;
 
             CombatLog.SetCategoryFilter(category);
-            try
-            {
-                return RunDemo(which);
-            }
-            catch (Exception e)
-            {
-                // A failing demo must fail through the log and the exit code. An
-                // unhandled exception makes the CLR abort the process, which pops a
-                // Windows Error Reporting dialog (0xE0434352) and hangs unattended runs.
-                Console.Error.WriteLine("DEMO FAILED: " + e);
-                return 1;
-            }
-        }
-
-        static int RunDemo(string which)
-        {
             switch (which)
             {
                 case "tag": TagInputDemo.Run(); break;
@@ -49,25 +33,12 @@ namespace Combat
                 case "perc": PerceptionDemo.Run(); break;
                 case "enemy": EnemyAiDemo.Run(); break;
                 case "summon": SummonDemo.Run(); break;
-                case "clock": ClockDemo.Run(); break;
-                case "spawn": SpawnEventDemo.Run(); break;
-                case "lesson": SeasonThreeLessonDemo.Run(); break;
                 case "season2":
-                case "s2":
-                    SeasonTwoDemo.Run();
-                    break;
-                case "present-season":
-                case "regress":
-                    SeasonTwoDemo.Regression();
-                    break;
-                case "all":
-                    SeasonTwoDemo.Regression();
-                    break;
-                case "season":
-                    SeasonOneDemo.Run();
-                    break;
+                case "s2": SeasonTwoDemo.Run(); break;
+                case "all": SeasonTwoDemo.RunAllTeachingDemos(); break;
+                case "season": SeasonOneDemo.Run(); break;
                 default:
-                    Console.Error.WriteLine("Unknown demo '" + which + "'.");
+                    Console.Error.WriteLine("Unknown demo command: " + which);
                     return 2;
             }
 
@@ -132,38 +103,6 @@ namespace Combat
 
             category = canonical;
             return 0;
-        }
-    }
-
-    /// <summary>
-    /// Windows-only crash-dialog guard for unattended demo runs. A managed exception
-    /// that escapes the entry point, or a native fault, otherwise raises the JIT
-    /// debugger prompt and the "application error" box, which hangs automation until
-    /// somebody clicks it. Failures must show up as log lines plus a non-zero exit
-    /// code instead.
-    /// </summary>
-    internal static class NoPopup
-    {
-        const uint SemFailCriticalErrors = 0x0001;
-        const uint SemNoGpFaultErrorBox = 0x0002;
-        const uint SemNoOpenFileErrorBox = 0x8000;
-
-        [System.Runtime.InteropServices.DllImport("kernel32.dll")]
-        static extern uint SetErrorMode(uint mode);
-
-        internal static void Arm()
-        {
-            if (!System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(
-                    System.Runtime.InteropServices.OSPlatform.Windows))
-                return;
-            try
-            {
-                SetErrorMode(SemFailCriticalErrors | SemNoGpFaultErrorBox | SemNoOpenFileErrorBox);
-            }
-            catch (Exception)
-            {
-                // Best effort: the guard itself must never break a demo run.
-            }
         }
     }
 }

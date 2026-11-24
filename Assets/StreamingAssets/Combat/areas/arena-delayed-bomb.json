@@ -1,0 +1,63 @@
+{
+  "id": "arena-delayed-bomb",
+  "name": "延迟地面炸弹",
+  "root": "area",
+  "nodes": [
+    {
+      "id": "area",
+      "kind": "delivery",
+      "runtimeId": 4105,
+      "enabled": true,
+      "parameters": {
+        "mode": "area",
+        "persistent": true,
+        "radius": 0.1,
+        "duration": 3,
+        "interval": 0.45,
+        "pulseOnSpawn": true,
+        "removeOnObstacle": false,
+        "view": "buff_aoe_stayingbomb_view"
+      }
+    },
+    {
+      "id": "explosion",
+      "kind": "area-ref",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "area": "arena-bomb-explosion",
+        "center": "auto",
+        "forwardOffset": 0
+      }
+    },
+    {
+      "id": "burn",
+      "kind": "area-ref",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "area": "arena-bomb-fire",
+        "center": "auto",
+        "forwardOffset": 0
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "area-expire-explosion-0",
+      "source": "area",
+      "sourcePort": "expire",
+      "target": "explosion",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "area-expire-burn-1",
+      "source": "area",
+      "sourcePort": "expire",
+      "target": "burn",
+      "targetPort": "execute",
+      "order": 1
+    }
+  ]
+}

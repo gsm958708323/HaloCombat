@@ -1,0 +1,96 @@
+{
+  "id": "arena-return-burn",
+  "runtimeId": 5102,
+  "name": "回旋灼烧",
+  "permanent": false,
+  "duration": 3.0,
+  "interval": 0.5,
+  "stack": "add",
+  "maxStacks": 3,
+  "mutexGroup": 0,
+  "tags": [],
+  "modifiers": [],
+  "nodes": [
+    {
+      "id": "events",
+      "kind": "buff-events",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {}
+    },
+    {
+      "id": "period",
+      "kind": "damage",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "flat": 0,
+        "coefficient": 0.06,
+        "canCrit": false,
+        "snapshotAttack": false,
+        "scaleByStacks": true,
+        "notifyHurt": false,
+        "feedback": "none"
+      }
+    },
+    {
+      "id": "status-visual",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "id": 4210,
+        "name": "StatusVisual",
+        "center": "target",
+        "anchor": "Body",
+        "playback": "start",
+        "instanceKey": "buff_5102",
+        "stopWithCast": false,
+        "stacksAsTier": true,
+        "maxTier": 3
+      }
+    },
+    {
+      "id": "status-visual-stop",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "id": 4210,
+        "name": "StatusVisual",
+        "center": "target",
+        "anchor": "Body",
+        "playback": "stop",
+        "instanceKey": "buff_5102",
+        "stacksAsTier": true,
+        "maxTier": 3
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "events-period-period",
+      "source": "events",
+      "sourcePort": "period",
+      "target": "period",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "events-apply-status-visual-1",
+      "source": "events",
+      "sourcePort": "apply",
+      "target": "status-visual",
+      "targetPort": "execute",
+      "order": 1
+    },
+    {
+      "id": "events-removed-status-visual-stop-0",
+      "source": "events",
+      "sourcePort": "removed",
+      "target": "status-visual-stop",
+      "targetPort": "execute",
+      "order": 0
+    }
+  ]
+}

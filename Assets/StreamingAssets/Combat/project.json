@@ -1,0 +1,69 @@
+{
+  "formatVersion": 1,
+  "id": "halo-combat-runtime",
+  "name": "HaloCombat 正式战斗内容",
+  "files": {
+    "skills": [
+      "skills/g1.json",
+      "skills/g2.json",
+      "skills/dodge.json",
+      "skills/homing.json",
+      "skills/aura.json",
+      "skills/summon-melee.json",
+      "skills/arena-ammo-shot.json",
+      "skills/arena-reload-ammo.json",
+      "skills/arena-tracked-shot.json",
+      "skills/arena-projectile-warp.json",
+      "skills/arena-barrel.json",
+      "skills/arena-controlled-shot.json",
+      "skills/arena-absorbing-orb.json",
+      "skills/arena-combo-second.json",
+      "skills/arena-combo-finisher.json",
+      "skills/arena-double-shot.json",
+      "skills/arena-homing-shot.json",
+      "skills/arena-enemy-shot.json",
+      "skills/arena-returning-shot.json",
+      "skills/arena-bomb-shot.json",
+      "skills/arena-roll.json"
+    ],
+    "timelines": [
+      "timelines/arena-confirmed-shot.json"
+    ],
+    "projectiles": [
+      "projectiles/arena-normal-projectile.json",
+      "projectiles/arena-confirmed-projectile.json",
+      "projectiles/arena-enemy-projectile.json",
+      "projectiles/arena-homing-projectile.json",
+      "projectiles/arena-returning-projectile.json",
+      "projectiles/arena-bomb-projectile.json"
+    ],
+    "areas": [
+      "areas/arena-bomb-explosion.json",
+      "areas/arena-delayed-bomb.json",
+      "areas/arena-bomb-fire.json",
+      "areas/arena-absorbing-shield.json",
+      "areas/arena-black-hole.json"
+    ],
+    "buffs": [
+      "buffs/burn.json",
+      "buffs/aura-slow.json",
+      "buffs/arena-vulnerability.json",
+      "buffs/arena-return-burn.json",
+      "buffs/arena-roll-guard.json",
+      "buffs/arena-ground-burn.json"
+    ],
+    "summonBlueprints": [
+      "summonBlueprints/summon.json"
+    ],
+    "preview": "preview.json",
+    "editor": "editor.json",
+    "runtime": {
+      "motor": "runtime/motor.json",
+      "combos": "runtime/combos.json",
+      "actors": "runtime/actors.json",
+      "cues": "runtime/cues.json",
+      "views": "runtime/views.json",
+      "arena": "runtime/arena.json"
+    }
+  }
+}

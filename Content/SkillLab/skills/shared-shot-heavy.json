@@ -1,0 +1,42 @@
+{
+  "id": "shared-shot-heavy",
+  "runtimeId": 2046,
+  "name": "共享动作重弹",
+  "category": "共享动作",
+  "nodes": [
+    {
+      "id": "target",
+      "kind": "target",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "point",
+        "range": 20
+      }
+    },
+    {
+      "id": "cast",
+      "kind": "cast",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "instant",
+        "cost": 0,
+        "cooldown": 0,
+        "ammoCost": 2,
+        "hitFeedback": "finisher"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "target-target-cast",
+      "source": "target",
+      "sourcePort": "target",
+      "target": "cast",
+      "targetPort": "target",
+      "order": 0
+    }
+  ],
+  "timelineRef": "shared-impact-shot"
+}

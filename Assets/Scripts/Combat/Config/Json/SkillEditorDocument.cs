@@ -1,0 +1,41 @@
+using System;
+
+namespace Combat.Config
+{
+    // Authoring-only metadata. Runtime publication deliberately omits this object.
+    public sealed class SkillEditorDocument
+    {
+        public string SelectedSkill {get;set;}
+        public string SelectedBuff {get;set;}
+        [Newtonsoft.Json.JsonProperty(NullValueHandling=Newtonsoft.Json.NullValueHandling.Ignore)]public string SelectedTimeline {get;set;}
+        [Newtonsoft.Json.JsonProperty(NullValueHandling=Newtonsoft.Json.NullValueHandling.Ignore)]public string SelectedProjectile {get;set;}
+        [Newtonsoft.Json.JsonProperty(NullValueHandling=Newtonsoft.Json.NullValueHandling.Ignore)]public string SelectedArea {get;set;}
+        public GraphViewportDocument[] Viewports {get;set;}=Array.Empty<GraphViewportDocument>();
+        [Newtonsoft.Json.JsonProperty(NullValueHandling=Newtonsoft.Json.NullValueHandling.Ignore)]public ComboPositionDocument[] ComboPositions {get;set;}
+        [Newtonsoft.Json.JsonProperty(NullValueHandling=Newtonsoft.Json.NullValueHandling.Ignore)]public ComboViewDocument[] ComboViews {get;set;}
+        [Newtonsoft.Json.JsonProperty(NullValueHandling=Newtonsoft.Json.NullValueHandling.Ignore)]public string[] ComboCancelRuleIds {get;set;}
+    }
+    public sealed class ComboPositionDocument
+    {
+        public string SkillId {get;set;}
+        public float X {get;set;}
+        public float Y {get;set;}
+    }
+    public sealed class ComboViewDocument
+    {
+        public string Id {get;set;}
+        public string Name {get;set;}
+        public string RootSkill {get;set;}
+        public string[] RuleIds {get;set;}=Array.Empty<string>();
+        public ComboPositionDocument[] Positions {get;set;}=Array.Empty<ComboPositionDocument>();
+    }
+
+    public sealed class GraphViewportDocument
+    {
+        public string Kind {get;set;}
+        public string Id {get;set;}
+        public float X {get;set;}
+        public float Y {get;set;}
+        public float Zoom {get;set;}=1;
+    }
+}

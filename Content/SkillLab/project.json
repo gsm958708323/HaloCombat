@@ -1,0 +1,81 @@
+{
+  "formatVersion": 1,
+  "id": "halo-skill-lab",
+  "name": "HaloCombat 技能实验室",
+  "files": {
+    "skills": [
+      "skills/basic-shot.json",
+      "skills/burst-shot.json",
+      "skills/held-spray.json",
+      "skills/charged-shot.json",
+      "skills/explosive-shot.json",
+      "skills/ground-field.json",
+      "skills/direct-hit.json",
+      "skills/melee-thrust.json",
+      "skills/melee-fan.json",
+      "skills/melee-whirl.json",
+      "skills/dash-strike.json",
+      "skills/blink-strike.json",
+      "skills/ray-shot.json",
+      "skills/piercing-ray.json",
+      "skills/summon-gunners.json",
+      "skills/summon-blade.json",
+      "skills/burn-shot.json",
+      "skills/cleanse-burn.json",
+      "skills/battle-rage.json",
+      "skills/burning-field.json",
+      "skills/slow-aura.json",
+      "skills/spread-shot.json",
+      "skills/chain-shot.json",
+      "skills/split-shot.json",
+      "skills/fan-channel.json",
+      "skills/accelerating-shot.json",
+      "skills/returning-shot.json",
+      "skills/bouncing-shot.json",
+      "skills/ricochet-shot.json",
+      "skills/homing-shot.json",
+      "skills/event-shot.json",
+      "skills/elemental-shot.json",
+      "skills/shield-self.json",
+      "skills/impact-strike.json",
+      "skills/ammo-shot.json",
+      "skills/reload-ammo.json",
+      "skills/tracked-shot.json",
+      "skills/projectile-warp.json",
+      "skills/barrel-chain.json",
+      "skills/detonate-constructs.json",
+      "skills/actor-hitstop.json",
+      "skills/controlled-shot.json",
+      "skills/absorbing-orb.json",
+      "skills/repeat-contact.json",
+      "skills/shared-shot-light.json",
+      "skills/shared-shot-heavy.json",
+      "skills/sampled-return.json",
+      "skills/phase-bounce.json",
+      "skills/death-shot.json",
+      "skills/behavior-pierce.json",
+      "skills/behavior-chain.json",
+      "skills/flight-time.json",
+      "skills/flight-distance.json",
+      "skills/bleed-validation.json"
+    ],
+    "timelines": [
+      "timelines/shared-impact-shot.json"
+    ],
+    "projectiles": [
+      "projectiles/shared-impact-projectile.json"
+    ],
+    "buffs": [
+      "buffs/burn.json",
+      "buffs/battle-rage.json",
+      "buffs/aura-slow.json",
+      "buffs/bleed-demo.json"
+    ],
+    "summonBlueprints": [
+      "summonBlueprints/echo-gunner.json",
+      "summonBlueprints/echo-blade.json"
+    ],
+    "preview": "preview.json",
+    "editor": "editor.json"
+  }
+}

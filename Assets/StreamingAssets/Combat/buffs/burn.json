@@ -1,0 +1,46 @@
+{
+  "id": "burn",
+  "runtimeId": 1,
+  "name": "灼烧",
+  "permanent": false,
+  "duration": 3.0,
+  "interval": 1.0,
+  "stack": "add",
+  "maxStacks": 3,
+  "mutexGroup": 0,
+  "tags": [],
+  "modifiers": [],
+  "nodes": [
+    {
+      "id": "events",
+      "kind": "buff-events",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {}
+    },
+    {
+      "id": "period",
+      "kind": "damage",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "flat": 0,
+        "coefficient": 0.2,
+        "critChance": 0,
+        "critMultiplier": 2,
+        "scaleByStacks": true,
+        "canCrit": false
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "events-period-period-0",
+      "source": "events",
+      "sourcePort": "period",
+      "target": "period",
+      "targetPort": "execute",
+      "order": 0
+    }
+  ]
+}

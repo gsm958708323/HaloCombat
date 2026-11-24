@@ -1,0 +1,64 @@
+{
+  "id": "reload-ammo",
+  "runtimeId": 2036,
+  "name": "换弹 · 1.1秒补充",
+  "category": "弹药与重施放",
+  "nodes": [
+    {
+      "id": "target",
+      "kind": "target",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "facing",
+        "range": 20
+      }
+    },
+    {
+      "id": "cast",
+      "kind": "cast",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "instant",
+        "cost": 0,
+        "cooldown": 0
+      }
+    },
+    {
+      "id": "refill",
+      "kind": "refill-ammo",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "amount": 60,
+        "recipient": "self"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "target-cast",
+      "source": "target",
+      "sourcePort": "target",
+      "target": "cast",
+      "targetPort": "target",
+      "order": 0
+    }
+  ],
+  "timeline": {
+    "runtimeId": 3036,
+    "duration": 1.15,
+    "clips": [],
+    "payloads": [
+      {
+        "id": "payload",
+        "time": 1.1,
+        "repeatInterval": 0.0,
+        "effects": [
+          "refill"
+        ]
+      }
+    ]
+  }
+}

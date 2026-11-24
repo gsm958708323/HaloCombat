@@ -1,0 +1,80 @@
+{
+  "id": "shield-self",
+  "runtimeId": 2033,
+  "name": "护盾自身",
+  "category": "结算与事件",
+  "nodes": [
+    {
+      "id": "target",
+      "kind": "target",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "self",
+        "range": 20
+      }
+    },
+    {
+      "id": "cast",
+      "kind": "cast",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "instant",
+        "cost": 10,
+        "cooldown": 0.7,
+        "delay": 0.1,
+        "duration": 0.3,
+        "count": 1,
+        "interval": 0.1
+      }
+    },
+    {
+      "id": "delivery",
+      "kind": "delivery",
+      "runtimeId": 6014,
+      "enabled": true,
+      "parameters": {
+        "mode": "target",
+        "recipient": "target"
+      }
+    },
+    {
+      "id": "damage",
+      "kind": "impact",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "shield",
+        "recipient": "self",
+        "amount": 200
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "target-cast",
+      "source": "target",
+      "sourcePort": "target",
+      "target": "cast",
+      "targetPort": "target",
+      "order": 0
+    },
+    {
+      "id": "cast-delivery",
+      "source": "cast",
+      "sourcePort": "cast",
+      "target": "delivery",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "hit-damage",
+      "source": "delivery",
+      "sourcePort": "apply",
+      "target": "damage",
+      "targetPort": "execute",
+      "order": 0
+    }
+  ]
+}

@@ -1,0 +1,106 @@
+{
+  "id": "arena-confirmed-projectile",
+  "name": "确认连段弹体",
+  "root": "projectile",
+  "nodes": [
+    {
+      "id": "projectile",
+      "kind": "projectile",
+      "runtimeId": 4012,
+      "enabled": true,
+      "parameters": {
+        "speed": 10,
+        "range": 0,
+        "lifetime": 3,
+        "radius": 0.16,
+        "spawnForward": 0.45,
+        "sameTargetDelay": 0.15,
+        "passInvulnerable": true,
+        "view": "buff_projectile_normal_view"
+      }
+    },
+    {
+      "id": "damage",
+      "kind": "damage",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "flat": 0,
+        "coefficient": 1.35,
+        "canCrit": true,
+        "critChance": 0.05,
+        "critMultiplier": 1.8,
+        "snapshotAttack": true,
+        "notifyHurt": false,
+        "sourceHitstopFrames": 2,
+        "targetHitstopFrames": 4
+      }
+    },
+    {
+      "id": "vulnerable",
+      "kind": "buff",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "buff": "arena-vulnerability",
+        "recipient": "target",
+        "stacks": 1
+      }
+    },
+    {
+      "id": "hit-cue",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "id": 4206,
+        "name": "OriginalCue4206",
+        "center": "target",
+        "anchor": "Body"
+      }
+    },
+    {
+      "id": "projectile-pierce",
+      "kind": "pierce",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "maxHits": 4
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "projectile-hit-damage",
+      "source": "projectile",
+      "sourcePort": "hit",
+      "target": "damage",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "damage-next-hit-cue",
+      "source": "damage",
+      "sourcePort": "next",
+      "target": "hit-cue",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "hit-cue-next-vulnerable",
+      "source": "hit-cue",
+      "sourcePort": "next",
+      "target": "vulnerable",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "projectile-hit-projectile-pierce",
+      "source": "projectile",
+      "sourcePort": "hit",
+      "target": "projectile-pierce",
+      "targetPort": "execute",
+      "order": 1
+    }
+  ]
+}

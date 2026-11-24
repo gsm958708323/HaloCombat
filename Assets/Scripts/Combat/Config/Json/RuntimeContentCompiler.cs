@@ -1,0 +1,96 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Combat.Core;
+
+namespace Combat.Config
+{
+    public sealed class RuntimeContentSnapshot
+    {
+        public BakedCombatData Data {get;internal set;}
+        public IReadOnlyDictionary<string,RuntimeActorDefinition> Actors {get;internal set;}
+        public ArenaDefinition Arena {get;internal set;}
+        public IReadOnlyDictionary<string,RuntimeViewDefinition> Views {get;internal set;}
+        public IActorFactory CreateFactory(SkillCatalog skills)=>new RuntimeActorFactory(Data,skills,Actors);
+    }
+    internal static class RuntimeContentCompiler
+    {
+        public static RuntimeContentSnapshot Compile(SkillProjectDocument project,CombatContentSnapshot content)
+        {
+            var source=project.Runtime;if(source==null){if(content.RequiredBodyViews.Count>0)Fail("$.runtime","Body views require a runtime resource catalog.");return null;}
+            string path="$.runtime";
+            var views=RuntimeViewCompiler.Compile(source.Views,project);
+            foreach(string key in content.RequiredBodyViews)if(!views.TryGetValue(key,out var body)||body.Kind!="body")Fail("$.runtime.views["+key+"]","Referenced body view is missing or not a body view.");
+            if(source.Motor==null||source.Actors==null||source.Combos==null||source.Cues==null)Fail(path,"Runtime arrays and motor are required.");
+            if(source.Actors.Length>256||source.Combos.Length>1024||source.Cues.Length>512)Fail(path,"Runtime collection size is invalid.");
+            var m=source.Motor;N(m.Gravity,-1000,-.01f,path+".motor.gravity");N(m.JumpSpeed,.01f,100,path+".motor.jumpSpeed");
+            N(m.AirSteer,0,1,path+".motor.airSteer");N(m.GroundY,-1000,1000,path+".motor.groundY");N(m.StickDeadzone,0,1,path+".motor.stickDeadzone");
+            var combo=RuntimeComboCompiler.Compile(source.Combos,(id,p)=>Skill(content,id,p),(id,p)=>Buff(content,id,p));
+            var cues=new CueLibrary();var cueIds=new HashSet<int>();
+            foreach(var cue in source.Cues)
+            {
+                if(cue==null)Fail(path+".cues","Null cue.");string p=path+".cues["+cue.Id+"]";
+                if(cue.Id<=0||!cueIds.Add(cue.Id)||string.IsNullOrWhiteSpace(cue.Key))Fail(p,"Missing/duplicate cue identity or key.");
+                if(cue.Kind!="cube"&&cue.Kind!="prefab")Fail(p+".kind","Expected cube or prefab.");
+                if(cue.Kind=="prefab"&&string.IsNullOrWhiteSpace(cue.Resource))Fail(p+".resource","Prefab resource key is required.");
+                N(cue.Lifetime,.001f,120,p+".lifetime");
+                cues.Register(new CueDef{CueId=cue.Id,PrefabKey=cue.Key,SfxKey=cue.Sound??"",LifeTime=cue.Lifetime,PresentationKind=cue.Kind,ResourceKey=cue.Resource});
+            }
+            foreach(int cue in content.RequiredCues)if(!cueIds.Contains(cue))Fail("$.runtime.cues["+cue+"]","Referenced Cue is missing.");
+            var data=new BakedCombatData{Combo=new ComboTableDefinition{Entries=combo},Timelines=content.Timelines,Projectiles=content.Projectiles,Aoes=content.Aoes,
+                Summons=content.Summons,Constructs=content.Constructs,Cues=cues,Motor=new MotorConfig{Gravity=m.Gravity,JumpSpeed=m.JumpSpeed,AirSteer=m.AirSteer,GroundY=m.GroundY,StickDeadzone=m.StickDeadzone}};
+            var actors=new Dictionary<string,RuntimeActorDefinition>();
+            foreach(var actor in source.Actors)
+            {
+                if(actor==null)Fail(path+".actors","Null actor.");string p=path+".actors["+actor.Id+"]";
+                if(string.IsNullOrWhiteSpace(actor.Id)||actor.Id=="projectile"||actor.Id=="aoe"||actor.Id=="construct"||actors.ContainsKey(actor.Id))Fail(p+".id","Missing, reserved or duplicate actor identity.");
+                if(Array.IndexOf(new[]{"player","target","ai","summon"},actor.Role)<0)Fail(p+".role","Unknown actor role.");
+                N(actor.Hp,.001f,1000000000,p+".hp");N(actor.Attack,0,10000000,p+".attack");N(actor.Defense,0,10000000,p+".defense");N(actor.MoveSpeed,0,1000,p+".moveSpeed");
+                N(actor.Shield,0,1000000000,p+".shield");N(actor.CritRate,0,1,p+".critRate");N(actor.DamageDealt,0,1000,p+".damageDealt");N(actor.DamageTaken,0,1000,p+".damageTaken");N(actor.CollisionRadius,0,100,p+".collisionRadius");
+                N(actor.ActionSpeed,0,100,p+".actionSpeed");
+                N(actor.InputBufferSeconds,.01f,10,p+".inputBufferSeconds");
+                N(actor.Energy,0,1000000,p+".energy");N(actor.Recovery,0,1000000,p+".recovery");
+                N(actor.Ammo,0,1000000,p+".ammo");N(actor.InitialAmmo??actor.Ammo,0,actor.Ammo,p+".initialAmmo");
+                N(actor.AcquireRadius,.001f,1000,p+".acquireRadius");N(actor.AttackRange,.001f,1000,p+".attackRange");N(actor.FollowRange,0,1000,p+".followRange");N(actor.LeashRange,0,1000,p+".leashRange");N(actor.PatrolRadius,0,1000,p+".patrolRadius");
+                if(actor.Team<0||actor.Team>30)Fail(p+".team","Expected team0..30.");
+                if(actor.Slots==null||actor.Slots.Length>3)Fail(p+".slots","Expected up to3 skill slots.");
+                if(string.IsNullOrWhiteSpace(actor.View)||!RuntimeViewCompiler.Builtin(actor.View)&&!views.ContainsKey(actor.View))Fail(p+".view","Unknown view key.");
+                if(views.TryGetValue(actor.View,out var actorView)&&actorView.Kind!="actor")Fail(p+".view","Character requires an actor view.");
+                var definition=new RuntimeActorDefinition{Id=actor.Id,Role=actor.Role,View=actor.View,Team=actor.Team,Hp=actor.Hp,Attack=actor.Attack,Defense=actor.Defense,MoveSpeed=actor.MoveSpeed,
+                    SpawnStats=ActorSpawnCompiler.Compile(actor.SpawnStats,p+".spawnStats"),KeepAssignedTarget=actor.Ai=="wander-shooter",InputBufferSeconds=actor.InputBufferSeconds,
+                    Shield=actor.Shield,CritRate=actor.CritRate,DamageDealt=actor.DamageDealt,DamageTaken=actor.DamageTaken,CollisionRadius=actor.CollisionRadius,Energy=actor.Energy,InitialEnergy=actor.Energy,Recovery=actor.Recovery,Ammo=actor.Ammo,InitialAmmo=actor.InitialAmmo??actor.Ammo,ActionSpeed=actor.ActionSpeed,
+                    AcquireRadius=actor.AcquireRadius,AttackRange=actor.AttackRange,FollowRange=actor.FollowRange,LeashRange=actor.LeashRange,PatrolRadius=actor.PatrolRadius,
+                    Slots=actor.Slots.Select(id=>Skill(content,id,p+".slots").Id).ToArray(),DodgeSkill=string.IsNullOrEmpty(actor.DodgeSkill)?SkillNodeId.None:Skill(content,actor.DodgeSkill,p+".dodgeSkill").Id};
+                if(actor.Role=="ai"||actor.Role=="summon")
+                {
+                    var skill=Skill(content,actor.SkillId,p+".skillId");definition.Skill=skill.Id;
+                    definition.Tree=actor.Ai=="puncher"?BtFactory.MeleePuncher(skill.Id,skill.Timeline):actor.Ai=="guard"?BtFactory.MeleeGuard(skill.Id,skill.Timeline):
+                        actor.Ai=="ranged"?BtFactory.Ranged(skill.Id,skill.Timeline):actor.Ai=="summon"?BtFactory.SummonMelee(skill.Id,skill.Timeline):
+                        actor.Ai=="wander-shooter"?WanderBehavior.Create(skill.Id,ActorSpawnCompiler.Wander(actor.Wander,p+".wander")):null;
+                    if(definition.Tree==null)Fail(p+".ai","Expected puncher, guard, ranged, summon or wander-shooter.");
+                }
+                else if(actor.Ai!="none")Fail(p+".ai","Non-AI role must use none.");
+                if(actor.Ai!="wander-shooter"&&actor.Wander!=null)Fail(p+".wander","Wander timing requires wander-shooter AI.");
+                actors.Add(actor.Id,definition);
+            }
+            // Shared summon blueprints are the sole source of summon stats in both preview and game.
+            foreach(var sourceBlueprint in project.SummonBlueprints)
+            {
+                content.Blueprints.TryGet(sourceBlueprint.Id,out var b);var skill=Skill(content,b.SkillKey,"$.summonBlueprints["+b.Id+"].skillId");
+                if(actors.ContainsKey(b.Id))Fail("$.runtime.actors["+b.Id+"].id","Summon blueprint identity already defines this actor.");
+                actors.Add(b.Id,new RuntimeActorDefinition{Id=b.Id,Role="summon",View="summon",Team=1,Hp=b.Hp,Attack=b.Attack,Defense=b.Defense,MoveSpeed=b.MoveSpeed,
+                    DamageDealt=1,DamageTaken=1,CollisionRadius=b.CollisionRadius,Energy=b.Energy,InitialEnergy=b.InitialEnergy,Recovery=b.Recovery,Ammo=b.Ammo,InitialAmmo=b.InitialAmmo,ActionSpeed=b.ActionSpeed,
+                    Skill=b.Skill,AcquireRadius=b.AcquireRadius,AttackRange=b.AttackRange,FollowRange=b.FollowRange,LeashRange=20,
+                    Tree=skill.Mode==SkillCastMode.Instant?BtFactory.SummonMelee(skill.Id,skill.Timeline):SummonBehavior.Create(b.Skill,b.HoldDuration)});
+            }
+            var result=new RuntimeContentSnapshot{Data=data,Actors=actors,Views=views};
+            content.Runtime=result;result.Arena=ArenaCompiler.Compile(source.Arena,content,actors);return result;
+        }
+        static SkillDefinition Skill(CombatContentSnapshot content,string key,string path)
+        {foreach(var skill in content.Skills.All)if(skill.Key==key)return skill;throw new ContentValidationException(path,"Unknown skill: "+key);}
+        static DurationSpec Buff(CombatContentSnapshot content,string key,string path)
+        {if(!string.IsNullOrWhiteSpace(key)&&content.Buffs.TryGet(key,out var spec))return spec;throw new ContentValidationException(path,"Unknown Buff: "+key);}
+        static void N(float v,float min,float max,string path)=>AuthoredTimelineCompiler.Number(v,min,max,path);
+        static void Fail(string path,string reason)=>throw new ContentValidationException(path,reason);
+    }
+}

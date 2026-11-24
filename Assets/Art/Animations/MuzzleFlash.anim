@@ -123,7 +123,7 @@ AnimationClip:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
-    path: 
+    path:
   m_FloatCurves:
   - curve:
       serializedVersion: 2
@@ -144,7 +144,7 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: material._MainTex_ST.x
-    path: 
+    path:
     classID: 23
     script: {fileID: 0}
   - curve:
@@ -166,7 +166,7 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: material._MainTex_ST.y
-    path: 
+    path:
     classID: 23
     script: {fileID: 0}
   - curve:
@@ -230,7 +230,7 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: material._MainTex_ST.z
-    path: 
+    path:
     classID: 23
     script: {fileID: 0}
   - curve:
@@ -264,7 +264,7 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: material._MainTex_ST.w
-    path: 
+    path:
     classID: 23
     script: {fileID: 0}
   m_PPtrCurves: []
@@ -351,7 +351,7 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: material._MainTex_ST.x
-    path: 
+    path:
     classID: 23
     script: {fileID: 0}
   - curve:
@@ -373,7 +373,7 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: material._MainTex_ST.y
-    path: 
+    path:
     classID: 23
     script: {fileID: 0}
   - curve:
@@ -437,7 +437,7 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: material._MainTex_ST.z
-    path: 
+    path:
     classID: 23
     script: {fileID: 0}
   - curve:
@@ -471,7 +471,7 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: material._MainTex_ST.w
-    path: 
+    path:
     classID: 23
     script: {fileID: 0}
   - curve:
@@ -583,7 +583,7 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: m_LocalScale.x
-    path: 
+    path:
     classID: 4
     script: {fileID: 0}
   - curve:
@@ -695,7 +695,7 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: m_LocalScale.y
-    path: 
+    path:
     classID: 4
     script: {fileID: 0}
   - curve:
@@ -807,7 +807,7 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: m_LocalScale.z
-    path: 
+    path:
     classID: 4
     script: {fileID: 0}
   m_EulerEditorCurves: []

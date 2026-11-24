@@ -10,9 +10,18 @@ namespace Combat.Core
         Knockdown = 6
     }
 
+    public struct LocoProfile
+    {
+        public float MotorScale;
+        public bool UseSkill;
+        public bool UseHit;
+        public bool ApplyGravity;
+    }
+
     public enum FacingMode : byte
     {
         FollowStickIfGrounded = 0,
+        Lock = 1,
         SteerIfGrounded = 2
     }
 
@@ -24,6 +33,7 @@ namespace Combat.Core
 
     public struct ActivityMotorPolicy
     {
+        public LocoProfile Loco;
         public FacingPolicy Facing;
     }
 
@@ -66,26 +76,26 @@ namespace Combat.Core
 
     public sealed class RootActivity : IActivity
     {
-        TagLease _controls;
         public ActivityId Id => ActivityId.Root;
         public ActivityMotorPolicy Motor { get; } = new ActivityMotorPolicy
         {
+            // External hit displacement does not require entering the Hit activity.
+            Loco = new LocoProfile { MotorScale = 1f, UseHit = true, ApplyGravity = true },
             Facing = new FacingPolicy { Mode = FacingMode.FollowStickIfGrounded }
         };
 
         public bool CanEnter(ActivityId from) => from != ActivityId.Dead;
-        public void Enter(in ActivityContext ctx, in ActivityEnterArgs args)
-            => _controls = ctx.Tags.Acquire(CommonTags.BlockSkillMotion, CommonTags.BlockHitMotion);
-        public void Exit(in ActivityContext ctx, in ActivityEnterArgs toNext) => _controls.Release();
+        public void Enter(in ActivityContext ctx, in ActivityEnterArgs args) { }
+        public void Exit(in ActivityContext ctx, in ActivityEnterArgs toNext) { }
         public bool Tick(in ActivityContext ctx, float dt) => false;
     }
 
     public sealed class AttackActivity : IActivity
     {
-        TagLease _controls;
         public ActivityId Id => ActivityId.Attack;
         public ActivityMotorPolicy Motor { get; } = new ActivityMotorPolicy
         {
+            Loco = new LocoProfile { MotorScale = 0f, UseSkill = true, UseHit = true, ApplyGravity = true },
             Facing = new FacingPolicy { Mode = FacingMode.SteerIfGrounded }
         };
 
@@ -93,12 +103,12 @@ namespace Combat.Core
 
         public void Enter(in ActivityContext ctx, in ActivityEnterArgs args)
         {
-            _controls = ctx.Tags.Acquire(CommonTags.Casting, CommonTags.BlockHitMotion);
+            ctx.Tags.Add(CommonTags.Casting, 1, TagSource.StateEnter("Attack"));
         }
 
         public void Exit(in ActivityContext ctx, in ActivityEnterArgs toNext)
         {
-            _controls.Release();
+            ctx.Tags.Remove(CommonTags.Casting, 1, TagSource.StateExit("Attack"));
             ctx.Loco?.ClearClipSteer();
         }
 
@@ -107,12 +117,12 @@ namespace Combat.Core
 
     public sealed class HitActivity : IActivity
     {
-        TagLease _controls;
         float _timer;
         public ActivityId Id => ActivityId.Hit;
         public ActivityMotorPolicy Motor { get; } = new ActivityMotorPolicy
         {
-            Facing = new FacingPolicy { Mode = FacingMode.FollowStickIfGrounded }
+            Loco = new LocoProfile { UseHit = true, ApplyGravity = true },
+            Facing = new FacingPolicy { Mode = FacingMode.Lock }
         };
 
         public bool CanEnter(ActivityId from) => from != ActivityId.Dead;
@@ -126,20 +136,19 @@ namespace Combat.Core
         void ApplyHit(in ActivityContext ctx, in ActivityEnterArgs args, bool isRefresh)
         {
             _timer = args.HitDuration > 0f ? args.HitDuration : 0.35f;
-            ctx.Director?.Stop(DirectorStopReason.Hit);
             ctx.Input?.Clear();
-            ctx.Loco?.ClearPendingMotion();
+            ctx.Director?.Stop(DirectorStopReason.Hit);
             ctx.Loco?.ClearClipSteer();
             ctx.Loco?.ClearPendingSkill();
             if (!isRefresh)
-                _controls = ctx.Tags.Acquire(CommonTags.Stunned);
+                ctx.Tags.Add(CommonTags.Stunned, 1, TagSource.StateEnter("Hit"));
             if (args.IFrameDuration > 0f && ctx.Self.TryGetComp<HealthComp>(out var hp))
                 hp.BeginIFrame(args.IFrameDuration);
         }
 
         public void Exit(in ActivityContext ctx, in ActivityEnterArgs toNext)
         {
-            _controls.Release();
+            ctx.Tags.Remove(CommonTags.Stunned, 1, TagSource.StateExit("Hit"));
             _timer = 0f;
         }
 
@@ -152,11 +161,10 @@ namespace Combat.Core
 
     public sealed class DeadActivity : IActivity
     {
-        TagLease _controls;
         public ActivityId Id => ActivityId.Dead;
         public ActivityMotorPolicy Motor { get; } = new ActivityMotorPolicy
         {
-            Facing = new FacingPolicy { Mode = FacingMode.FollowStickIfGrounded }
+            Facing = new FacingPolicy { Mode = FacingMode.Lock }
         };
 
         public bool CanEnter(ActivityId from) => true;
@@ -165,16 +173,12 @@ namespace Combat.Core
         {
             ctx.Input?.Clear();
             ctx.Director?.Stop(DirectorStopReason.Dead);
-            ctx.Loco?.ClearPendingMotion();
             ctx.Loco?.ClearClipSteer();
             ctx.Loco?.ClearPendingSkill();
-            _controls = ctx.Tags.Acquire(CommonTags.Dead);
-            var world = ctx.Self.World;
-            ctx.Self.NotifyDeath(args.Killer.IsValid && world != null && world.TryGetActor(args.Killer, out var killer)
-                ? killer
-                : null);
+            ctx.Tags.Add(CommonTags.Dead, 1, TagSource.StateEnter("Dead"));
             if (ctx.Self.TryGetComp<BuffComp>(out var buffs))
-                buffs.ClearAllWithExpire();
+                buffs.ClearAll(BuffRemovalReason.Death);
+            var world = ctx.Self.World;
             if (world != null)
             {
                 world.CleanupByOwner(ctx.Self.Id);
@@ -184,7 +188,7 @@ namespace Combat.Core
 
         public void Exit(in ActivityContext ctx, in ActivityEnterArgs toNext)
         {
-            _controls.Release();
+            ctx.Tags.Remove(CommonTags.Dead, 1, TagSource.StateExit("Dead"));
         }
 
         public bool Tick(in ActivityContext ctx, float dt) => false;
@@ -192,13 +196,19 @@ namespace Combat.Core
 
     public sealed class KnockdownActivity : IActivity
     {
-        TagLease _controls;
         float _timer;
 
         public ActivityId Id => ActivityId.Knockdown;
         public ActivityMotorPolicy Motor { get; } = new ActivityMotorPolicy
         {
-            Facing = new FacingPolicy { Mode = FacingMode.FollowStickIfGrounded }
+            Loco = new LocoProfile
+            {
+                MotorScale = 0f,
+                UseSkill = false,
+                UseHit = true,
+                ApplyGravity = true
+            },
+            Facing = new FacingPolicy { Mode = FacingMode.Lock }
         };
 
         public bool CanEnter(ActivityId from) => from != ActivityId.Dead;
@@ -212,18 +222,17 @@ namespace Combat.Core
         void Apply(in ActivityContext ctx, in ActivityEnterArgs args, bool refresh)
         {
             _timer = args.HitDuration > 0f ? args.HitDuration : 0.80f;
-            ctx.Director?.Stop(DirectorStopReason.Knockdown);
             ctx.Input?.Clear();
-            ctx.Loco?.ClearPendingMotion();
+            ctx.Director?.Stop(DirectorStopReason.Knockdown);
             ctx.Loco?.ClearClipSteer();
             ctx.Loco?.ClearPendingSkill();
             if (!refresh)
-                _controls = ctx.Tags.Acquire(CommonTags.Downed);
+                ctx.Tags.Add(CommonTags.Downed, 1, TagSource.StateEnter("Knockdown"));
         }
 
         public void Exit(in ActivityContext ctx, in ActivityEnterArgs toNext)
         {
-            _controls.Release();
+            ctx.Tags.Remove(CommonTags.Downed, 1, TagSource.StateExit("Knockdown"));
             _timer = 0f;
         }
 
@@ -267,7 +276,6 @@ namespace Combat.Core
 
         protected override void OnDetach()
         {
-            _current?.Exit(MakeCtx(), new ActivityEnterArgs { Reason = "Detach" });
             _current = null;
             _tags = null;
             _director = null;

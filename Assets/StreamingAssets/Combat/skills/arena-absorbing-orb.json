@@ -1,0 +1,157 @@
+{
+  "id": "arena-absorbing-orb",
+  "runtimeId": 2003,
+  "name": "移动吸收球",
+  "category": "Arena 原技能",
+  "nodes": [
+    {
+      "id": "target",
+      "kind": "target",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "facing",
+        "range": 20
+      }
+    },
+    {
+      "id": "orb",
+      "kind": "delivery",
+      "runtimeId": 4102,
+      "enabled": true,
+      "parameters": {
+        "mode": "area",
+        "persistent": true,
+        "center": "source",
+        "radius": 0.25,
+        "duration": 100,
+        "interval": 0.45,
+        "pulseOnSpawn": true,
+        "areaMotion": "forward",
+        "moveSpeed": 0.1,
+        "removeOnObstacle": true,
+        "forwardOffset": 0.5,
+        "absorbProjectiles": true,
+        "absorbForce": 0.05,
+        "radiusPerProjectile": 0.05,
+        "view": "buff_aoe_monkey_view"
+      }
+    },
+    {
+      "id": "damage",
+      "kind": "damage",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "flat": 0,
+        "coefficient": 0.2,
+        "canCrit": true,
+        "critChance": 0.05,
+        "critMultiplier": 1.8,
+        "notifyHurt": false,
+        "sourceHitstopFrames": 0,
+        "targetHitstopFrames": 2,
+        "feedback": "skill",
+        "feedbackHitstop": true
+      }
+    },
+    {
+      "id": "hurt",
+      "kind": "hurt-feedback",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "level": "damage",
+        "requireHpDamage": false
+      }
+    },
+    {
+      "id": "cast",
+      "kind": "cast",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "instant",
+        "cost": 0,
+        "cooldown": 0,
+        "ammoCost": 3,
+        "hitFeedback": "heavy"
+      }
+    },
+    {
+      "id": "muzzle-cue",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "id": 4201,
+        "name": "MuzzleFlash",
+        "center": "source",
+        "anchor": "Muzzle"
+      }
+    },
+    {
+      "id": "hit-cue",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "id": 4204,
+        "name": "OriginalCue4204",
+        "center": "target",
+        "anchor": "Body"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "target-target-cast",
+      "source": "target",
+      "sourcePort": "target",
+      "target": "cast",
+      "targetPort": "target",
+      "order": 0
+    },
+    {
+      "id": "orb-enter-damage",
+      "source": "orb",
+      "sourcePort": "enter",
+      "target": "damage",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "damage-next-hurt",
+      "source": "damage",
+      "sourcePort": "next",
+      "target": "hurt",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "hurt-next-hit-cue",
+      "source": "hurt",
+      "sourcePort": "next",
+      "target": "hit-cue",
+      "targetPort": "execute",
+      "order": 0
+    }
+  ],
+  "timeline": {
+    "runtimeId": 3003,
+    "duration": 0.5,
+    "animation": "Fire",
+    "clips": [],
+    "payloads": [
+      {
+        "id": "spawn",
+        "time": 0.1,
+        "repeatInterval": 0.0,
+        "effects": [
+          "muzzle-cue",
+          "orb"
+        ]
+      }
+    ]
+  }
+}

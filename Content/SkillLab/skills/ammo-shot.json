@@ -1,0 +1,107 @@
+{
+  "id": "ammo-shot",
+  "runtimeId": 2035,
+  "name": "弹药射击",
+  "category": "弹药与重施放",
+  "nodes": [
+    {
+      "id": "target",
+      "kind": "target",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "facing",
+        "range": 20
+      }
+    },
+    {
+      "id": "cast",
+      "kind": "cast",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "instant",
+        "cost": 0,
+        "cooldown": 0,
+        "ammoCost": 1,
+        "fallbackSkill": "reload-ammo"
+      }
+    },
+    {
+      "id": "projectile",
+      "kind": "projectile",
+      "runtimeId": 6016,
+      "enabled": true,
+      "parameters": {
+        "speed": 6,
+        "range": 0,
+        "lifetime": 10,
+        "radius": 0.1,
+        "spawnForward": 0.4
+      }
+    },
+    {
+      "id": "damage",
+      "kind": "damage",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "flat": 80,
+        "coefficient": 0,
+        "canCrit": false,
+        "critChance": 0,
+        "critMultiplier": 1.8,
+        "notifyHurt": false
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "target-cast",
+      "source": "target",
+      "sourcePort": "target",
+      "target": "cast",
+      "targetPort": "target",
+      "order": 0
+    },
+    {
+      "id": "hit-damage",
+      "source": "projectile",
+      "sourcePort": "hit",
+      "target": "damage",
+      "targetPort": "execute",
+      "order": 0
+    }
+  ],
+  "timeline": {
+    "runtimeId": 3035,
+    "duration": 0.8,
+    "clips": [
+      {
+        "id": "cancel",
+        "kind": "cancel",
+        "start": 0.5,
+        "end": 0.8,
+        "moveX": 0.0,
+        "moveY": 0.0,
+        "moveZ": 0.0,
+        "steer": 0.0,
+        "hitRadius": 0.0,
+        "hitOffsetX": 0.0,
+        "hitOffsetY": 0.0,
+        "hitOffsetZ": 0.0,
+        "effects": []
+      }
+    ],
+    "payloads": [
+      {
+        "id": "payload",
+        "time": 0.1,
+        "repeatInterval": 0.0,
+        "effects": [
+          "projectile"
+        ]
+      }
+    ]
+  }
+}

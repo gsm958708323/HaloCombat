@@ -1,0 +1,81 @@
+{
+  "id": "arena-homing-shot",
+  "runtimeId": 2004,
+  "name": "原追踪射击",
+  "category": "Arena 原技能",
+  "nodes": [
+    {
+      "id": "target",
+      "kind": "target",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "facing",
+        "range": 20
+      }
+    },
+    {
+      "id": "cast",
+      "kind": "cast",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "instant",
+        "cost": 0,
+        "cooldown": 0,
+        "ammoCost": 2,
+        "hitFeedback": "none"
+      }
+    },
+    {
+      "id": "projectile",
+      "kind": "projectile-ref",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "projectile": "arena-homing-projectile",
+        "count": 1,
+        "spread": 0
+      }
+    },
+    {
+      "id": "muzzle-cue",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "id": 4201,
+        "name": "MuzzleFlash",
+        "center": "source",
+        "anchor": "Muzzle"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "target-target-cast",
+      "source": "target",
+      "sourcePort": "target",
+      "target": "cast",
+      "targetPort": "target",
+      "order": 0
+    }
+  ],
+  "timeline": {
+    "runtimeId": 3004,
+    "duration": 0.5,
+    "animation": "Fire",
+    "clips": [],
+    "payloads": [
+      {
+        "id": "shot-0",
+        "time": 0.1,
+        "repeatInterval": 0.0,
+        "effects": [
+          "muzzle-cue",
+          "projectile"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+.actor-spawn-properties{border-top:1px solid #425056;padding:10px 0;margin:8px 0;min-width:0}
+.actor-spawn-properties summary{cursor:pointer;color:#b4cfbd}
+.actor-spawn-properties label{display:grid;grid-template-columns:minmax(0,1fr)76px;gap:8px;align-items:center;margin:9px 0;font-size:10px;line-height:1.5}
+.actor-spawn-properties label:has(select){grid-template-columns:minmax(0,1fr);gap:4px}
+.actor-spawn-properties input[type=number]{width:76px;min-width:0;padding:4px;font-size:10px}
+.actor-spawn-properties input[type=checkbox]{justify-self:end;margin:0}
+.actor-spawn-properties select{width:100%;min-width:0;font-size:10px}
+.actor-spawn-properties p,.actor-spawn-properties small{display:block;font-size:10px;line-height:1.7;color:#b3c4c1;overflow-wrap:anywhere}

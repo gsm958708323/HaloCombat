@@ -1,0 +1,105 @@
+{
+  "id": "slow-aura",
+  "runtimeId": 2021,
+  "name": "来源独立的减速光环",
+  "category": "Buff",
+  "nodes": [
+    {
+      "id": "target",
+      "kind": "target",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "point",
+        "range": 20
+      }
+    },
+    {
+      "id": "cast",
+      "kind": "cast",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "instant",
+        "cost": 10,
+        "cooldown": 0.7,
+        "delay": 0.1,
+        "duration": 0.3,
+        "count": 1,
+        "interval": 0.1
+      }
+    },
+    {
+      "id": "area",
+      "kind": "delivery",
+      "runtimeId": 5023,
+      "enabled": true,
+      "parameters": {
+        "mode": "area",
+        "center": "point",
+        "radius": 4,
+        "maxTargets": 0,
+        "persistent": true,
+        "duration": 1,
+        "interval": 0.5,
+        "pulseOnSpawn": false
+      }
+    },
+    {
+      "id": "slow",
+      "kind": "buff",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "buff": "aura-slow",
+        "stacks": 1,
+        "recipient": "target"
+      }
+    },
+    {
+      "id": "leave",
+      "kind": "dispel",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "source",
+        "maxCount": 0,
+        "recipient": "target"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "target-cast",
+      "source": "target",
+      "sourcePort": "target",
+      "target": "cast",
+      "targetPort": "target",
+      "order": 0
+    },
+    {
+      "id": "cast-delivery",
+      "source": "cast",
+      "sourcePort": "cast",
+      "target": "area",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "hit-damage",
+      "source": "area",
+      "sourcePort": "enter",
+      "target": "slow",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "leave",
+      "source": "area",
+      "sourcePort": "exit",
+      "target": "leave",
+      "targetPort": "execute",
+      "order": 0
+    }
+  ]
+}

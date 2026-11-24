@@ -1,124 +1,117 @@
-using System;
 using System.Collections.Generic;
 
 namespace Combat.Core
 {
-    public readonly struct TagLease
-    {
-        internal readonly TagComp Owner;
-        internal readonly long Id;
-        internal TagLease(TagComp owner, long id) { Owner = owner; Id = id; }
-        public void Release() => Owner?.Release(this);
-    }
-
     public sealed class TagComp : Comp
     {
         readonly Dictionary<int, int> _stacks = new Dictionary<int, int>(16);
-        readonly Dictionary<string, int> _sourced = new Dictionary<string, int>(16);
-        readonly Dictionary<int, int> _leased = new Dictionary<int, int>(16);
-        readonly Dictionary<long, TagId[]> _leases = new Dictionary<long, TagId[]>();
-        long _nextLease;
-        public bool Has(TagId tag) => Stack(tag) > 0;
-        int Raw(TagId tag)
-        {
-            int total = Count(_stacks, tag) + Count(_leased, tag);
-            foreach (var pair in _sourced)
-                if (pair.Key.StartsWith(tag.Value + ":", StringComparison.Ordinal)) total += pair.Value;
-            return total;
-        }
+        readonly Dictionary<int,int> _leasedStacks = new Dictionary<int,int>();
+        readonly Dictionary<int,(TagId Tag,int Count)> _leases = new Dictionary<int,(TagId,int)>();
+        int _nextLease;
+
+        public bool Has(TagId tag)
+            => Stack(tag)>0;
+
         public int Stack(TagId tag)
-        {
-            int n = Raw(tag);
-            if (tag == CommonTags.BlockMove || tag == CommonTags.BlockRotate ||
-                tag == CommonTags.BlockSkill || tag == CommonTags.BlockSkillMotion)
-                n += Raw(CommonTags.Stunned) + Raw(CommonTags.Downed) + Raw(CommonTags.Dead);
-            if (tag == CommonTags.BlockSkill) n += Raw(CommonTags.Silence);
-            if (tag == CommonTags.BlockHitMotion || tag == CommonTags.BlockGravity)
-                n += Raw(CommonTags.Dead);
-            return n;
-        }
-        static int Count(Dictionary<int, int> map, TagId tag)
-            => map.TryGetValue(tag.Value, out var n) ? n : 0;
-        static int Count(Dictionary<string, int> map, string key)
-            => map.TryGetValue(key, out var n) ? n : 0;
-        static void Change(Dictionary<int, int> map, TagId tag, int delta)
-        {
-            int n = Count(map, tag) + delta;
-            if (n <= 0) map.Remove(tag.Value); else map[tag.Value] = n;
-        }
-        static void Change(Dictionary<string, int> map, string key, int delta)
-        {
-            int n = map.TryGetValue(key, out var old) ? old + delta : delta;
-            if (n <= 0) map.Remove(key); else map[key] = n;
-        }
+            => (_stacks.TryGetValue(tag.Value, out var n) ? n : 0)+(_leasedStacks.TryGetValue(tag.Value,out var leases)?leases:0);
+
         public void Add(TagId tag, int stacks, TagSource source)
         {
-            if (stacks > 0) Change(_sourced, SourceKey(tag, source), stacks);
+            if (stacks <= 0) return;
+            if (_stacks.TryGetValue(tag.Value, out var cur))
+                _stacks[tag.Value] = cur + stacks;
+            else
+                _stacks[tag.Value] = stacks;
+            _ = source;
         }
+
         public void Remove(TagId tag, int stacks, TagSource source)
         {
-            int remove = Math.Min(Math.Max(0, stacks), Count(_sourced, SourceKey(tag, source)));
-            if (remove > 0) Change(_sourced, SourceKey(tag, source), -remove);
+            if (stacks <= 0) return;
+            if (!_stacks.TryGetValue(tag.Value, out var cur)) return;
+            cur -= stacks;
+            if (cur <= 0) _stacks.Remove(tag.Value);
+            else _stacks[tag.Value] = cur;
+            _ = source;
         }
-        public TagLease Acquire(params TagId[] tags)
+
+        public TagLease Acquire(TagId tag,int count=1)
         {
-            var copy = tags == null ? Array.Empty<TagId>() : (TagId[])tags.Clone();
-            long id = ++_nextLease;
-            _leases.Add(id, copy);
-            foreach (var tag in copy) Change(_leased, tag, 1);
-            return new TagLease(this, id);
+            if(count<=0)throw new System.ArgumentOutOfRangeException(nameof(count));
+            int id=++_nextLease;_leases.Add(id,(tag,count));
+            _leasedStacks[tag.Value]=(_leasedStacks.TryGetValue(tag.Value,out int current)?current:0)+count;
+            return new TagLease(this,id);
         }
-        public void Release(TagLease lease)
+        internal void ReleaseLease(int id)
         {
-            if (lease.Owner != this || !_leases.TryGetValue(lease.Id, out var tags)) return;
-            _leases.Remove(lease.Id);
-            foreach (var tag in tags) Change(_leased, tag, -1);
+            if(!_leases.TryGetValue(id,out var lease))return;_leases.Remove(id);
+            int left=_leasedStacks[lease.Tag.Value]-lease.Count;
+            if(left<=0)_leasedStacks.Remove(lease.Tag.Value);else _leasedStacks[lease.Tag.Value]=left;
         }
-        public void ClearAll() { _stacks.Clear(); _sourced.Clear(); _leased.Clear(); _leases.Clear(); }
-        static string SourceKey(TagId tag, TagSource source) => tag.Value + ":" + (source.Reason ?? string.Empty);
+        public Dictionary<int,int> Snapshot()
+        {var values=new Dictionary<int,int>(_stacks);foreach(var item in _leasedStacks)values[item.Key]=(values.TryGetValue(item.Key,out int count)?count:0)+item.Value;return values;}
+        public void ClearAll(){_stacks.Clear();_leases.Clear();_leasedStacks.Clear();}
+
         protected override void OnDetach() => ClearAll();
     }
 
-    /// <summary>Three pending presses, FIFO. Held fire never occupies this queue.</summary>
     public sealed class InputBufferComp : Comp
     {
-        public const int Capacity = 3;
-        readonly Queue<Entry> _queue = new Queue<Entry>(Capacity);
-        float _bufferWindow = .8f;
-        struct Entry { public InputToken Token; public float Time; }
+        public const int Capacity=3;
+        readonly Queue<Entry> _queue=new Queue<Entry>(Capacity);
+        struct Entry {public InputToken Token;public double Time;public int Sequence;}
+        int _pushSequence;
+        ActorTime _time;
+        float _bufferWindow = 0.2f;
+
+        public InputBufferComp(float bufferSeconds=.2f){SetBufferWindow(bufferSeconds);}
+
         public float LastPushTime { get; private set; }
-        public bool HasBuffered { get { Expire(); return _queue.Count > 0; } }
-        public int Count { get { Expire(); return _queue.Count; } }
-        public bool PrimaryHeld { get; set; }
-        public void SetBufferWindow(float seconds) => _bufferWindow = Math.Max(.01f, seconds);
+        public bool HasBuffered {get{Expire();return _queue.Count>0;}}
+        public int Count {get{Expire();return _queue.Count;}}
+        public int HeadSequence {get{Expire();return _queue.Count>0?_queue.Peek().Sequence:0;}}
+        public int LastPushSequence=>_pushSequence;
+
+        public void SetBufferWindow(float seconds)
+            => _bufferWindow = seconds > 0f ? seconds : 0.01f;
+
+        protected override void OnAttach()
+        {
+            _time = Self.Time;
+        }
+
+        protected override void OnDetach()
+        {
+            Clear();LastPushTime=0;_pushSequence=0;
+            _time = null;
+        }
+
         public void Push(in InputToken token)
         {
-            if (!token.IsValid || Self == null) return;
-            Expire();
-            if (_queue.Count == Capacity) _queue.Dequeue();
-            LastPushTime = Self.Time.Time;
-            _queue.Enqueue(new Entry { Token = token, Time = LastPushTime });
+            if (!token.IsValid || _time == null) return;
+            Expire();if(_queue.Count==Capacity)_queue.Dequeue();
+            _queue.Enqueue(new Entry{Token=token,Time=_time.Time,Sequence=++_pushSequence});
+            LastPushTime = (float)_time.Time;
         }
+
         public bool TryPeek(out InputToken token)
         {
-            Expire();
-            token = _queue.Count > 0 ? _queue.Peek().Token : default;
-            return _queue.Count > 0;
+            Expire();token=_queue.Count>0?_queue.Peek().Token:default;return _queue.Count>0;
         }
+
         public bool Consume()
         {
-            Expire();
-            if (_queue.Count == 0) return false;
+            Expire();if(_queue.Count==0)return false;
             _queue.Dequeue();
             return true;
         }
+
+        public void Clear()=>_queue.Clear();
         void Expire()
         {
-            if (Self == null) return;
-            while (_queue.Count > 0 && Self.Time.Time - _queue.Peek().Time > _bufferWindow)
-                _queue.Dequeue();
+            // Every press ages from reception, even while another press waits at the front.
+            // Actor time also preserves the original freeze during local hitstop.
+            while(_time!=null&&_queue.Count>0&&_time.Time-_queue.Peek().Time>_bufferWindow)_queue.Dequeue();
         }
-        public void Clear() { _queue.Clear(); PrimaryHeld = false; }
-        protected override void OnDetach() { Clear(); LastPushTime = 0f; }
     }
 }

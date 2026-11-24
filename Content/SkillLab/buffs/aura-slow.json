@@ -1,0 +1,32 @@
+{
+  "id": "aura-slow",
+  "runtimeId": 8003,
+  "name": "区域减速",
+  "permanent": true,
+  "duration": 2.0,
+  "interval": 0.0,
+  "stack": "independent",
+  "maxStacks": 1,
+  "mutexGroup": 0,
+  "tags": [
+    3103
+  ],
+  "modifiers": [
+    {
+      "attribute": "moveSpeed",
+      "operation": "mul",
+      "value": 0.5,
+      "priority": 0
+    }
+  ],
+  "nodes": [
+    {
+      "id": "events",
+      "kind": "buff-events",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {}
+    }
+  ],
+  "edges": []
+}

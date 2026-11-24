@@ -1,0 +1,93 @@
+{
+  "id": "tracked-shot",
+  "runtimeId": 2037,
+  "name": "传送弹 · 再次施放传送",
+  "category": "弹药与重施放",
+  "nodes": [
+    {
+      "id": "target",
+      "kind": "target",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "facing",
+        "range": 20
+      }
+    },
+    {
+      "id": "cast",
+      "kind": "cast",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "instant",
+        "cost": 0,
+        "cooldown": 0,
+        "recastProjectile": "warp",
+        "recastSkill": "projectile-warp"
+      }
+    },
+    {
+      "id": "projectile",
+      "kind": "projectile",
+      "runtimeId": 6017,
+      "enabled": true,
+      "parameters": {
+        "speed": 6,
+        "range": 0,
+        "lifetime": 3,
+        "radius": 0.1,
+        "spawnForward": 0.4,
+        "trajectory": "accelerate",
+        "acceleration": 5,
+        "maxSpeed": 1000,
+        "trackingKey": "warp"
+      }
+    },
+    {
+      "id": "damage",
+      "kind": "damage",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "flat": 48,
+        "coefficient": 0,
+        "canCrit": false,
+        "notifyHurt": false
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "target-cast",
+      "source": "target",
+      "sourcePort": "target",
+      "target": "cast",
+      "targetPort": "target",
+      "order": 0
+    },
+    {
+      "id": "hit-damage",
+      "source": "projectile",
+      "sourcePort": "hit",
+      "target": "damage",
+      "targetPort": "execute",
+      "order": 0
+    }
+  ],
+  "timeline": {
+    "runtimeId": 3037,
+    "duration": 0.5,
+    "clips": [],
+    "payloads": [
+      {
+        "id": "payload",
+        "time": 0.1,
+        "repeatInterval": 0.0,
+        "effects": [
+          "projectile"
+        ]
+      }
+    ]
+  }
+}

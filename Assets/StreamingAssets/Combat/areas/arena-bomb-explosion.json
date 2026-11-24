@@ -1,0 +1,106 @@
+{
+  "id": "arena-bomb-explosion",
+  "name": "炸弹共用爆炸区",
+  "root": "area",
+  "nodes": [
+    {
+      "id": "area",
+      "kind": "delivery",
+      "runtimeId": 4104,
+      "enabled": true,
+      "parameters": {
+        "mode": "area",
+        "persistent": true,
+        "radius": 1.5,
+        "duration": 0.02,
+        "interval": 0.45,
+        "pulseOnSpawn": true,
+        "hostileMask": 0,
+        "removeOnObstacle": false
+      }
+    },
+    {
+      "id": "damage",
+      "kind": "damage",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "flat": 0,
+        "coefficient": 0.1,
+        "critChance": 0.05,
+        "critMultiplier": 1.8,
+        "canCrit": true,
+        "notifyHurt": false,
+        "targetHitstopFrames": 3,
+        "feedback": "heavy"
+      }
+    },
+    {
+      "id": "hurt",
+      "kind": "hurt-feedback",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "level": "damage",
+        "requireHpDamage": false
+      }
+    },
+    {
+      "id": "hit-cue",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "id": 4204,
+        "name": "BombHit",
+        "center": "target",
+        "anchor": "Body"
+      }
+    },
+    {
+      "id": "explosion-cue",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "id": 4206,
+        "name": "BombExplosion",
+        "center": "point"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "area-apply-damage-0",
+      "source": "area",
+      "sourcePort": "apply",
+      "target": "damage",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "damage-next-hurt-0",
+      "source": "damage",
+      "sourcePort": "next",
+      "target": "hurt",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "hurt-next-hit-cue-0",
+      "source": "hurt",
+      "sourcePort": "next",
+      "target": "hit-cue",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "area-expire-explosion-cue-0",
+      "source": "area",
+      "sourcePort": "expire",
+      "target": "explosion-cue",
+      "targetPort": "execute",
+      "order": 0
+    }
+  ]
+}

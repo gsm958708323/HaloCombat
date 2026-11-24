@@ -1,0 +1,146 @@
+{
+  "id": "impact-strike",
+  "runtimeId": 2034,
+  "name": "受击击退击飞",
+  "category": "结算与事件",
+  "nodes": [
+    {
+      "id": "target",
+      "kind": "target",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "nearest",
+        "range": 20
+      }
+    },
+    {
+      "id": "cast",
+      "kind": "cast",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "instant",
+        "cost": 10,
+        "cooldown": 0.7,
+        "delay": 0.1,
+        "duration": 0.3,
+        "count": 1,
+        "interval": 0.1
+      }
+    },
+    {
+      "id": "delivery",
+      "kind": "delivery",
+      "runtimeId": 6015,
+      "enabled": true,
+      "parameters": {
+        "mode": "target",
+        "recipient": "target"
+      }
+    },
+    {
+      "id": "damage",
+      "kind": "damage",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "flat": 80,
+        "coefficient": 0,
+        "critChance": 0,
+        "critMultiplier": 1.8,
+        "ignoreDefense": false,
+        "hitstopFrames": 0
+      }
+    },
+    {
+      "id": "stun",
+      "kind": "impact",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "hitstun",
+        "distance": 2,
+        "speed": 5,
+        "duration": 0.3,
+        "recipient": "target"
+      }
+    },
+    {
+      "id": "push",
+      "kind": "impact",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "knockback",
+        "distance": 2,
+        "speed": 5,
+        "duration": 0.3,
+        "recipient": "target"
+      }
+    },
+    {
+      "id": "launch",
+      "kind": "impact",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "launch",
+        "distance": 2,
+        "speed": 5,
+        "duration": 0.3,
+        "recipient": "target"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "target-cast",
+      "source": "target",
+      "sourcePort": "target",
+      "target": "cast",
+      "targetPort": "target",
+      "order": 0
+    },
+    {
+      "id": "cast-delivery",
+      "source": "cast",
+      "sourcePort": "cast",
+      "target": "delivery",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "hit-damage",
+      "source": "delivery",
+      "sourcePort": "apply",
+      "target": "damage",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "stun",
+      "source": "damage",
+      "sourcePort": "next",
+      "target": "stun",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "push",
+      "source": "stun",
+      "sourcePort": "next",
+      "target": "push",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "launch",
+      "source": "push",
+      "sourcePort": "next",
+      "target": "launch",
+      "targetPort": "execute",
+      "order": 0
+    }
+  ]
+}

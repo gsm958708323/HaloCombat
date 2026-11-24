@@ -1,0 +1,43 @@
+{
+  "id": "arena-combo-second",
+  "runtimeId": 2012,
+  "name": "确认连段二段",
+  "category": "Arena 原技能",
+  "nodes": [
+    {
+      "id": "target",
+      "kind": "target",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "facing",
+        "range": 20
+      }
+    },
+    {
+      "id": "cast",
+      "kind": "cast",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "instant",
+        "cost": 0,
+        "cooldown": 0,
+        "ammoCost": 2,
+        "fallbackSkill": "arena-reload-ammo",
+        "hitFeedback": "confirm"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "target-target-cast",
+      "source": "target",
+      "sourcePort": "target",
+      "target": "cast",
+      "targetPort": "target",
+      "order": 0
+    }
+  ],
+  "timelineRef": "arena-confirmed-shot"
+}

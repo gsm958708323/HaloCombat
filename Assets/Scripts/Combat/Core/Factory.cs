@@ -35,9 +35,6 @@ namespace Combat.Core
                 return actor;
             }
 
-            if (_data.Characters != null && _data.Characters.TryGet(bp, out var configured))
-                return CreateConfiguredCombatant(actor, configured);
-
             bool stake = bp == "stake";
             bool enemy = bp == "melee_ai" || bp == "melee_ai_narrow" || bp == "melee_guard" || bp == "ranged_ai";
             bool summon = bp == "summon";
@@ -52,61 +49,6 @@ namespace Combat.Core
 
             // Unknown blueprints retain the original stake-like target dummy shape.
             return CreateCombatant(actor, bp, false, false, true);
-        }
-
-        Actor CreateConfiguredCombatant(Actor actor, CharacterDefinition definition)
-        {
-            if (definition == null)
-                throw new InvalidOperationException("Null character definition");
-            var attr = new AttributeSet();
-            actor.AddComp(new TransformComp());
-            actor.AddComp(new TagComp());
-            actor.AddComp(attr);
-            actor.AddComp(new BuffComp());
-            actor.AddComp(new TeamComp(definition.IsPlayer ? 1 : 2));
-            actor.AddComp(new HealthComp());
-            actor.AddComp(new StateMachineComp());
-            actor.AddComp(new LocomotionComp());
-
-            if (definition.IsPlayer)
-            {
-                actor.AddComp(new InputBufferComp());
-                actor.AddComp(new HitboxComp());
-                actor.AddComp(new ComboComp(definition.Combo ?? throw new InvalidOperationException(
-                    "Player character " + definition.BlueprintId + " requires a ComboTable.")));
-                actor.AddComp(new PlayerCombatDriverComp(definition.PlayerCombat));
-                actor.AddComp(new SkillDirectorComp(_data.Timelines, _data.Skills));
-                var loadout = new LoadoutComp();
-                actor.AddComp(loadout);
-                EquipConfiguredLoadout(loadout, definition.Skills);
-            }
-            else
-            {
-                actor.AddComp(new HitboxComp());
-                if (definition.BehaviorTree == null)
-                    throw new InvalidOperationException("Enemy character " + definition.BlueprintId + " requires a BehaviorTree.");
-                actor.AddComp(new PerceptionComp(definition.AcquireRadius));
-                actor.AddComp(new BehaviorTreeComp(definition.BehaviorTree, board =>
-                {
-                    board.AcquireRadius = definition.AcquireRadius;
-                    board.AttackRange = definition.AttackRange;
-                    board.FollowRange = definition.FollowRange;
-                    board.LeashRange = definition.LeashRange;
-                    board.PatrolRadius = definition.PatrolRadius;
-                }));
-                actor.AddComp(new SkillDirectorComp(_data.Timelines, _data.Skills));
-            }
-
-            attr.InitFighterDefaults();
-            return actor;
-        }
-
-        static void EquipConfiguredLoadout(LoadoutComp loadout, SkillDefinition[] skills)
-        {
-            if (loadout == null || skills == null) return;
-            int count = Math.Min(skills.Length, 3);
-            for (int i = 0; i < count; i++)
-                loadout.EquipSkill((SkillSlot)i, skills[i].Id, skills[i].Timeline);
         }
 
         Actor CreateCombatant(Actor actor, string bp, bool player, bool isSummon, bool stake = false)
@@ -124,7 +66,7 @@ namespace Combat.Core
             {
                 actor.AddComp(new InputBufferComp());
                 actor.AddComp(new HitboxComp());
-                actor.AddComp(new ComboComp(_data.Combo ?? new ComboTableSO()));
+                actor.AddComp(new ComboComp(_data.Combo ?? new ComboTableDefinition()));
                 actor.AddComp(new PlayerCombatDriverComp());
                 actor.AddComp(new SkillDirectorComp(_data.Timelines ?? new TimelineLibrary()));
                 var loadout = new LoadoutComp();
@@ -174,16 +116,16 @@ namespace Combat.Core
         public static TimelineLibrary MakeLib()
         {
             var lib = new TimelineLibrary();
-            lib.Register(TimelineSO.G1());
-            lib.Register(TimelineSO.G2());
-            lib.Register(TimelineSO.Dodge());
-            lib.Register(TimelineSO.Homing());
+            lib.Register(TimelineDefinition.G1());
+            lib.Register(TimelineDefinition.G2());
+            lib.Register(TimelineDefinition.Dodge());
+            lib.Register(TimelineDefinition.Homing());
             return lib;
         }
 
-        public static ComboTableSO G1G2()
+        public static ComboTableDefinition G1G2()
         {
-            return new ComboTableSO
+            return new ComboTableDefinition
             {
                 Entries = new[]
                 {
@@ -191,7 +133,7 @@ namespace Combat.Core
                     {
                         PreSkills = Array.Empty<SkillNodeId>(),
                         Input = InputToken.Attack,
-                        RequiredTags = Array.Empty<int>(),
+                        Conditions = Array.Empty<ComboCondition>(),
                         Priority = 0,
                         ToSkill = SkillNodeId.G1,
                         Timeline = TimelineId.TL_G1
@@ -200,7 +142,7 @@ namespace Combat.Core
                     {
                         PreSkills = new[] { SkillNodeId.G1 },
                         Input = InputToken.Attack,
-                        RequiredTags = new[] { CommonTags.Cancel.Value },
+                        Conditions = new[] { ComboCondition.HasTag(CommonTags.Cancel.Value) },
                         Priority = 10,
                         ToSkill = SkillNodeId.G2,
                         Timeline = TimelineId.TL_G2
@@ -209,7 +151,7 @@ namespace Combat.Core
                     {
                         PreSkills = new[] { SkillNodeId.Dodge },
                         Input = InputToken.Attack,
-                        RequiredTags = new[] { CommonTags.Cancel.Value },
+                        Conditions = new[] { ComboCondition.HasTag(CommonTags.Cancel.Value) },
                         Priority = 5,
                         ToSkill = SkillNodeId.G1,
                         Timeline = TimelineId.TL_G1
@@ -220,15 +162,14 @@ namespace Combat.Core
 
         public static void ResetG1MeleeDefaults()
         {
-            TimelineSO.G1Melee.Damage.Coeff = 1f;
-            TimelineSO.G1Melee.Damage.CanCrit = true;
-            TimelineSO.G1Melee.Damage.UseSnapshotAtk = true;
-            TimelineSO.G1Melee.Damage.SourceHitstopFrames = 3;
-            TimelineSO.G1Melee.Damage.TargetHitstopFrames = 3;
-            TimelineSO.G1Melee.Stun = new HitStunEffect { Duration = 0.35f };
-            TimelineSO.G1Melee.Knockback = new KnockbackEffect { Distance = 0.4f };
-            TimelineSO.G1Melee.IFrame = null;
-            TimelineSO.G1Melee.ClearCache();
+            TimelineDefinition.G1Melee.Damage.Coeff = 1f;
+            TimelineDefinition.G1Melee.Damage.CanCrit = true;
+            TimelineDefinition.G1Melee.Damage.UseSnapshotAtk = true;
+            TimelineDefinition.G1Melee.Damage.HitstopFrames = 3;
+            TimelineDefinition.G1Melee.Stun = new HitStunEffect { Duration = 0.35f };
+            TimelineDefinition.G1Melee.Knockback = new KnockbackEffect { Distance = 0.4f };
+            TimelineDefinition.G1Melee.IFrame = null;
+            TimelineDefinition.G1Melee.ClearCache();
         }
     }
 }

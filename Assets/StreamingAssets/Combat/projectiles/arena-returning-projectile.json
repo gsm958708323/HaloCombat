@@ -1,0 +1,150 @@
+{
+  "id": "arena-returning-projectile",
+  "name": "正弦回旋弹体",
+  "root": "projectile",
+  "nodes": [
+    {
+      "id": "projectile",
+      "kind": "projectile",
+      "runtimeId": 4003,
+      "enabled": true,
+      "parameters": {
+        "speed": 5,
+        "range": 0,
+        "lifetime": 10,
+        "radius": 0.5,
+        "spawnForward": 0.4,
+        "sameTargetDelay": 0.5,
+        "passInvulnerable": true,
+        "trajectory": "return",
+        "returnCurve": "sine",
+        "returnAfter": 1,
+        "returnSpeed": 5,
+        "catchRadius": 0.75,
+        "removeOnObstacle": false,
+        "view": "buff_projectile_boomerang_view"
+      }
+    },
+    {
+      "id": "damage",
+      "kind": "damage",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "flat": 0,
+        "coefficient": 1,
+        "canCrit": true,
+        "critChance": 0.05,
+        "critMultiplier": 1.8,
+        "notifyHurt": false,
+        "sourceHitstopFrames": 0,
+        "targetHitstopFrames": 2,
+        "feedbackHitstop": true
+      }
+    },
+    {
+      "id": "damage-hurt",
+      "kind": "hurt-feedback",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "level": "damage",
+        "requireHpDamage": false
+      }
+    },
+    {
+      "id": "return-burn",
+      "kind": "buff",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "buff": "arena-return-burn",
+        "recipient": "target",
+        "stacks": 1
+      }
+    },
+    {
+      "id": "hit-cue",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "id": 4204,
+        "name": "OriginalCue4204",
+        "center": "target",
+        "anchor": "Body"
+      }
+    },
+    {
+      "id": "return-cue",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "id": 4202,
+        "name": "OriginalCue4202",
+        "center": "source",
+        "anchor": "Body"
+      }
+    },
+    {
+      "id": "projectile-pierce",
+      "kind": "pierce",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "maxHits": 99999
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "hit-damage",
+      "source": "projectile",
+      "sourcePort": "hit",
+      "target": "damage",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "damage-hurt-edge",
+      "source": "damage",
+      "sourcePort": "next",
+      "target": "damage-hurt",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "damage-hurt-next-hit-cue",
+      "source": "damage-hurt",
+      "sourcePort": "next",
+      "target": "hit-cue",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "hit-cue-next-return-burn",
+      "source": "hit-cue",
+      "sourcePort": "next",
+      "target": "return-burn",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "projectile-returned-return-cue",
+      "source": "projectile",
+      "sourcePort": "returned",
+      "target": "return-cue",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "projectile-hit-projectile-pierce",
+      "source": "projectile",
+      "sourcePort": "hit",
+      "target": "projectile-pierce",
+      "targetPort": "execute",
+      "order": 1
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "player": "arena-player",
+  "enemy": "arena-enemy",
+  "trainingTarget": "arena-target",
+  "seed": 1,
+  "maxEnemies": 10,
+  "spawnPeriod": 10.0,
+  "cleanupDelay": 5.0,
+  "halfWidth": 16.0,
+  "halfDepth": 12.0,
+  "spawnDistance": 4.0,
+  "playerX": 0.0,
+  "playerZ": 0.0,
+  "playerYaw": 0.0,
+  "cameraDistance": 2.5,
+  "cameraHeight": 2.5,
+  "cameraFov": 60.0,
+  "cameraFocusHeight": 1.6,
+  "bindings": [
+    {
+      "action": "Fire1",
+      "input": "ArenaPrimary"
+    },
+    {
+      "action": "Fire2",
+      "input": "ArenaArea"
+    },
+    {
+      "action": "Fire3",
+      "input": "ArenaAura"
+    },
+    {
+      "action": "Fire5",
+      "input": "ArenaConstruct"
+    },
+    {
+      "action": "Roll",
+      "input": "ArenaDodge"
+    },
+    {
+      "action": "Homing",
+      "input": "ArenaHoming"
+    },
+    {
+      "action": "Monkey",
+      "input": "ArenaOrb"
+    },
+    {
+      "action": "Fire4",
+      "input": "ArenaTracked"
+    }
+  ],
+  "obstacles": []
+}

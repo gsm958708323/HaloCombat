@@ -1,0 +1,86 @@
+{
+  "id": "burning-field",
+  "runtimeId": 2020,
+  "name": "灼烧火区",
+  "category": "Buff",
+  "nodes": [
+    {
+      "id": "target",
+      "kind": "target",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "point",
+        "range": 20
+      }
+    },
+    {
+      "id": "cast",
+      "kind": "cast",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "instant",
+        "cost": 10,
+        "cooldown": 0.7,
+        "delay": 0.1,
+        "duration": 0.3,
+        "count": 1,
+        "interval": 0.1
+      }
+    },
+    {
+      "id": "area",
+      "kind": "delivery",
+      "runtimeId": 5022,
+      "enabled": true,
+      "parameters": {
+        "mode": "area",
+        "center": "point",
+        "radius": 4,
+        "maxTargets": 0,
+        "persistent": true,
+        "duration": 0.7,
+        "interval": 0.2,
+        "pulseOnSpawn": true
+      }
+    },
+    {
+      "id": "burn",
+      "kind": "buff",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "buff": "burn",
+        "stacks": 1,
+        "recipient": "target"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "target-cast",
+      "source": "target",
+      "sourcePort": "target",
+      "target": "cast",
+      "targetPort": "target",
+      "order": 0
+    },
+    {
+      "id": "cast-delivery",
+      "source": "cast",
+      "sourcePort": "cast",
+      "target": "area",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "hit-damage",
+      "source": "area",
+      "sourcePort": "apply",
+      "target": "burn",
+      "targetPort": "execute",
+      "order": 0
+    }
+  ]
+}

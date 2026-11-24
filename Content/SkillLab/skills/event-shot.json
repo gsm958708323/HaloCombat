@@ -1,0 +1,268 @@
+{
+  "id": "event-shot",
+  "runtimeId": 2031,
+  "name": "暴击与技能事件",
+  "category": "结算与事件",
+  "nodes": [
+    {
+      "id": "target",
+      "kind": "target",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "point",
+        "range": 20
+      }
+    },
+    {
+      "id": "cast",
+      "kind": "cast",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "instant",
+        "cost": 10,
+        "cooldown": 0.7,
+        "delay": 0.1,
+        "duration": 0.3,
+        "count": 1,
+        "interval": 0.1
+      }
+    },
+    {
+      "id": "projectile",
+      "kind": "projectile",
+      "runtimeId": 6012,
+      "enabled": true,
+      "parameters": {
+        "speed": 12,
+        "range": 24,
+        "radius": 0.18,
+        "homingRate": 0
+      }
+    },
+    {
+      "id": "damage",
+      "kind": "damage",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "flat": 80,
+        "coefficient": 0,
+        "critChance": 1,
+        "critMultiplier": 2,
+        "ignoreDefense": false,
+        "hitstopFrames": 0
+      }
+    },
+    {
+      "id": "skill-events",
+      "kind": "skill-events",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {}
+    },
+    {
+      "id": "event-cue-0",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "id": 110
+      }
+    },
+    {
+      "id": "event-cue-1",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "id": 111
+      }
+    },
+    {
+      "id": "event-cue-2",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "id": 112
+      }
+    },
+    {
+      "id": "event-cue-3",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "id": 113
+      }
+    },
+    {
+      "id": "event-cue-4",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "id": 114
+      }
+    },
+    {
+      "id": "event-cue-5",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "id": 115
+      }
+    },
+    {
+      "id": "event-cue-6",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "id": 116
+      }
+    },
+    {
+      "id": "bonus-damage",
+      "kind": "damage",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "coefficient": 0,
+        "ignoreDefense": true,
+        "flat": 5,
+        "critChance": 0,
+        "includeBonuses": false
+      }
+    },
+    {
+      "id": "confirm",
+      "kind": "after-damage",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "latestCastOnly": true
+      }
+    },
+    {
+      "id": "impact",
+      "kind": "impact",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "knockback",
+        "recipient": "target",
+        "distance": 1.5
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "target-cast",
+      "source": "target",
+      "sourcePort": "target",
+      "target": "cast",
+      "targetPort": "target",
+      "order": 0
+    },
+    {
+      "id": "cast-delivery",
+      "source": "cast",
+      "sourcePort": "cast",
+      "target": "projectile",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "hit-damage",
+      "source": "projectile",
+      "sourcePort": "hit",
+      "target": "damage",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "event-cue-0",
+      "source": "skill-events",
+      "sourcePort": "hit",
+      "target": "event-cue-0",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "event-cue-1",
+      "source": "skill-events",
+      "sourcePort": "critical",
+      "target": "event-cue-1",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "event-cue-2",
+      "source": "skill-events",
+      "sourcePort": "kill",
+      "target": "event-cue-2",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "event-cue-3",
+      "source": "skill-events",
+      "sourcePort": "completed",
+      "target": "event-cue-3",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "event-cue-4",
+      "source": "skill-events",
+      "sourcePort": "wall",
+      "target": "event-cue-4",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "event-cue-5",
+      "source": "skill-events",
+      "sourcePort": "range",
+      "target": "event-cue-5",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "event-cue-6",
+      "source": "skill-events",
+      "sourcePort": "projectile-end",
+      "target": "event-cue-6",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "bonus",
+      "source": "skill-events",
+      "sourcePort": "hit",
+      "target": "bonus-damage",
+      "targetPort": "execute",
+      "order": 1
+    },
+    {
+      "id": "confirm",
+      "source": "damage",
+      "sourcePort": "next",
+      "target": "confirm",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "impact",
+      "source": "confirm",
+      "sourcePort": "apply",
+      "target": "impact",
+      "targetPort": "execute",
+      "order": 0
+    }
+  ]
+}

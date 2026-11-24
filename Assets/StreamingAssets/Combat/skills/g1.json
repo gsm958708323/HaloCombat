@@ -1,0 +1,242 @@
+{
+  "id": "g1",
+  "runtimeId": 101,
+  "name": "G1 斩击与火球",
+  "category": "正式内容",
+  "nodes": [
+    {
+      "id": "target",
+      "kind": "target",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "facing",
+        "range": 20
+      }
+    },
+    {
+      "id": "cast",
+      "kind": "cast",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "instant",
+        "cost": 0,
+        "cooldown": 0
+      }
+    },
+    {
+      "id": "melee",
+      "kind": "damage",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "flat": 0,
+        "coefficient": 1,
+        "critChance": 0,
+        "critMultiplier": 2,
+        "critFromAttribute": true,
+        "hitstopFrames": 3
+      }
+    },
+    {
+      "id": "stun",
+      "kind": "impact",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "hitstun",
+        "duration": 0.35
+      }
+    },
+    {
+      "id": "knockback",
+      "kind": "impact",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "knockback",
+        "distance": 0.4
+      }
+    },
+    {
+      "id": "slash-cue",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "id": 101,
+        "name": "G1_Slash"
+      }
+    },
+    {
+      "id": "fireball",
+      "kind": "projectile",
+      "runtimeId": 901,
+      "enabled": true,
+      "parameters": {
+        "speed": 14,
+        "lifetime": 2,
+        "range": 0,
+        "radius": 0.3,
+        "spawnForward": 0.4
+      }
+    },
+    {
+      "id": "fire-damage",
+      "kind": "damage",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "flat": 0,
+        "coefficient": 1,
+        "critChance": 0,
+        "critMultiplier": 2,
+        "critFromAttribute": true
+      }
+    },
+    {
+      "id": "burn",
+      "kind": "buff",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "buff": "burn"
+      }
+    },
+    {
+      "id": "hit-cue",
+      "kind": "cue",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "id": 201,
+        "name": "FireballHit"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "target-cast",
+      "source": "target",
+      "sourcePort": "target",
+      "target": "cast",
+      "targetPort": "target",
+      "order": 0
+    },
+    {
+      "id": "fireball-hit-fire-damage-0",
+      "source": "fireball",
+      "sourcePort": "hit",
+      "target": "fire-damage",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "fireball-hit-stun-1",
+      "source": "fireball",
+      "sourcePort": "hit",
+      "target": "stun",
+      "targetPort": "execute",
+      "order": 1
+    },
+    {
+      "id": "fireball-hit-knockback-2",
+      "source": "fireball",
+      "sourcePort": "hit",
+      "target": "knockback",
+      "targetPort": "execute",
+      "order": 2
+    },
+    {
+      "id": "fireball-hit-burn-3",
+      "source": "fireball",
+      "sourcePort": "hit",
+      "target": "burn",
+      "targetPort": "execute",
+      "order": 3
+    },
+    {
+      "id": "fireball-hit-hit-cue-4",
+      "source": "fireball",
+      "sourcePort": "hit",
+      "target": "hit-cue",
+      "targetPort": "execute",
+      "order": 4
+    }
+  ],
+  "timeline": {
+    "runtimeId": 1001,
+    "duration": 0.55,
+    "animation": "Fire",
+    "clips": [
+      {
+        "id": "cancel",
+        "kind": "cancel",
+        "start": 0.12,
+        "end": 0.4,
+        "moveX": 0.0,
+        "moveY": 0.0,
+        "moveZ": 0.0,
+        "steer": 0.0,
+        "hitRadius": 0.0,
+        "hitOffsetX": 0.0,
+        "hitOffsetY": 0.0,
+        "hitOffsetZ": 0.0,
+        "effects": []
+      },
+      {
+        "id": "move",
+        "kind": "move",
+        "start": 0.08,
+        "end": 0.28,
+        "moveX": 0.6,
+        "moveY": 0.0,
+        "moveZ": 0.0,
+        "steer": 0.0,
+        "hitRadius": 0.0,
+        "hitOffsetX": 0.0,
+        "hitOffsetY": 0.0,
+        "hitOffsetZ": 0.0,
+        "effects": []
+      },
+      {
+        "id": "hit",
+        "kind": "hitbox",
+        "start": 0.18,
+        "end": 0.3,
+        "moveX": 0.0,
+        "moveY": 0.0,
+        "moveZ": 0.0,
+        "steer": 0.0,
+        "hitRadius": 0.8,
+        "hitOffsetX": 0.0,
+        "hitOffsetY": 0.0,
+        "hitOffsetZ": 0.0,
+        "effects": [
+          "melee",
+          "stun",
+          "knockback"
+        ]
+      }
+    ],
+    "payloads": [
+      {
+        "id": "slash",
+        "time": 0.18,
+        "repeatInterval": 0.0,
+        "effects": [
+          "slash-cue"
+        ]
+      },
+      {
+        "id": "fire",
+        "time": 0.22,
+        "repeatInterval": 0.0,
+        "effects": [
+          "fireball"
+        ]
+      }
+    ]
+  }
+}

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <RootNamespace>Combat</RootNamespace>
     <LangVersion>latest</LangVersion>
     <Nullable>disable</Nullable>
@@ -11,7 +11,25 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
+    <Compile Include="RuntimeContentCli.cs" />
+    <Compile Include="Assets/Scripts/Combat/Config/Json/**/*.cs" />
     <Compile Include="Assets/Scripts/Combat/Core/**/*.cs" />
-    <Compile Include="Assets/Scripts/Combat/Demos/**/*.cs" />
+    <Compile Include="Assets/Scripts/Combat/Presentation/**/*.cs" />
+    <Compile Include="Assets/Scripts/Combat/Demos/HaloCombatDemoCases.cs" />
+    <Compile Include="Assets/Scripts/Combat/Demos/MovementAndTimelineDemos.cs" />
+    <Compile Include="Assets/Scripts/Combat/Demos/CombatEffectDemos.cs" />
+    <Compile Include="Assets/Scripts/Combat/Demos/SeasonOneDemo.cs" />
+    <Compile Include="Assets/Scripts/Combat/Demos/DemoTrace.cs" />
+    <Compile Include="Assets/Scripts/Combat/Demos/SeasonTwoDemoSupport.cs" />
+    <Compile Include="Assets/Scripts/Combat/Demos/KnockdownDemo.cs" />
+    <Compile Include="Assets/Scripts/Combat/Demos/DodgeHitstopDemo.cs" />
+    <Compile Include="Assets/Scripts/Combat/Demos/AuraHomingDemo.cs" />
+    <Compile Include="Assets/Scripts/Combat/Demos/BehaviorTreeDemo.cs" />
+    <Compile Include="Assets/Scripts/Combat/Demos/PerceptionDemo.cs" />
+    <Compile Include="Assets/Scripts/Combat/Demos/EnemyAiDemo.cs" />
+    <Compile Include="Assets/Scripts/Combat/Demos/SummonDemo.cs" />
+    <Compile Include="Assets/Scripts/Combat/Demos/SeasonTwoDemo.cs" />
+    <Compile Include="Assets/Scripts/Combat/Demos/DemoWorld.cs" />
   </ItemGroup>
+  <ItemGroup><PackageReference Include="Newtonsoft.Json" Version="13.0.3" /></ItemGroup>
 </Project>

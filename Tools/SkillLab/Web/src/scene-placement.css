@@ -1,0 +1,6 @@
+.world-canvas>svg{touch-action:none;user-select:none;outline-offset:-2px}
+.scene-actions{flex-wrap:wrap;max-width:calc(100% - 16px)}
+.scene-actions span{flex-basis:100%;padding:0 2px}
+.scene-message{position:absolute;left:8px;right:8px;bottom:20px;padding:4px 6px;border-radius:3px;background:#14232ee8;color:#dec894;font-size:10px;pointer-events:none}
+.placement-ghost{opacity:.9}
+.scene-actors .remove-scene-target{grid-column:1/-1;font-size:10px;padding:4px}

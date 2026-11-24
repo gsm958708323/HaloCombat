@@ -1,0 +1,80 @@
+{
+  "id": "battle-rage",
+  "runtimeId": 2019,
+  "name": "战斗强化",
+  "category": "Buff",
+  "nodes": [
+    {
+      "id": "target",
+      "kind": "target",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "self",
+        "range": 20
+      }
+    },
+    {
+      "id": "cast",
+      "kind": "cast",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "instant",
+        "cost": 10,
+        "cooldown": 0.7,
+        "delay": 0.1,
+        "duration": 0.3,
+        "count": 1,
+        "interval": 0.1
+      }
+    },
+    {
+      "id": "delivery",
+      "kind": "delivery",
+      "runtimeId": 5021,
+      "enabled": true,
+      "parameters": {
+        "mode": "target",
+        "recipient": "self"
+      }
+    },
+    {
+      "id": "rage",
+      "kind": "buff",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "buff": "battle-rage",
+        "stacks": 1,
+        "recipient": "target"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "target-cast",
+      "source": "target",
+      "sourcePort": "target",
+      "target": "cast",
+      "targetPort": "target",
+      "order": 0
+    },
+    {
+      "id": "cast-delivery",
+      "source": "cast",
+      "sourcePort": "cast",
+      "target": "delivery",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "hit-damage",
+      "source": "delivery",
+      "sourcePort": "apply",
+      "target": "rage",
+      "targetPort": "execute",
+      "order": 0
+    }
+  ]
+}

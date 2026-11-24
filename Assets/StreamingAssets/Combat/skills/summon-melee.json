@@ -1,0 +1,70 @@
+{
+  "id": "summon-melee",
+  "runtimeId": 402,
+  "name": "近战分身",
+  "category": "正式内容",
+  "nodes": [
+    {
+      "id": "target",
+      "kind": "target",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "facing",
+        "range": 20
+      }
+    },
+    {
+      "id": "cast",
+      "kind": "cast",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "instant",
+        "cost": 0,
+        "cooldown": 0
+      }
+    },
+    {
+      "id": "summon",
+      "kind": "delivery",
+      "runtimeId": 701,
+      "enabled": true,
+      "parameters": {
+        "mode": "summon",
+        "blueprint": "summon",
+        "center": "auto",
+        "count": 1,
+        "spacing": 1,
+        "permanent": true,
+        "maxAlive": 64
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "target-cast",
+      "source": "target",
+      "sourcePort": "target",
+      "target": "cast",
+      "targetPort": "target",
+      "order": 0
+    }
+  ],
+  "timeline": {
+    "runtimeId": 1402,
+    "duration": 0.1,
+    "animation": "Fire",
+    "clips": [],
+    "payloads": [
+      {
+        "id": "summon",
+        "time": 0.0,
+        "repeatInterval": 0.0,
+        "effects": [
+          "summon"
+        ]
+      }
+    ]
+  }
+}

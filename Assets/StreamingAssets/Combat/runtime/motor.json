@@ -1,0 +1,7 @@
+{
+  "gravity": -20.0,
+  "jumpSpeed": 6.0,
+  "airSteer": 0.35,
+  "groundY": 0.0,
+  "stickDeadzone": 0.25
+}

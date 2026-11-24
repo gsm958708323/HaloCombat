@@ -1,0 +1,8 @@
+.view-properties { border-top:1px solid #435155;margin-top:14px;padding-top:10px;min-width:0; }
+.view-properties summary { cursor:pointer;color:#d7cba8;overflow-wrap:anywhere; }
+.view-properties p { font-size:10px;line-height:1.7;color:#a7b9b9; }
+.view-properties label { display:grid;grid-template-columns:minmax(0,1fr);gap:4px;margin:9px 0;font-size:10px;overflow-wrap:anywhere; }
+.view-properties input,.view-properties select { width:100%;max-width:100%;font-size:10px; }
+.view-properties details { min-width:0;margin-top:12px;padding:8px;border:1px solid #3b4c50;border-radius:3px; }
+.view-properties small { display:block;line-height:1.6;overflow-wrap:anywhere; }
+.timeline-properties input[aria-label="时间轴动画语义"] { width:100%; }

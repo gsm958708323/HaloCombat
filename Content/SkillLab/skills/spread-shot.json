@@ -1,0 +1,88 @@
+{
+  "id": "spread-shot",
+  "runtimeId": 2022,
+  "name": "扇形散射",
+  "category": "投射物行为",
+  "nodes": [
+    {
+      "id": "target",
+      "kind": "target",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "point",
+        "range": 20
+      }
+    },
+    {
+      "id": "cast",
+      "kind": "cast",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "instant",
+        "cost": 10,
+        "cooldown": 0.7,
+        "delay": 0.1,
+        "duration": 0.3,
+        "count": 1,
+        "interval": 0.1
+      }
+    },
+    {
+      "id": "projectile",
+      "kind": "projectile",
+      "runtimeId": 6003,
+      "enabled": true,
+      "parameters": {
+        "speed": 12,
+        "range": 24,
+        "radius": 0.18,
+        "homingRate": 0,
+        "multi": true,
+        "count": 5,
+        "spread": 60
+      }
+    },
+    {
+      "id": "damage",
+      "kind": "damage",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "flat": 80,
+        "coefficient": 0,
+        "critChance": 0,
+        "critMultiplier": 1.8,
+        "ignoreDefense": false,
+        "hitstopFrames": 0
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "target-cast",
+      "source": "target",
+      "sourcePort": "target",
+      "target": "cast",
+      "targetPort": "target",
+      "order": 0
+    },
+    {
+      "id": "cast-delivery",
+      "source": "cast",
+      "sourcePort": "cast",
+      "target": "projectile",
+      "targetPort": "execute",
+      "order": 0
+    },
+    {
+      "id": "hit-damage",
+      "source": "projectile",
+      "sourcePort": "hit",
+      "target": "damage",
+      "targetPort": "execute",
+      "order": 0
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "id": "detonate-constructs",
+  "runtimeId": 2040,
+  "name": "范围引爆木桶",
+  "category": "可破坏物",
+  "nodes": [
+    {
+      "id": "target",
+      "kind": "target",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "point",
+        "range": 20
+      }
+    },
+    {
+      "id": "cast",
+      "kind": "cast",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "mode": "instant",
+        "cost": 0,
+        "cooldown": 0,
+        "delay": 0,
+        "duration": 0.02
+      }
+    },
+    {
+      "id": "ignite",
+      "kind": "construct-chain",
+      "runtimeId": 0,
+      "enabled": true,
+      "parameters": {
+        "group": "barrel",
+        "radius": 2.2,
+        "damage": 9999
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "target-cast",
+      "source": "target",
+      "sourcePort": "target",
+      "target": "cast",
+      "targetPort": "target",
+      "order": 0
+    },
+    {
+      "id": "cast-ignite",
+      "source": "cast",
+      "sourcePort": "cast",
+      "target": "ignite",
+      "targetPort": "execute",
+      "order": 0
+    }
+  ]
+}

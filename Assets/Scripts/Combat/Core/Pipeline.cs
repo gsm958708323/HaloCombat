@@ -2,23 +2,9 @@ using System;
 
 namespace Combat.Core
 {
-    /// <summary>
-    /// 一个效果包。结算路径只有这一条：效果只读自己的配置 + 写 ctx 指向的目标/世界。
-    /// 效果实例可能在多条内容之间共享，所以实现必须无状态。
-    /// </summary>
     public interface IEffect
     {
         void Apply(ref EffectContext ctx);
-    }
-
-    /// <summary>
-    /// 受击过滤钩子：由「目标」组件实现，让通用伤害公式不必认识具体产品组件（例如 Arena 的木桶）。
-    /// 只在 DamageEffect 的 DirectDamage 为 true 时调用；反伤等路径保持绕过。
-    /// 返回值替换 raw 伤害，护盾 / 暴击 / 事件 / 死亡等其余步骤不受影响。
-    /// </summary>
-    public interface IIncomingDamage
-    {
-        float Filter(Actor source, float amount, in EffectContext ctx);
     }
 
     public struct EffectContext
@@ -33,11 +19,10 @@ namespace Combat.Core
         public bool HasPoint;
         public SimVec3 Dir;
         public bool HasDir;
-        public CastId CastId;
-        public SkillNodeId Skill;
-        public int HitIndex;
-        // Result of the most recent DamageEffect in this delivery, never inherited by a new bag.
-        public bool DamageApplied;
+        public SkillOrigin Origin;
+        public ProjectileHitContext ProjectileHit;
+        public DeliveryContact Contact;
+        public DamageResult Damage;
     }
 
     public readonly struct ApplyEffectsIntent
@@ -49,9 +34,10 @@ namespace Combat.Core
         public readonly int BuffStacks;
         public readonly SimVec3 Point;
         public readonly bool HasPoint;
-        public readonly CastId CastId;
-        public readonly SkillNodeId Skill;
-        public readonly int HitIndex;
+        public readonly float Power;
+        public readonly SkillOrigin Origin;
+        public readonly SimVec3 Direction;
+        public readonly bool HasDirection;
 
         public ApplyEffectsIntent(
             IEffect[] effects,
@@ -60,7 +46,8 @@ namespace Combat.Core
             float snapshotAtk,
             int buffStacks = 0,
             SimVec3 point = default,
-            bool hasPoint = false, CastId castId = default, SkillNodeId skill = default, int hitIndex = 0)
+            bool hasPoint = false,
+            float power = 1,SkillOrigin origin=default,SimVec3 direction=default,bool hasDirection=false)
         {
             Effects = effects;
             SourceId = sourceId;
@@ -69,21 +56,33 @@ namespace Combat.Core
             BuffStacks = buffStacks;
             Point = point;
             HasPoint = hasPoint;
-            CastId = castId;
-            Skill = skill;
-            HitIndex = hitIndex;
+            Power = power;
+            Origin=origin;Direction=direction;HasDirection=hasDirection;
         }
     }
 
     public sealed class EffectPipeline
     {
+        readonly IEffectObserver _observer;
+        public EffectPipeline(IEffectObserver observer=null)=>_observer=observer;
         public void Run(ref EffectContext ctx, IEffect[] effects)
         {
-            ctx.DamageApplied = false;
             if (effects == null) return;
             for (int i = 0; i < effects.Length; i++)
-                effects[i]?.Apply(ref ctx);
+            {
+                if(effects[i]==null)continue;
+                int token=_observer?.Enter(effects[i],ctx)??-1;
+                try{effects[i].Apply(ref ctx);}finally{_observer?.Exit(token);}
+            }
         }
+    }
+
+    // Optional execution diagnostics. Implementations belong to the composition layer;
+    // gameplay does not know author documents, node identities or editor positions.
+    public interface IEffectObserver
+    {
+        int Enter(IEffect effect,in EffectContext context);
+        void Exit(int token);
     }
 
     public sealed class CallbackEffect : IEffect

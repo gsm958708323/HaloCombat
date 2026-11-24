@@ -1,0 +1,17 @@
+{
+  "id": "echo-blade",
+  "name": "近战分身",
+  "skillId": "melee-thrust",
+  "hp": 120.0,
+  "attack": 80.0,
+  "defense": 0.0,
+  "moveSpeed": 5.0,
+  "collisionRadius": 0.4,
+  "energy": 100.0,
+  "initialEnergy": 100.0,
+  "recovery": 10.0,
+  "acquireRadius": 20.0,
+  "attackRange": 6.0,
+  "followRange": 2.0,
+  "holdDuration": 0.75
+}

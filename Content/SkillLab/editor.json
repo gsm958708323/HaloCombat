@@ -1,0 +1,1810 @@
+{
+  "nodePositions": [
+    {
+      "kind": "skills",
+      "graphId": "basic-shot",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "basic-shot",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "basic-shot",
+      "nodeId": "projectile",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "basic-shot",
+      "nodeId": "damage",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "burst-shot",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "burst-shot",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "burst-shot",
+      "nodeId": "projectile",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "burst-shot",
+      "nodeId": "damage",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "held-spray",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "held-spray",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "held-spray",
+      "nodeId": "projectile",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "held-spray",
+      "nodeId": "damage",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "charged-shot",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "charged-shot",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "charged-shot",
+      "nodeId": "projectile",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "charged-shot",
+      "nodeId": "damage",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "explosive-shot",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "explosive-shot",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "explosive-shot",
+      "nodeId": "projectile",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "explosive-shot",
+      "nodeId": "damage",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "explosive-shot",
+      "nodeId": "damage-delivery",
+      "x": 810.0,
+      "y": 340.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "ground-field",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "ground-field",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "ground-field",
+      "nodeId": "area",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "ground-field",
+      "nodeId": "damage",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "direct-hit",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "direct-hit",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "direct-hit",
+      "nodeId": "delivery",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "direct-hit",
+      "nodeId": "damage",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "melee-thrust",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "melee-thrust",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "melee-thrust",
+      "nodeId": "action",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "melee-thrust",
+      "nodeId": "damage",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "melee-fan",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "melee-fan",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "melee-fan",
+      "nodeId": "action",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "melee-fan",
+      "nodeId": "damage",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "melee-whirl",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "melee-whirl",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "melee-whirl",
+      "nodeId": "action",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "melee-whirl",
+      "nodeId": "damage",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "dash-strike",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "dash-strike",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "dash-strike",
+      "nodeId": "action",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "dash-strike",
+      "nodeId": "damage",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "blink-strike",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "blink-strike",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "blink-strike",
+      "nodeId": "action",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "blink-strike",
+      "nodeId": "damage",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "ray-shot",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "ray-shot",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "ray-shot",
+      "nodeId": "ray",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "ray-shot",
+      "nodeId": "damage",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "piercing-ray",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "piercing-ray",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "piercing-ray",
+      "nodeId": "ray",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "piercing-ray",
+      "nodeId": "damage",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "piercing-ray",
+      "nodeId": "ray-pierce",
+      "x": 540.0,
+      "y": 340.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "summon-gunners",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "summon-gunners",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "summon-gunners",
+      "nodeId": "summon",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "summon-blade",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "summon-blade",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "summon-blade",
+      "nodeId": "summon",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "burn-shot",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "burn-shot",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "burn-shot",
+      "nodeId": "projectile",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "burn-shot",
+      "nodeId": "burn",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "cleanse-burn",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "cleanse-burn",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "cleanse-burn",
+      "nodeId": "delivery",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "cleanse-burn",
+      "nodeId": "cleanse",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "battle-rage",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "battle-rage",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "battle-rage",
+      "nodeId": "delivery",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "battle-rage",
+      "nodeId": "rage",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "burning-field",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "burning-field",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "burning-field",
+      "nodeId": "area",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "burning-field",
+      "nodeId": "burn",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "slow-aura",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "slow-aura",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "slow-aura",
+      "nodeId": "area",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "slow-aura",
+      "nodeId": "slow",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "slow-aura",
+      "nodeId": "leave",
+      "x": 810.0,
+      "y": 450.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "spread-shot",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "spread-shot",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "spread-shot",
+      "nodeId": "projectile",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "spread-shot",
+      "nodeId": "damage",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "chain-shot",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "chain-shot",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "chain-shot",
+      "nodeId": "projectile",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "chain-shot",
+      "nodeId": "damage",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "chain-shot",
+      "nodeId": "projectile-chain",
+      "x": 540.0,
+      "y": 340.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "split-shot",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "split-shot",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "split-shot",
+      "nodeId": "projectile",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "split-shot",
+      "nodeId": "damage",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "split-shot",
+      "nodeId": "split",
+      "x": 1080.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "fan-channel",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "fan-channel",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "fan-channel",
+      "nodeId": "projectile",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "fan-channel",
+      "nodeId": "damage",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "fan-channel",
+      "nodeId": "projectile-pierce",
+      "x": 540.0,
+      "y": 340.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "accelerating-shot",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "accelerating-shot",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "accelerating-shot",
+      "nodeId": "projectile",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "accelerating-shot",
+      "nodeId": "damage",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "returning-shot",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "returning-shot",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "returning-shot",
+      "nodeId": "projectile",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "returning-shot",
+      "nodeId": "damage",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "returning-shot",
+      "nodeId": "projectile-pierce",
+      "x": 540.0,
+      "y": 340.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "bouncing-shot",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "bouncing-shot",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "bouncing-shot",
+      "nodeId": "projectile",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "bouncing-shot",
+      "nodeId": "damage",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "bouncing-shot",
+      "nodeId": "projectile-pierce",
+      "x": 540.0,
+      "y": 340.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "ricochet-shot",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "ricochet-shot",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "ricochet-shot",
+      "nodeId": "projectile",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "ricochet-shot",
+      "nodeId": "damage",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "ricochet-shot",
+      "nodeId": "projectile-pierce",
+      "x": 540.0,
+      "y": 340.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "homing-shot",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "homing-shot",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "homing-shot",
+      "nodeId": "projectile",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "homing-shot",
+      "nodeId": "damage",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "event-shot",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "event-shot",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "event-shot",
+      "nodeId": "projectile",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "event-shot",
+      "nodeId": "damage",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "event-shot",
+      "nodeId": "skill-events",
+      "x": 0.0,
+      "y": 650.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "event-shot",
+      "nodeId": "event-cue-0",
+      "x": 270.0,
+      "y": 650.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "event-shot",
+      "nodeId": "event-cue-1",
+      "x": 510.0,
+      "y": 650.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "event-shot",
+      "nodeId": "event-cue-2",
+      "x": 750.0,
+      "y": 650.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "event-shot",
+      "nodeId": "event-cue-3",
+      "x": 990.0,
+      "y": 650.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "event-shot",
+      "nodeId": "event-cue-4",
+      "x": 1230.0,
+      "y": 650.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "event-shot",
+      "nodeId": "event-cue-5",
+      "x": 1470.0,
+      "y": 650.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "event-shot",
+      "nodeId": "event-cue-6",
+      "x": 1710.0,
+      "y": 650.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "event-shot",
+      "nodeId": "bonus-damage",
+      "x": 540.0,
+      "y": 850.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "event-shot",
+      "nodeId": "confirm",
+      "x": 1080.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "event-shot",
+      "nodeId": "impact",
+      "x": 1350.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "elemental-shot",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "elemental-shot",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "elemental-shot",
+      "nodeId": "projectile",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "elemental-shot",
+      "nodeId": "damage",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "shield-self",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "shield-self",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "shield-self",
+      "nodeId": "delivery",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "shield-self",
+      "nodeId": "damage",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "impact-strike",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "impact-strike",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "impact-strike",
+      "nodeId": "delivery",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "impact-strike",
+      "nodeId": "damage",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "impact-strike",
+      "nodeId": "stun",
+      "x": 1080.0,
+      "y": 500.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "impact-strike",
+      "nodeId": "push",
+      "x": 1080.0,
+      "y": 600.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "impact-strike",
+      "nodeId": "launch",
+      "x": 1080.0,
+      "y": 700.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "ammo-shot",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "ammo-shot",
+      "nodeId": "cast",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "ammo-shot",
+      "nodeId": "projectile",
+      "x": 600.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "ammo-shot",
+      "nodeId": "damage",
+      "x": 900.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "reload-ammo",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "reload-ammo",
+      "nodeId": "cast",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "reload-ammo",
+      "nodeId": "refill",
+      "x": 600.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "tracked-shot",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "tracked-shot",
+      "nodeId": "cast",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "tracked-shot",
+      "nodeId": "projectile",
+      "x": 600.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "tracked-shot",
+      "nodeId": "damage",
+      "x": 900.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "projectile-warp",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "projectile-warp",
+      "nodeId": "cast",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "projectile-warp",
+      "nodeId": "warp",
+      "x": 600.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "barrel-chain",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "barrel-chain",
+      "nodeId": "cast",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "barrel-chain",
+      "nodeId": "barrel",
+      "x": 600.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "barrel-chain",
+      "nodeId": "blast",
+      "x": 900.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "barrel-chain",
+      "nodeId": "damage",
+      "x": 1200.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "barrel-chain",
+      "nodeId": "chain",
+      "x": 900.0,
+      "y": 460.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "detonate-constructs",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "detonate-constructs",
+      "nodeId": "cast",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "detonate-constructs",
+      "nodeId": "ignite",
+      "x": 600.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "actor-hitstop",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "actor-hitstop",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "actor-hitstop",
+      "nodeId": "delivery",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "actor-hitstop",
+      "nodeId": "damage",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "actor-hitstop",
+      "nodeId": "hurt",
+      "x": 1110.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "controlled-shot",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "controlled-shot",
+      "nodeId": "cast",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "controlled-shot",
+      "nodeId": "shot",
+      "x": 600.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "controlled-shot",
+      "nodeId": "damage",
+      "x": 900.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "absorbing-orb",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "absorbing-orb",
+      "nodeId": "cast",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "absorbing-orb",
+      "nodeId": "orb",
+      "x": 600.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "absorbing-orb",
+      "nodeId": "damage",
+      "x": 900.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "absorbing-orb",
+      "nodeId": "hurt",
+      "x": 1200.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "repeat-contact",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "repeat-contact",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "repeat-contact",
+      "nodeId": "projectile",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "repeat-contact",
+      "nodeId": "damage",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "repeat-contact",
+      "nodeId": "projectile-pierce",
+      "x": 540.0,
+      "y": 340.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "shared-shot-light",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "shared-shot-light",
+      "nodeId": "cast",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "shared-shot-heavy",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "shared-shot-heavy",
+      "nodeId": "cast",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "sampled-return",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "sampled-return",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "sampled-return",
+      "nodeId": "projectile",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "sampled-return",
+      "nodeId": "damage",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "sampled-return",
+      "nodeId": "projectile-pierce",
+      "x": 540.0,
+      "y": 340.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "phase-bounce",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "phase-bounce",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "phase-bounce",
+      "nodeId": "projectile",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "phase-bounce",
+      "nodeId": "damage",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "death-shot",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "death-shot",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "death-shot",
+      "nodeId": "projectile",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "death-shot",
+      "nodeId": "damage",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "behavior-pierce",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "behavior-pierce",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "behavior-pierce",
+      "nodeId": "projectile",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "behavior-pierce",
+      "nodeId": "damage",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "behavior-pierce",
+      "nodeId": "behavior",
+      "x": 300.0,
+      "y": 550.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "behavior-chain",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "behavior-chain",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "behavior-chain",
+      "nodeId": "projectile",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "behavior-chain",
+      "nodeId": "damage",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "behavior-chain",
+      "nodeId": "behavior",
+      "x": 300.0,
+      "y": 550.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "flight-time",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "flight-time",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "flight-time",
+      "nodeId": "projectile",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "flight-time",
+      "nodeId": "damage",
+      "x": 1130.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "flight-time",
+      "nodeId": "flight-area",
+      "x": 850.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "flight-distance",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "flight-distance",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "flight-distance",
+      "nodeId": "projectile",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "flight-distance",
+      "nodeId": "damage",
+      "x": 1130.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "flight-distance",
+      "nodeId": "flight-area",
+      "x": 850.0,
+      "y": 80.0
+    },
+    {
+      "kind": "timelines",
+      "graphId": "shared-impact-shot",
+      "nodeId": "projectile",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "projectiles",
+      "graphId": "shared-impact-projectile",
+      "nodeId": "projectile",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "projectiles",
+      "graphId": "shared-impact-projectile",
+      "nodeId": "damage",
+      "x": 300.0,
+      "y": 80.0
+    },
+    {
+      "kind": "projectiles",
+      "graphId": "shared-impact-projectile",
+      "nodeId": "hurt",
+      "x": 600.0,
+      "y": 80.0
+    },
+    {
+      "kind": "projectiles",
+      "graphId": "shared-impact-projectile",
+      "nodeId": "projectile-pierce",
+      "x": 0.0,
+      "y": 340.0
+    },
+    {
+      "kind": "buffs",
+      "graphId": "burn",
+      "nodeId": "events",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "buffs",
+      "graphId": "burn",
+      "nodeId": "period-damage",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "buffs",
+      "graphId": "burn",
+      "nodeId": "apply-cue",
+      "x": 270.0,
+      "y": -180.0
+    },
+    {
+      "kind": "buffs",
+      "graphId": "burn",
+      "nodeId": "stack-cue",
+      "x": 270.0,
+      "y": -70.0
+    },
+    {
+      "kind": "buffs",
+      "graphId": "burn",
+      "nodeId": "expire-cue",
+      "x": 270.0,
+      "y": 380.0
+    },
+    {
+      "kind": "buffs",
+      "graphId": "burn",
+      "nodeId": "removed-cue",
+      "x": 270.0,
+      "y": 490.0
+    },
+    {
+      "kind": "buffs",
+      "graphId": "battle-rage",
+      "nodeId": "events",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "buffs",
+      "graphId": "battle-rage",
+      "nodeId": "cast-cue",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "buffs",
+      "graphId": "battle-rage",
+      "nodeId": "hurt-cue",
+      "x": 270.0,
+      "y": 220.0
+    },
+    {
+      "kind": "buffs",
+      "graphId": "aura-slow",
+      "nodeId": "events",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "bleed-validation",
+      "nodeId": "target",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "bleed-validation",
+      "nodeId": "cast",
+      "x": 270.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "bleed-validation",
+      "nodeId": "projectile",
+      "x": 540.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "bleed-validation",
+      "nodeId": "damage",
+      "x": 810.0,
+      "y": 80.0
+    },
+    {
+      "kind": "skills",
+      "graphId": "bleed-validation",
+      "nodeId": "apply-bleed",
+      "x": 810.0,
+      "y": 380.0
+    },
+    {
+      "kind": "buffs",
+      "graphId": "bleed-demo",
+      "nodeId": "events",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "kind": "buffs",
+      "graphId": "bleed-demo",
+      "nodeId": "period-damage",
+      "x": 270.0,
+      "y": 80.0
+    }
+  ]
+}

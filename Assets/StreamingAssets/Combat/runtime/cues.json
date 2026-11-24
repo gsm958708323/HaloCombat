@@ -1,0 +1,130 @@
+[
+  {
+    "id": 101,
+    "key": "fx_g1_slash",
+    "kind": "cube",
+    "resource": null,
+    "sound": null,
+    "lifetime": 0.4
+  },
+  {
+    "id": 102,
+    "key": "fx_g2",
+    "kind": "cube",
+    "resource": null,
+    "sound": null,
+    "lifetime": 0.3
+  },
+  {
+    "id": 201,
+    "key": "fx_fireball_hit",
+    "kind": "cube",
+    "resource": null,
+    "sound": null,
+    "lifetime": 0.5
+  },
+  {
+    "id": 202,
+    "key": "fx_fire_ground",
+    "kind": "cube",
+    "resource": null,
+    "sound": null,
+    "lifetime": 2.0
+  },
+  {
+    "id": 4201,
+    "key": "fx_muzzle",
+    "kind": "prefab",
+    "resource": "Combat/Effects/MuzzleFlash",
+    "sound": null,
+    "lifetime": 0.8
+  },
+  {
+    "id": 4202,
+    "key": "fx_heart",
+    "kind": "prefab",
+    "resource": "Combat/Effects/Heart",
+    "sound": null,
+    "lifetime": 0.8
+  },
+  {
+    "id": 4203,
+    "key": "fx_roll_fire",
+    "kind": "prefab",
+    "resource": "Combat/Effects/Fire_B",
+    "sound": null,
+    "lifetime": 0.8
+  },
+  {
+    "id": 4204,
+    "key": "fx_hit",
+    "kind": "prefab",
+    "resource": "Combat/Effects/HitEffect_A",
+    "sound": null,
+    "lifetime": 0.8
+  },
+  {
+    "id": 4205,
+    "key": "fx_shield",
+    "kind": "prefab",
+    "resource": "Combat/Effects/HitEffect_B",
+    "sound": null,
+    "lifetime": 0.8
+  },
+  {
+    "id": 4206,
+    "key": "fx_explosion",
+    "kind": "prefab",
+    "resource": "Combat/Effects/Explosion_A",
+    "sound": null,
+    "lifetime": 0.8
+  },
+  {
+    "id": 4207,
+    "key": "fx_star",
+    "kind": "prefab",
+    "resource": "Combat/Effects/Star_B",
+    "sound": null,
+    "lifetime": 0.8
+  },
+  {
+    "id": 4208,
+    "key": "fx_shockwave",
+    "kind": "prefab",
+    "resource": "Combat/Effects/ShockWave",
+    "sound": null,
+    "lifetime": 0.8
+  },
+  {
+    "id": 4209,
+    "key": "fx_burn",
+    "kind": "prefab",
+    "resource": "Combat/Effects/Fire_A",
+    "sound": null,
+    "lifetime": 0.8
+  },
+  {
+    "id": 4210,
+    "key": "fx_bleed",
+    "kind": "prefab",
+    "resource": "Combat/Effects/HitEffect_A",
+    "sound": null,
+    "lifetime": 0.8
+  },
+  {
+    "id": 4211,
+    "key": "fx_sunder",
+    "kind": "prefab",
+    "resource": "Combat/Effects/HitEffect_B",
+    "sound": null,
+    "lifetime": 0.8
+  },
+  {
+    "id": 4212,
+    "key": "fx_guard",
+    "kind": "prefab",
+    "resource": "Combat/Effects/ShockWave",
+    "sound": null,
+    "lifetime": 0.8
+  }
+]

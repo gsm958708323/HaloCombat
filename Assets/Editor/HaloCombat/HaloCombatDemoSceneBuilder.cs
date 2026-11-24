@@ -6,7 +6,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Combat.Editor
+namespace Combat.Unity.Editor
 {
     public static class HaloCombatDemoSceneBuilder
     {
@@ -69,10 +69,9 @@ namespace Combat.Editor
             Debug.Log($"[HaloCombat] Created {Specs.Length} demo scenes.");
         }
 
-        [MenuItem("Tools/HaloCombat/Verify Demo Scenes")]
+        [MenuItem("Tools/HaloCombat/运行全部教学 Demo")]
         public static void VerifyAll()
         {
-            Combat.Core.CombatValidator.VerifyYawConvention();
             for (int i = 0; i < Specs.Length; i++)
             {
                 var spec = Specs[i];

@@ -1,0 +1,86 @@
+.combo-input{padding:6px 9px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;border-bottom:1px solid #3c494f}.combo-input select{min-width:110px;max-width:190px}.combo-input small{font-size:10px;color:#aebcc1}
+
+/* Tactile Input Deck for Combo Playtesting */
+.combo-deck {
+  display: flex;
+  flex-direction: column;
+  background: #1a2429;
+  border-bottom: 1px solid #33454d;
+}
+.combo-deck-action {
+  font-size: 11px;
+  font-weight: 600;
+  color: #7ce6bd;
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.combo-deck-frame {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #121c20;
+  color: #9cb2ba;
+  font-variant-numeric: tabular-nums;
+}
+.combo-deck-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+}
+.combo-pad-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.combo-pad-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #202e35;
+  border: 1px solid color-mix(in srgb, var(--pad-color, #d9bc78) 45%, #344750);
+  border-left: 3px solid var(--pad-color, #d9bc78);
+  color: #e7f0f2;
+  font-size: 11px;
+  font-weight: 500;
+  transition: transform .08s, background .14s, border-color .14s, box-shadow .14s;
+}
+.combo-pad-btn:hover:not(:disabled) {
+  background: #283a42;
+  border-color: var(--pad-color, #d9bc78);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+}
+.combo-pad-btn:active:not(:disabled) { transform: scale(0.97); }
+.combo-pad-btn.is-selected {
+  background: color-mix(in srgb, var(--pad-color, #d9bc78) 18%, #1d2b31);
+  border-color: var(--pad-color, #d9bc78);
+}
+.combo-pad-btn kbd {
+  font-family: Consolas, monospace;
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: #111a1e;
+  border: 1px solid #354952;
+  color: #b4c8cf;
+}
+.combo-deck-empty { color: #7e959e; font-size: 11px; }
+
+.combo-deck-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.combo-deck-controls button { padding: 5px 8px; font-size: 11px; }
+.combo-deck-status {
+  min-height: 1.4em;
+  font-size: 11px;
+  color: #95adb5;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.combo-deck-status.is-error { color: #ffab96; }
