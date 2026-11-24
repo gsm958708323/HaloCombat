@@ -59,38 +59,85 @@
     <UnityVersion>6000.0.32f1</UnityVersion>
   </PropertyGroup>
   <ItemGroup>
-    <Analyzer Include="C:\Users\Halo\.vscode\extensions\visualstudiotoolsforunity.vstuc-1.3.1\Analyzers\Microsoft.Unity.Analyzers.dll" />
+    <Analyzer Include="C:\Users\Halo\.vscode\extensions\visualstudiotoolsforunity.vstuc-1.3.2\Analyzers\Microsoft.Unity.Analyzers.dll" />
     <Analyzer Include="D:\Work\UnityInstall\6000.0.32f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.SourceGenerators.dll" />
     <Analyzer Include="D:\Work\UnityInstall\6000.0.32f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.Properties.SourceGenerator.dll" />
     <Analyzer Include="D:\Work\UnityInstall\6000.0.32f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\Combat\Core\MotorConfig.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\ActorBodyCollision.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\DeliveryContactEffects.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Pipeline.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\ConstructEffects.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\CombatComps.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\AoeRuntime.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\TagLease.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\SkillTargeting.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Motor.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\AreaEffects.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\RuntimeActorFactory.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\ImpactEffects.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\CombatValidator.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\BlinkStrikeEffect.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\SkillCastRouting.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\ActorTime.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\TimelinePlayer.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Summons.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\BtParallel.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\DamageEffect.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\Combo.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\ComboDiagnostics.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\BuffDefinition.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\BehaviorTree.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\LineTargeting.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\CollisionGeometry.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\SampledProjectileMotion.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Attributes.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\BehaviorTreeComp.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\WanderBehavior.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\ActCastSkill.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\ActorSpawnStats.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Effects.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\PerceptionComp.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\PlayPositionedCueEffect.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\ProjectileKinematics.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Buffs.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\ConstructComp.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Catalog.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\SkillCasting.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Presentation.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\TagsInput.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\ConstructDeathQueue.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\ProjectileFlight.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\RayStrikeEffect.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\BakedContent.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Infrastructure.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\World.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Timeline.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\ArenaDefinition.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\ActorModel.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Logging.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\QueryRandom.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\SkillCharge.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\SummonBlueprint.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\AmmoComp.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\HurtFeedback.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Factory.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\ProjectileDerivation.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\SkillEvents.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\RuntimeBodies.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\CuePlaybackEffect.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\TrackedProjectilesComp.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\ProjectileService.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\SpatialGeometry.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\AoeInteractions.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\CollisionWorld.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Activity.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Primitives.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\SpatialClipHandlers.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\ComboConditions.cs" />
+    <Compile Include="Assets\Scripts\Combat\Core\ConstructDefinition.cs" />
     <Compile Include="Assets\Scripts\Combat\Core\Events.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -143,6 +190,10 @@
     </Reference>
     <Reference Include="Unity.VisualScripting.Antlr3.Runtime">
       <HintPath>Library\PackageCache\com.unity.visualscripting\Runtime\VisualScripting.Flow\Dependencies\NCalc\Unity.VisualScripting.Antlr3.Runtime.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>Library\PackageCache\com.unity.nuget.newtonsoft-json\Runtime\Newtonsoft.Json.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.VisualScripting.TextureAssets">
