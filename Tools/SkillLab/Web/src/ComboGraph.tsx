@@ -54,14 +54,12 @@ function Canvas(props: Props) {
   const getHighlight = useCallback(() => tracker(store.get().state), [tracker, store]);
   const highlight = useSyncExternalStore(store.subscribe, getHighlight);
 
+  const [measurements, setMeasurements] = useState<Record<string, {width: number; height: number}>>({});
   const [dragPositions, setDragPositions] = useState<Map<string, {x: number; y: number}>>(new Map());
+  const [draggingIds, setDraggingIds] = useState<Set<string>>(new Set());
   const [appendSource, setAppendSource] = useState<{sourceId: string; x: number; y: number} | null>(null);
   const [appendQuery, setAppendQuery] = useState('');
   const wrapperRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setDragPositions(new Map());
-  }, [layout.positions]);
 
   const initializedRef = useRef(false);
   useEffect(() => {
@@ -119,6 +117,8 @@ function Canvas(props: Props) {
       id: IDLE_NODE_ID,
       type: 'comboSkill',
       position: idlePos,
+      measured: measurements[IDLE_NODE_ID],
+      dragging: draggingIds.has(IDLE_NODE_ID),
       selected: selectedNodeId === IDLE_NODE_ID,
       data: {
         isIdle: true,
@@ -147,6 +147,8 @@ function Canvas(props: Props) {
         id: skillId,
         type: 'comboSkill',
         position: pos,
+        measured: measurements[skillId],
+        dragging: draggingIds.has(skillId),
         selected: selectedNodeId === skillId,
         data: {
           skillId,
@@ -168,7 +170,7 @@ function Canvas(props: Props) {
     }
     return result;
   }, [
-    project, layout, dragPositions, selectedNodeId, entryCount, highlight,
+    project, layout, measurements, dragPositions, draggingIds, selectedNodeId, entryCount, highlight,
     cancelDotsBySkill, activeCancelRule, hoveredCancelRule,
     onSelectNode, onOpenSkill, openQuickAppend, onToggleCancelSkill,
   ]);
@@ -209,15 +211,53 @@ function Canvas(props: Props) {
   }), [layout, selectedEdgeId, highlight.edgeId, rules, project, onSelectEdge]);
 
   const handleNodesChange = useCallback((changes: NodeChange<ComboFlowNode>[]) => {
-    const moving = changes.filter(c => c.type === 'position' && c.position);
-    if (!moving.length) return;
-    setDragPositions(prev => {
-      const next = new Map(prev);
-      for (const item of moving) {
-        if (item.type === 'position' && item.position) next.set(item.id, item.position);
-      }
-      return next;
-    });
+    const dimensions = changes.filter(c => c.type === 'dimensions');
+    if (dimensions.length) {
+      setMeasurements(prev => {
+        let next = prev;
+        for (const item of dimensions) {
+          if (item.type !== 'dimensions' || !item.dimensions) continue;
+          const old = prev[item.id];
+          if (!old || old.width !== item.dimensions.width || old.height !== item.dimensions.height) {
+            if (next === prev) next = {...prev};
+            next[item.id] = item.dimensions;
+          }
+        }
+        return next;
+      });
+    }
+
+    const posChanges = changes.filter(c => c.type === 'position');
+    if (!posChanges.length) return;
+
+    const moving = posChanges.filter(c => c.type === 'position' && c.position);
+    if (moving.length) {
+      setDragPositions(prev => {
+        const next = new Map(prev);
+        for (const item of moving) {
+          if (item.type === 'position' && item.position) next.set(item.id, item.position);
+        }
+        return next;
+      });
+    }
+
+    const hasDragFlag = posChanges.some(c => c.type === 'position' && typeof c.dragging === 'boolean');
+    if (hasDragFlag) {
+      setDraggingIds(prev => {
+        let next = prev;
+        for (const item of posChanges) {
+          if (item.type !== 'position' || typeof item.dragging !== 'boolean') continue;
+          if (item.dragging && !next.has(item.id)) {
+            if (next === prev) next = new Set(prev);
+            next.add(item.id);
+          } else if (!item.dragging && next.has(item.id)) {
+            if (next === prev) next = new Set(prev);
+            next.delete(item.id);
+          }
+        }
+        return next;
+      });
+    }
   }, []);
 
   const handleNodeDragStop = useCallback((_: unknown, node: ComboFlowNode, allDragged: ComboFlowNode[]) => {
@@ -225,6 +265,8 @@ function Canvas(props: Props) {
     const list = allDragged.length ? allDragged : [node];
     for (const item of list) updates[item.id] = {x: item.position.x, y: item.position.y};
     onMoveNodes(updates);
+    setDragPositions(new Map());
+    setDraggingIds(new Set());
   }, [onMoveNodes]);
 
   const handleConnect = useCallback((connection: Connection) => {

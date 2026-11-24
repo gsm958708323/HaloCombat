@@ -236,7 +236,7 @@
   color: #eaf2f4;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
   cursor: pointer;
-  transition: border-color .15s, box-shadow .15s, opacity .15s, transform .12s;
+  transition: border-color .15s, box-shadow .15s, opacity .15s;
 }
 .combo-card:hover { border-color: #5b7582; background: linear-gradient(180deg, #293a42 0%, #202f36 100%); }
 .combo-card.is-selected {

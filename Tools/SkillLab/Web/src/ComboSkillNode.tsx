@@ -1,3 +1,4 @@
+import {memo} from 'react';
 import {Handle, Position} from '@xyflow/react';
 import type {Node, NodeProps} from '@xyflow/react';
 import {Plus, Sparkles, Check} from 'lucide-react';
@@ -31,7 +32,7 @@ export interface ComboSkillNodeData extends Record<string, unknown> {
 
 export type ComboFlowNode = Node<ComboSkillNodeData, 'comboSkill'>;
 
-export function ComboSkillNode({id, data, selected}: NodeProps<ComboFlowNode>) {
+export const ComboSkillNode = memo(function ComboSkillNode({id, data, selected}: NodeProps<ComboFlowNode>) {
   if (data.isIdle || id === IDLE_NODE_ID) {
     return (
       <div className={`combo-idle-node ${selected ? 'is-selected' : ''}`} data-combo-idle="true"
@@ -141,4 +142,4 @@ export function ComboSkillNode({id, data, selected}: NodeProps<ComboFlowNode>) {
       )}
     </div>
   );
-}
+});
